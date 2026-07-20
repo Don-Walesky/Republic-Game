@@ -1,1 +1,26 @@
+Assets/
 
+├── _Project/
+│   ├── Scripts/
+│   ├── Scenes/
+│   ├── Prefabs/
+│   ├── ScriptableObjects/
+│   ├── Resources/
+│   ├── Addressables/
+│   ├── UI/
+│   ├── Audio/
+│   ├── Materials/
+│   ├── Shaders/
+│   ├── Textures/
+│   ├── Fonts/
+│   ├── Animations/
+│   ├── Models/
+│   └── Editor/
+
+├── ThirdParty/
+│
+├── Art/
+│
+├── Audio/
+│
+└── Tests/
