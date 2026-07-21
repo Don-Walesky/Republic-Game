@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "vBaqlQ4pRfk=",
+  "success": true,
+  "projectFilePath": "/home/runner/work/Republic-Game/Republic-Game/src/Republic.App/Republic.App.csproj",
+  "expectedPackageFiles": [
+    "/home/runner/.nuget/packages/microsoft.extensions.dependencyinjection/10.0.10/microsoft.extensions.dependencyinjection.10.0.10.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/10.0.10/microsoft.extensions.dependencyinjection.abstractions.10.0.10.nupkg.sha512"
+  ],
+  "logs": []
+}

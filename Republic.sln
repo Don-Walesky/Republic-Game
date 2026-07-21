@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Republic.Core", "src\Republic.Core\Republic.Core.csproj", "{0E337255-240B-496F-B0D7-5AA6AFD699A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Republic.App", "src\Republic.App\Republic.App.csproj", "{14F23B6A-5370-45AB-8DE0-57574541A6A1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Republic.Core.Tests", "tests\Republic.Core.Tests\Republic.Core.Tests.csproj", "{AF3AE4A8-21D8-4765-AAC6-5B6F08B24DA5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E337255-240B-496F-B0D7-5AA6AFD699A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E337255-240B-496F-B0D7-5AA6AFD699A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E337255-240B-496F-B0D7-5AA6AFD699A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E337255-240B-496F-B0D7-5AA6AFD699A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14F23B6A-5370-45AB-8DE0-57574541A6A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14F23B6A-5370-45AB-8DE0-57574541A6A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14F23B6A-5370-45AB-8DE0-57574541A6A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14F23B6A-5370-45AB-8DE0-57574541A6A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF3AE4A8-21D8-4765-AAC6-5B6F08B24DA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF3AE4A8-21D8-4765-AAC6-5B6F08B24DA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF3AE4A8-21D8-4765-AAC6-5B6F08B24DA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF3AE4A8-21D8-4765-AAC6-5B6F08B24DA5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
