@@ -1,46 +1,73 @@
-# Republic-Game
 # Republic
 
-Republic is a persistent multiplayer geopolitical strategy and democratic governance simulation game developed in Unity.
+Republic is a persistent geopolitical strategy and democratic governance simulation game.
 
-Players campaign for office, govern procedurally generated nations, manage economies, negotiate diplomacy, build global influence, and compete for geopolitical dominance through governance rather than territorial conquest.
+Wave 0 now establishes a **headless deterministic .NET simulation core** that can be tested independently and later adapted into a Unity shell.
 
-## Vision
+## Canonical Planning Model
 
-Republic aims to create the most comprehensive political and economic simulation where every decision has interconnected consequences across governance, economics, diplomacy, public opinion, and global markets.
+The repository now uses a **10-wave player-experience roadmap** as the canonical delivery model:
 
-## Current Development Stage
+1. Wave 0 — Foundation
+2. Wave 1 — Executive Workspace
+3. Wave 2 — World Simulation
+4. Wave 3 — Campaign
+5. Wave 4 — Government
+6. Wave 5 — Economy
+7. Wave 6 — Legislature
+8. Wave 7 — Military
+9. Wave 8 — Diplomacy
+10. Wave 9 — Multiplayer
 
-🚧 Pre-Production
+Technical layers still matter, but they support the wave plan rather than replacing it.
 
-Current focus:
-- Technical Architecture
-- Core Simulation Framework
-- World Generation
-- Foundation Systems
+## Current Repository Structure
 
-## Project Structure
+- `/home/runner/work/Republic-Game/Republic-Game/src/Republic.Core` — deterministic core systems
+- `/home/runner/work/Republic-Game/Republic-Game/src/Republic.App` — bootstrap host and dependency injection setup
+- `/home/runner/work/Republic-Game/Republic-Game/tests/Republic.Core.Tests` — Wave 0 unit tests
+- `/home/runner/work/Republic-Game/Republic-Game/Config/defaults.json` — default runtime configuration
+- `/home/runner/work/Republic-Game/Republic-Game/unity` — reserved Unity shell boundary
+- `/home/runner/work/Republic-Game/Republic-Game/Docs` — canonical product and technical documentation
 
-- `/Assets` – Unity project assets
-- `/Docs` – Design and technical documentation
-- `/Packages` – Unity packages
-- `/ProjectSettings` – Unity configuration
+## Wave 0 Foundation Scope
+
+Wave 0 delivers:
+- solution and project scaffolding
+- configuration loading
+- multi-sink logging
+- queued event bus
+- deterministic time system
+- save/load framework
+- world manager shell
+- bootstrap host and CI entry points
+
+## Local Development
+
+```bash
+./build.sh
+```
+
+Or run commands directly:
+
+```bash
+dotnet restore Republic.sln
+dotnet build Republic.sln --configuration Debug
+dotnet test Republic.sln --configuration Debug --no-build
+```
 
 ## Documentation
 
-- Game Design Document (GDD)
-- Technical Design Document (TDD)
-- Architecture Documents
-- Development Roadmap
+Start here:
+- `/home/runner/work/Republic-Game/Republic-Game/Docs/README.md`
+- `/home/runner/work/Republic-Game/Republic-Game/ARCHITECTURE.md`
+- `/home/runner/work/Republic-Game/Republic-Game/DEVELOPMENT.md`
+- `/home/runner/work/Republic-Game/Republic-Game/.github/PRODUCTION_WAVES.md`
 
-## Technology
+## Legacy Planning Notes
 
-- Unity 6
-- C#
-- Unity Cloud
-- GitHub
-- GitHub Projects
-
-## License
-
-Private Repository
+Older sprint and backlog documents remain for historical context, but the canonical source of truth is now the combination of:
+- `/home/runner/work/Republic-Game/Republic-Game/.github/PRODUCTION_WAVES.md`
+- `/home/runner/work/Republic-Game/Republic-Game/Docs/Roadmap/README.md`
+- `/home/runner/work/Republic-Game/Republic-Game/Docs/Features/README.md`
+- `/home/runner/work/Republic-Game/Republic-Game/Docs/Architecture/Decisions/ADR-0001-canonical-delivery-model.md`
