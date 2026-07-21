@@ -1,28 +1,26 @@
 # Game Design Document (GDD)
 
-The official Game Design Document for Republic defines all gameplay mechanics, features, systems, and player experience.
+**The "what" and "why" of Republic's gameplay.**
 
-## Contents
-
-This folder contains:
-- Comprehensive gameplay specifications
-- Feature descriptions and mechanics
-- Game systems (economy, politics, military, etc)
-- Campaign and progression systems
-- Multiplayer mechanics
-- Balance and tuning guidelines
-
-## Quick Links
-
-- **Core Gameplay Philosophy** → See [Gameplay Philosophy](../Gameplay%20Philosophy/README.md)
-- **Feature Specifications** → See [Features](../Features/README.md)
-- **Development Timeline** → See [Roadmap](../Roadmap/README.md)
-- **User Interface Design** → See [UX](../UX/README.md)
-
-## Structure
-
-Feature documentation is organized in the [Features](../Features/) folder by system.
+This document describes:
+- What the game is
+- What the player does
+- How the game feels
+- What makes it unique
 
 ---
 
-*The GDD serves as the primary reference for gameplay design and feature implementation.*
+## Quick Links
+- **[Design Principles](../Design%20Principles/README.md)** - Core design pillars
+- **[TDD](../TDD/README.md)** - Technical specifications
+- **[Development Bible](../Development%20Bible/README.md)** - Implementation roadmap
+
+## Coming Soon
+
+Detailed GDD covering:
+- Game overview
+- Player experience
+- Core gameplay loop
+- Unique value proposition
+- Target audience
+- Platform requirements
