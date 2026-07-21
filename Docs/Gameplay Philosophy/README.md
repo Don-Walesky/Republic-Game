@@ -2,20 +2,55 @@
 
 The core design philosophy that guides all decisions in Republic.
 
+## Documents
+
+### 📖 [The Republic Manifesto](./MANIFESTO.md)
+The north star of Republic:
+
+**"Republic is not a game about ruling people. It is a game about carrying the burden of democratic leadership."**
+
+This single statement shapes every design decision.
+
+### 📋 [Design Principles](./Design%20Principles.md)
+Comprehensive design philosophy covering:
+- Core design philosophy (what Republic is and isn't)
+- The Executive Perspective
+- Office-First Gameplay
+- Decision Spaces
+- Communication-Driven Design
+- Leadership vs. Micromanagement
+- And 10+ more foundational principles
+
+## The Republic Test
+
+Before implementing any feature, ask:
+
+1. Does it strengthen the executive leadership experience?
+2. Does it create meaningful strategic choices?
+3. Does it affect multiple systems?
+4. Does it fit within the office-centric design philosophy?
+5. Does it increase replayability?
+6. Does it create opportunities for emergent storytelling?
+7. Does it reinforce the player's role as Head of Government?
+
+**If it fails most of these, redesign or omit it.**
+
 ## Design Pillars
+
+Republic is built on five core pillars:
 
 ### 1. Agency
 **Players shape the world through meaningful choices.**
 - Every decision has visible consequences
 - Multiple valid strategies exist
 - Player experimentation is rewarded
-- Mistakes are recoverable (save system)
+- Mistakes are recoverable
 
 ### 2. Emergence
 **Complex interactions create unexpected outcomes.**
 - Systems interact to create emergent behavior
 - No single solution to problems
-- Player decisions cascade through interconnected systems
+- Decisions cascade through interconnected systems
 - Simulation depth rewards understanding
 
 ### 3. Transparency
@@ -39,23 +74,13 @@ The core design philosophy that guides all decisions in Republic.
 - Generations of gameplay
 - Deep economic simulation
 
-## Design Principles
+## Quick Navigation
 
-1. **Systemic First**: Design through systems, not scripts
-2. **Data-Driven**: Game ruled by numbers, not exceptions
-3. **Layered Complexity**: Simple to learn, deep to master
-4. **Player Agency**: Meaningful choices always available
-5. **Consequence Chain**: Every action echoes through systems
-
-## Gameplay Experience
-
-Players should feel:
-- **Powerful** - Their decisions shape nations
-- **Strategic** - Long-term planning matters
-- **Connected** - To the world and its people
-- **Challenged** - By systemic complexity
-- **Rewarded** - For understanding and mastery
+- **Feature Specifications** → [Features](../Features/README.md)
+- **Technical Details** → [TDD](../TDD/README.md)
+- **Development Timeline** → [Roadmap](../Roadmap/README.md)
+- **User Interface** → [UX](../UX/README.md)
 
 ---
 
-*All design and technical decisions should reinforce these pillars.*
+*All design and technical decisions should reinforce these principles.*
