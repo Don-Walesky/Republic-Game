@@ -18,7 +18,7 @@ public sealed class SaveEnvelope<TState>
     /// <summary>
     /// Gets or sets the UTC save timestamp.
     /// </summary>
-    public DateTimeOffset SavedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset SavedAt { get; set; }
 
     /// <summary>
     /// Gets or sets the saved payload.

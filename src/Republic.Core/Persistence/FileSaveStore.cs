@@ -27,6 +27,11 @@ public sealed class FileSaveStore
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
         ArgumentNullException.ThrowIfNull(envelope);
 
+        if (envelope.SavedAt == default)
+        {
+            envelope.SavedAt = DateTimeOffset.UtcNow;
+        }
+
         var directory = Path.GetFullPath(_configuration.SaveDirectory);
         Directory.CreateDirectory(directory);
         var fullPath = Path.Combine(directory, fileName);

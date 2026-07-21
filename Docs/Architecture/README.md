@@ -18,8 +18,8 @@ Republic starts as a headless deterministic simulation core.
 
 ## Unity Separation
 
-The Unity shell is intentionally deferred behind `/home/runner/work/Republic-Game/Republic-Game/unity` so Wave 0 can build and test without engine coupling.
+The Unity shell is intentionally deferred behind `unity/` so Wave 0 can build and test without engine coupling.
 
 ## Decision Record
 
-See `/home/runner/work/Republic-Game/Republic-Game/Docs/Architecture/Decisions/ADR-0001-canonical-delivery-model.md`.
+See `Decisions/ADR-0001-canonical-delivery-model.md`.

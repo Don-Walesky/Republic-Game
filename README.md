@@ -23,12 +23,12 @@ Technical layers still matter, but they support the wave plan rather than replac
 
 ## Current Repository Structure
 
-- `/home/runner/work/Republic-Game/Republic-Game/src/Republic.Core` — deterministic core systems
-- `/home/runner/work/Republic-Game/Republic-Game/src/Republic.App` — bootstrap host and dependency injection setup
-- `/home/runner/work/Republic-Game/Republic-Game/tests/Republic.Core.Tests` — Wave 0 unit tests
-- `/home/runner/work/Republic-Game/Republic-Game/Config/defaults.json` — default runtime configuration
-- `/home/runner/work/Republic-Game/Republic-Game/unity` — reserved Unity shell boundary
-- `/home/runner/work/Republic-Game/Republic-Game/Docs` — canonical product and technical documentation
+- `src/Republic.Core` — deterministic core systems
+- `src/Republic.App` — bootstrap host and dependency injection setup
+- `tests/Republic.Core.Tests` — Wave 0 unit tests
+- `Config/defaults.json` — default runtime configuration
+- `unity` — reserved Unity shell boundary
+- `Docs` — canonical product and technical documentation
 
 ## Wave 0 Foundation Scope
 
@@ -59,15 +59,15 @@ dotnet test Republic.sln --configuration Debug --no-build
 ## Documentation
 
 Start here:
-- `/home/runner/work/Republic-Game/Republic-Game/Docs/README.md`
-- `/home/runner/work/Republic-Game/Republic-Game/ARCHITECTURE.md`
-- `/home/runner/work/Republic-Game/Republic-Game/DEVELOPMENT.md`
-- `/home/runner/work/Republic-Game/Republic-Game/.github/PRODUCTION_WAVES.md`
+- `Docs/README.md`
+- `ARCHITECTURE.md`
+- `DEVELOPMENT.md`
+- `.github/PRODUCTION_WAVES.md`
 
 ## Legacy Planning Notes
 
 Older sprint and backlog documents remain for historical context, but the canonical source of truth is now the combination of:
-- `/home/runner/work/Republic-Game/Republic-Game/.github/PRODUCTION_WAVES.md`
-- `/home/runner/work/Republic-Game/Republic-Game/Docs/Roadmap/README.md`
-- `/home/runner/work/Republic-Game/Republic-Game/Docs/Features/README.md`
-- `/home/runner/work/Republic-Game/Republic-Game/Docs/Architecture/Decisions/ADR-0001-canonical-delivery-model.md`
+- `.github/PRODUCTION_WAVES.md`
+- `Docs/Roadmap/README.md`
+- `Docs/Features/README.md`
+- `Docs/Architecture/Decisions/ADR-0001-canonical-delivery-model.md`

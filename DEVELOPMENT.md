@@ -8,26 +8,26 @@
 ## Setup
 
 ```bash
-dotnet restore /home/runner/work/Republic-Game/Republic-Game/Republic.sln
+dotnet restore Republic.sln
 ```
 
 ## Build
 
 ```bash
-dotnet build /home/runner/work/Republic-Game/Republic-Game/Republic.sln --configuration Debug
-dotnet build /home/runner/work/Republic-Game/Republic-Game/Republic.sln --configuration Release
+dotnet build Republic.sln --configuration Debug
+dotnet build Republic.sln --configuration Release
 ```
 
 ## Test
 
 ```bash
-dotnet test /home/runner/work/Republic-Game/Republic-Game/Republic.sln --configuration Debug --no-build
+dotnet test Republic.sln --configuration Debug --no-build
 ```
 
 ## Run Bootstrap Host
 
 ```bash
-dotnet run --project /home/runner/work/Republic-Game/Republic-Game/src/Republic.App/Republic.App.csproj
+dotnet run --project src/Republic.App/Republic.App.csproj
 ```
 
 ## Repository Conventions

@@ -18,7 +18,7 @@ public sealed class WorldState
     /// <summary>
     /// Gets or sets the UTC creation time.
     /// </summary>
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>
     /// Gets or sets the current tick recorded by the world shell.
