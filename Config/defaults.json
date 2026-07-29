@@ -1,0 +1,25 @@
+{
+  "engine": {
+    "startupFrameCount": 3,
+    "frameDeltaMilliseconds": 100,
+    "worldName": "Republic Sandbox"
+  },
+  "logging": {
+    "minimumLevel": "Debug",
+    "consoleEnabled": true,
+    "fileEnabled": true,
+    "structuredJson": false,
+    "filePath": "logs/republic.log",
+    "slowOperationThresholdMilliseconds": 16
+  },
+  "time": {
+    "tickRate": 60,
+    "daysPerMonth": 30,
+    "monthsPerYear": 12,
+    "ticksPerDay": 120
+  },
+  "persistence": {
+    "saveDirectory": "saves",
+    "formatVersion": 1
+  }
+}
