@@ -1,6 +1,7 @@
 namespace Republic.Core.Crises.Services;
 
 using Republic.Core.Crises.Events;
+using Republic.Core.Crises.Models;
 using Republic.Core.Decisions.Models;
 using Republic.Core.Decisions.Services;
 using Republic.Core.Diagnostics;
@@ -128,6 +129,101 @@ public sealed class CrisisTriggerEngine : ICrisisTriggerEngine
                         Effects = new List<PolicyEffect>
                         {
                             new PolicyEffect { TargetMetric = "Happiness", DeltaValue = 15.0 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 3. Coup Threat Check (Military faction approval < 25%)
+        var militaryFaction = _worldManager.PoliticalCulture.GetFactions().FirstOrDefault(f => f.Name.Contains("Military", StringComparison.OrdinalIgnoreCase) || f.Name.Contains("Armed", StringComparison.OrdinalIgnoreCase));
+        if (militaryFaction != null && militaryFaction.ApprovalRating < 25.0)
+        {
+            triggeredCrises++;
+            _logger?.LogWarning($"CRISIS TRIGGERED: Coup Threat detected at tick {currentTick} (Military Approval: {militaryFaction.ApprovalRating:0.0}%)");
+            _eventBus.PublishAsync(new CoupThreatTriggeredEvent("Nationwide", militaryFaction.ApprovalRating, DateTimeOffset.UtcNow));
+
+            _workspaceManager.Email.ReceiveEmail(new EmailMessage
+            {
+                Sender = "Defense High Command",
+                Subject = "ULTIMATUM: Military Council Demand",
+                Body = "Mr. President, general staff officers demand an immediate expansion of the defense budget.",
+                Folder = "Inbox",
+                ActionRequired = true,
+            });
+
+            _decisionEngine.RegisterDecision(new DecisionContext
+            {
+                Title = "Military Coup Ultimatum",
+                Description = "High command officers threaten to seize control of government facilities.",
+                Category = "National Defense",
+                IsUrgent = true,
+                Options = new List<DecisionOption>
+                {
+                    new DecisionOption
+                    {
+                        Label = "Increase Defense Appropriations",
+                        Description = "Approve $200M defense allocation.",
+                        TreasuryCost = 200_000_000,
+                        Effects = new List<PolicyEffect>
+                        {
+                            new PolicyEffect { TargetMetric = "Approval", TargetId = militaryFaction.Id, DeltaValue = 25.0 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. Armed Insurgency Check (Country baseline stability < 25%)
+        var lowStabilityCountry = _worldManager.Countries.GetAllCountries().FirstOrDefault(c => c.BaselineStability < 25.0);
+        if (lowStabilityCountry != null)
+        {
+            triggeredCrises++;
+            _logger?.LogWarning($"CRISIS TRIGGERED: Armed Insurgency in '{lowStabilityCountry.Name}' (Stability: {lowStabilityCountry.BaselineStability:0.0})");
+            _eventBus.PublishAsync(new InsurgencyBeganEvent(lowStabilityCountry.Id, CrisisSeverity.Catastrophic, DateTimeOffset.UtcNow));
+
+            _workspaceManager.News.PublishArticle(new NewsArticle
+            {
+                Source = "Defense Network",
+                Headline = "ARMED REBEL MILITIA SEIZES REGIONAL CAPITALS",
+                Summary = "Insurgent forces have established control over provincial government buildings.",
+                Category = "Security",
+                ImpactRating = 5
+            });
+        }
+
+        // 5. Environmental & Natural Disaster Check (Every 1000 ticks)
+        if (currentTick > 0 && currentTick % 1000 == 0)
+        {
+            triggeredCrises++;
+            _logger?.LogWarning($"CRISIS TRIGGERED: Natural Disaster at tick {currentTick}");
+            _eventBus.PublishAsync(new NaturalDisasterOccurredEvent("Severe Earthquake", "Region-1", CrisisSeverity.Severe, DateTimeOffset.UtcNow));
+
+            _workspaceManager.News.PublishArticle(new NewsArticle
+            {
+                Source = "Global Disaster Network",
+                Headline = "MAJOR EARTHQUAKE STRIKES PROVINCIAL SECTOR",
+                Summary = "Emergency response teams deployed amidst infrastructure damage and power outages.",
+                Category = "Environment",
+                ImpactRating = 4
+            });
+
+            _decisionEngine.RegisterDecision(new DecisionContext
+            {
+                Title = "Disaster Relief Allocation",
+                Description = "A major natural disaster requires urgent emergency funding.",
+                Category = "Disaster Relief",
+                IsUrgent = true,
+                Options = new List<DecisionOption>
+                {
+                    new DecisionOption
+                    {
+                        Label = "Deploy Federal Disaster Aid",
+                        Description = "Allocate $75M in emergency reconstruction aid.",
+                        TreasuryCost = 75_000_000,
+                        Effects = new List<PolicyEffect>
+                        {
+                            new PolicyEffect { TargetMetric = "Happiness", DeltaValue = 8.0 }
                         }
                     }
                 }

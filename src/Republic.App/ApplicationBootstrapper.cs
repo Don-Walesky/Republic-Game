@@ -68,6 +68,7 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<IWorldManager, WorldManager>();
         services.AddSingleton<IDecisionEngine, DecisionEngine>();
         services.AddSingleton<ICrisisTriggerEngine, CrisisTriggerEngine>();
+        services.AddSingleton<IInterPlayerWarfareService, InterPlayerWarfareService>();
         services.AddSingleton<IVisitorService, VisitorService>();
         services.AddSingleton<IPhoneService, PhoneService>();
         services.AddSingleton<IEmailService, EmailService>();
