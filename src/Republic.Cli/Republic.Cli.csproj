@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Republic.Cli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Republic.App\Republic.App.csproj" />
+    <ProjectReference Include="..\Republic.Core\Republic.Core.csproj" />
+  </ItemGroup>
+</Project>

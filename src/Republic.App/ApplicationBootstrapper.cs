@@ -2,6 +2,7 @@ namespace Republic.App;
 
 using Microsoft.Extensions.DependencyInjection;
 using Republic.Core.Configuration;
+using Republic.Core.AI.Services;
 using Republic.Core.Cabinet.Services;
 using Republic.Core.Crises.Services;
 using Republic.Core.Decisions.Services;
@@ -83,6 +84,7 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<IScenarioBootstrapper, ScenarioBootstrapper>();
         services.AddSingleton<IBudgetService, BudgetService>();
         services.AddSingleton<IElectionService, ElectionService>();
+        services.AddSingleton<IRivalAIService, RivalAIService>();
         services.AddSingleton<IVisitorService, VisitorService>();
         services.AddSingleton<IPhoneService, PhoneService>();
         services.AddSingleton<IEmailService, EmailService>();

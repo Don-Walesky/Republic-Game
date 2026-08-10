@@ -1,25 +1,46 @@
 namespace Republic.App;
 
+using Republic.Core.Cabinet.Services;
 using Republic.Core.Configuration;
+using Republic.Core.Crises.Services;
+using Republic.Core.Decisions.Services;
 using Republic.Core.Diagnostics;
+using Republic.Core.Diplomacy.Services;
+using Republic.Core.Economy.Budget.Services;
+using Republic.Core.Elections.Services;
 using Republic.Core.Engine;
+using Republic.Core.Intelligence.Services;
+using Republic.Core.Legislature.Services;
+using Republic.Core.Persistence.Services;
 using Republic.Core.Tasks.Models;
 using Republic.Core.Tasks.Services;
 using Republic.Core.Time;
+using Republic.Core.World;
 using Republic.Core.Workspace.Models;
 using Republic.Core.Workspace.Services;
 
 /// <summary>
-/// Top-level application facade used by Program.cs.
+/// Top-level application facade providing access to all runtime simulation services.
 /// </summary>
 public sealed class RepublicApplication
 {
-    private readonly RepublicConfiguration _configuration;
-    private readonly ILogger _logger;
-    private readonly RepublicEngine _engine;
-    private readonly IWorkspaceManager _workspaceManager;
-    private readonly ITaskQueueManager _taskQueueManager;
-    private readonly ITimeSystem _timeSystem;
+    public RepublicConfiguration Configuration { get; }
+    public ILogger Logger { get; }
+    public RepublicEngine Engine { get; }
+    public IWorldManager WorldManager { get; }
+    public IWorkspaceManager WorkspaceManager { get; }
+    public ITaskQueueManager TaskQueueManager { get; }
+    public ITimeSystem TimeSystem { get; }
+    public IDecisionEngine DecisionEngine { get; }
+    public ICrisisTriggerEngine CrisisTriggerEngine { get; }
+    public IInterPlayerWarfareService WarfareService { get; }
+    public IDiplomacyService DiplomacyService { get; }
+    public ICabinetService CabinetService { get; }
+    public IIntelligenceService IntelligenceService { get; }
+    public ILegislatureService LegislatureService { get; }
+    public IBudgetService BudgetService { get; }
+    public IElectionService ElectionService { get; }
+    public ISaveGameManager SaveGameManager { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RepublicApplication"/> class.
@@ -28,16 +49,38 @@ public sealed class RepublicApplication
         RepublicConfiguration configuration,
         ILogger logger,
         RepublicEngine engine,
+        IWorldManager worldManager,
         IWorkspaceManager workspaceManager,
         ITaskQueueManager taskQueueManager,
-        ITimeSystem timeSystem)
+        ITimeSystem timeSystem,
+        IDecisionEngine decisionEngine,
+        ICrisisTriggerEngine crisisTriggerEngine,
+        IInterPlayerWarfareService warfareService,
+        IDiplomacyService diplomacyService,
+        ICabinetService cabinetService,
+        IIntelligenceService intelligenceService,
+        ILegislatureService legislatureService,
+        IBudgetService budgetService,
+        IElectionService electionService,
+        ISaveGameManager saveGameManager)
     {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _engine = engine ?? throw new ArgumentNullException(nameof(engine));
-        _workspaceManager = workspaceManager ?? throw new ArgumentNullException(nameof(workspaceManager));
-        _taskQueueManager = taskQueueManager ?? throw new ArgumentNullException(nameof(taskQueueManager));
-        _timeSystem = timeSystem ?? throw new ArgumentNullException(nameof(timeSystem));
+        Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Engine = engine ?? throw new ArgumentNullException(nameof(engine));
+        WorldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
+        WorkspaceManager = workspaceManager ?? throw new ArgumentNullException(nameof(workspaceManager));
+        TaskQueueManager = taskQueueManager ?? throw new ArgumentNullException(nameof(taskQueueManager));
+        TimeSystem = timeSystem ?? throw new ArgumentNullException(nameof(timeSystem));
+        DecisionEngine = decisionEngine ?? throw new ArgumentNullException(nameof(decisionEngine));
+        CrisisTriggerEngine = crisisTriggerEngine ?? throw new ArgumentNullException(nameof(crisisTriggerEngine));
+        WarfareService = warfareService ?? throw new ArgumentNullException(nameof(warfareService));
+        DiplomacyService = diplomacyService ?? throw new ArgumentNullException(nameof(diplomacyService));
+        CabinetService = cabinetService ?? throw new ArgumentNullException(nameof(cabinetService));
+        IntelligenceService = intelligenceService ?? throw new ArgumentNullException(nameof(intelligenceService));
+        LegislatureService = legislatureService ?? throw new ArgumentNullException(nameof(legislatureService));
+        BudgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
+        ElectionService = electionService ?? throw new ArgumentNullException(nameof(electionService));
+        SaveGameManager = saveGameManager ?? throw new ArgumentNullException(nameof(saveGameManager));
     }
 
     /// <summary>
@@ -45,15 +88,14 @@ public sealed class RepublicApplication
     /// </summary>
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInfo("Republic bootstrap starting.");
-        await _engine.InitializeAsync(cancellationToken).ConfigureAwait(false);
+        Logger.LogInfo("Republic bootstrap starting.");
+        await Engine.InitializeAsync(cancellationToken).ConfigureAwait(false);
 
-        _logger.LogInfo($"Simulation Epoch Date: {_timeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC");
+        Logger.LogInfo($"Simulation Epoch Date: {TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC");
 
-        // Executive Workspace simulation pass
-        _workspaceManager.UpdateRoomState(roomName: "Executive Office", lightingMode: "Day", audioZone: "DeskAmbience");
+        WorkspaceManager.UpdateRoomState(roomName: "Executive Office", lightingMode: "Day", audioZone: "DeskAmbience");
 
-        _workspaceManager.Visitors.RegisterVisitor(new Visitor
+        WorkspaceManager.Visitors.RegisterVisitor(new Visitor
         {
             Name = "Minister Alexander Vance",
             Title = "Minister of Finance",
@@ -61,7 +103,7 @@ public sealed class RepublicApplication
             Purpose = "Emergency Budget Briefing"
         });
 
-        _workspaceManager.Phone.ReceiveCall(new PhoneCall
+        WorkspaceManager.Phone.ReceiveCall(new PhoneCall
         {
             CallerName = "Ambassador Elena Rostova",
             Organization = "Foreign Relations Ministry",
@@ -69,7 +111,7 @@ public sealed class RepublicApplication
             Subject = "Border Tariff Negotiations"
         });
 
-        _workspaceManager.Email.ReceiveEmail(new EmailMessage
+        WorkspaceManager.Email.ReceiveEmail(new EmailMessage
         {
             Sender = "chief.of.staff@republic.gov",
             Recipient = "executive@republic.gov",
@@ -78,7 +120,7 @@ public sealed class RepublicApplication
             ActionRequired = true
         });
 
-        _workspaceManager.News.PublishArticle(new NewsArticle
+        WorkspaceManager.News.PublishArticle(new NewsArticle
         {
             Source = "Republic National Press",
             Headline = "Quarterly GDP Growth Exceeds Estimates",
@@ -87,25 +129,23 @@ public sealed class RepublicApplication
             ImpactRating = 4
         });
 
-        // Queue a long-running construction action (Build Central National University)
-        var constructionTask = _taskQueueManager.QueueTask(
+        var constructionTask = TaskQueueManager.QueueTask(
             title: "Build Central National University",
             category: TaskCategory.Construction,
             targetEntityId: "UNI_CAPITAL_01",
             durationTicks: 10,
-            timeSystem: _timeSystem);
+            timeSystem: TimeSystem);
 
-        await _engine.RunAsync(
-            _configuration.Engine.StartupFrameCount,
-            TimeSpan.FromMilliseconds(_configuration.Engine.FrameDeltaMilliseconds),
+        await Engine.RunAsync(
+            Configuration.Engine.StartupFrameCount,
+            TimeSpan.FromMilliseconds(Configuration.Engine.FrameDeltaMilliseconds),
             cancellationToken).ConfigureAwait(false);
 
-        // Process tasks for remaining ticks
-        await _taskQueueManager.ProcessTickAsync(_timeSystem.CurrentTick, cancellationToken).ConfigureAwait(false);
+        await TaskQueueManager.ProcessTickAsync(TimeSystem.CurrentTick, cancellationToken).ConfigureAwait(false);
 
-        var state = _workspaceManager.GetCurrentState();
-        _logger.LogInfo($"Republic Executive Workspace active: {state.Visitors.Count} Visitor(s), {state.PhoneCalls.Count} Call(s), {state.Emails.Count} Email(s), {state.NewsArticles.Count} News item(s).");
-        _logger.LogInfo($"Scheduled Task Status: '{constructionTask.Title}' -> {constructionTask.Status} ({constructionTask.ProgressPercentage:0.0}%)");
-        _logger.LogInfo("Republic bootstrap completed.");
+        var state = WorkspaceManager.GetCurrentState();
+        Logger.LogInfo($"Republic Executive Workspace active: {state.Visitors.Count} Visitor(s), {state.PhoneCalls.Count} Call(s), {state.Emails.Count} Email(s), {state.NewsArticles.Count} News item(s).");
+        Logger.LogInfo($"Scheduled Task Status: '{constructionTask.Title}' -> {constructionTask.Status} ({constructionTask.ProgressPercentage:0.0}%)");
+        Logger.LogInfo("Republic bootstrap completed.");
     }
 }
