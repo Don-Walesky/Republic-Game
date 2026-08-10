@@ -24,6 +24,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Republic.App\Republic.App.csproj" />
     <ProjectReference Include="..\..\src\Republic.Core\Republic.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\Config\defaults.json" Link="Config\defaults.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

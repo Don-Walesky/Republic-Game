@@ -1,5 +1,6 @@
 namespace Republic.App;
 
+using Republic.Core.AI.Services;
 using Republic.Core.Cabinet.Services;
 using Republic.Core.Configuration;
 using Republic.Core.Crises.Services;
@@ -40,6 +41,7 @@ public sealed class RepublicApplication
     public ILegislatureService LegislatureService { get; }
     public IBudgetService BudgetService { get; }
     public IElectionService ElectionService { get; }
+    public IRivalAIService RivalAIService { get; }
     public ISaveGameManager SaveGameManager { get; }
 
     /// <summary>
@@ -62,6 +64,7 @@ public sealed class RepublicApplication
         ILegislatureService legislatureService,
         IBudgetService budgetService,
         IElectionService electionService,
+        IRivalAIService rivalAIService,
         ISaveGameManager saveGameManager)
     {
         Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -80,6 +83,7 @@ public sealed class RepublicApplication
         LegislatureService = legislatureService ?? throw new ArgumentNullException(nameof(legislatureService));
         BudgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         ElectionService = electionService ?? throw new ArgumentNullException(nameof(electionService));
+        RivalAIService = rivalAIService ?? throw new ArgumentNullException(nameof(rivalAIService));
         SaveGameManager = saveGameManager ?? throw new ArgumentNullException(nameof(saveGameManager));
     }
 
