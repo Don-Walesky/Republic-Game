@@ -1,6 +1,7 @@
 namespace Republic.App;
 
 using Microsoft.Extensions.DependencyInjection;
+using Republic.Core.AI.Services;
 using Republic.Core.Configuration;
 using Republic.Core.Cabinet.Services;
 using Republic.Core.Crises.Services;
