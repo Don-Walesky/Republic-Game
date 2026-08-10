@@ -1,5 +1,9 @@
-# Assets
+# Unity Assets
 
-This directory is reserved for the future Unity shell.
+This folder contains the initial Unity shell assets for Republic.
 
-Wave 0 keeps the simulation headless and testable in `src/`, while Unity-facing assets will be added here once Wave 1 begins.
+- Scenes: starter scene for editor import
+- Scripts: Unity bootstrap, bridge, and office controller components
+- Prefabs/Materials/Art/Audio: reserved for later gameplay implementation
+
+The office shell now acts as a placeholder for the campaign-to-office experience, including cabinet, treasury, economy, and military panels.

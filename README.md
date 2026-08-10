@@ -42,6 +42,15 @@ Wave 0 delivers:
 - world manager shell
 - bootstrap host and CI entry points
 
+## Current Gameplay Direction
+
+The core simulation now includes a lightweight office-state model for:
+- an office-like campaign-to-in-office transition
+- country-specific currencies with foreign exchange-style market tracking
+- ministerial trade actions through cabinet offices
+- employment programs that spend treasury to create jobs
+- military recruitment and weapons procurement
+
 ## Local Development
 
 ```bash
