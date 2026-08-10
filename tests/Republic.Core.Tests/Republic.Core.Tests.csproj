@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Republic.App\Republic.App.csproj" />
     <ProjectReference Include="..\..\src\Republic.Core\Republic.Core.csproj" />
   </ItemGroup>
 </Project>
