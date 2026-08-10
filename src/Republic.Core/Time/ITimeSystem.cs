@@ -36,6 +36,11 @@ public interface ITimeSystem
     GameDate CurrentDate { get; }
 
     /// <summary>
+    /// Gets the current simulated real-world epoch date and time.
+    /// </summary>
+    DateTime CurrentSimulatedDateTime { get; }
+
+    /// <summary>
     /// Pauses simulation advancement.
     /// </summary>
     ValueTask PauseAsync(CancellationToken cancellationToken = default);

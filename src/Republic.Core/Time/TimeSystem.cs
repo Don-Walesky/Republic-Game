@@ -44,6 +44,9 @@ public sealed class TimeSystem : ITimeSystem
     public GameDate CurrentDate => _calendar.CurrentDate;
 
     /// <inheritdoc />
+    public DateTime CurrentSimulatedDateTime => _configuration.EpochStartDate.AddSeconds(CurrentTick * DeltaTime);
+
+    /// <inheritdoc />
     public ValueTask PauseAsync(CancellationToken cancellationToken = default)
     {
         IsPaused = true;

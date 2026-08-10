@@ -1,7 +1,9 @@
 namespace Republic.Core.World;
 
+using Republic.Core.World.Services;
+
 /// <summary>
-/// Manages the current world shell and entity registry.
+/// Manages the current world shell, entity registry, and world simulation services.
 /// </summary>
 public interface IWorldManager
 {
@@ -9,6 +11,13 @@ public interface IWorldManager
     /// Gets the current world state.
     /// </summary>
     WorldState Current { get; }
+
+    ICountryService Countries { get; }
+    IGeographyService Geography { get; }
+    IResourceService Resources { get; }
+    IDemographicService Demographics { get; }
+    IEconomicService Economic { get; }
+    IPoliticalCultureService PoliticalCulture { get; }
 
     /// <summary>
     /// Creates a new world shell.

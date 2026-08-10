@@ -1,21 +1,58 @@
 namespace Republic.Core.World;
 
+using Republic.Core.Diagnostics;
 using Republic.Core.Events;
+using Republic.Core.World.Services;
 
 /// <summary>
-/// Minimal world shell for Wave 0 integration and save tests.
+/// World manager coordinating entity registries and Wave 2 world simulation services.
 /// </summary>
 public sealed class WorldManager : IWorldManager
 {
     private readonly IEventBus _eventBus;
     private readonly Dictionary<Guid, WorldEntity> _entities = new();
 
+    public ICountryService Countries { get; }
+    public IGeographyService Geography { get; }
+    public IResourceService Resources { get; }
+    public IDemographicService Demographics { get; }
+    public IEconomicService Economic { get; }
+    public IPoliticalCultureService PoliticalCulture { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WorldManager"/> class with default services.
+    /// </summary>
+    public WorldManager(IEventBus eventBus, ILogger? logger = null)
+        : this(
+            eventBus,
+            new CountryService(eventBus, logger),
+            new GeographyService(logger),
+            new ResourceService(eventBus, logger),
+            new DemographicService(eventBus, logger),
+            new EconomicService(eventBus, logger),
+            new PoliticalCultureService(eventBus, logger))
+    {
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="WorldManager"/> class.
     /// </summary>
-    public WorldManager(IEventBus eventBus)
+    public WorldManager(
+        IEventBus eventBus,
+        ICountryService countryService,
+        IGeographyService geographyService,
+        IResourceService resourceService,
+        IDemographicService demographicService,
+        IEconomicService economicService,
+        IPoliticalCultureService politicalCultureService)
     {
         _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
+        Countries = countryService ?? throw new ArgumentNullException(nameof(countryService));
+        Geography = geographyService ?? throw new ArgumentNullException(nameof(geographyService));
+        Resources = resourceService ?? throw new ArgumentNullException(nameof(resourceService));
+        Demographics = demographicService ?? throw new ArgumentNullException(nameof(demographicService));
+        Economic = economicService ?? throw new ArgumentNullException(nameof(economicService));
+        PoliticalCulture = politicalCultureService ?? throw new ArgumentNullException(nameof(politicalCultureService));
         Current = new WorldState();
     }
 
@@ -77,6 +114,8 @@ public sealed class WorldManager : IWorldManager
     {
         EnsureWorldExists();
         Current.CurrentTick = tick;
+        Demographics.AdvanceDemographicsTick();
+        Economic.AdvanceEconomyTick();
     }
 
     /// <inheritdoc />

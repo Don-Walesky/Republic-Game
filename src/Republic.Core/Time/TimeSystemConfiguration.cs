@@ -24,4 +24,9 @@ public sealed class TimeSystemConfiguration
     /// Gets or sets the number of ticks required to advance one in-game day.
     /// </summary>
     public int TicksPerDay { get; set; } = 600;
+
+    /// <summary>
+    /// Gets or sets the real-world epoch start date for the simulation.
+    /// </summary>
+    public DateTime EpochStartDate { get; set; } = new DateTime(2027, 2, 10, 0, 0, 0, DateTimeKind.Utc);
 }

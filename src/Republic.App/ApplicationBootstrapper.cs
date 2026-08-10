@@ -6,11 +6,14 @@ using Republic.Core.Diagnostics;
 using Republic.Core.Engine;
 using Republic.Core.Events;
 using Republic.Core.Persistence;
+using Republic.Core.Tasks.Services;
 using Republic.Core.Time;
 using Republic.Core.World;
+using Republic.Core.World.Services;
+using Republic.Core.Workspace.Services;
 
 /// <summary>
-/// Builds the Wave 0 service container.
+/// Builds the service container.
 /// </summary>
 public sealed class ApplicationBootstrapper
 {
@@ -49,9 +52,22 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton(new EventBusOptions());
         services.AddSingleton<IEventBus, EventBus>();
         services.AddSingleton<ITimeSystem, TimeSystem>();
+        services.AddSingleton<ITaskQueueManager, TaskQueueManager>();
         services.AddSingleton<IStateSerializer, JsonStateSerializer>();
         services.AddSingleton<FileSaveStore>();
+        services.AddSingleton<ICountryService, CountryService>();
+        services.AddSingleton<IGeographyService, GeographyService>();
+        services.AddSingleton<IResourceService, ResourceService>();
+        services.AddSingleton<IDemographicService, DemographicService>();
+        services.AddSingleton<IEconomicService, EconomicService>();
+        services.AddSingleton<IPoliticalCultureService, PoliticalCultureService>();
         services.AddSingleton<IWorldManager, WorldManager>();
+        services.AddSingleton<IVisitorService, VisitorService>();
+        services.AddSingleton<IPhoneService, PhoneService>();
+        services.AddSingleton<IEmailService, EmailService>();
+        services.AddSingleton<INewsService, NewsService>();
+        services.AddSingleton<ICalendarService, CalendarService>();
+        services.AddSingleton<IWorkspaceManager, WorkspaceManager>();
         services.AddSingleton<RepublicEngine>();
         services.AddSingleton<RepublicApplication>();
 
