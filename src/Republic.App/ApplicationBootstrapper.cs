@@ -17,6 +17,7 @@ using Republic.Core.Government.Services;
 using Republic.Core.Intelligence.Services;
 using Republic.Core.Legislature.Services;
 using Republic.Core.Media.Services;
+using Republic.Core.Narrative.Services;
 using Republic.Core.Persistence;
 using Republic.Core.Persistence.Services;
 using Republic.Core.Scenarios.Services;
@@ -92,6 +93,7 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<IGovernmentReformService, GovernmentReformService>();
         services.AddSingleton<IPressConferenceService, PressConferenceService>();
         services.AddSingleton<IDemographicClassService, DemographicClassService>();
+        services.AddSingleton<INarrativeEngine, NarrativeEngine>();
         services.AddSingleton<IVisitorService, VisitorService>();
         services.AddSingleton<IPhoneService, PhoneService>();
         services.AddSingleton<IEmailService, EmailService>();

@@ -47,6 +47,30 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
             StartingHappiness = 40.0,
             NeighboringCountries = new List<string> { "Imperium of Valeria" },
             PrimaryResourceNodes = new List<string> { "Depleted Solaria Refinery" }
+        },
+        new ScenarioPreset
+        {
+            Id = "cold-war",
+            Name = "The Cold War Standoff",
+            Description = "Manage an intense militarized border standoff against a nuclear superpower.",
+            PlayerCountryName = "Federal Republic of Aethel",
+            StartingTreasury = 8_500_000_000.0,
+            StartingStability = 65.0,
+            StartingHappiness = 60.0,
+            NeighboringCountries = new List<string> { "Sovereign Union of Norse" },
+            PrimaryResourceNodes = new List<string> { "Border Radar Grid Alpha" }
+        },
+        new ScenarioPreset
+        {
+            Id = "post-coup",
+            Name = "Post-Coup Emergency",
+            Description = "Re-establish civilian executive authority following a neutralized military coup attempt.",
+            PlayerCountryName = "Republic of Valeria",
+            StartingTreasury = 2_000_000_000.0,
+            StartingStability = 35.0,
+            StartingHappiness = 30.0,
+            NeighboringCountries = new List<string> { "Republic of Arcadia" },
+            PrimaryResourceNodes = new List<string> { "Valeria Central Foundry" }
         }
     };
 
