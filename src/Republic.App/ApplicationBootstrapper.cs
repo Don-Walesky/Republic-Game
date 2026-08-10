@@ -78,7 +78,14 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<IDemographicService, DemographicService>();
         services.AddSingleton<IEconomicService, EconomicService>();
         services.AddSingleton<IPoliticalCultureService, PoliticalCultureService>();
-        services.AddSingleton<IWorldManager, WorldManager>();
+        services.AddSingleton<IWorldManager>(serviceProvider => new WorldManager(
+            serviceProvider.GetRequiredService<IEventBus>(),
+            serviceProvider.GetRequiredService<ICountryService>(),
+            serviceProvider.GetRequiredService<IGeographyService>(),
+            serviceProvider.GetRequiredService<IResourceService>(),
+            serviceProvider.GetRequiredService<IDemographicService>(),
+            serviceProvider.GetRequiredService<IEconomicService>(),
+            serviceProvider.GetRequiredService<IPoliticalCultureService>()));
         services.AddSingleton<IDecisionEngine, DecisionEngine>();
         services.AddSingleton<ICrisisTriggerEngine, CrisisTriggerEngine>();
         services.AddSingleton<IInterPlayerWarfareService, InterPlayerWarfareService>();
