@@ -3,7 +3,7 @@ namespace Republic.Core.Persistence.Services;
 using Republic.Core.Persistence.Models;
 
 /// <summary>
-/// Service interface managing session saves, loads, quicksaves, and slot enumeration.
+/// Service interface managing session saves, loads, quick saves, and slot enumeration.
 /// </summary>
 public interface ISaveGameManager
 {

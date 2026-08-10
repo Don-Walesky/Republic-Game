@@ -5,9 +5,9 @@ using Republic.Core.Workspace.Models;
 using Republic.Unity.Bridge;
 
 /// <summary>
-/// Unity MonoBehaviour managing office desk sound effects, disaster sirens, and dynamic background score.
+/// Unity MonoBehavior managing office desk sound effects, disaster sirens, and dynamic background score.
 /// </summary>
-public sealed class RepublicAudioManager : MonoBehaviour
+public sealed class RepublicAudioManager : MonoBehavior
 {
     public static RepublicAudioManager Instance { get; private set; } = null!;
 

@@ -8,9 +8,14 @@
         "**/*.meta": true
     },
     "cSpell.words": [
+        "Aethel",
         "Aethelgard",
         "Bootstrapper",
+        "Dont",
         "Northlands",
-        "Southbasin"
+        "Southbasin",
+        "Targetia",
+        "tempslot",
+        "Xunit"
     ]
 }
