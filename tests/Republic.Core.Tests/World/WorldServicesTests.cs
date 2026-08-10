@@ -66,6 +66,7 @@ public sealed class WorldServicesTests
 
         service.RegisterNode(node);
         Assert.Single(service.GetNodesForRegion("r1"));
+        Assert.NotNull(service.GetNode("node-iron"));
 
         var extracted = service.ExtractResource("node-iron", 30.0);
         Assert.Equal(30.0, extracted);
@@ -129,11 +130,16 @@ public sealed class WorldServicesTests
 
         service.RegisterFaction(faction);
         Assert.Single(service.GetFactions());
+        Assert.NotNull(service.GetFaction("f1"));
 
         var updated = service.UpdateApproval("f1", 62.0);
         Assert.True(updated);
         Assert.Equal(62.0, service.GetFactions()[0].ApprovalRating);
         Assert.NotNull(service.GetConstitution());
+
+        var amended = service.AmendConstitution("Republic Charter", "Federal Republic", new[] { "Article I: Liberty" });
+        Assert.True(amended);
+        Assert.Equal("Federal Republic", service.GetConstitution().GovernmentSystem);
     }
 
     [Fact]

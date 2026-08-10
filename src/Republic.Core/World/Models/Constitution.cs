@@ -5,11 +5,12 @@ namespace Republic.Core.World.Models;
 /// </summary>
 public sealed class Constitution
 {
+    public string Name { get; set; } = "National Constitution";
     public string GovernmentSystem { get; set; } = "Constitutional Republic";
     public double ExecutivePowerRating { get; set; } = 7.0;
     public double JudicialIndependenceRating { get; set; } = 8.0;
     public double CivilRightsRating { get; set; } = 8.5;
-    public List<string> EnactedRights { get; init; } = new()
+    public List<string> EnactedRights { get; set; } = new()
     {
         "Freedom of Speech",
         "Freedom of Assembly",

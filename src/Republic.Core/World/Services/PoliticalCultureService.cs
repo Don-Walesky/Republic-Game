@@ -34,6 +34,14 @@ public sealed class PoliticalCultureService : IPoliticalCultureService
         return faction;
     }
 
+    public Faction? GetFaction(string factionId)
+    {
+        lock (_lock)
+        {
+            return _factions.FirstOrDefault(f => f.Id == factionId);
+        }
+    }
+
     public IReadOnlyList<Faction> GetFactions()
     {
         lock (_lock)
@@ -60,4 +68,23 @@ public sealed class PoliticalCultureService : IPoliticalCultureService
     }
 
     public Constitution GetConstitution() => _constitution;
+
+    public bool AmendConstitution(string name, string governmentSystem, IEnumerable<string>? enactedRights = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(governmentSystem);
+
+        lock (_lock)
+        {
+            _constitution.Name = name;
+            _constitution.GovernmentSystem = governmentSystem;
+            if (enactedRights != null)
+            {
+                _constitution.EnactedRights = enactedRights.ToList();
+            }
+
+            _logger?.LogInfo($"Constitution amended: '{name}' ({governmentSystem})");
+            return true;
+        }
+    }
 }

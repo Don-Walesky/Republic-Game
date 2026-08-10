@@ -12,6 +12,7 @@ public interface ITaskQueueManager
     bool PauseTask(string taskId);
     bool ResumeTask(string taskId);
     bool CancelTask(string taskId);
+    ScheduledTask? GetTask(string taskId);
     IReadOnlyList<ScheduledTask> GetActiveTasks();
     IReadOnlyList<ScheduledTask> GetCompletedTasks();
     Task<int> ProcessTickAsync(ulong currentTick, CancellationToken cancellationToken = default);

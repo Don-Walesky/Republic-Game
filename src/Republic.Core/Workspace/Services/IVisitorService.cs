@@ -10,6 +10,7 @@ public interface IVisitorService
     void RegisterVisitor(Visitor visitor);
     Visitor? GetNextVisitor();
     bool StartMeeting(string visitorId);
+    bool DecideVisitorAudience(string visitorId, bool granted);
     bool DismissVisitor(string visitorId);
     IReadOnlyList<Visitor> GetActiveVisitors();
 }

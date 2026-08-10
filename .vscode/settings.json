@@ -6,5 +6,10 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "**/*.meta": true
-    }
+    },
+    "cSpell.words": [
+        "Aethelgard",
+        "Northlands",
+        "Southbasin"
+    ]
 }

@@ -8,6 +8,7 @@ using Republic.Core.World.Models;
 public interface IResourceService
 {
     ResourceNode RegisterNode(ResourceNode node);
+    ResourceNode? GetNode(string nodeId);
     IReadOnlyList<ResourceNode> GetNodesForRegion(string regionId);
     IReadOnlyList<ResourceNode> GetAllNodes();
     double ExtractResource(string nodeId, double requestedAmount);

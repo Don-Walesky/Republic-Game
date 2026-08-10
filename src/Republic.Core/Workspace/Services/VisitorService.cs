@@ -57,6 +57,22 @@ public sealed class VisitorService : IVisitorService
         }
     }
 
+    public bool DecideVisitorAudience(string visitorId, bool granted)
+    {
+        lock (_lock)
+        {
+            var visitor = _visitors.FirstOrDefault(v => v.Id == visitorId);
+            if (visitor == null)
+            {
+                return false;
+            }
+
+            visitor.Status = granted ? VisitorStatus.InMeeting : VisitorStatus.Dismissed;
+            _logger.LogInfo($"Visitor audience decided for '{visitor.Name}': {(granted ? "Granted" : "Denied")}");
+            return true;
+        }
+    }
+
     public bool DismissVisitor(string visitorId)
     {
         lock (_lock)

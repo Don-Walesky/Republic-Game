@@ -106,6 +106,14 @@ public sealed class TaskQueueManager : ITaskQueueManager
         }
     }
 
+    public ScheduledTask? GetTask(string taskId)
+    {
+        lock (_lock)
+        {
+            return _tasks.FirstOrDefault(t => t.Id == taskId);
+        }
+    }
+
     public IReadOnlyList<ScheduledTask> GetActiveTasks()
     {
         lock (_lock)

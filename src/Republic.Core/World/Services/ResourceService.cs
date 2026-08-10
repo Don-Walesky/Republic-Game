@@ -33,6 +33,14 @@ public sealed class ResourceService : IResourceService
         return node;
     }
 
+    public ResourceNode? GetNode(string nodeId)
+    {
+        lock (_lock)
+        {
+            return _nodes.FirstOrDefault(n => n.Id == nodeId);
+        }
+    }
+
     public IReadOnlyList<ResourceNode> GetNodesForRegion(string regionId)
     {
         lock (_lock)

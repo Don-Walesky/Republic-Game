@@ -50,6 +50,22 @@ public sealed class EmailService : IEmailService
         }
     }
 
+    public bool RespondToEmail(string emailId, string selectedOptionId)
+    {
+        lock (_lock)
+        {
+            var email = _emails.FirstOrDefault(e => e.Id == emailId);
+            if (email == null)
+            {
+                return false;
+            }
+
+            email.IsRead = true;
+            _logger.LogInfo($"Responded to email '{email.Subject}' with option '{selectedOptionId}'.");
+            return true;
+        }
+    }
+
     public bool MoveToFolder(string emailId, string folder)
     {
         lock (_lock)

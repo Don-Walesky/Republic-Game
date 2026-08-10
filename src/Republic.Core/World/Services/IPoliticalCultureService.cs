@@ -8,7 +8,9 @@ using Republic.Core.World.Models;
 public interface IPoliticalCultureService
 {
     Faction RegisterFaction(Faction faction);
+    Faction? GetFaction(string factionId);
     IReadOnlyList<Faction> GetFactions();
     bool UpdateApproval(string factionId, double newApproval);
     Constitution GetConstitution();
+    bool AmendConstitution(string name, string governmentSystem, IEnumerable<string>? enactedRights = null);
 }
