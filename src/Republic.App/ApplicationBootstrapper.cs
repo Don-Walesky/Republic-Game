@@ -2,12 +2,15 @@ namespace Republic.App;
 
 using Microsoft.Extensions.DependencyInjection;
 using Republic.Core.Configuration;
+using Republic.Core.Cabinet.Services;
 using Republic.Core.Crises.Services;
 using Republic.Core.Decisions.Services;
 using Republic.Core.Diagnostics;
 using Republic.Core.Diplomacy.Services;
 using Republic.Core.Engine;
 using Republic.Core.Events;
+using Republic.Core.Intelligence.Services;
+using Republic.Core.Legislature.Services;
 using Republic.Core.Persistence;
 using Republic.Core.Persistence.Services;
 using Republic.Core.Tasks.Services;
@@ -71,6 +74,9 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<ICrisisTriggerEngine, CrisisTriggerEngine>();
         services.AddSingleton<IInterPlayerWarfareService, InterPlayerWarfareService>();
         services.AddSingleton<IDiplomacyService, DiplomacyService>();
+        services.AddSingleton<ICabinetService, CabinetService>();
+        services.AddSingleton<IIntelligenceService, IntelligenceService>();
+        services.AddSingleton<ILegislatureService, LegislatureService>();
         services.AddSingleton<IVisitorService, VisitorService>();
         services.AddSingleton<IPhoneService, PhoneService>();
         services.AddSingleton<IEmailService, EmailService>();
