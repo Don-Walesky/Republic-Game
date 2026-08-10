@@ -2,10 +2,13 @@ namespace Republic.App;
 
 using Microsoft.Extensions.DependencyInjection;
 using Republic.Core.Configuration;
+using Republic.Core.Crises.Services;
+using Republic.Core.Decisions.Services;
 using Republic.Core.Diagnostics;
 using Republic.Core.Engine;
 using Republic.Core.Events;
 using Republic.Core.Persistence;
+using Republic.Core.Persistence.Services;
 using Republic.Core.Tasks.Services;
 using Republic.Core.Time;
 using Republic.Core.World;
@@ -55,6 +58,7 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<ITaskQueueManager, TaskQueueManager>();
         services.AddSingleton<IStateSerializer, JsonStateSerializer>();
         services.AddSingleton<FileSaveStore>();
+        services.AddSingleton<ISaveGameManager, SaveGameManager>();
         services.AddSingleton<ICountryService, CountryService>();
         services.AddSingleton<IGeographyService, GeographyService>();
         services.AddSingleton<IResourceService, ResourceService>();
@@ -62,6 +66,8 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<IEconomicService, EconomicService>();
         services.AddSingleton<IPoliticalCultureService, PoliticalCultureService>();
         services.AddSingleton<IWorldManager, WorldManager>();
+        services.AddSingleton<IDecisionEngine, DecisionEngine>();
+        services.AddSingleton<ICrisisTriggerEngine, CrisisTriggerEngine>();
         services.AddSingleton<IVisitorService, VisitorService>();
         services.AddSingleton<IPhoneService, PhoneService>();
         services.AddSingleton<IEmailService, EmailService>();
