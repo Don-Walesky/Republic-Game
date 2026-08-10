@@ -12,6 +12,6 @@ public sealed class ApplicationBootstrapperCompilationTests
 
         Assert.NotNull(application);
         Assert.NotNull(application.ElectionService);
-        Assert.True(typeof(IRivalAIService).IsAssignableFrom(typeof(RivalAIService)));
+        Assert.IsType<RivalAIService>(application.RivalAIService);
     }
 }
