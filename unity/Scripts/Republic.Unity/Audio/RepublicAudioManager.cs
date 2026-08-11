@@ -1,140 +1,108 @@
 namespace Republic.Unity.Audio;
 
 using UnityEngine;
-using Republic.Core.Workspace.Models;
+using Republic.Core.Military.Models;
 using Republic.Unity.Bridge;
 
 /// <summary>
-/// Unity Monobehavior managing office desk sound effects, disaster sirens, and dynamic background score.
+/// Unity AudioManager executing audio clips for executive stamp slams, phone rings, press camera shutters, and DEFCON sirens.
 /// </summary>
-public sealed class RepublicAudioManager : Monobehavior
+public sealed class RepublicAudioManager : MonoBehaviour
 {
-    public static RepublicAudioManager Instance { get; private set; } = null!;
-
     [Header("Audio Sources")]
-    [SerializeField] private AudioSource sfxAudioSource = null!;
-    [SerializeField] private AudioSource musicAudioSource = null!;
+    [SerializeField] private AudioSource sfxSource = null!;
+    [SerializeField] private AudioSource ambienceSource = null!;
+    [SerializeField] private AudioSource phoneRingSource = null!;
 
-    [Header("Audio Clips")]
-    [SerializeField] private AudioClip phoneRingingClip = null!;
-    [SerializeField] private AudioClip phonePickUpClip = null!;
-    [SerializeField] private AudioClip emailReceivedClip = null!;
-    [SerializeField] private AudioClip newsFlashClip = null!;
-    [SerializeField] private AudioClip paperShuffleClip = null!;
-    [SerializeField] private AudioClip disasterSirenClip = null!;
-    [SerializeField] private AudioClip decreeEnactedClip = null!;
-    [SerializeField] private AudioClip backgroundAmbienceClip = null!;
-    [SerializeField] private AudioClip crisisMusicClip = null!;
+    [Header("Sound Effects Clips")]
+    [SerializeField] private AudioClip stampSlamClip = null!;
+    [SerializeField] private AudioClip phoneRingClip = null!;
+    [SerializeField] private AudioClip dossierFlipClip = null!;
+    [SerializeField] private AudioClip pressCameraShutterClip = null!;
+    [SerializeField] private AudioClip defconSirenClip = null!;
+    [SerializeField] private AudioClip officeAmbienceClip = null!;
 
-    private bool _isCrisisMusicActive;
+    private static RepublicAudioManager instance = null!;
+    public static RepublicAudioManager Instance => instance;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
             return;
         }
-
-        Instance = this;
+        instance = this;
         DontDestroyOnLoad(gameObject);
     }
 
     private void Start()
     {
+        if (ambienceSource != null && officeAmbienceClip != null)
+        {
+            ambienceSource.clip = officeAmbienceClip;
+            ambienceSource.loop = true;
+            ambienceSource.Play();
+        }
+
         if (RepublicGameManager.Instance != null)
         {
             var bridge = RepublicGameManager.Instance.UnityBridge;
             bridge.PhoneRinging += OnPhoneRinging;
-            bridge.EmailReceived += OnEmailReceived;
-            bridge.NewsPublished += OnNewsPublished;
-            bridge.CrisisTriggered += OnCrisisTriggered;
             bridge.DecreeEnacted += OnDecreeEnacted;
-            bridge.AppointmentReminded += OnAppointmentReminded;
-            bridge.DecisionPrompted += OnDecisionPrompted;
-        }
-
-        PlayBackgroundMusic(isCrisis: false);
-    }
-
-    public void PlaySoundEffect(RepublicAudioClip clipType)
-    {
-        var clip = clipType switch
-        {
-            RepublicAudioClip.PhoneRinging => phoneRingingClip,
-            RepublicAudioClip.PhonePickUp => phonePickUpClip,
-            RepublicAudioClip.EmailReceived => emailReceivedClip,
-            RepublicAudioClip.NewsFlashChime => newsFlashClip,
-            RepublicAudioClip.PaperShuffle => paperShuffleClip,
-            RepublicAudioClip.DisasterSiren => disasterSirenClip,
-            RepublicAudioClip.DecreeEnactedFanfare => decreeEnactedClip,
-            RepublicAudioClip.BackgroundAmbience => backgroundAmbienceClip,
-            _ => null
-        };
-
-        if (clip != null && sfxAudioSource != null)
-        {
-            sfxAudioSource.PlayOneShot(clip);
-        }
-        else
-        {
-            Debug.Log($"[Audio Manager] Sound Effect triggered: {clipType}");
+            bridge.DefconLevelChanged += OnDefconChanged;
+            bridge.PressConferenceConducted += OnPressConferenceConducted;
         }
     }
 
-    public void PlayBackgroundMusic(bool isCrisis)
+    public void PlayStampSlam()
     {
-        if (musicAudioSource == null)
+        if (sfxSource != null && stampSlamClip != null)
         {
-            Debug.Log($"[Audio Manager] Background music toggled (Crisis: {isCrisis})");
-            return;
-        }
-
-        var targetClip = isCrisis ? crisisMusicClip : backgroundAmbienceClip;
-        if (targetClip != null && (musicAudioSource.clip != targetClip || !_isCrisisMusicActive != !isCrisis))
-        {
-            _isCrisisMusicActive = isCrisis;
-            musicAudioSource.Stop();
-            musicAudioSource.clip = targetClip;
-            musicAudioSource.loop = true;
-            musicAudioSource.Play();
+            sfxSource.PlayOneShot(stampSlamClip);
         }
     }
 
-    private void OnPhoneRinging(PhoneCall call)
+    public void PlayDossierFlip()
     {
-        PlaySoundEffect(RepublicAudioClip.PhoneRinging);
+        if (sfxSource != null && dossierFlipClip != null)
+        {
+            sfxSource.PlayOneShot(dossierFlipClip);
+        }
     }
 
-    private void OnEmailReceived(EmailMessage email)
+    private void OnPhoneRinging(Republic.Core.Workspace.Models.PhoneCall call)
     {
-        PlaySoundEffect(RepublicAudioClip.EmailReceived);
+        if (phoneRingSource != null && phoneRingClip != null)
+        {
+            phoneRingSource.clip = phoneRingClip;
+            phoneRingSource.loop = true;
+            phoneRingSource.Play();
+        }
     }
 
-    private void OnNewsPublished(NewsArticle article)
+    private void OnDecreeEnacted(string decreeId, string title)
     {
-        PlaySoundEffect(RepublicAudioClip.NewsFlashChime);
+        PlayStampSlam();
     }
 
-    private void OnCrisisTriggered(string title, string category, string severity)
+    private void OnDefconChanged(DefconLevel prev, DefconLevel next)
     {
-        PlaySoundEffect(RepublicAudioClip.DisasterSiren);
-        PlayBackgroundMusic(isCrisis: true);
+        if (next == DefconLevel.Defcon1_MaximumReadiness || next == DefconLevel.Defcon2_ArmedForcesArmed)
+        {
+            if (sfxSource != null && defconSirenClip != null)
+            {
+                sfxSource.PlayOneShot(defconSirenClip);
+            }
+        }
     }
 
-    private void OnDecreeEnacted(string id, string title)
+    private void OnPressConferenceConducted(string topic, double delta, string summary)
     {
-        PlaySoundEffect(RepublicAudioClip.DecreeEnactedFanfare);
-    }
-
-    private void OnAppointmentReminded(CalendarAppointment appointment)
-    {
-        PlaySoundEffect(RepublicAudioClip.PaperShuffle);
-    }
-
-    private void OnDecisionPrompted(Republic.Core.Decisions.Models.DecisionContext decision)
-    {
-        PlaySoundEffect(RepublicAudioClip.PaperShuffle);
+        if (sfxSource != null && pressCameraShutterClip != null)
+        {
+            sfxSource.PlayOneShot(pressCameraShutterClip);
+        }
     }
 
     private void OnDestroy()
@@ -143,12 +111,9 @@ public sealed class RepublicAudioManager : Monobehavior
         {
             var bridge = RepublicGameManager.Instance.UnityBridge;
             bridge.PhoneRinging -= OnPhoneRinging;
-            bridge.EmailReceived -= OnEmailReceived;
-            bridge.NewsPublished -= OnNewsPublished;
-            bridge.CrisisTriggered -= OnCrisisTriggered;
             bridge.DecreeEnacted -= OnDecreeEnacted;
-            bridge.AppointmentReminded -= OnAppointmentReminded;
-            bridge.DecisionPrompted -= OnDecisionPrompted;
+            bridge.DefconLevelChanged -= OnDefconChanged;
+            bridge.PressConferenceConducted -= OnPressConferenceConducted;
         }
     }
 }
