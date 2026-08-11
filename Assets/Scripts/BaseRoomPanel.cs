@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public abstract class BaseRoomPanel : MonoBehaviour
+public abstract class BaseRoomPanel : MonoBehavior
 {
     protected OfficeController Office;
     public GameObject Panel { get; private set; }
