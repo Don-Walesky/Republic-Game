@@ -12,6 +12,7 @@ using Republic.Core.Elections.Services;
 using Republic.Core.Engine;
 using Republic.Core.Intelligence.Services;
 using Republic.Core.Legislature.Services;
+using Republic.Core.Military.Services;
 using Republic.Core.Persistence.Services;
 using Republic.Core.Tasks.Models;
 using Republic.Core.Tasks.Services;
@@ -42,6 +43,7 @@ public sealed class RepublicApplication
     public IBudgetService BudgetService { get; }
     public IElectionService ElectionService { get; }
     public IRivalAIService RivalAIService { get; }
+    public IMilitaryService MilitaryService { get; }
     public ISaveGameManager SaveGameManager { get; }
 
     /// <summary>
@@ -65,6 +67,7 @@ public sealed class RepublicApplication
         IBudgetService budgetService,
         IElectionService electionService,
         IRivalAIService rivalAIService,
+        IMilitaryService militaryService,
         ISaveGameManager saveGameManager)
     {
         Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -84,6 +87,7 @@ public sealed class RepublicApplication
         BudgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         ElectionService = electionService ?? throw new ArgumentNullException(nameof(electionService));
         RivalAIService = rivalAIService ?? throw new ArgumentNullException(nameof(rivalAIService));
+        MilitaryService = militaryService ?? throw new ArgumentNullException(nameof(militaryService));
         SaveGameManager = saveGameManager ?? throw new ArgumentNullException(nameof(saveGameManager));
     }
 

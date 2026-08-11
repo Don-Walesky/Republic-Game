@@ -9,10 +9,12 @@ using Republic.Core.Decisions.Services;
 using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Budget.Services;
 using Republic.Core.Elections.Services;
+using Republic.Core.Government;
 using Republic.Core.Intelligence.Models;
 using Republic.Core.Intelligence.Services;
 using Republic.Core.Legislature.Models;
 using Republic.Core.Legislature.Services;
+using Republic.Core.Military.Models;
 using Republic.Core.Scenarios.Services;
 
 public static class Program
@@ -45,6 +47,7 @@ public static class Program
             Console.WriteLine(" [6] Conduct Parliamentary Bill Vote");
             Console.WriteLine(" [7] Advance Time (1 Tick / 10 Ticks)");
             Console.WriteLine(" [8] Save / Quick-Load Session");
+            Console.WriteLine(" [9] Conduct Military & Defense Command Operations");
             Console.WriteLine(" [0] Exit Application");
             Console.WriteLine("==============================================================");
             Console.Write(" Select Option > ");
@@ -77,6 +80,9 @@ public static class Program
                     break;
                 case "8":
                     await SaveLoadAsync(app);
+                    break;
+                case "9":
+                    await ManageMilitaryAsync(app);
                     break;
                 case "0":
                     running = false;
@@ -263,6 +269,91 @@ public static class Program
         {
             var state = await app.SaveGameManager.LoadGameAsync("Quicksave");
             Console.WriteLine($"Session loaded! Current tick: {state.CurrentTick}");
+        }
+        Console.ReadLine();
+    }
+
+    private static async Task ManageMilitaryAsync(RepublicApplication app)
+    {
+        Console.WriteLine("=== MILITARY & ARMED FORCES COMMAND ===");
+
+        var state = new GovernmentState
+        {
+            CountryName = "Arcadia",
+            TreasuryBalance = 2_500_000m
+        };
+
+        var report = app.MilitaryService.GetReadinessReport(state);
+
+        Console.WriteLine($" Active Alert Level: {report.Defcon}");
+        Console.WriteLine($" Total Personnel: {report.TotalPersonnel:N0} | Ordnance/Weapons: {report.TotalEquipment:N0}");
+        Console.WriteLine($" Composite Readiness Score: {report.CompositeReadinessScore:0.0}%");
+        Console.WriteLine(" Branch Breakdown:");
+        foreach (var branch in report.BranchBreakdown)
+        {
+            Console.WriteLine($"  - {branch.Branch,-10}: Personnel: {branch.PersonnelCount,6:N0} | Equipment: {branch.EquipmentCount,4} | Readiness: {branch.ReadinessScore:0.0}%");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(" [1] Set DEFCON Alert Level");
+        Console.WriteLine(" [2] Recruit Branch Personnel");
+        Console.WriteLine(" [3] Procure Branch Equipment");
+        Console.WriteLine(" [4] Execute Strategic Military Directive");
+        Console.Write(" Choice > ");
+
+        var choice = Console.ReadLine()?.Trim();
+        if (choice == "1")
+        {
+            Console.Write("Enter DEFCON level (1=Max Readiness, 5=Peace) > ");
+            if (int.TryParse(Console.ReadLine()?.Trim(), out var lvl) && lvl >= 1 && lvl <= 5)
+            {
+                var newDefcon = (DefconLevel)lvl;
+                await app.MilitaryService.SetDefconLevelAsync(state, newDefcon);
+                Console.WriteLine($"DEFCON Level updated to: {newDefcon}");
+            }
+        }
+        else if (choice == "2")
+        {
+            Console.Write("Branch (0=Army, 1=Navy, 2=AirForce, 3=CyberCorps) > ");
+            if (Enum.TryParse<MilitaryBranch>(Console.ReadLine()?.Trim(), out var branch))
+            {
+                Console.Write("Recruit Count > ");
+                if (int.TryParse(Console.ReadLine()?.Trim(), out var count))
+                {
+                    bool ok = await app.MilitaryService.RecruitBranchPersonnelAsync(state, branch, count, 150m);
+                    Console.WriteLine(ok ? $"Recruited {count} personnel for {branch}!" : "Recruitment failed due to insufficient treasury.");
+                }
+            }
+        }
+        else if (choice == "3")
+        {
+            Console.Write("Branch (0=Army, 1=Navy, 2=AirForce, 3=CyberCorps) > ");
+            if (Enum.TryParse<MilitaryBranch>(Console.ReadLine()?.Trim(), out var branch))
+            {
+                Console.Write("Equipment Units > ");
+                if (int.TryParse(Console.ReadLine()?.Trim(), out var units))
+                {
+                    bool ok = await app.MilitaryService.ProcureBranchEquipmentAsync(state, branch, units, 500m);
+                    Console.WriteLine(ok ? $"Procured {units} units of equipment for {branch}!" : "Procurement failed due to insufficient treasury.");
+                }
+            }
+        }
+        else if (choice == "4")
+        {
+            Console.Write("Target Country Name > ");
+            var target = Console.ReadLine()?.Trim() ?? "Valoria";
+            Console.Write("Operation Type (Invasion, Airstrike, CyberAttack, Blockade, PeacekeepingMission) > ");
+            if (Enum.TryParse<MilitaryOpType>(Console.ReadLine()?.Trim(), true, out var opType))
+            {
+                Console.Write("Troops Committed > ");
+                if (int.TryParse(Console.ReadLine()?.Trim(), out var troops))
+                {
+                    var res = await app.MilitaryService.ExecuteDirectiveAsync(state, target, opType, troops);
+                    Console.WriteLine($"Directive Outcome: {(res.Success ? "SUCCESS" : "FAILED")}");
+                    Console.WriteLine($" {res.Message}");
+                    Console.WriteLine($" Sustained Casualties: {res.CasualtiesSustained} | Target Casualties: {res.TargetCasualties}");
+                }
+            }
         }
         Console.ReadLine();
     }

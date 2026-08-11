@@ -18,6 +18,7 @@ using Republic.Core.Government.Services;
 using Republic.Core.Intelligence.Services;
 using Republic.Core.Legislature.Services;
 using Republic.Core.Media.Services;
+using Republic.Core.Military.Services;
 using Republic.Core.Narrative.Services;
 using Republic.Core.Persistence;
 using Republic.Core.Persistence.Services;
@@ -97,6 +98,7 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<IBudgetService, BudgetService>();
         services.AddSingleton<IElectionService, ElectionService>();
         services.AddSingleton<IRivalAIService, RivalAIService>();
+        services.AddSingleton<IMilitaryService, MilitaryService>();
         services.AddSingleton<ITradeMarketService, TradeMarketService>();
         services.AddSingleton<IGovernmentReformService, GovernmentReformService>();
         services.AddSingleton<IPressConferenceService, PressConferenceService>();
