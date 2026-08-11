@@ -117,4 +117,42 @@ public sealed class RepublicUnityBridgeTests
         Assert.Equal("dec-001", prompted.Id);
         Assert.Equal("Economic Stimulus Bill", prompted.Title);
     }
+
+    [Fact]
+    public void OnIntelligenceInfiltrated_ForwardsTargetAndSpyLevel()
+    {
+        var bridge = new RepublicUnityBridge();
+        string target = string.Empty;
+        int level = 0;
+
+        bridge.IntelligenceInfiltrated += (t, l) =>
+        {
+            target = t;
+            level = l;
+        };
+
+        bridge.OnIntelligenceInfiltrated("Valoria", 3);
+
+        Assert.Equal("Valoria", target);
+        Assert.Equal(3, level);
+    }
+
+    [Fact]
+    public void OnPressConferenceConducted_ForwardsTopicAndApprovalDelta()
+    {
+        var bridge = new RepublicUnityBridge();
+        string topic = string.Empty;
+        double delta = 0.0;
+
+        bridge.PressConferenceConducted += (top, del, _) =>
+        {
+            topic = top;
+            delta = del;
+        };
+
+        bridge.OnPressConferenceConducted("Defense Budget Surge", 4.5, "Summary of speech.");
+
+        Assert.Equal("Defense Budget Surge", topic);
+        Assert.Equal(4.5, delta);
+    }
 }

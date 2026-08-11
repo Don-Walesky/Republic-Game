@@ -15,7 +15,7 @@ using Republic.Core.Workspace.Models;
 /// <summary>
 /// Unified C# event listener bridging Core simulation events to registered Unity UI views.
 /// </summary>
-public sealed class RepublicUnityBridge : IWorkspacePresenter, IDecisionPresenter, IWorldOverviewPresenter, IMilitaryPresenter, IRegionalPresenter
+public sealed class RepublicUnityBridge : IWorkspacePresenter, IDecisionPresenter, IWorldOverviewPresenter, IMilitaryPresenter, IRegionalPresenter, IIntelligencePresenter, IMediaPresenter
 {
     public event Action<WorkspaceState>? WorkspaceStateUpdated;
     public event Action<Visitor>? VisitorArrived;
@@ -42,6 +42,14 @@ public sealed class RepublicUnityBridge : IWorkspacePresenter, IDecisionPresente
     public event Action<string, string, double>? RegionalInfrastructureBuilt;
     public event Action<string, string, double>? RebellionRiskElevated;
 
+    public event Action<string, int>? IntelligenceInfiltrated;
+    public event Action<string, bool, string>? CovertOperationCompleted;
+    public event Action<string, double>? ThreatLevelEscalated;
+
+    public event Action<string, double, string>? PressConferenceConducted;
+    public event Action<string, string, string>? HeadlinePublished;
+    public event Action<double>? PublicApprovalRatingUpdated;
+
     public void OnWorkspaceStateUpdated(WorkspaceState state) => WorkspaceStateUpdated?.Invoke(state);
     public void OnVisitorArrived(Visitor visitor) => VisitorArrived?.Invoke(visitor);
     public void OnPhoneRinging(PhoneCall call) => PhoneRinging?.Invoke(call);
@@ -66,4 +74,12 @@ public sealed class RepublicUnityBridge : IWorkspacePresenter, IDecisionPresente
     public void OnProvinceStabilityChanged(string provinceId, string provinceName, double newStability) => ProvinceStabilityChanged?.Invoke(provinceId, provinceName, newStability);
     public void OnRegionalInfrastructureBuilt(string provinceId, string provinceName, double newInfrastructureIndex) => RegionalInfrastructureBuilt?.Invoke(provinceId, provinceName, newInfrastructureIndex);
     public void OnRebellionRiskElevated(string provinceId, string provinceName, double riskLevel) => RebellionRiskElevated?.Invoke(provinceId, provinceName, riskLevel);
+
+    public void OnIntelligenceInfiltrated(string targetCountryId, int spyLevel) => IntelligenceInfiltrated?.Invoke(targetCountryId, spyLevel);
+    public void OnCovertOperationCompleted(string operationName, bool success, string details) => CovertOperationCompleted?.Invoke(operationName, success, details);
+    public void OnThreatLevelEscalated(string regionOrCountry, double threatScore) => ThreatLevelEscalated?.Invoke(regionOrCountry, threatScore);
+
+    public void OnPressConferenceConducted(string topic, double publicApprovalDelta, string transcriptSummary) => PressConferenceConducted?.Invoke(topic, publicApprovalDelta, transcriptSummary);
+    public void OnHeadlinePublished(string outletName, string headlineText, string category) => HeadlinePublished?.Invoke(outletName, headlineText, category);
+    public void OnPublicApprovalRatingUpdated(double approvalRating) => PublicApprovalRatingUpdated?.Invoke(approvalRating);
 }
