@@ -60,6 +60,11 @@ public sealed class ExecutiveDeskCanvasBuilder : MonoBehaviour
             gameObject.AddComponent<DecisionPromptUIController>();
         }
 
+        if (gameObject.GetComponent<IntelligenceMediaUIController>() == null)
+        {
+            gameObject.AddComponent<IntelligenceMediaUIController>();
+        }
+
         Debug.Log("[Republic UI] Executive Desk Canvas procedural layout & UI controllers constructed cleanly.");
     }
 }

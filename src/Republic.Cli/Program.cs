@@ -48,6 +48,9 @@ public static class Program
             Console.WriteLine(" [7] Advance Time (1 Tick / 10 Ticks)");
             Console.WriteLine(" [8] Save / Quick-Load Session");
             Console.WriteLine(" [9] Conduct Military & Defense Command Operations");
+            Console.WriteLine(" [10] Administer Regional Provinces & Investment");
+            Console.WriteLine(" [11] Enact Presidential Executive Decree");
+            Console.WriteLine(" [12] Conduct Presidential Press Conference");
             Console.WriteLine(" [0] Exit Application");
             Console.WriteLine("==============================================================");
             Console.Write(" Select Option > ");
@@ -83,6 +86,15 @@ public static class Program
                     break;
                 case "9":
                     await ManageMilitaryAsync(app);
+                    break;
+                case "10":
+                    await ManageProvincesAsync(app);
+                    break;
+                case "11":
+                    await EnactDecreeAsync(app);
+                    break;
+                case "12":
+                    await HoldPressConferenceAsync(app);
                     break;
                 case "0":
                     running = false;
@@ -354,6 +366,70 @@ public static class Program
                     Console.WriteLine($" Sustained Casualties: {res.CasualtiesSustained} | Target Casualties: {res.TargetCasualties}");
                 }
             }
+        }
+        Console.ReadLine();
+    }
+
+    private static async Task ManageProvincesAsync(RepublicApplication app)
+    {
+        Console.WriteLine("=== REGIONAL PROVINCE ADMINISTRATION ===");
+        var provinces = app.GeographyService.GetAllProvinces();
+        if (provinces.Count == 0)
+        {
+            Console.WriteLine("No provinces registered.");
+            Console.ReadLine();
+            return;
+        }
+
+        for (var i = 0; i < provinces.Count; i++)
+        {
+            var p = provinces[i];
+            Console.WriteLine($" [{i + 1}] {p.Name} | Terrain: {p.Terrain} | Pop: {p.Population:N0} | Infra: {p.InfrastructureIndex:0.0} | Stability: {p.LocalStability:0.0}%");
+        }
+
+        Console.Write("\nSelect Province Number to Invest > ");
+        if (int.TryParse(Console.ReadLine()?.Trim(), out var idx) && idx >= 1 && idx <= provinces.Count)
+        {
+            var target = provinces[idx - 1];
+            Console.Write("Enter Infrastructure Investment Amount ($) > ");
+            if (decimal.TryParse(Console.ReadLine()?.Trim(), out var amount) && amount > 0m)
+            {
+                bool success = await app.GeographyService.InvestInRegionalInfrastructureAsync(target.Id, amount);
+                Console.WriteLine(success ? $"Invested {amount:C} in '{target.Name}'! New Infra Index: {target.InfrastructureIndex:0.0}" : "Investment failed.");
+            }
+        }
+        Console.ReadLine();
+    }
+
+    private static async Task EnactDecreeAsync(RepublicApplication app)
+    {
+        Console.WriteLine("=== PRESIDENTIAL EXECUTIVE DECREE ===");
+        Console.Write("Enter Decree Title > ");
+        var title = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            Console.Write("Enter Justification Summary > ");
+            var justification = Console.ReadLine()?.Trim() ?? "National Interest";
+            var order = new ExecutiveOrder
+            {
+                Title = title,
+                Justification = justification,
+                IssuedAt = DateTimeOffset.UtcNow
+            };
+            Console.WriteLine($"[DECREE ENACTED] '{order.Title}' issued cleanly under executive authority.");
+        }
+        Console.ReadLine();
+    }
+
+    private static async Task HoldPressConferenceAsync(RepublicApplication app)
+    {
+        Console.WriteLine("=== PRESIDENTIAL PRESS CONFERENCE ===");
+        Console.Write("Enter Press Conference Topic > ");
+        var topic = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(topic))
+        {
+            var summary = await app.PressConferenceService.ConductPressConferenceAsync(topic, 5.0);
+            Console.WriteLine($"[PRESS BRIEFING SUMMARY]:\n{summary}");
         }
         Console.ReadLine();
     }
