@@ -44,7 +44,7 @@ public sealed class SaveGameManagerTests : IDisposable
 
         _taskQueue = new TaskQueueManager(_eventBus, _logger);
 
-        _saveManager = new SaveGameManager(store, config, _world, _workspace, _taskQueue, _time, _logger);
+        _saveManager = new SaveGameManager(store, config, _world, _workspace, _taskQueue, _time, narrativeEngine: null, logger: _logger);
     }
 
     [Fact]
@@ -61,6 +61,27 @@ public sealed class SaveGameManagerTests : IDisposable
         Assert.Equal("Save Test World", loadedState.World.Name);
         Assert.Single(loadedState.World.Entities);
         Assert.Contains(_saveManager.ListSaveSlots(), slot => slot.Equals("slot_1", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task QuickSaveAndQuickLoad_RoundTripsState()
+    {
+        await _world.RegisterEntityAsync("Region", "West Province");
+
+        var path = await _saveManager.QuickSaveAsync();
+        Assert.True(File.Exists(path));
+
+        var loadedState = await _saveManager.QuickLoadAsync();
+        Assert.NotNull(loadedState);
+        Assert.Equal("quicksave", loadedState.SaveName);
+    }
+
+    [Fact]
+    public async Task AutoSave_CreatesAutoSaveSlotFile()
+    {
+        var path = await _saveManager.AutoSaveAsync();
+        Assert.True(File.Exists(path));
+        Assert.Contains("autosave", _saveManager.ListSaveSlots(), StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]

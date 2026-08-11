@@ -32,11 +32,100 @@ public sealed class GovernmentReformService : IGovernmentReformService
         _logger = logger;
     }
 
+    private readonly List<ConstitutionalAmendment> _amendments = new();
+
     public GovernmentType GetCurrentGovernmentSystem()
     {
         lock (_lock)
         {
             return _currentSystem;
+        }
+    }
+
+    public Task<ConstitutionalAmendment> ProposeConstitutionalAmendmentAsync(ConstitutionalAmendment amendment, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(amendment);
+
+        lock (_lock)
+        {
+            amendment.Status = ConstitutionalAmendmentStatus.Proposed;
+            _amendments.Add(amendment);
+        }
+
+        _logger?.LogInfo($"CONSTITUTIONAL AMENDMENT PROPOSED: '{amendment.Title}' (Required Supermajority: {amendment.SupermajorityRatioRequired * 100:F0}%).");
+
+        _workspaceManager?.News.PublishArticle(new NewsArticle
+        {
+            Source = "Assembly Parliamentary Journal",
+            Headline = $"AMENDMENT PROPOSED: {amendment.Title.ToUpperInvariant()}",
+            Summary = amendment.Description,
+            Category = "Constitution",
+            ImpactRating = 3
+        });
+
+        return Task.FromResult(amendment);
+    }
+
+    public async Task<bool> VoteOnConstitutionalAmendmentAsync(string amendmentId, int votesInFavor, int totalVotesCast, CancellationToken cancellationToken = default)
+    {
+        ConstitutionalAmendment? amendment;
+        lock (_lock)
+        {
+            amendment = _amendments.FirstOrDefault(a => a.Id == amendmentId);
+            if (amendment == null || amendment.Status == ConstitutionalAmendmentStatus.Enacted)
+            {
+                return false;
+            }
+
+            amendment.VotesInFavor = votesInFavor;
+            amendment.TotalVotesCast = totalVotesCast;
+        }
+
+        double approvalRatio = totalVotesCast > 0 ? (double)votesInFavor / totalVotesCast : 0.0;
+        bool passed = approvalRatio >= amendment.SupermajorityRatioRequired;
+
+        if (passed)
+        {
+            lock (_lock)
+            {
+                amendment.Status = ConstitutionalAmendmentStatus.Enacted;
+                amendment.EnactedAt = DateTimeOffset.UtcNow;
+            }
+
+            _worldManager.PoliticalCulture.AmendConstitution(amendment.Title, _currentSystem.ToString(), new[] { amendment.TargetLawCategory });
+            _logger?.LogInfo($"CONSTITUTIONAL AMENDMENT PASSED & ENACTED: '{amendment.Title}' ({approvalRatio * 100:F1}% in favor >= {amendment.SupermajorityRatioRequired * 100:F0}% threshold).");
+
+            await _eventBus.PublishAsync(new ConstitutionalAmendmentVotedEvent(amendment, true, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+            await _eventBus.PublishAsync(new ConstitutionalAmendmentEnactedEvent(amendment, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+
+            _workspaceManager?.News.PublishArticle(new NewsArticle
+            {
+                Source = "Constitutional Court Gazette",
+                Headline = $"CONSTITUTIONAL AMENDMENT RATIFIED: {amendment.Title.ToUpperInvariant()}",
+                Summary = $"With {approvalRatio * 100:F1}% of assembly votes, '{amendment.Title}' has been ratified into supreme law.",
+                Category = "Constitution",
+                ImpactRating = 5
+            });
+        }
+        else
+        {
+            lock (_lock)
+            {
+                amendment.Status = ConstitutionalAmendmentStatus.Rejected;
+            }
+
+            _logger?.LogInfo($"CONSTITUTIONAL AMENDMENT REJECTED: '{amendment.Title}' ({approvalRatio * 100:F1}% in favor < {amendment.SupermajorityRatioRequired * 100:F0}% threshold).");
+            await _eventBus.PublishAsync(new ConstitutionalAmendmentVotedEvent(amendment, false, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+        }
+
+        return passed;
+    }
+
+    public IReadOnlyList<ConstitutionalAmendment> GetConstitutionalAmendments()
+    {
+        lock (_lock)
+        {
+            return _amendments.ToList().AsReadOnly();
         }
     }
 

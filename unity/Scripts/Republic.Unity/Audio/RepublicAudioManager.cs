@@ -5,9 +5,9 @@ using Republic.Core.Workspace.Models;
 using Republic.Unity.Bridge;
 
 /// <summary>
-/// Unity MonoBehavior managing office desk sound effects, disaster sirens, and dynamic background score.
+/// Unity Monobehavior managing office desk sound effects, disaster sirens, and dynamic background score.
 /// </summary>
-public sealed class RepublicAudioManager : MonoBehavior
+public sealed class RepublicAudioManager : Monobehavior
 {
     public static RepublicAudioManager Instance { get; private set; } = null!;
 
@@ -17,10 +17,16 @@ public sealed class RepublicAudioManager : MonoBehavior
 
     [Header("Audio Clips")]
     [SerializeField] private AudioClip phoneRingingClip = null!;
+    [SerializeField] private AudioClip phonePickUpClip = null!;
     [SerializeField] private AudioClip emailReceivedClip = null!;
     [SerializeField] private AudioClip newsFlashClip = null!;
+    [SerializeField] private AudioClip paperShuffleClip = null!;
     [SerializeField] private AudioClip disasterSirenClip = null!;
     [SerializeField] private AudioClip decreeEnactedClip = null!;
+    [SerializeField] private AudioClip backgroundAmbienceClip = null!;
+    [SerializeField] private AudioClip crisisMusicClip = null!;
+
+    private bool _isCrisisMusicActive;
 
     private void Awake()
     {
@@ -44,7 +50,11 @@ public sealed class RepublicAudioManager : MonoBehavior
             bridge.NewsPublished += OnNewsPublished;
             bridge.CrisisTriggered += OnCrisisTriggered;
             bridge.DecreeEnacted += OnDecreeEnacted;
+            bridge.AppointmentReminded += OnAppointmentReminded;
+            bridge.DecisionPrompted += OnDecisionPrompted;
         }
+
+        PlayBackgroundMusic(isCrisis: false);
     }
 
     public void PlaySoundEffect(RepublicAudioClip clipType)
@@ -52,10 +62,13 @@ public sealed class RepublicAudioManager : MonoBehavior
         var clip = clipType switch
         {
             RepublicAudioClip.PhoneRinging => phoneRingingClip,
+            RepublicAudioClip.PhonePickUp => phonePickUpClip,
             RepublicAudioClip.EmailReceived => emailReceivedClip,
             RepublicAudioClip.NewsFlashChime => newsFlashClip,
+            RepublicAudioClip.PaperShuffle => paperShuffleClip,
             RepublicAudioClip.DisasterSiren => disasterSirenClip,
             RepublicAudioClip.DecreeEnactedFanfare => decreeEnactedClip,
+            RepublicAudioClip.BackgroundAmbience => backgroundAmbienceClip,
             _ => null
         };
 
@@ -66,6 +79,25 @@ public sealed class RepublicAudioManager : MonoBehavior
         else
         {
             Debug.Log($"[Audio Manager] Sound Effect triggered: {clipType}");
+        }
+    }
+
+    public void PlayBackgroundMusic(bool isCrisis)
+    {
+        if (musicAudioSource == null)
+        {
+            Debug.Log($"[Audio Manager] Background music toggled (Crisis: {isCrisis})");
+            return;
+        }
+
+        var targetClip = isCrisis ? crisisMusicClip : backgroundAmbienceClip;
+        if (targetClip != null && (musicAudioSource.clip != targetClip || !_isCrisisMusicActive != !isCrisis))
+        {
+            _isCrisisMusicActive = isCrisis;
+            musicAudioSource.Stop();
+            musicAudioSource.clip = targetClip;
+            musicAudioSource.loop = true;
+            musicAudioSource.Play();
         }
     }
 
@@ -87,11 +119,22 @@ public sealed class RepublicAudioManager : MonoBehavior
     private void OnCrisisTriggered(string title, string category, string severity)
     {
         PlaySoundEffect(RepublicAudioClip.DisasterSiren);
+        PlayBackgroundMusic(isCrisis: true);
     }
 
     private void OnDecreeEnacted(string id, string title)
     {
         PlaySoundEffect(RepublicAudioClip.DecreeEnactedFanfare);
+    }
+
+    private void OnAppointmentReminded(CalendarAppointment appointment)
+    {
+        PlaySoundEffect(RepublicAudioClip.PaperShuffle);
+    }
+
+    private void OnDecisionPrompted(Republic.Core.Decisions.Models.DecisionContext decision)
+    {
+        PlaySoundEffect(RepublicAudioClip.PaperShuffle);
     }
 
     private void OnDestroy()
@@ -104,6 +147,8 @@ public sealed class RepublicAudioManager : MonoBehavior
             bridge.NewsPublished -= OnNewsPublished;
             bridge.CrisisTriggered -= OnCrisisTriggered;
             bridge.DecreeEnacted -= OnDecreeEnacted;
+            bridge.AppointmentReminded -= OnAppointmentReminded;
+            bridge.DecisionPrompted -= OnDecisionPrompted;
         }
     }
 }

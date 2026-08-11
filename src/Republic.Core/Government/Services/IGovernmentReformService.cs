@@ -9,4 +9,7 @@ public interface IGovernmentReformService
 {
     GovernmentType GetCurrentGovernmentSystem();
     Task<bool> EnactConstitutionalReformAsync(ConstitutionalReform reform, CancellationToken cancellationToken = default);
+    Task<ConstitutionalAmendment> ProposeConstitutionalAmendmentAsync(ConstitutionalAmendment amendment, CancellationToken cancellationToken = default);
+    Task<bool> VoteOnConstitutionalAmendmentAsync(string amendmentId, int votesInFavor, int totalVotesCast, CancellationToken cancellationToken = default);
+    IReadOnlyList<ConstitutionalAmendment> GetConstitutionalAmendments();
 }

@@ -2,6 +2,7 @@ namespace Republic.Core.Persistence.Services;
 
 using Republic.Core.Configuration;
 using Republic.Core.Diagnostics;
+using Republic.Core.Narrative.Services;
 using Republic.Core.Persistence.Models;
 using Republic.Core.Tasks.Services;
 using Republic.Core.Time;
@@ -13,12 +14,16 @@ using Republic.Core.Workspace.Services;
 /// </summary>
 public sealed class SaveGameManager : ISaveGameManager
 {
+    private const string QuickSaveSlotName = "quicksave";
+    private const string AutoSaveSlotName = "autosave";
+
     private readonly FileSaveStore _store;
     private readonly PersistenceConfiguration _config;
     private readonly IWorldManager _worldManager;
     private readonly IWorkspaceManager _workspaceManager;
     private readonly ITaskQueueManager _taskQueueManager;
     private readonly ITimeSystem _timeSystem;
+    private readonly INarrativeEngine? _narrativeEngine;
     private readonly ILogger? _logger;
 
     public SaveGameManager(
@@ -28,6 +33,7 @@ public sealed class SaveGameManager : ISaveGameManager
         IWorkspaceManager workspaceManager,
         ITaskQueueManager taskQueueManager,
         ITimeSystem timeSystem,
+        INarrativeEngine? narrativeEngine = null,
         ILogger? logger = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
@@ -36,6 +42,7 @@ public sealed class SaveGameManager : ISaveGameManager
         _workspaceManager = workspaceManager ?? throw new ArgumentNullException(nameof(workspaceManager));
         _taskQueueManager = taskQueueManager ?? throw new ArgumentNullException(nameof(taskQueueManager));
         _timeSystem = timeSystem ?? throw new ArgumentNullException(nameof(timeSystem));
+        _narrativeEngine = narrativeEngine;
         _logger = logger;
     }
 
@@ -50,6 +57,7 @@ public sealed class SaveGameManager : ISaveGameManager
             SaveTimestamp = DateTimeOffset.UtcNow,
             World = _worldManager.Snapshot(),
             Workspace = _workspaceManager.GetCurrentState(),
+            Narrative = _narrativeEngine?.GetNarrativeState() ?? new(),
             ActiveTasks = _taskQueueManager.GetActiveTasks().ToList(),
             CompletedTasks = _taskQueueManager.GetCompletedTasks().ToList(),
         };
@@ -88,8 +96,28 @@ public sealed class SaveGameManager : ISaveGameManager
 
         var state = envelope.State;
         _worldManager.Restore(state.World);
+        if (state.Narrative != null)
+        {
+            _narrativeEngine?.RestoreNarrativeState(state.Narrative);
+        }
+
         _logger?.LogInfo($"Game loaded successfully from slot '{slotName}' (Saved tick: {state.CurrentTick})");
         return state;
+    }
+
+    public Task<string> QuickSaveAsync(CancellationToken cancellationToken = default)
+    {
+        return SaveGameAsync(QuickSaveSlotName, cancellationToken);
+    }
+
+    public Task<FullGameState> QuickLoadAsync(CancellationToken cancellationToken = default)
+    {
+        return LoadGameAsync(QuickSaveSlotName, cancellationToken);
+    }
+
+    public Task<string> AutoSaveAsync(CancellationToken cancellationToken = default)
+    {
+        return SaveGameAsync(AutoSaveSlotName, cancellationToken);
     }
 
     public IReadOnlyList<string> ListSaveSlots()

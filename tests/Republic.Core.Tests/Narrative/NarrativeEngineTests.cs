@@ -43,17 +43,35 @@ public sealed class NarrativeEngineTests
     }
 
     [Fact]
-    public async Task MakeStoryChoice_AppliesEffects_AndResolvesEvent()
+    public async Task MakeStoryChoice_WithFollowUpEvent_TriggersFollowUpEvent()
     {
         var engine = new NarrativeEngine(_world, _eventBus, _workspace, _logger);
         await engine.EvaluateNarrativeTriggersAsync(10);
 
-        var active = engine.GetActiveStoryEvents()[0];
-        var choice = active.Choices[0];
+        var initialEvent = engine.GetActiveStoryEvents()[0];
+        var nationalizeChoice = initialEvent.Choices[0]; // Has FollowUpEventId = "story-assembly-debate"
 
-        var resolved = await engine.MakeStoryChoiceAsync(active.Id, choice.Id);
+        await engine.MakeStoryChoiceAsync(initialEvent.Id, nationalizeChoice.Id);
 
-        Assert.True(resolved);
-        Assert.Empty(engine.GetActiveStoryEvents());
+        var activeAfterChoice = engine.GetActiveStoryEvents();
+        Assert.Single(activeAfterChoice);
+        Assert.Equal("National Assembly Emergency Debate", activeAfterChoice[0].Title);
+        Assert.Single(engine.GetResolvedStoryEvents());
+    }
+
+    [Fact]
+    public async Task GetNarrativeState_AndRestoreNarrativeState_RoundTripsState()
+    {
+        var engine = new NarrativeEngine(_world, _eventBus, _workspace, _logger);
+        await engine.EvaluateNarrativeTriggersAsync(10);
+
+        var snapshot = engine.GetNarrativeState();
+
+        var newEngine = new NarrativeEngine(_world, _eventBus, _workspace, _logger);
+        Assert.Empty(newEngine.GetActiveStoryEvents());
+
+        newEngine.RestoreNarrativeState(snapshot);
+        Assert.Single(newEngine.GetActiveStoryEvents());
+        Assert.Equal("Offshore Energy Reserve Uncovered", newEngine.GetActiveStoryEvents()[0].Title);
     }
 }

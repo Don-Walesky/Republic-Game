@@ -43,24 +43,58 @@ public sealed class NarrativeEngine : INarrativeEngine
             Title = "Offshore Energy Reserve Uncovered",
             NarrativeText = "Geological survey teams have confirmed a massive offshore natural gas field in sovereign waters.",
             Category = "Economy",
+            PrerequisiteTick = 10,
             Choices = new List<StoryChoice>
             {
                 new StoryChoice
                 {
                     Text = "Nationalize gas extraction under state energy corporation.",
+                    OutcomeDescription = "State revenues surge; private energy sector objects.",
                     Effects = new List<PolicyEffect>
                     {
                         new PolicyEffect { TargetMetric = "Treasury", DeltaValue = 500_000_000 },
                         new PolicyEffect { TargetMetric = "Approval", DeltaValue = 10.0 }
-                    }
+                    },
+                    FollowUpEventId = "story-assembly-debate"
                 },
                 new StoryChoice
                 {
                     Text = "Auction extraction rights to international conglomerates.",
+                    OutcomeDescription = "Immediate capital influx; public uproar over foreign control.",
                     Effects = new List<PolicyEffect>
                     {
                         new PolicyEffect { TargetMetric = "Treasury", DeltaValue = 1_200_000_000 },
                         new PolicyEffect { TargetMetric = "Approval", DeltaValue = -5.0 }
+                    }
+                }
+            }
+        });
+
+        _events.Add(new StoryEvent
+        {
+            Id = "story-assembly-debate",
+            Title = "National Assembly Emergency Debate",
+            NarrativeText = "Lawmakers convene to pass environmental regulatory frameworks for offshore drilling.",
+            Category = "Legislature",
+            PrerequisiteTick = 0, // Triggered as follow-up
+            Choices = new List<StoryChoice>
+            {
+                new StoryChoice
+                {
+                    Text = "Fast-track strict environmental protection standards.",
+                    OutcomeDescription = "Protect maritime ecosystems; development delays expected.",
+                    Effects = new List<PolicyEffect>
+                    {
+                        new PolicyEffect { TargetMetric = "Approval", DeltaValue = 5.0 }
+                    }
+                },
+                new StoryChoice
+                {
+                    Text = "Grant expedited drilling permits with tax incentives.",
+                    OutcomeDescription = "Accelerated production schedule.",
+                    Effects = new List<PolicyEffect>
+                    {
+                        new PolicyEffect { TargetMetric = "Treasury", DeltaValue = 150_000_000 }
                     }
                 }
             }
@@ -75,40 +109,50 @@ public sealed class NarrativeEngine : INarrativeEngine
         }
     }
 
+    public IReadOnlyList<StoryEvent> GetResolvedStoryEvents()
+    {
+        lock (_lock)
+        {
+            return _events.Where(e => e.IsResolved).ToList().AsReadOnly();
+        }
+    }
+
     public async Task EvaluateNarrativeTriggersAsync(ulong currentTick, CancellationToken cancellationToken = default)
     {
-        if (currentTick == 10)
+        List<StoryEvent> newlyTriggered = new();
+        lock (_lock)
         {
-            StoryEvent? e;
-            lock (_lock)
+            foreach (var e in _events)
             {
-                e = _events.FirstOrDefault(x => x.Id == "story-oil-discovery");
-                if (e != null && !e.IsTriggered)
+                if (!e.IsTriggered && !e.IsResolved && e.PrerequisiteTick > 0 && currentTick >= e.PrerequisiteTick)
                 {
                     e.IsTriggered = true;
+                    newlyTriggered.Add(e);
                 }
             }
+        }
 
-            if (e != null)
+        foreach (var e in newlyTriggered)
+        {
+            _logger?.LogInfo($"NARRATIVE EVENT TRIGGERED: '{e.Title}'");
+            await _eventBus.PublishAsync(new StoryEventTriggeredEvent(e, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+
+            _workspaceManager?.Email.ReceiveEmail(new EmailMessage
             {
-                _logger?.LogInfo($"NARRATIVE EVENT TRIGGERED: '{e.Title}'");
-                await _eventBus.PublishAsync(new StoryEventTriggeredEvent(e, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
-
-                _workspaceManager?.Email.ReceiveEmail(new EmailMessage
-                {
-                    Sender = "Ministry of Energy",
-                    Subject = $"SPECIAL REPORT: {e.Title}",
-                    Body = e.NarrativeText,
-                    Folder = "Inbox",
-                    ActionRequired = true
-                });
-            }
+                Sender = "Executive Secretariat",
+                Subject = $"SPECIAL REPORT: {e.Title}",
+                Body = e.NarrativeText,
+                Folder = "Inbox",
+                ActionRequired = true
+            });
         }
     }
 
     public async Task<bool> MakeStoryChoiceAsync(string storyEventId, string choiceId, CancellationToken cancellationToken = default)
     {
         StoryEvent? storyEvent;
+        StoryEvent? followUpEvent = null;
+
         lock (_lock)
         {
             storyEvent = _events.FirstOrDefault(e => e.Id == storyEventId);
@@ -118,11 +162,21 @@ public sealed class NarrativeEngine : INarrativeEngine
             }
 
             storyEvent.IsResolved = true;
+            var choice = storyEvent.Choices.FirstOrDefault(c => c.Id == choiceId) ?? storyEvent.Choices[0];
+
+            if (!string.IsNullOrEmpty(choice.FollowUpEventId))
+            {
+                followUpEvent = _events.FirstOrDefault(e => e.Id == choice.FollowUpEventId);
+                if (followUpEvent != null)
+                {
+                    followUpEvent.IsTriggered = true;
+                }
+            }
         }
 
-        var choice = storyEvent.Choices.FirstOrDefault(c => c.Id == choiceId) ?? storyEvent.Choices[0];
+        var chosenOption = storyEvent.Choices.FirstOrDefault(c => c.Id == choiceId) ?? storyEvent.Choices[0];
 
-        foreach (var effect in choice.Effects)
+        foreach (var effect in chosenOption.Effects)
         {
             if (effect.TargetMetric == "Treasury")
             {
@@ -130,8 +184,59 @@ public sealed class NarrativeEngine : INarrativeEngine
             }
         }
 
-        _logger?.LogInfo($"NARRATIVE CHOICE MADE: '{choice.Text}' in '{storyEvent.Title}'");
-        await _eventBus.PublishAsync(new StoryChoiceMadeEvent(storyEvent, choice, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+        _logger?.LogInfo($"NARRATIVE CHOICE MADE: '{chosenOption.Text}' in '{storyEvent.Title}'");
+        await _eventBus.PublishAsync(new StoryChoiceMadeEvent(storyEvent, chosenOption, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+
+        if (followUpEvent != null)
+        {
+            await _eventBus.PublishAsync(new StoryEventTriggeredEvent(followUpEvent, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+            _workspaceManager?.Email.ReceiveEmail(new EmailMessage
+            {
+                Sender = "Executive Secretariat",
+                Subject = $"FOLLOW-UP EVENT: {followUpEvent.Title}",
+                Body = followUpEvent.NarrativeText,
+                Folder = "Inbox",
+                ActionRequired = true
+            });
+        }
+
         return true;
+    }
+
+    public NarrativeSnapshot GetNarrativeState()
+    {
+        lock (_lock)
+        {
+            return new NarrativeSnapshot
+            {
+                Events = _events.Select(e => new StoryEventSnapshot
+                {
+                    Id = e.Id,
+                    IsTriggered = e.IsTriggered,
+                    IsResolved = e.IsResolved
+                }).ToList()
+            };
+        }
+    }
+
+    public void RestoreNarrativeState(NarrativeSnapshot snapshot)
+    {
+        if (snapshot == null || snapshot.Events == null)
+        {
+            return;
+        }
+
+        lock (_lock)
+        {
+            foreach (var item in snapshot.Events)
+            {
+                var existing = _events.FirstOrDefault(e => e.Id == item.Id);
+                if (existing != null)
+                {
+                    existing.IsTriggered = item.IsTriggered;
+                    existing.IsResolved = item.IsResolved;
+                }
+            }
+        }
     }
 }
