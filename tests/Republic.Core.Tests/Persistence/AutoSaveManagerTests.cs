@@ -25,11 +25,11 @@ public class AutoSaveManagerTests
         {
             var logger = new TestLogger();
             var eventBus = new EventBus(new EventBusOptions(), logger);
-            var timeSystem = new TimeSystem(new TimeConfiguration());
+            var timeSystem = new TimeSystem(new TimeSystemConfiguration(), eventBus, logger);
             var taskQueue = new TaskQueueManager(eventBus, logger);
             var serializer = new JsonStateSerializer();
             var config = new PersistenceConfiguration { SaveDirectory = tempDir };
-            var store = new FileSaveStore(serializer, config);
+            var store = new FileSaveStore(config, serializer);
 
             var world = new WorldManager(eventBus);
             var workspace = new WorkspaceManager(
