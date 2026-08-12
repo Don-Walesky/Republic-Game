@@ -15,6 +15,8 @@ public sealed class MilitaryDefenseUIController : MonoBehaviour
     [SerializeField] private Text personnelCountText = null!;
     [SerializeField] private Text equipmentCountText = null!;
     [SerializeField] private Text compositeReadinessText = null!;
+    [SerializeField] private Text logisticsEfficiencyText = null!;
+    [SerializeField] private Text unitTrainingIndexText = null!;
 
     [Header("Branch Breakdown Texts")]
     [SerializeField] private Text armyReadinessText = null!;
@@ -33,6 +35,15 @@ public sealed class MilitaryDefenseUIController : MonoBehaviour
             bridge.MilitaryReadinessReportUpdated += UpdateReadinessUI;
             bridge.DefconLevelChanged += OnDefconChanged;
             bridge.MilitaryDirectiveExecuted += OnDirectiveExecuted;
+        }
+    }
+
+    public void SetDefconAlertLevel(int level)
+    {
+        if (System.Enum.IsDefined(typeof(DefconLevel), level))
+        {
+            var newLevel = (DefconLevel)level;
+            Debug.Log($"[Military Defense UI] Triggered manual DEFCON alert change to: {newLevel}");
         }
     }
 
@@ -58,6 +69,16 @@ public sealed class MilitaryDefenseUIController : MonoBehaviour
         if (compositeReadinessText != null)
         {
             compositeReadinessText.text = $"Readiness Score: {report.CompositeReadinessScore:0.0}%";
+        }
+
+        if (logisticsEfficiencyText != null)
+        {
+            logisticsEfficiencyText.text = $"Logistics Supply Efficiency: {report.LogisticsSupplyEfficiency:0.0}%";
+        }
+
+        if (unitTrainingIndexText != null)
+        {
+            unitTrainingIndexText.text = $"Unit Training Index: {report.UnitTrainingIndex:0.0}%";
         }
 
         foreach (var branch in report.BranchBreakdown)

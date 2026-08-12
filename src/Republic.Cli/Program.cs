@@ -10,6 +10,7 @@ using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Budget.Services;
 using Republic.Core.Elections.Services;
 using Republic.Core.Government;
+using Republic.Core.Government.Models;
 using Republic.Core.Intelligence.Models;
 using Republic.Core.Intelligence.Services;
 using Republic.Core.Legislature.Models;
@@ -413,7 +414,7 @@ public static class Program
             var order = new ExecutiveOrder
             {
                 Title = title,
-                Justification = justification,
+                Description = justification,
                 IssuedAt = DateTimeOffset.UtcNow
             };
             Console.WriteLine($"[DECREE ENACTED] '{order.Title}' issued cleanly under executive authority.");
@@ -428,8 +429,8 @@ public static class Program
         var topic = Console.ReadLine()?.Trim();
         if (!string.IsNullOrWhiteSpace(topic))
         {
-            var summary = await app.PressConferenceService.ConductPressConferenceAsync(topic, 5.0);
-            Console.WriteLine($"[PRESS BRIEFING SUMMARY]:\n{summary}");
+            var question = await app.PressConferenceService.HostPressConferenceAsync(topic);
+            Console.WriteLine($"[PRESS BRIEFING QUESTION]:\n Journalist: {question.JournalistName} ({question.NewsOutlet})\n Prompt: {question.QuestionText}");
         }
         Console.ReadLine();
     }

@@ -2,6 +2,7 @@ namespace Republic.Unity.UI;
 
 using UnityEngine;
 using UnityEngine.UI;
+using Republic.Core.Engine;
 
 /// <summary>
 /// Unity UI controller managing new game campaign scenario selection, difficulty picks, and quick-load triggers.
@@ -19,12 +20,18 @@ public sealed class MainMenuUIController : MonoBehaviour
     [SerializeField] private Text difficultyBadgeText = null!;
 
     private string currentScenarioId = "arcadia-day1";
-    private string selectedDifficulty = "Standard";
+    private DifficultyPreset selectedDifficultyPreset = DifficultyPreset.Standard;
 
     public void OnStartCampaignClicked()
     {
-        Debug.Log($"[Main Menu] Launching Campaign Scenario '{currentScenarioId}' under '{selectedDifficulty}' difficulty!");
-        // Triggers bootstrapper and loads ExecutiveDeskScene
+        Debug.Log($"[Main Menu] Launching Campaign Scenario '{currentScenarioId}' under '{selectedDifficultyPreset}' difficulty!");
+        var settings = GameDifficultySettings.FromPreset(selectedDifficultyPreset);
+        
+        if (RepublicGameManager.Instance != null)
+        {
+            Debug.Log($"[Main Menu] Configured Campaign Difficulty: AiAggression={settings.AiAggressionMultiplier}x, InsolvencyThreshold=${settings.InsolvencyThreshold:N0}");
+        }
+        // Loads ExecutiveDeskScene / transitions views
     }
 
     public void SelectScenario(string scenarioId)
@@ -36,12 +43,20 @@ public sealed class MainMenuUIController : MonoBehaviour
         }
     }
 
-    public void SetDifficulty(string difficulty)
+    public void SetDifficulty(string difficultyName)
     {
-        selectedDifficulty = difficulty;
+        if (System.Enum.TryParse<DifficultyPreset>(difficultyName, true, out var preset))
+        {
+            selectedDifficultyPreset = preset;
+        }
+        else
+        {
+            selectedDifficultyPreset = DifficultyPreset.Standard;
+        }
+
         if (difficultyBadgeText != null)
         {
-            difficultyBadgeText.text = $"DIFFICULTY: {difficulty.ToUpper()}";
+            difficultyBadgeText.text = $"DIFFICULTY: {selectedDifficultyPreset.ToString().ToUpper()}";
         }
     }
 
@@ -56,3 +71,4 @@ public sealed class MainMenuUIController : MonoBehaviour
         Application.Quit();
     }
 }
+

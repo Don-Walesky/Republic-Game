@@ -45,6 +45,8 @@ public sealed class RepublicApplication
     public IRivalAIService RivalAIService { get; }
     public IMilitaryService MilitaryService { get; }
     public ISaveGameManager SaveGameManager { get; }
+    public Republic.Core.World.Services.IGeographyService GeographyService { get; }
+    public Republic.Core.Media.Services.IPressConferenceService PressConferenceService { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RepublicApplication"/> class.
@@ -68,7 +70,9 @@ public sealed class RepublicApplication
         IElectionService electionService,
         IRivalAIService rivalAIService,
         IMilitaryService militaryService,
-        ISaveGameManager saveGameManager)
+        ISaveGameManager saveGameManager,
+        Republic.Core.World.Services.IGeographyService geographyService,
+        Republic.Core.Media.Services.IPressConferenceService pressConferenceService)
     {
         Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -89,6 +93,8 @@ public sealed class RepublicApplication
         RivalAIService = rivalAIService ?? throw new ArgumentNullException(nameof(rivalAIService));
         MilitaryService = militaryService ?? throw new ArgumentNullException(nameof(militaryService));
         SaveGameManager = saveGameManager ?? throw new ArgumentNullException(nameof(saveGameManager));
+        GeographyService = geographyService ?? throw new ArgumentNullException(nameof(geographyService));
+        PressConferenceService = pressConferenceService ?? throw new ArgumentNullException(nameof(pressConferenceService));
     }
 
     /// <summary>

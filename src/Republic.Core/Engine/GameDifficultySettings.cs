@@ -22,6 +22,8 @@ public sealed class GameDifficultySettings
     public double ImpeachmentRiskThreshold { get; set; } = 25.0; // Public happiness below 25% triggers impeachment risk
     public double MilitaryCoupThreshold { get; set; } = 30.0;     // Composite military readiness below 30% or DEFCON 1 chaos
     public double InsolvencyThreshold { get; set; } = -5_000_000.0; // Negative treasury limit
+    public double UnrestUprisingThreshold { get; set; } = 80.0;  // Civil unrest above 80% triggers revolutionary uprising
+    public double GeopoliticalStandingFloor { get; set; } = 10.0; // Foreign diplomatic standing below 10 triggers subjugation
     public ulong MandateMaxTicks { get; set; } = 1000;            // Re-election evaluation tick milestone
 
     public static GameDifficultySettings FromPreset(DifficultyPreset preset)
@@ -34,7 +36,9 @@ public sealed class GameDifficultySettings
                 AiAggressionMultiplier = 0.5,
                 EconomicDecayMultiplier = 0.7,
                 ImpeachmentRiskThreshold = 15.0,
-                MilitaryCoupThreshold = 20.0
+                MilitaryCoupThreshold = 20.0,
+                UnrestUprisingThreshold = 90.0,
+                GeopoliticalStandingFloor = 5.0
             },
             DifficultyPreset.Realist => new GameDifficultySettings
             {
@@ -42,7 +46,9 @@ public sealed class GameDifficultySettings
                 AiAggressionMultiplier = 1.4,
                 EconomicDecayMultiplier = 1.3,
                 ImpeachmentRiskThreshold = 35.0,
-                MilitaryCoupThreshold = 40.0
+                MilitaryCoupThreshold = 40.0,
+                UnrestUprisingThreshold = 75.0,
+                GeopoliticalStandingFloor = 15.0
             },
             DifficultyPreset.Nightmare => new GameDifficultySettings
             {
@@ -50,7 +56,9 @@ public sealed class GameDifficultySettings
                 AiAggressionMultiplier = 2.0,
                 EconomicDecayMultiplier = 1.8,
                 ImpeachmentRiskThreshold = 45.0,
-                MilitaryCoupThreshold = 50.0
+                MilitaryCoupThreshold = 50.0,
+                UnrestUprisingThreshold = 65.0,
+                GeopoliticalStandingFloor = 25.0
             },
             _ => new GameDifficultySettings()
         };

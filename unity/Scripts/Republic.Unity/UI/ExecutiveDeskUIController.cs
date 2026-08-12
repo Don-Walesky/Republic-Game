@@ -21,6 +21,7 @@ public sealed class ExecutiveDeskUIController : MonoBehaviour
     [SerializeField] private Text emailBadgeText = null!;
     [SerializeField] private Text newsTickerText = null!;
     [SerializeField] private Text visitorQueueText = null!;
+    [SerializeField] private Text calendarAlertText = null!;
     [SerializeField] private GameObject phoneRingIndicator = null!;
 
     private void Start()
@@ -31,6 +32,8 @@ public sealed class ExecutiveDeskUIController : MonoBehaviour
             bridge.EconomicIndicatorsUpdated += UpdateEconomicHUD;
             bridge.WorkspaceStateUpdated += UpdateWorkspaceHUD;
             bridge.NewsPublished += OnNewsArticlePublished;
+            bridge.VisitorArrived += OnVisitorArrived;
+            bridge.AppointmentReminded += OnAppointmentReminded;
         }
     }
 
@@ -65,6 +68,22 @@ public sealed class ExecutiveDeskUIController : MonoBehaviour
         }
     }
 
+    private void OnVisitorArrived(Visitor visitor)
+    {
+        if (visitorQueueText != null && visitor != null)
+        {
+            visitorQueueText.text = $"LOBBY: Visitor '{visitor.Name}' ({visitor.Title}) arrived for {visitor.Purpose}";
+        }
+    }
+
+    private void OnAppointmentReminded(CalendarAppointment appointment)
+    {
+        if (calendarAlertText != null && appointment != null)
+        {
+            calendarAlertText.text = $"CALENDAR: {appointment.Title} scheduled at {appointment.ScheduledTime:HH:mm} ({appointment.Location})";
+        }
+    }
+
     private void OnNewsArticlePublished(NewsArticle article)
     {
         if (newsTickerText != null && article != null)
@@ -81,6 +100,8 @@ public sealed class ExecutiveDeskUIController : MonoBehaviour
             bridge.EconomicIndicatorsUpdated -= UpdateEconomicHUD;
             bridge.WorkspaceStateUpdated -= UpdateWorkspaceHUD;
             bridge.NewsPublished -= OnNewsArticlePublished;
+            bridge.VisitorArrived -= OnVisitorArrived;
+            bridge.AppointmentReminded -= OnAppointmentReminded;
         }
     }
 }

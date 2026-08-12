@@ -12,6 +12,11 @@ public sealed class ExecutiveDeskCanvasBuilder : MonoBehaviour
     [SerializeField] private CanvasScaler canvasScaler = null!;
     [SerializeField] private GraphicRaycaster graphicRaycaster = null!;
 
+    [Header("Procedural Action Panels")]
+    [SerializeField] private GameObject actionButtonsPanel = null!;
+    [SerializeField] private GameObject visitorLobbyPanel = null!;
+    [SerializeField] private GameObject calendarAlertPanel = null!;
+
     public void BuildDeskCanvasLayout()
     {
         if (targetCanvas == null)
@@ -44,27 +49,22 @@ public sealed class ExecutiveDeskCanvasBuilder : MonoBehaviour
             }
         }
 
-        // Attach UI controllers if not already present
-        if (gameObject.GetComponent<ExecutiveDeskUIController>() == null)
-        {
-            gameObject.AddComponent<ExecutiveDeskUIController>();
-        }
-
-        if (gameObject.GetComponent<MilitaryDefenseUIController>() == null)
-        {
-            gameObject.AddComponent<MilitaryDefenseUIController>();
-        }
-
-        if (gameObject.GetComponent<DecisionPromptUIController>() == null)
-        {
-            gameObject.AddComponent<DecisionPromptUIController>();
-        }
-
-        if (gameObject.GetComponent<IntelligenceMediaUIController>() == null)
-        {
-            gameObject.AddComponent<IntelligenceMediaUIController>();
-        }
+        // Ensure Core UI Controllers are attached
+        EnsureController<ExecutiveDeskUIController>();
+        EnsureController<MilitaryDefenseUIController>();
+        EnsureController<DecisionPromptUIController>();
+        EnsureController<IntelligenceMediaUIController>();
+        EnsureController<WorkspaceUIController>();
 
         Debug.Log("[Republic UI] Executive Desk Canvas procedural layout & UI controllers constructed cleanly.");
     }
+
+    private void EnsureController<T>() where T : MonoBehaviour
+    {
+        if (gameObject.GetComponent<T>() == null)
+        {
+            gameObject.AddComponent<T>();
+        }
+    }
 }
+

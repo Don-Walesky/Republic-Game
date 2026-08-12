@@ -52,6 +52,8 @@ public sealed class RepublicAudioManager : MonoBehaviour
             bridge.DecreeEnacted += OnDecreeEnacted;
             bridge.DefconLevelChanged += OnDefconChanged;
             bridge.PressConferenceConducted += OnPressConferenceConducted;
+            bridge.EmailReceived += OnEmailReceived;
+            bridge.NewsPublished += OnNewsPublished;
         }
     }
 
@@ -78,6 +80,19 @@ public sealed class RepublicAudioManager : MonoBehaviour
             phoneRingSource.clip = phoneRingClip;
             phoneRingSource.loop = true;
             phoneRingSource.Play();
+        }
+    }
+
+    private void OnEmailReceived(Republic.Core.Workspace.Models.EmailMessage email)
+    {
+        PlayDossierFlip();
+    }
+
+    private void OnNewsPublished(Republic.Core.Workspace.Models.NewsArticle article)
+    {
+        if (sfxSource != null && pressCameraShutterClip != null)
+        {
+            sfxSource.PlayOneShot(pressCameraShutterClip);
         }
     }
 
@@ -114,6 +129,8 @@ public sealed class RepublicAudioManager : MonoBehaviour
             bridge.DecreeEnacted -= OnDecreeEnacted;
             bridge.DefconLevelChanged -= OnDefconChanged;
             bridge.PressConferenceConducted -= OnPressConferenceConducted;
+            bridge.EmailReceived -= OnEmailReceived;
+            bridge.NewsPublished -= OnNewsPublished;
         }
     }
 }

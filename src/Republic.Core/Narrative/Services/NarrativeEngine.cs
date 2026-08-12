@@ -99,6 +99,66 @@ public sealed class NarrativeEngine : INarrativeEngine
                 }
             }
         });
+
+        _events.Add(new StoryEvent
+        {
+            Id = "story-whistleblower-leak",
+            Title = "Intelligence Whistleblower Dossier Leaked",
+            NarrativeText = "A high-ranking intelligence officer has leaked classified cables regarding unauthorized wiretapping.",
+            Category = "Intelligence",
+            PrerequisiteTick = 15,
+            Choices = new List<StoryChoice>
+            {
+                new StoryChoice
+                {
+                    Text = "Order full public disclosure and independent commission inquiry.",
+                    OutcomeDescription = "Restores public trust; destabilizes intelligence cabinet relations.",
+                    Effects = new List<PolicyEffect>
+                    {
+                        new PolicyEffect { TargetMetric = "Approval", DeltaValue = 15.0 }
+                    }
+                },
+                new StoryChoice
+                {
+                    Text = "Invoke executive privilege and seal national security records.",
+                    OutcomeDescription = "Protects intelligence operations; sparks parliamentary protest.",
+                    Effects = new List<PolicyEffect>
+                    {
+                        new PolicyEffect { TargetMetric = "Approval", DeltaValue = -10.0 }
+                    }
+                }
+            }
+        });
+
+        _events.Add(new StoryEvent
+        {
+            Id = "story-border-skirmish",
+            Title = "Northern Border Skirmish Escalation",
+            NarrativeText = "Unmarked foreign patrols exchanged fire with border border guards near Sector 4.",
+            Category = "Military",
+            PrerequisiteTick = 25,
+            Choices = new List<StoryChoice>
+            {
+                new StoryChoice
+                {
+                    Text = "Deploy armored task force and elevate alert status to DEFCON 3.",
+                    OutcomeDescription = "Deters further incursions; raises regional tension.",
+                    Effects = new List<PolicyEffect>
+                    {
+                        new PolicyEffect { TargetMetric = "Treasury", DeltaValue = -50_000_000 }
+                    }
+                },
+                new StoryChoice
+                {
+                    Text = "Request immediate neutral diplomatic mediation via international summit.",
+                    OutcomeDescription = "De-escalates border friction peacefully.",
+                    Effects = new List<PolicyEffect>
+                    {
+                        new PolicyEffect { TargetMetric = "Approval", DeltaValue = 5.0 }
+                    }
+                }
+            }
+        });
     }
 
     public IReadOnlyList<StoryEvent> GetActiveStoryEvents()

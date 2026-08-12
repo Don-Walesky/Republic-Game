@@ -49,8 +49,28 @@ public sealed class MilitaryReadinessReport
     public int TotalEquipment { get; set; }
     public decimal TotalDefenseBudget { get; set; }
     public double CompositeReadinessScore { get; set; }
+    public double LogisticsSupplyEfficiency { get; set; } = 85.0; // 0-100%
+    public double UnitTrainingIndex { get; set; } = 80.0;           // 0-100%
     public List<MilitaryBranchState> BranchBreakdown { get; set; } = new();
     public List<MilitaryAction> RecentOperations { get; set; } = new();
+
+    public double CalculateCompositeReadiness()
+    {
+        if (BranchBreakdown.Count == 0)
+        {
+            return (LogisticsSupplyEfficiency * 0.4) + (UnitTrainingIndex * 0.6);
+        }
+
+        double branchAvg = 0.0;
+        foreach (var b in BranchBreakdown)
+        {
+            branchAvg += b.ReadinessScore;
+        }
+        branchAvg /= BranchBreakdown.Count;
+
+        CompositeReadinessScore = (branchAvg * 0.5) + (LogisticsSupplyEfficiency * 0.3) + (UnitTrainingIndex * 0.2);
+        return CompositeReadinessScore;
+    }
 }
 
 /// <summary>

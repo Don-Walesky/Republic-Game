@@ -13,6 +13,8 @@ public enum GameEndStatus
     Impeached,
     MilitaryCoup,
     Insolvent,
+    RevolutionaryUprising,
+    GeopoliticalSubjugation,
     ReelectedVictory,
     DefeatedElections
 }
@@ -38,7 +40,9 @@ public sealed class GameEndConditionEvaluator
         double treasuryBalance,
         Demographics demographics,
         MilitaryReadinessReport militaryReport,
-        ulong currentTick)
+        ulong currentTick,
+        double civilUnrestLevel = 0.0,
+        double geopoliticalStanding = 100.0)
     {
         ArgumentNullException.ThrowIfNull(demographics);
 
@@ -69,7 +73,25 @@ public sealed class GameEndConditionEvaluator
                 DateTimeOffset.UtcNow);
         }
 
-        // 4. Presidential Term Re-election Victory / Election Loss Milestone
+        // 4. Revolutionary Uprising Defeat
+        if (civilUnrestLevel >= _settings.UnrestUprisingThreshold)
+        {
+            return new GameEndResult(
+                GameEndStatus.RevolutionaryUprising,
+                $"Revolutionary Insurrection: Civil unrest escalated to {civilUnrestLevel:0.0}%. Protesters stormed government headquarters.",
+                DateTimeOffset.UtcNow);
+        }
+
+        // 5. Geopolitical Subjugation Defeat
+        if (geopoliticalStanding < _settings.GeopoliticalStandingFloor)
+        {
+            return new GameEndResult(
+                GameEndStatus.GeopoliticalSubjugation,
+                $"Geopolitical Collapse: Sovereign diplomatic influence dropped to {geopoliticalStanding:0.0}. Foreign coalition imposed external administration.",
+                DateTimeOffset.UtcNow);
+        }
+
+        // 6. Presidential Term Re-election Victory / Election Loss Milestone
         if (currentTick >= _settings.MandateMaxTicks)
         {
             if (demographics.HappinessRating >= 60.0 && treasuryBalance >= 0)

@@ -1,33 +1,53 @@
 namespace Republic.Core.Tests.Demographics;
 
+using System.Linq;
+using Xunit;
 using Republic.Core.Demographics.Classes.Models;
 using Republic.Core.Demographics.Classes.Services;
 using Republic.Core.Events;
 using Republic.Core.World;
+using Republic.Core.World.Services;
 
-public sealed class DemographicClassServiceTests
+public class DemographicClassServiceTests
 {
-    private readonly EventBus _eventBus;
-    private readonly TestLogger _logger;
-    private readonly WorldManager _world;
-
-    public DemographicClassServiceTests()
+    [Fact]
+    public void InitializeClasses_Registers_All_DemographicClasses()
     {
-        _logger = new TestLogger();
-        _eventBus = new EventBus(new EventBusOptions(), _logger);
-        _world = new WorldManager(_eventBus, _logger);
-        _world.CreateAsync("Demo Class World").GetAwaiter().GetResult();
+        var eventBus = new EventBus(new EventBusOptions(), new TestLogger());
+        var worldManager = new WorldManager(eventBus);
+        var service = new DemographicClassService(worldManager, eventBus);
+
+        var approvals = service.GetClassApprovals();
+
+        Assert.NotEmpty(approvals);
+        Assert.Contains(approvals, a => a.ClassType == DemographicClass.WorkingClass);
+        Assert.Contains(approvals, a => a.ClassType == DemographicClass.Oligarchs);
+        Assert.Contains(approvals, a => a.ClassType == DemographicClass.MilitaryStaff);
     }
 
     [Fact]
-    public void AdjustClassApproval_UpdatesTargetRatingAndWeightedSum()
+    public void AdjustClassApproval_Clamps_And_Updates_Rating()
     {
-        var service = new DemographicClassService(_world, _eventBus, _logger);
-        var initialWeighted = service.GetWeightedOverallApproval();
+        var eventBus = new EventBus(new EventBusOptions(), new TestLogger());
+        var worldManager = new WorldManager(eventBus);
+        var service = new DemographicClassService(worldManager, eventBus);
 
         service.AdjustClassApproval(DemographicClass.WorkingClass, -20.0);
+        var target = service.GetClassApprovals().First(a => a.ClassType == DemographicClass.WorkingClass);
 
-        var newWeighted = service.GetWeightedOverallApproval();
-        Assert.True(newWeighted < initialWeighted);
+        Assert.Equal(55.0, target.ApprovalRating);
+        Assert.True(target.RebellionRiskIndex > 0);
+    }
+
+    [Fact]
+    public void WeightedOverallApproval_Calculates_Sum_Correctly()
+    {
+        var eventBus = new EventBus(new EventBusOptions(), new TestLogger());
+        var worldManager = new WorldManager(eventBus);
+        var service = new DemographicClassService(worldManager, eventBus);
+
+        double overall = service.GetWeightedOverallApproval();
+
+        Assert.True(overall > 0.0);
     }
 }
