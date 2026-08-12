@@ -1,5 +1,6 @@
 namespace Republic.Unity.UI;
 
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Republic.Core.Decisions.Models;
@@ -51,7 +52,8 @@ public sealed class DecisionPromptUIController : MonoBehaviour
         if (decision.Options.Count > 0 && optionButtonA != null && optionTextA != null)
         {
             var optA = decision.Options[0];
-            optionTextA.text = $"{optA.Label}\n<size=11>${optA.TreasuryCost:N0}</size>";
+            string effectsA = FormatPolicyEffects(optA);
+            optionTextA.text = $"{optA.Label}\n<size=11>${optA.TreasuryCost:N0} | {effectsA}</size>";
             optionButtonA.onClick.RemoveAllListeners();
             optionButtonA.onClick.AddListener(() => OnOptionClicked(optA.Id));
         }
@@ -59,10 +61,17 @@ public sealed class DecisionPromptUIController : MonoBehaviour
         if (decision.Options.Count > 1 && optionButtonB != null && optionTextB != null)
         {
             var optB = decision.Options[1];
-            optionTextB.text = $"{optB.Label}\n<size=11>${optB.TreasuryCost:N0}</size>";
+            string effectsB = FormatPolicyEffects(optB);
+            optionTextB.text = $"{optB.Label}\n<size=11>${optB.TreasuryCost:N0} | {effectsB}</size>";
             optionButtonB.onClick.RemoveAllListeners();
             optionButtonB.onClick.AddListener(() => OnOptionClicked(optB.Id));
         }
+    }
+
+    private static string FormatPolicyEffects(DecisionOption option)
+    {
+        if (option.Effects == null || option.Effects.Count == 0) return "No Direct Impact";
+        return string.Join(", ", option.Effects.Select(e => $"{e.TargetMetric} {(e.DeltaValue >= 0 ? "+" : "")}{e.DeltaValue:0.#}"));
     }
 
     private async void OnOptionClicked(string optionId)

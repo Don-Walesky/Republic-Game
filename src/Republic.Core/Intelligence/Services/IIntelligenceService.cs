@@ -11,4 +11,5 @@ public interface IIntelligenceService
     Task<SpyNetwork> InfiltrateTargetAsync(string targetCountryId, int additionalAgents = 2, CancellationToken cancellationToken = default);
     Task<CovertOperation> LaunchOperationAsync(CovertOperationType type, string targetCountryId, string title, CancellationToken cancellationToken = default);
     IReadOnlyList<CovertOperation> GetActiveOperations();
+    Task<bool> ConductCounterEspionageSweepAsync(CancellationToken cancellationToken = default);
 }

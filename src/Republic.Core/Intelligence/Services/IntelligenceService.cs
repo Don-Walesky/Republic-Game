@@ -134,4 +134,21 @@ public sealed class IntelligenceService : IIntelligenceService
             return _operations.Where(o => !o.IsCompleted && !o.IsExposed).ToList().AsReadOnly();
         }
     }
+
+    public Task<bool> ConductCounterEspionageSweepAsync(CancellationToken cancellationToken = default)
+    {
+        _worldManager.Economic.WithdrawTreasury(15_000_000.0);
+        _logger?.LogInfo("COUNTER-ESPIONAGE SWEEP: National wiretap and signals intelligence sweep executed.");
+
+        _workspaceManager?.News.PublishArticle(new NewsArticle
+        {
+            Source = "Ministry of Security Gazette",
+            Headline = "NATIONAL SECURITY BULLETIN: COUNTER-INTELLIGENCE SURVEILLANCE EXPANDED",
+            Summary = "Domestic wiretap sweeps and counter-surveillance protocols heightened across state ministries.",
+            Category = "Security",
+            ImpactRating = 3
+        });
+
+        return Task.FromResult(true);
+    }
 }
