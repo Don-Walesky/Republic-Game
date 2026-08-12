@@ -176,4 +176,35 @@ public sealed class GeographyService : IGeographyService
 
         await Task.CompletedTask;
     }
+
+    public double CalculateGeopoliticalTensionIndex()
+    {
+        lock (_lock)
+        {
+            if (_provinces.Count == 0) return 15.0; // Baseline low tension
+            double avgRebellion = _provinces.Average(p => p.RebellionRisk);
+            double avgInfra = _provinces.Average(p => p.InfrastructureIndex);
+            return Math.Clamp(avgRebellion * 0.7 + (100.0 - avgInfra) * 0.3, 0.0, 100.0);
+        }
+    }
+
+    public async Task<bool> HostBilateralSummitAsync(string partnerCountryId, string treatyName, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(partnerCountryId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(treatyName);
+
+        _logger?.LogInfo($"GEOPOLITICAL SUMMIT CONVENED with '{partnerCountryId}': Treaty '{treatyName}' proposed.");
+
+        lock (_lock)
+        {
+            foreach (var province in _provinces)
+            {
+                province.LocalStability = Math.Min(100.0, province.LocalStability + 5.0);
+                province.RebellionRisk = Math.Max(0.0, 100.0 - province.LocalStability);
+            }
+        }
+
+        await Task.CompletedTask;
+        return true;
+    }
 }

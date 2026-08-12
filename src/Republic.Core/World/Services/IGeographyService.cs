@@ -20,4 +20,6 @@ public interface IGeographyService
     Task<bool> InvestInRegionalInfrastructureAsync(string provinceId, decimal investment, CancellationToken cancellationToken = default);
     Task<double> UpdateProvincialStabilityAsync(string provinceId, double delta, CancellationToken cancellationToken = default);
     Task SimulateProvincialTurnAsync(CancellationToken cancellationToken = default);
+    double CalculateGeopoliticalTensionIndex();
+    Task<bool> HostBilateralSummitAsync(string partnerCountryId, string treatyName, CancellationToken cancellationToken = default);
 }

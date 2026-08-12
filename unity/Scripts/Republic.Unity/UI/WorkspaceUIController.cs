@@ -19,6 +19,10 @@ public sealed class WorkspaceUIController : MonoBehaviour
     [SerializeField] private Text latestEmailSubjectText = null!;
     [SerializeField] private Text latestEmailSenderText = null!;
 
+    [Header("Executive Desk Schedule HUD")]
+    [SerializeField] private Text visitorStatusText = null!;
+    [SerializeField] private Text calendarScheduleText = null!;
+
     private readonly List<NewsArticle> recentArticles = new();
     private readonly List<EmailMessage> inbox = new();
 
@@ -29,6 +33,24 @@ public sealed class WorkspaceUIController : MonoBehaviour
             var bridge = RepublicGameManager.Instance.UnityBridge;
             bridge.NewsPublished += OnNewsPublished;
             bridge.EmailReceived += OnEmailReceived;
+            bridge.VisitorArrived += OnVisitorArrived;
+            bridge.AppointmentReminded += OnAppointmentReminded;
+        }
+    }
+
+    private void OnVisitorArrived(Visitor visitor)
+    {
+        if (visitorStatusText != null && visitor != null)
+        {
+            visitorStatusText.text = $"VISITOR ARRIVED: {visitor.Name} ({visitor.Title}) - '{visitor.Purpose}'";
+        }
+    }
+
+    private void OnAppointmentReminded(CalendarItem item)
+    {
+        if (calendarScheduleText != null && item != null)
+        {
+            calendarScheduleText.text = $"SCHEDULED: {item.Title} @ {item.StartTime:HH:mm} ({item.Location})";
         }
     }
 
@@ -78,6 +100,8 @@ public sealed class WorkspaceUIController : MonoBehaviour
             var bridge = RepublicGameManager.Instance.UnityBridge;
             bridge.NewsPublished -= OnNewsPublished;
             bridge.EmailReceived -= OnEmailReceived;
+            bridge.VisitorArrived -= OnVisitorArrived;
+            bridge.AppointmentReminded -= OnAppointmentReminded;
         }
     }
 }

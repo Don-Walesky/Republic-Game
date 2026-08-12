@@ -73,6 +73,7 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton<IStateSerializer, JsonStateSerializer>();
         services.AddSingleton<FileSaveStore>();
         services.AddSingleton<ISaveGameManager, SaveGameManager>();
+        services.AddSingleton<AutoSaveManager>();
         services.AddSingleton<ICountryService, CountryService>();
         services.AddSingleton<IGeographyService, GeographyService>();
         services.AddSingleton<IResourceService, ResourceService>();
