@@ -112,6 +112,20 @@ public sealed class RivalAIService : IRivalAIService
                 actionsTaken++;
                 await _intelligenceService.InfiltrateTargetAsync(playerCountry.Id, 1, cancellationToken).ConfigureAwait(false);
             }
+            // 4. Defensive / Isolationist AI Action
+            else if (bot.Behavior == RivalAIBehavior.Defensive)
+            {
+                actionsTaken++;
+                _logger?.LogInfo($"RIVAL AI [{bot.Name}]: Fortifying sovereign border defenses.");
+                await _intelligenceService.ConductCounterEspionageSweepAsync(cancellationToken).ConfigureAwait(false);
+            }
+            // 5. Economic / Merchant AI Action
+            else if (bot.Behavior == RivalAIBehavior.Economic)
+            {
+                actionsTaken++;
+                _logger?.LogInfo($"RIVAL AI [{bot.Name}]: Extending international commercial credit lines.");
+                _worldManager.Economic.DepositTreasury(25_000_000.0);
+            }
         }
 
         return actionsTaken;

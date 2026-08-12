@@ -79,6 +79,27 @@ public sealed class ElectionService : IElectionService
         });
     }
 
+    public async Task<PollingData> SimulateWeeklyPollingShiftsAsync(CancellationToken cancellationToken = default)
+    {
+        PollingData data;
+        lock (_lock)
+        {
+            data = GetCurrentPollingData();
+            if (_isCampaignActive)
+            {
+                // Dynamic campaign momentum swing
+                double momentumSwing = (_worldManager.Demographics.GetDemographics().HappinessRating > 50.0) ? 2.5 : -3.0;
+                _pollingData.IncumbentApprovalPercentage = Math.Clamp(data.IncumbentApprovalPercentage + momentumSwing, 10.0, 90.0);
+                _pollingData.OppositionApprovalPercentage = Math.Clamp(100.0 - _pollingData.IncumbentApprovalPercentage - 8.0, 10.0, 80.0);
+                _pollingData.UndecidedVotersPercentage = 100.0 - _pollingData.IncumbentApprovalPercentage - _pollingData.OppositionApprovalPercentage;
+            }
+        }
+
+        _logger?.LogInfo($"WEEKLY POLLING SHIFT: Incumbent [{_pollingData.IncumbentApprovalPercentage:0.0}%], Opposition [{_pollingData.OppositionApprovalPercentage:0.0}%]");
+        await Task.CompletedTask;
+        return GetCurrentPollingData();
+    }
+
     public async Task<ElectionResult> ConductElectionAsync(string incumbentName, string candidateOppositionName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(incumbentName);
