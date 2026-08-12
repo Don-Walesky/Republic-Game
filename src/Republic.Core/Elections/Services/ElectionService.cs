@@ -45,10 +45,13 @@ public sealed class ElectionService : IElectionService
     {
         lock (_lock)
         {
-            var demo = _worldManager.Demographics.GetDemographics();
-            _pollingData.IncumbentApprovalPercentage = Math.Clamp(demo.HappinessRating + 5.0, 10.0, 90.0);
-            _pollingData.OppositionApprovalPercentage = Math.Clamp(100.0 - _pollingData.IncumbentApprovalPercentage - 8.0, 10.0, 80.0);
-            _pollingData.UndecidedVotersPercentage = 100.0 - _pollingData.IncumbentApprovalPercentage - _pollingData.OppositionApprovalPercentage;
+            if (!_isCampaignActive && _pollingData.IncumbentApprovalPercentage == 0.0)
+            {
+                var demo = _worldManager.Demographics.GetDemographics();
+                _pollingData.IncumbentApprovalPercentage = Math.Clamp(demo.HappinessRating + 5.0, 10.0, 90.0);
+                _pollingData.OppositionApprovalPercentage = Math.Clamp(100.0 - _pollingData.IncumbentApprovalPercentage - 8.0, 10.0, 80.0);
+                _pollingData.UndecidedVotersPercentage = 100.0 - _pollingData.IncumbentApprovalPercentage - _pollingData.OppositionApprovalPercentage;
+            }
 
             return new PollingData
             {

@@ -8,5 +8,7 @@ public enum RivalAIBehavior
     Diplomatic,
     Aggressive,
     Isolationist,
-    Opportunistic
+    Opportunistic,
+    Defensive,
+    Economic
 }
