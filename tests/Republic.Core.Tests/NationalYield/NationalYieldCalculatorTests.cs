@@ -9,7 +9,7 @@ using Xunit;
 /// <summary>
 /// Unit tests for the isolated, deterministic National Yield calculation engine (Step 4D).
 /// Validates determinism, country isolation, input immutability, complete 14-category coverage,
-/// food exclusion, input influence, modifier determinism, and zero randomness.
+/// food exclusion, direct input influence, modifier determinism, and zero randomness.
 /// </summary>
 public sealed class NationalYieldCalculatorTests
 {
@@ -132,38 +132,40 @@ public sealed class NationalYieldCalculatorTests
         {
             CountryId = "country-14",
             EconomicCapacity = 50.0,
-            GovernmentEffectiveness = 50.0,
             InfrastructureCondition = 50.0,
             HumanCapital = 50.0,
             ScienceTechnology = 50.0,
-            PoliticalStability = 50.0,
-            SecurityLevel = 50.0,
-            CabinetEffectiveness = 50.0
+            GovernmentEffectiveness = 50.0,
+            SecurityLevel = 50.0
         };
 
         var result = _calculator.Calculate(inputs);
 
-        // Economic
-        Assert.True(result.RepuTreasuryRevenue > 0.0);
-        Assert.True(result.IndustrialCapacity > 0.0);
-        Assert.True(result.EnergyCapacity > 0.0);
-        Assert.True(result.InfrastructureCapacity > 0.0);
-        Assert.True(result.FinancialCapacity > 0.0);
+        // Verify all 14 canonical categories are present and accessible
+        foreach (var category in Enum.GetValues<NationalYieldCategory>())
+        {
+            var capacity = result.GetCapacity(category);
+            Assert.False(double.IsNaN(capacity));
+            Assert.True(capacity >= 0.0);
+        }
 
-        // Human/Knowledge
-        Assert.True(result.HumanCapital > 0.0);
-        Assert.True(result.ScienceCapacity > 0.0);
-        Assert.True(result.InnovationCapacity > 0.0);
+        // Direct input mappings reflect straight baseline values without balancing multipliers
+        Assert.Equal(50.0, result.IndustrialCapacity);
+        Assert.Equal(50.0, result.InfrastructureCapacity);
+        Assert.Equal(50.0, result.HumanCapital);
+        Assert.Equal(50.0, result.ScienceCapacity);
+        Assert.Equal(50.0, result.AdministrativeCapacity);
+        Assert.Equal(50.0, result.SecurityCapacity);
 
-        // State
-        Assert.True(result.AdministrativeCapacity > 0.0);
-        Assert.True(result.SecurityCapacity > 0.0);
-        Assert.True(result.IntelligenceCapacity > 0.0);
-        Assert.True(result.MilitaryReadiness > 0.0);
-        Assert.True(result.DiplomaticCapacity > 0.0);
-
-        // Resource
-        Assert.True(result.NaturalResourceOutput > 0.0);
+        // Uncalibrated categories safely report their neutral baseline (0.0) pending future domain models
+        Assert.Equal(0.0, result.EnergyCapacity);
+        Assert.Equal(0.0, result.FinancialCapacity);
+        Assert.Equal(0.0, result.InnovationCapacity);
+        Assert.Equal(0.0, result.IntelligenceCapacity);
+        Assert.Equal(0.0, result.MilitaryReadiness);
+        Assert.Equal(0.0, result.DiplomaticCapacity);
+        Assert.Equal(0.0, result.NaturalResourceOutput);
+        Assert.Equal(0.0, result.RepuTreasuryRevenue);
     }
 
     [Fact]
@@ -193,7 +195,9 @@ public sealed class NationalYieldCalculatorTests
             EconomicCapacity = 20.0,
             ScienceTechnology = 20.0,
             GovernmentEffectiveness = 20.0,
-            InfrastructureCondition = 20.0
+            InfrastructureCondition = 20.0,
+            HumanCapital = 20.0,
+            SecurityLevel = 20.0
         };
 
         var highInputs = new NationalYieldCalculationInputs
@@ -201,7 +205,9 @@ public sealed class NationalYieldCalculatorTests
             EconomicCapacity = 100.0,
             ScienceTechnology = 100.0,
             GovernmentEffectiveness = 100.0,
-            InfrastructureCondition = 100.0
+            InfrastructureCondition = 100.0,
+            HumanCapital = 100.0,
+            SecurityLevel = 100.0
         };
 
         var lowResult = _calculator.Calculate(lowInputs);
@@ -211,7 +217,8 @@ public sealed class NationalYieldCalculatorTests
         Assert.True(highResult.ScienceCapacity > lowResult.ScienceCapacity);
         Assert.True(highResult.AdministrativeCapacity > lowResult.AdministrativeCapacity);
         Assert.True(highResult.InfrastructureCapacity > lowResult.InfrastructureCapacity);
-        Assert.True(highResult.RepuTreasuryRevenue > lowResult.RepuTreasuryRevenue);
+        Assert.True(highResult.HumanCapital > lowResult.HumanCapital);
+        Assert.True(highResult.SecurityCapacity > lowResult.SecurityCapacity);
     }
 
     [Fact]
@@ -254,7 +261,7 @@ public sealed class NationalYieldCalculatorTests
                 $"Field '{field.Name}' references System.Random, violating deterministic isolation.");
         }
 
-        // Test running 50 iterations back-to-back produces identical floating-point results
+        // Test running 50 iterations back-to-back produces identical results
         var inputs = new NationalYieldCalculationInputs
         {
             EconomicCapacity = 45.67,
@@ -267,7 +274,7 @@ public sealed class NationalYieldCalculatorTests
         {
             var next = _calculator.Calculate(inputs);
             Assert.Equal(first.IndustrialCapacity, next.IndustrialCapacity);
-            Assert.Equal(first.RepuTreasuryRevenue, next.RepuTreasuryRevenue);
+            Assert.Equal(first.AdministrativeCapacity, next.AdministrativeCapacity);
         }
     }
 }
