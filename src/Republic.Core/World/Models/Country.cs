@@ -1,6 +1,7 @@
 namespace Republic.Core.World.Models;
 
 using System.Text.Json.Serialization;
+using Republic.Core.NationalYield;
 using Republic.Core.Time;
 
 /// <summary>
@@ -46,6 +47,12 @@ public sealed class Country
     /// Gets or sets the baseline political and societal stability (0.0 to 100.0).
     /// </summary>
     public double BaselineStability { get; set; } = 75.0;
+
+    /// <summary>
+    /// Gets the authoritative National Yield state representing the country's productive, human, institutional, and resource capacities.
+    /// Each sovereign country owns an independent, isolated instance.
+    /// </summary>
+    public NationalYield Yield { get; init; } = new();
 
     /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
@@ -159,7 +166,8 @@ public sealed class Country
         string capitalCity = "",
         string governmentType = "Democratic Republic",
         double territorySizeSqKm = 500000,
-        double baselineStability = 75.0)
+        double baselineStability = 75.0,
+        NationalYield? yield = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         return new Country
@@ -171,7 +179,8 @@ public sealed class Country
             GovernmentType = governmentType,
             TerritorySizeSqKm = territorySizeSqKm,
             BaselineStability = baselineStability,
-            FoundingStatus = CountryFoundingStatus.NewlyFounded
+            FoundingStatus = CountryFoundingStatus.NewlyFounded,
+            Yield = yield?.Clone() ?? new NationalYield()
         };
     }
 }
