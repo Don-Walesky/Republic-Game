@@ -22,10 +22,10 @@ public sealed class WorldManager : IWorldManager
     /// <summary>
     /// Initializes a new instance of the <see cref="WorldManager"/> class with default services.
     /// </summary>
-    public WorldManager(IEventBus eventBus, ILogger? logger = null)
+    public WorldManager(IEventBus eventBus, ILogger? logger = null, Republic.Core.Time.IRepublicClock? clock = null)
         : this(
             eventBus,
-            new CountryService(eventBus, logger),
+            new CountryService(eventBus, logger, clock),
             new GeographyService(logger),
             new ResourceService(eventBus, logger),
             new DemographicService(eventBus, logger),
@@ -126,6 +126,7 @@ public sealed class WorldManager : IWorldManager
         CreatedAt = Current.CreatedAt,
         CurrentTick = Current.CurrentTick,
         Entities = _entities.Values.ToList(),
+        Countries = Countries.GetAllCountries().ToList(),
     };
 
     /// <inheritdoc />
@@ -139,12 +140,21 @@ public sealed class WorldManager : IWorldManager
             CreatedAt = state.CreatedAt,
             CurrentTick = state.CurrentTick,
             Entities = state.Entities.Select(entity => entity with { }).ToList(),
+            Countries = state.Countries?.ToList() ?? new(),
         };
 
         _entities.Clear();
         foreach (var entity in Current.Entities)
         {
             _entities[entity.Id] = entity;
+        }
+
+        if (state.Countries != null)
+        {
+            foreach (var country in state.Countries)
+            {
+                Countries.RegisterCountry(country);
+            }
         }
     }
 

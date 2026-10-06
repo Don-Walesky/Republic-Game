@@ -29,4 +29,9 @@ public sealed class WorldState
     /// Gets or sets the registered entity list.
     /// </summary>
     public List<WorldEntity> Entities { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the sovereign countries registered in the world.
+    /// </summary>
+    public List<Republic.Core.World.Models.Country> Countries { get; set; } = new();
 }

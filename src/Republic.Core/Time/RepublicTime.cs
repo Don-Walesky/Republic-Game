@@ -14,6 +14,7 @@ public readonly struct RepublicTime : IEquatable<RepublicTime>, IComparable<Repu
     /// <summary>
     /// Initializes a new instance of the <see cref="RepublicTime"/> struct.
     /// </summary>
+    [System.Text.Json.Serialization.JsonConstructor]
     public RepublicTime(DateTimeOffset watTimestamp, DateTimeOffset launchEpochWat)
     {
         WatTimestamp = watTimestamp.ToOffset(WatOffset);

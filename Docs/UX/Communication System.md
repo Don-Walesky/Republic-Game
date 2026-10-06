@@ -33,16 +33,19 @@ Because the world advances continuously on the shared **West Africa Time (WAT / 
 Republic provides clear, traceable feedback across three time horizons:
 
 ### Immediate Feedback
+
 - Executive order or project commitment confirmed in REPU.
 - Real-time notification of initial institutional reaction.
 - Status update in national telemetry.
 
 ### Medium-Term Feedback (Hours / Days in Real Simulation Time)
+
 - Sectoral responses from businesses, civil service, and public opinion.
 - Progress updates on active development projects.
 - Diplomatic cables from foreign nations responding to trade tariffs or border moves.
 
 ### Long-Term Feedback (Weeks / Months in Global Simulation Time)
+
 - Compounding shifts in National Yield and State Capacity.
 - Changes in demographic health, educational attainment, and food security.
 - Shifts in sovereign geopolitical standing and treaty alliances.
