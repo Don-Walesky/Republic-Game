@@ -33,6 +33,7 @@ public sealed class RepublicApplication
     public IWorkspaceManager WorkspaceManager { get; }
     public ITaskQueueManager TaskQueueManager { get; }
     public ITimeSystem TimeSystem { get; }
+    public IRepublicClock Clock => TimeSystem.Clock;
     public IDecisionEngine DecisionEngine { get; }
     public ICrisisTriggerEngine CrisisTriggerEngine { get; }
     public IInterPlayerWarfareService WarfareService { get; }
@@ -106,6 +107,7 @@ public sealed class RepublicApplication
         await Engine.InitializeAsync(cancellationToken).ConfigureAwait(false);
 
         Logger.LogInfo($"Simulation Epoch Date: {TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC");
+        Logger.LogInfo($"Republic Simulation Time: {TimeSystem.CurrentRepublicTime.ToDetailedString()}");
 
         WorkspaceManager.UpdateRoomState(roomName: "Executive Office", lightingMode: "Day", audioZone: "DeskAmbience");
 

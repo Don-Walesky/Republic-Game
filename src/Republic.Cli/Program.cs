@@ -111,7 +111,7 @@ public static class Program
 
     private static void RenderDashboard(RepublicApplication app)
     {
-        Console.Clear();
+        try { Console.Clear(); } catch { /* ignore in non-interactive console */ }
         var econ = app.WorldManager.Economic.GetIndicators();
         var demo = app.WorldManager.Demographics.GetDemographics();
         var tick = app.TimeSystem.CurrentTick;
@@ -122,7 +122,7 @@ public static class Program
         Console.WriteLine("==============================================================");
         Console.ResetColor();
 
-        Console.WriteLine($" Tick: {tick} | Date: {app.TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC");
+        Console.WriteLine($" Tick: {tick} | Republic Time: {app.TimeSystem.CurrentRepublicTime} ({app.TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC)");
         Console.WriteLine($" Treasury: ${econ.TreasuryBalance:N0} | GDP: ${econ.GrossDomesticProduct:N0}");
         Console.WriteLine($" Inflation: {econ.InflationRate * 100:0.0}% | Trade Balance: ${econ.TradeBalance:N0}");
         Console.WriteLine($" Demographics: Population ({demo.TotalPopulation:N0}) | Happiness ({demo.HappinessRating:0.0}%)");

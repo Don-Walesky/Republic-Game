@@ -12,17 +12,23 @@ public sealed class TimeSystem : ITimeSystem
     private readonly IEventBus _eventBus;
     private readonly ILogger _logger;
     private readonly GameCalendar _calendar;
+    private readonly IRepublicClock _clock;
     private double _accumulatedSeconds;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TimeSystem"/> class.
     /// </summary>
-    public TimeSystem(TimeSystemConfiguration configuration, IEventBus eventBus, ILogger logger)
+    public TimeSystem(
+        TimeSystemConfiguration configuration,
+        IEventBus eventBus,
+        ILogger logger,
+        IRepublicClock? clock = null)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _calendar = new GameCalendar(configuration.DaysPerMonth, configuration.MonthsPerYear);
+        _clock = clock ?? new RepublicClock(configuration.Clock);
     }
 
     /// <inheritdoc />
@@ -45,6 +51,12 @@ public sealed class TimeSystem : ITimeSystem
 
     /// <inheritdoc />
     public DateTime CurrentSimulatedDateTime => _configuration.EpochStartDate.AddSeconds(CurrentTick * DeltaTime);
+
+    /// <inheritdoc />
+    public IRepublicClock Clock => _clock;
+
+    /// <inheritdoc />
+    public RepublicTime CurrentRepublicTime => _clock.FromElapsed(ElapsedTime);
 
     /// <inheritdoc />
     public ValueTask PauseAsync(CancellationToken cancellationToken = default)
@@ -89,6 +101,11 @@ public sealed class TimeSystem : ITimeSystem
         {
             _accumulatedSeconds -= DeltaTime;
             CurrentTick++;
+            if (_clock is IControlledRepublicClock controlledClock)
+            {
+                controlledClock.SetElapsed(ElapsedTime);
+            }
+
             var now = DateTimeOffset.UtcNow;
             await _eventBus.PublishAsync(new SimulationTickEvent(CurrentTick, DeltaTime, CurrentDate, now), cancellationToken).ConfigureAwait(false);
 
@@ -134,6 +151,11 @@ public sealed class TimeSystem : ITimeSystem
         TimeScale = Math.Max(0d, state.TimeScale);
         IsPaused = state.IsPaused;
         _calendar.Restore(state.CurrentDate);
+        if (_clock is IControlledRepublicClock controlledClock)
+        {
+            controlledClock.SetElapsed(ElapsedTime);
+        }
+
         _logger.LogInfo($"Restored time system to tick {CurrentTick} ({CurrentDate.Year}/{CurrentDate.Month}/{CurrentDate.Day}).");
     }
 }

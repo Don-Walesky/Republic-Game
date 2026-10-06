@@ -41,6 +41,16 @@ public interface ITimeSystem
     DateTime CurrentSimulatedDateTime { get; }
 
     /// <summary>
+    /// Gets the authoritative global Republic simulation clock.
+    /// </summary>
+    IRepublicClock Clock { get; }
+
+    /// <summary>
+    /// Gets the current authoritative Republic simulation time in West Africa Time (WAT / UTC+1).
+    /// </summary>
+    RepublicTime CurrentRepublicTime { get; }
+
+    /// <summary>
     /// Pauses simulation advancement.
     /// </summary>
     ValueTask PauseAsync(CancellationToken cancellationToken = default);

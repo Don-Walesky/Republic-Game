@@ -48,6 +48,10 @@ public sealed class ApplicationBootstrapper
         services.AddSingleton(configuration);
         services.AddSingleton(configuration.Engine);
         services.AddSingleton(configuration.Time);
+        services.AddSingleton(configuration.Time.Clock);
+        services.AddSingleton<RepublicClock>();
+        services.AddSingleton<IRepublicClock>(sp => sp.GetRequiredService<RepublicClock>());
+        services.AddSingleton<IControlledRepublicClock>(sp => sp.GetRequiredService<RepublicClock>());
         services.AddSingleton(configuration.Persistence);
         services.AddSingleton(configuration.Logging);
         services.AddSingleton<ILogger>(serviceProvider =>

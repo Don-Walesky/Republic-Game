@@ -5,6 +5,13 @@ namespace Republic.Core.Time;
 /// </summary>
 public sealed class TimeSystemConfiguration
 {
+    private DateTime _epochStartDate = new DateTime(2027, 2, 10, 0, 0, 0, DateTimeKind.Utc);
+
+    /// <summary>
+    /// Gets or sets the configuration for the authoritative global Republic simulation clock.
+    /// </summary>
+    public RepublicClockConfiguration Clock { get; set; } = new();
+
     /// <summary>
     /// Gets or sets the simulation tick rate.
     /// </summary>
@@ -27,6 +34,15 @@ public sealed class TimeSystemConfiguration
 
     /// <summary>
     /// Gets or sets the real-world epoch start date for the simulation.
+    /// Preserved for backward compatibility with tick-based legacy engine systems.
     /// </summary>
-    public DateTime EpochStartDate { get; set; } = new DateTime(2027, 2, 10, 0, 0, 0, DateTimeKind.Utc);
+    public DateTime EpochStartDate
+    {
+        get => _epochStartDate;
+        set
+        {
+            _epochStartDate = value;
+            Clock.LaunchDate = DateOnly.FromDateTime(value);
+        }
+    }
 }
