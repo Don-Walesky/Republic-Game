@@ -1,146 +1,60 @@
 # Scene Navigation
 
-How scenes and views connect in the Republic UI.
-
-## Scene Hierarchy
-
-```
-Root
-├── Main Menu
-│   ├── New Game Dialog
-│   ├── Continue Game
-│   ├── Load Game Dialog
-│   ├── Settings Dialog
-│   └── Credits
-│
-├── Campaign
-│   ├── Executive Workspace (main scene)
-│   ├── Map View
-│   ├── Economy System
-│   ├── Government System
-│   ├── Military System
-│   ├── Diplomacy System
-│   ├── Population System
-│   ├── Reports System
-│   └── Pause Menu
-│
-└── Settings (global)
-    ├── Graphics
-    ├── Audio
-    ├── Gameplay
-    ├── Accessibility
-    └── Controls
-```
-
-## Navigation Patterns
-
-### Primary Navigation (Main Campaign)
-- **Executive Workspace**: Always accessible via Home button
-- **System Windows**: Open as dialogs/panels
-- **Map View**: Toggle from Executive Workspace
-- **Pause Menu**: Press ESC anytime
-
-### Secondary Navigation (Within Systems)
-- **Breadcrumb Trail**: Show path through menus
-- **Back Button**: Return to previous view
-- **Home Button**: Jump to Executive Workspace
-- **Tab Navigation**: Switch between related views
-
-## Transitions
-
-### Scene Changes
-- Fade to black
-- Duration: 0.3-0.5 seconds
-- Load new scene
-- Fade in
-
-### Panel/Window Transitions
-- Slide in from edge or center
-- Duration: 0.2-0.3 seconds
-- No scene reload
-- Smooth animation
-
-### Notification Animations
-- Pop-in with scale
-- Slide from edge
-- Duration: 0.1-0.2 seconds
-
-## Responsive Design
-
-### Desktop (1920x1080+)
-- Full sidebar
-- Detailed information
-- Multiple panels visible
-- Hover tooltips
-
-### Tablet (1280x720)
-- Collapsible sidebar
-- Optimized layouts
-- Touch-friendly buttons
-- Swipe navigation
-
-### Mobile (if supported)
-- Full-screen dialogs
-- Hamburger menu
-- Simplified displays
-- Touch-optimized
-
-## Keyboard Navigation
-
-### Main Controls
-- `H` - Home (Executive Workspace)
-- `ESC` - Pause menu
-- `Tab` - Next panel/system
-- `Shift+Tab` - Previous panel/system
-- `Enter` - Confirm selection
-- `Space` - Play/Pause
-- `1-9` - Quick access to systems
-
-### System-Specific
-- `E` - Economy system
-- `G` - Government system
-- `M` - Military system
-- `D` - Diplomacy system
-- `P` - Population system
-- `R` - Reports
-- `S` - Settings
-
-## Controller Support
-
-### Navigation
-- D-Pad/Analog Stick - Menu navigation
-- A/Cross - Confirm
-- B/Circle - Back
-- X/Square - Alternate action
-- Y/Triangle - Info/Details
-
-### Game Controls
-- LT/L2 - Play/Pause
-- RT/R2 - Increase time speed
-- LB/L1 - Decrease time speed
-- RB/R1 - Next system
-- Menu Button - Pause
-
-## Accessibility
-
-### Visual Accessibility
-- High contrast mode
-- Colorblind-friendly palettes
-- Large text option
-- Custom font sizes
-
-### Motor Accessibility
-- Customizable controls
-- Hold-to-activate options
-- Voice control support
-- Switch access support
-
-### Cognitive Accessibility
-- Simplified UI mode
-- Tooltips and help
-- Tutorial system
-- Customizable complexity
+Interface transitions and scene hierarchy for **Republic**.
 
 ---
 
-*Navigation should feel intuitive and responsive.*
+## 1. Scene & Interface Hierarchy
+
+```
+Root
+├── Authentication & World Connection
+│   ├── Sign In / Connect to Persistent World
+│   ├── Country Founding Dialog (if first-time player)
+│   │   ├── Name, Flag, and Starting Geography
+│   │   └── Independence Day Timestamp Confirmation
+│   └── National Briefing Modal (if returning player)
+│
+├── Executive Workspace (Main Game Scene)
+│   ├── Presidential Desk View (Phone, Terminal, Dossiers, Calendar)
+│   ├── National Telemetry & Yield HUD
+│   ├── National Map & Provincial View
+│   │
+│   ├── Decision Spaces (Overlays / Dedicated Rooms)
+│   │   ├── Cabinet Chamber
+│   │   ├── Economic Briefing Hall
+│   │   ├── Situation Room
+│   │   ├── Diplomatic Reception Hall
+│   │   ├── Intelligence Office
+│   │   └── Press Briefing Room
+│   │
+│   └── System Options (Audio, Display, Accessibility)
+```
+
+---
+
+## 2. Navigation Patterns
+
+### Primary Navigation (Executive Command Hub)
+- **Executive Workspace**: Always accessible as the home command centre.
+- **Decision Spaces**: Open as focused executive rooms or detailed full-screen consoles.
+- **National Map**: Toggled seamlessly from the desk view to examine geography, infrastructure, and borders.
+- **National Briefing**: Dismissible upon review, accessible at any time from the executive terminal.
+
+### Persistent Simulation Notice
+The simulation operates on a continuous global clock in **West Africa Time (WAT / UTC+1)**. There are no pause or speed modifier hotkeys. Exiting the client disconnects the session while the nation continues its persistent simulation in the background.
+
+---
+
+## 3. Keyboard & Shortcut Navigation
+
+- `H` — Return to Executive Desk (Home)
+- `C` — Cabinet Chamber
+- `E` — Economic Briefing Hall & Projects
+- `M` — Military & Situation Room
+- `D` — Diplomatic Reception Hall
+- `I` — Intelligence Office
+- `P` — Press & Public Sentiment
+- `Tab` / `Shift+Tab` — Cycle through active desk notifications
+- `Enter` — Confirm executive action
+- `ESC` — System / Settings menu

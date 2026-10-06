@@ -1,319 +1,387 @@
 # Republic Design Principles
 
-Version 1.0
-
-## Core Design Philosophy
-
-### What Republic Is NOT
-
-Republic is **not** about controlling citizens.
-
-Republic is **not** about controlling armies.
-
-Republic is **not** about building cities.
-
-### What Republic IS
-
-Republic is about controlling the **Office of the President**.
-
-The player experiences leadership the same way real executive leaders do:
-- Receiving intelligence
-- Meeting advisors
-- Negotiating with stakeholders
-- Responding to crises
-- Approving policies
-- Communicating with the nation
-- Balancing competing interests
-
-**The player governs through information, relationships, and decisions.**
+Version 2.0 — Canonical Design Specification
 
 ---
 
-## The Executive Perspective
+## 1. Game Identity
 
-Everything in Republic must answer one question:
+Republic is a **persistent multiplayer political and nation-building simulation**.
 
-**"Would a head of government realistically experience this in this way?"**
+Every player governs their own procedurally generated country in a shared, living geopolitical world.
 
-If the answer is "no," we redesign it.
+### The Player's Primary Objective
+> **BUILD, STRENGTHEN, PROTECT AND SUSTAIN THEIR COUNTRY.**
 
-### Examples
+### The Country as the Central Simulation Object
+The **country itself** is the central object of the simulation. Its territory, population, economy, institutions, infrastructure, state capacity, and survival form the bedrock of all gameplay.
 
-| Instead of | Republic becomes |
-|-----------|------------------|
-| "Build Road" | Minister of Infrastructure submits a proposal for a National Highway Expansion Program |
-| "Raise Taxes" | Minister of Finance recommends a fiscal adjustment package |
-| "Declare War" | National Security Council presents military response options |
+The **Presidential Office** is the player's command interface and command centre. Players experience executive leadership as heads of government, steering the nation from the executive desk, but the entire country is what lives, evolves, produces, and endures.
 
-The player **approves**.
+### Foundational Multiplayer Interaction
+Multiplayer is a foundational property of Republic from day one. Players exist within the same persistent world and interact with other player-governed countries through:
+- **Diplomacy** (embassies, summits, bilateral negotiations)
+- **Bilateral Trade** (import/export contracts, resource exchanges, market access)
+- **Treaties and Agreements** (non-aggression pacts, mutual defense, trade corridors)
+- **Foreign Investment** (cross-border capital, infrastructure development)
+- **Alliances** (geopolitical blocs, security pacts, coalitions)
+- **Intelligence** (espionage, counter-intelligence, covert operations, reconnaissance)
+- **Economic Competition** (trade rivalries, currency influence, market dominance)
+- **Military Pressure** (force deployments, border posture, deterrence, blockades)
+- **War and Conflict** (strategic campaigns, territorial defense, crisis resolution)
+- **International Negotiations** (multilateral accords, sanctions, global institutions)
 
-The government **executes**.
-
----
-
-## Office-First Gameplay
-
-Republic is an **office-centric simulation**.
-
-### What the Player Does NOT Do
-- Explore cities
-- Drive vehicles
-- Walk across government buildings
-- Directly command individual soldiers
-- Negotiate every business contract
-
-### What Comes to the Player
-
-Government comes to the player:
-- Advisors knock on the office door
-- Secure phone calls arrive
-- Cabinet meetings are scheduled
-- Intelligence briefings begin
-- Lobbyists request appointments
-- Governors submit reports
-- Foreign ambassadors seek meetings
-
-**The office is the center of the Republic experience.**
+The world continues to exist, evolve, and change even when an individual player is offline.
 
 ---
 
-## Decision Spaces
+## 2. Core Game Loop
 
-Gameplay takes place inside specialized environments called **Decision Spaces**.
+The fundamental gameplay cycle of Republic is:
 
-Each Decision Space exists for one purpose.
+```
+Govern country
+   ↓
+Develop country
+   ↓
+Make political / economic / security decisions
+   ↓
+Citizens, businesses, and institutions respond
+   ↓
+National capacity changes
+   ↓
+Interact with other countries
+   ↓
+Trade / negotiate / invest / ally / compete / conflict
+   ↓
+World produces consequences
+   ↓
+Country changes
+   ↓
+Respond and adapt
+   ↓
+Continue building the country
+```
 
-### Campaign Decision Spaces
-- Campaign Headquarters
-- Debate Stage
-- Press Room
-- Donor Meeting Room
-- Television Studio
-- Election Night Headquarters
-
-### Government Decision Spaces
-- Presidential Office
-- Cabinet Chamber
-- Situation Room
-- Military Command Center
-- Economic Briefing Room
-- Press Briefing Hall
-- Diplomatic Reception Room
-- Intelligence Center
-
-Players transition directly between these spaces when required.
-
-**Travel is implied rather than simulated.**
-
----
-
-## Communication Drives Gameplay
-
-Republic is fundamentally a **communication-driven game**.
-
-Every major event reaches the player through one of five channels:
-
-1. **Visitors** - In-person meetings
-2. **Phone calls** - Urgent matters
-3. **Email and official memoranda** - Administrative updates
-4. **Media broadcasts** - Public events
-5. **Classified intelligence briefings** - Sensitive intelligence
-
-The player **rarely searches for gameplay**.
-
-**Gameplay comes to the player.**
+### Foundational Principle:
+> **Every important action should ultimately affect the strength, stability, prosperity, security or political survival of the country.**
 
 ---
 
-## The Living Office Principle
+## 3. Official Currency — REPU
 
-The Executive Workspace must always feel **alive**.
+The official currency of Republic is **REPU**.
 
-### Signs of Life
-- Secretaries moving through the office
-- Ministers waiting outside
-- Phones ringing
-- Television displaying breaking news
-- Visitors arriving
-- Staff discussing current events
-- Security personnel escorting guests
-- Advisors preparing reports
+- **Currency Symbol**: `R`
+- **Formatting Examples**:
+  - `R45M` = 45,000,000 REPU
+  - `R450M` = 450,000,000 REPU
+  - `R1.2B` = 1,200,000,000 REPU
 
-Even during quiet political periods, the office should communicate that **the government is functioning**.
-
----
-
-## Every Decision Creates Winners and Losers
-
-Republic does **not** reward universally good decisions.
-
-**Every decision should benefit one group while disadvantaging another.**
-
-### Examples
-
-#### Higher Taxes
-- ✅ Better public services
-- ❌ Lower business confidence
-
-#### Military Spending
-- ✅ Better security
-- ❌ Reduced education funding
-
-#### Free University Tuition
-- ✅ Higher education access
-- ❌ Increased fiscal pressure
-
-**No decision should improve every national indicator simultaneously.**
+> [!IMPORTANT]
+> **REPU IS THE MONEY OF THE GAME.**  
+> It is not a secondary resource that converts from another fiat currency.  
+> Do not use the `₱` symbol or foreign currency stand-ins.  
+> All design, interface, and technical specifications must consistently designate monetary values in REPU (`R`).
 
 ---
 
-## Interconnected Systems
+## 4. National Yield
 
-**No system exists in isolation.**
+> [!NOTE]
+> **"National Yield is not free stuff given to the player. It is the measurable output and accumulating capacity of a functioning state."**
 
-**Every mechanic must influence multiple others.**
+National Yield is **not** free money or arbitrary resources magically deposited into player coffers. It represents the measurable productive, institutional, and strategic capacity generated by a functioning country.
 
-### Example: Education
-Education affects:
-- Employment
-- Innovation
-- GDP
-- Crime
-- Immigration
-- Foreign investment
+National Yield is calculated from the **actual condition of the country**—its population, economy, infrastructure, natural endowments, and State Capacity.
 
-### Example: Military
-Military affects:
-- Diplomacy
-- Budget
-- Public approval
-- International influence
-- Investor confidence
+### National Yield Categories
+1. **REPU Treasury Revenue** (tax collections, state enterprise returns, sovereign wealth flows)
+2. **Science / Research Capacity** (academic institutions, labs, patent generation)
+3. **Industrial Capacity** (manufacturing base, heavy industry, construction throughput)
+4. **Energy Capacity** (grid output, fuel generation, power stability)
+5. **Infrastructure Capacity** (transport networks, logistics throughput, ports, rail)
+6. **Human Capital** (workforce skill, educational attainment, public health)
+7. **Administrative Capacity** (civil service bandwidth, regulatory execution)
+8. **Military Readiness** (force training, equipment maintenance, mobilization speed)
+9. **Intelligence Capacity** (surveillance networks, analysis bandwidth, counter-intel)
+10. **Diplomatic Capacity** (diplomatic corps bandwidth, international leverage, soft power)
+11. **Innovation Capacity** (commercial tech adoption, efficiency gains, entrepreneurship)
+12. **Financial Capacity** (banking depth, sovereign credit rating, capital liquidity)
+13. **Security Capacity** (internal policing, border security, rule of law enforcement)
+14. **Natural Resource Output** (oil, gas, minerals, timber, where geographically applicable)
 
-**The simulation should reward long-term strategy over short-term optimization.**
-
----
-
-## Leadership, Not Micromanagement
-
-The player makes **strategic decisions**.
-
-Government institutions **implement** them.
-
-### The Player Should NOT
-- Individually build every road
-- Manually hire every civil servant
-- Directly command every soldier
-- Negotiate every business contract
-
-### The Player SHOULD
-- Set direction
-- Approve initiatives
-- Allocate resources
-- Make strategic choices
-
-While **ministers, agencies, and institutions carry out execution**.
+### Capacity Accumulation vs. Periodic Resource Deposits
+Not every National Yield category is deposited as a simple numeric spending pool each cycle. Many categories represent **accumulated institutional and structural capacity** that directly influences other systems (e.g., higher Administrative Capacity accelerates project implementation; higher Human Capital amplifies Innovation and industrial productivity).
 
 ---
 
-## Persistent Consequences
+## 5. The Food Economy — Enabling Environment vs. Direct Deposits
 
-**Nothing disappears.**
+Food must **NOT** be a direct National Yield deposit.
 
-- Campaign promises return
-- Secret deals resurface
-- Political rivals remember
-- Foreign governments remember
-- Media remembers
-- Citizens remember
+A functioning country does not receive bushels of food magically deposited into the presidential palace every cycle. Citizens work the land, and private or cooperative businesses produce food.
 
-Republic should feel like a **continuous political story** rather than isolated turns.
+### The Role of Government
+The state's role is to create the **enabling environment** for agricultural productivity. Government investment improves:
+- Irrigation networks and water rights
+- Rural road and transport networks
+- Agricultural research institutes and seed technology
+- Rural electrification and cold storage facilities
+- Agricultural credit lines and farm loan guarantees
+- Land tenure security and land development
+- Fertilizer production, subsidies, and distribution
+- Mechanization and farming technology adoption
+- Port, rail, and market logistics infrastructure
 
----
-
-## Democratic Legitimacy
-
-**Power must always require legitimacy.**
-
-Presidents derive authority through:
-- Elections
-- Legislative support
-- Judicial compliance
-- Cabinet confidence
-- Public approval
-- Party unity
-
-Losing legitimacy **gradually reduces governing capacity** before it results in losing office.
+### Emergent Food Economy
+Citizens, farming cooperatives, and agribusinesses respond to these structural conditions by cultivating, harvesting, processing, and trading food. Food security, food prices, and agricultural surpluses or deficits emerge naturally from the country's productive economic system.
 
 ---
 
-## The World Exists Without the Player
+## 6. Science as an Upstream National Capability
 
-Republic is a **living simulation**.
+Science and Research Capacity is a vital pillar of National Yield and national development.
 
-- Other nations continue developing
-- Economies evolve
-- Markets fluctuate
-- Political alliances shift
-- International crises emerge
-
-**The player influences the world but does not pause it.**
-
----
-
-## Accessibility Through Depth
-
-Republic should be **deep without becoming opaque**.
-
-Complex systems should be presented through:
-- Advisor recommendations
-- Visual dashboards
-- Briefings
-- Reports
-- News broadcasts
-
-The player should **understand why something happened**, even if the simulation beneath it is sophisticated.
+Science functions as an **upstream national capability** rather than merely an arbitrary consumable resource. Accumulated scientific capacity systematically upgrades national performance across multiple domains:
+- **Innovation & Commercial Technology** (higher productivity, higher-value exports)
+- **Agricultural Productivity** (crop yields, drought resilience, pest management)
+- **Medical & Public Health Capability** (disease eradication, lifespan, workforce stamina)
+- **Energy Efficiency** (reduced grid loss, clean energy transitions, industrial efficiency)
+- **Industrial Productivity** (automation, advanced metallurgy, manufacturing margins)
+- **Military Technology & Defense** (sensors, weapon systems, cyber defense)
+- **Long-term Economic Growth** (structural expansion of national GDP)
 
 ---
 
-## Evolution Over Time
+## 7. State Capacity
 
-Republic is designed to **evolve**.
+> [!IMPORTANT]
+> **State Capacity is the state's ability to convert resources, institutions, and executive decisions into productive real-world outcomes.**
 
-### Version 1.0 Focuses On
-- 2D presentation
-- Executive Workspace
-- Decision Spaces
-- Deep simulation
+National Yield does not depend solely on natural resources or raw population size; it depends decisively on **State Capacity**.
 
-### Future Versions May Include
-- Fully explorable 3D offices
-- Expanded diplomatic environments
-- Richer character interactions
-- Enhanced visual presentation
+### Factors Determining State Capacity:
+- **Government Effectiveness**: Speed and competence with which policies are executed
+- **Cabinet Competence**: Technical and strategic caliber of appointed ministers
+- **Civil Service Effectiveness**: Professionalism and meritocracy of the permanent bureaucracy
+- **Corruption & Rent-Seeking**: Leakage of public funds and regulatory distortion
+- **Institutional Strength**: Rule of law, judicial independence, property rights enforcement
+- **Political Stability**: Continuity of policy and absence of constitutional breakdown
+- **Physical & Digital Infrastructure**: Physical transport and digital communications efficiency
+- **Education & Human Capital**: Administrative and technical literacy of the workforce
+- **Administrative Efficiency**: Bureaucratic red tape vs. streamlined governance
+- **Government Legitimacy**: Citizen trust in the state's moral and constitutional right to rule
 
-**However, the core gameplay loop remains unchanged.**
-
----
-
-## The Republic Test
-
-Every proposed feature should answer these questions before implementation:
-
-1. Does it strengthen the executive leadership experience?
-2. Does it create meaningful strategic choices?
-3. Does it affect multiple systems?
-4. Does it fit within the office-centric design philosophy?
-5. Does it increase replayability?
-6. Does it create opportunities for emergent storytelling?
-7. Does it reinforce the player's role as Head of Government rather than a direct controller of society?
-
-**If a feature fails most of these questions, it should be redesigned or omitted.**
+### Governance Differentiator
+Two countries with identical geography and natural resources will produce dramatically divergent outcomes based on their State Capacity. A high-capacity state extracts high yield from modest endowments; a low-capacity state squanders immense wealth through corruption, institutional friction, and bureaucratic paralysis.
 
 ---
 
-## Vision Statement
+## 8. Government and Political Appointments
 
-Republic is a **persistent political leadership simulation** that places the player in the role of a democratic head of government, where governance is experienced through **executive decision-making** rather than direct control of the nation.
+Political appointments must have **meaningful gameplay consequences**.
 
-**Every decision carries interconnected political, economic, diplomatic, military, and social consequences** that shape both the current administration and the country's long-term future.
+Players must make deliberate, high-stakes decisions when selecting cabinet ministers, department heads, agency directors, and military commanders.
+
+### Candidate Characteristics:
+- **Technical Competence** (domain mastery in finance, diplomacy, defense, etc.)
+- **Political Loyalty** (fealty to the president, resilience against factional revolt)
+- **Integrity** (resistance to corruption, adherence to ethical standards)
+- **Administrative Ability** (organizational leadership, bureaucratic management)
+- **Public Popularity** (citizen approval, charisma, electoral asset)
+- **Ideological Alignment** (commitment to specific economic or social philosophies)
+- **Institutional Experience** (seniority within the civil service or armed forces)
+- **Political Connections** (ties to legislative factions, oligarchs, or regional blocs)
+
+### Inherent Trade-Offs:
+Every appointment creates trade-offs:
+- *The Technocrat Dilemma*: A world-class economist may possess extraordinary economic competence but zero political loyalty, ready to resign or criticize the administration during a crisis.
+- *The Loyalist Dilemma*: A fiercely loyal partisan may guarantee legislative votes and prevent coups, but run the finance ministry into catastrophic inflation through incompetence.
+
+### Systemic Consequences:
+- **Vacant or poorly staffed positions** severely impair the effectiveness and yield of corresponding government functions.
+- **Competent appointments** directly amplify National Yield and bolster State Capacity.
+- Appointments must **never** be simplistic permanent `+5%` or `+10%` flat stat modifiers. They actively interact with the broader simulation—triggering institutional reactions, factional realignment, cabinet crises, and legislative resistance.
+
+---
+
+## 9. Every Important Decision Has Pros and Cons
+
+This is a **fundamental Republic design principle**.
+
+Republic does not reward "silver bullet" choices or simplistic "always pick the highest stat" optimization. Major executive decisions always involve genuine trade-offs:
+
+| Strategic Tension | Advantage / Gain | Cost / Risk |
+|---|---|---|
+| **Competence vs. Loyalty** | Optimal policy execution | Risk of political betrayal or cabinet rebellion |
+| **Economic Growth vs. Stability** | Rapid GDP and commercial expansion | Social dislocation, inequality, inflation risks |
+| **Military Spending vs. Civilian Investment** | Strong deterrence and global defense leverage | Diverted funds from schools, roads, healthcare |
+| **Short-term Popularity vs. Long-term Productivity** | Immediate electoral boost and public favor | Deferred maintenance, fiscal deficits, structural decay |
+| **Investment vs. Immediate Consumption** | Compounding future national capacity | Constrained present-day living standards or subsidies |
+| **Diplomatic Cooperation vs. Sovereignty** | Collective security, foreign trade access | Regulatory concessions, treaty obligations |
+| **Scientific Freedom vs. State Control** | High innovation, talent retention | Unregulated research, unpredictable societal shifts |
+| **Taxation vs. Private Investment** | Robust public revenue for state projects | Lower business capital formation, capital flight |
+| **Security vs. Civil Liberties** | Effective counter-insurgency and public order | Public resentment, erosion of democratic legitimacy |
+
+---
+
+## 10. National Development Projects
+
+Government spending creates, modernizes, and sustains physical, social, and institutional capacity.
+
+### Core Development Categories:
+- Transportation: Highways, rural roads, national railways, deepwater ports, international airports
+- Human Capital & Health: Universities, technical institutes, regional hospitals, public clinics
+- Energy & Utilities: Hydroelectric dams, nuclear plants, solar farms, electrical transmission grids
+- Industry & Commerce: Special economic zones, industrial parks, manufacturing clusters, digital telecoms
+- Agriculture: Irrigation networks, grain silos, fertilizer complexes, agricultural research stations
+- Security & Sovereign Defense: Military command bases, naval shipyards, airbases, intelligence facilities
+
+### Project Attributes:
+- **Cost in REPU** (`R`)
+- **Construction Duration** (in real simulation time)
+- **Direct & Indirect Capacity Effects** (upgrades to National Yield and State Capacity)
+- **Secondary Consequences** (environmental impact, regional migration, land disputes)
+- **Ongoing Maintenance Costs in REPU** (infrastructure decays if neglected)
+
+### Independence from Yield Cycles:
+Project construction progresses continuously and is **independent from National Yield cycles**. A nation can commit `R180M` to a high-speed rail corridor; that project continues its physical construction timeline continuously while multiple daily National Yield cycles occur around it.
+
+---
+
+## 11. Simulation Time & Real-World Date Alignment
+
+Republic uses **REAL-WORLD DATE ALIGNMENT**.
+
+The in-game calendar date follows the **real-world calendar**.
+- **Game Clock**: **West Africa Time (WAT / UTC+1)**.
+- **Launch Moment**: **Republic Day 0, 00:00 WAT**.
+
+From that launch moment, the global simulation clock advances continuously in real time.
+
+> [!IMPORTANT]
+> **Do not create a separate fictional calendar disconnected from the real-world date.**  
+> The simulation timeline is unified, persistent, and grounded in real-world date progression.
+
+---
+
+## 12. Global Simulation Clock
+
+Republic operates on a single, authoritative, **shared global simulation clock**.
+
+- All countries—player-governed and AI-governed—exist within the exact same world timeline.
+- **National Yield cycles** are synchronized to the global simulation clock, ensuring fair economic synchronization across all nations rather than fragmented cycles tied to individual player login timestamps.
+
+---
+
+## 13. Country Founding / Independence Day
+
+When a player first joins Republic and creates their country, that specific timestamp becomes the nation's permanent **Independence Day**.
+
+### Recorded Founding Metadata:
+- **Independence Date** (e.g., `6 October 2026`)
+- **Independence Time** (e.g., `14:37 WAT`)
+- **Country Age** (tracked continuously from founding)
+- **Founding State & Baseline Parameters** (starting constitution, geography, institutions)
+- **Founding Conditions** (global economic and diplomatic climate at birth)
+
+Different players found their countries on different dates and times, yet all participate concurrently in the shared global Republic timeline.
+
+---
+
+## 14. Independence Day / Founding Period
+
+A newly founded country receives a temporary **Founding Period** representing the extraordinary initial momentum of nation-building.
+
+### Founding Period Mechanics:
+- **National Yield Multiplier**: National Yield is multiplied by **10** during the Founding Period to establish baseline national institutions and initial infrastructure.
+- **Temporary Founding Buffs**:
+  - *Administrative Momentum* (accelerated initial bureaucratic setup)
+  - *National Innovation Drive* (surge in initial research and technology adoption)
+  - *Founding Development Initiative* (reduced initial construction overhead)
+  - *Investor Confidence* (inflow of early sovereign and commercial capital)
+  - *Diplomatic Recognition Momentum* (speedy establishment of bilateral relations)
+  - *Constitutional Institution-Building Momentum* (rapid legislative and judicial standup)
+  - *Temporary National Unity* (heightened social cohesion and civic optimism)
+
+> [!NOTE]
+> These buffs are **strictly temporary modifiers**. They taper off as the country matures.  
+> The Founding Period must **never** confer permanent unfair advantages over older nations.
+
+---
+
+## 15. Offline Persistence
+
+Republic is a living, continuous simulation. The world does not pause when a player logs off.
+
+> [!NOTE]
+> **"Revenue is continuous. Development is continuous. Politics is continuous. The player is not."**
+
+### Continuous Offline Operations:
+When a player is offline, their country continues to:
+- Generate National Yield
+- Collect REPU treasury revenue
+- Progress construction of development projects
+- Run state institutions and civil service functions
+- Maintain diplomatic relations and honor treaty commitments
+- Experience internal political developments and factional shifts
+- Experience domestic and global market fluctuations
+- Respond to world events, crises, and international shifts
+- Update military readiness, deterrence, and defense postures
+- Collect intelligence and conduct surveillance
+- Interact with other player-governed and AI-governed countries in the persistent world
+
+### The National Briefing
+When the player logs back in, the Presidential Office delivers a concise, actionable **National Briefing** summarizing major events, revenues collected, projects finished, diplomatic communications, and urgent matters that occurred during their absence.
+
+---
+
+## 16. National Age
+
+Countries accumulate **National Age** measured continuously from their Independence Day.
+
+### Potential Influences of National Age:
+- **Institutional Maturity** (entrenched bureaucracy, institutional memory)
+- **Diplomatic Reputation** (historic reliability, standing in global treaties)
+- **Historical Legitimacy** (constitutional resilience against populist shocks)
+- **Accumulated Infrastructure** (depth of historical capital stock)
+- **Constitutional Traditions & National Identity** (civic identity depth)
+
+### Critical Principle:
+> **AGE MUST NOT AUTOMATICALLY EQUAL STRENGTH.**  
+> An older nation can decay into stagnation, debt, and corruption through poor leadership.  
+> A younger, well-governed nation can rapidly outpace older rivals through high State Capacity, strategic development, and sound economic stewardship.
+
+---
+
+## 17. The Executive Perspective & Command Centre
+
+### The Presidential Office as Command Centre
+The player exercises authority from the Presidential Office. Government comes to the executive through:
+- Direct visits from cabinet ministers, governors, and foreign ambassadors
+- Secure phone calls and hotlines for emerging crises
+- Official memoranda, cabinet proposals, and intelligence dossiers
+- Breaking news broadcasts and media tracking
+- High-level decision spaces (Cabinet Room, Situation Room, Economic Council)
+
+### Leadership, Not Micromanagement
+The player acts as Head of Government:
+- The player sets direction, approves initiatives, allocates REPU capital, and accepts strategic risks.
+- The civil service, ministers, regional administrators, and economic markets carry out execution.
+
+---
+
+## 18. The Republic Test
+
+Every feature, mechanic, and system in Republic must pass **The Republic Test** before design approval:
+
+1. **Does it reinforce the country as the central object of simulation and the office as its executive command interface?**
+2. **Does it respect the persistent, shared multiplayer reality of the world?**
+3. **Does it embody meaningful trade-offs with both clear pros and cons?**
+4. **Does it treat National Yield as accumulated state output rather than free handouts?**
+5. **Does it respect the continuous real-world timeline (WAT / UTC+1) and offline persistence?**
+6. **Does it preserve the player's role as strategic leader rather than micromanaging bureaucrat?**
+7. **Does it create emergent political, economic, or diplomatic storytelling?**
+
+If a feature fails these criteria, it must be redesigned or omitted.

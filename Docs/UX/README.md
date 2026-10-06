@@ -1,90 +1,61 @@
 # User Experience (UX)
 
-Interface design, workflows, and player interaction patterns for Republic.
-
-## UX Philosophy
-
-The interface should:
-- **Reveal System Depth**: Show powerful systems without overwhelming
-- **Facilitate Decision-Making**: Present options clearly with consequences
-- **Enable Strategy**: Provide information for long-term planning
-- **Maintain Immersion**: Keep players focused on their nation
-- **Support Emergence**: Display complex interactions visually
-
-## Core UX Documents
-
-### [Executive Workspace](./Executive%20Workspace.md)
-The main player interface where decisions happen.
-- National overview
-- Quick access to systems
-- Decision spaces
-- Information hierarchy
-
-### [Decision Spaces](./Decision%20Spaces.md)
-Each system where players make meaningful choices:
-- Economic decisions
-- Political decisions
-- Military decisions
-- Diplomatic decisions
-- Legislative decisions
-
-### [Communication System](./Communication%20System.md)
-How the game communicates with players:
-- Notifications and alerts
-- Reports and analytics
-- Event feedback
-- Tutorial and guidance
-
-### [Player Flow](./Player%20Flow.md)
-How players move through the interface:
-- Main menu flow
-- Campaign flow
-- Decision loop
-- Pause/save flow
-
-### [Scene Navigation](./Scene%20Navigation.md)
-How scenes and views connect:
-- Scene hierarchy
-- Navigation patterns
-- Transitions
-- Responsive design
-
-## Design Principles
-
-1. **Information Priority**: Most important information prominent
-2. **Progressive Disclosure**: Advanced options accessible but not overwhelming
-3. **Consistent Patterns**: Similar actions use similar UI patterns
-4. **Context Awareness**: UI adapts to current game state
-5. **Accessibility**: Keyboard, mouse, and controller support
-
-## Visual Language
-
-- **Color**: System-coded (economy=green, military=red, etc)
-- **Typography**: Clear hierarchy (title, section, body)
-- **Icons**: Instantly recognizable system symbols
-- **Layout**: Logical grouping of related information
-- **Animation**: Purposeful, not decorative
-
-## Interaction Patterns
-
-### Decision Making
-- Option clearly presented
-- Consequences visible
-- Confirmation required for major decisions
-- Ability to preview outcome
-
-### Information Discovery
-- Search functionality
-- Filtering and sorting
-- Drill-down navigation
-- Quick facts/tooltips
-
-### System Interaction
-- Drag and drop for allocation
-- Sliders for continuous values
-- Buttons for discrete choices
-- Lists for browsing options
+Interface architecture, executive workflows, and interaction patterns for **Republic**.
 
 ---
 
-*All UI should serve the gameplay and reinforce the player's agency.*
+## 1. UX Philosophy & Core Concept
+
+In Republic, the **country itself** is the central object of the simulation, while the **Presidential Office** serves as the player's executive command interface and command centre.
+
+The user experience is designed around the reality of executive governance in a **persistent multiplayer world**:
+- **Executive Command Vantage Point**: The player governs as head of government from the executive suite, receiving intelligence, consulting ministers, and issuing decrees.
+- **Continuous Living World**: Operating on a shared global simulation clock in **West Africa Time (WAT / UTC+1)**, the interface avoids artificial pause or rewind buttons in favor of continuous real-time telemetry.
+- **Explicit Pros & Cons**: Every decision space presents transparent trade-offs (e.g., economic growth vs. stability; competence vs. loyalty).
+- **The National Briefing**: Upon returning from offline periods, the interface recaps offline yields, project completions, and diplomatic shifts in a concise briefing.
+- **Monetary Cohesion**: All budgets, project costs, and trade figures are denominated in **REPU** (`R`).
+
+---
+
+## 2. Core UX Documents
+
+### 🏛️ [Executive Workspace](./Executive%20Workspace.md)
+The presidential command centre:
+- Sovereign emblem, DEFCON status, and global WAT clock
+- Interactive executive desk (red telephone, computer terminal, dossiers, calendar ledger, broadcast TV)
+- National telemetry panel (REPU treasury balance, National Yield across 14 capacities, State Capacity index, active development projects)
+- The actionable National Briefing presented upon session login
+
+### ⚖️ [Decision Spaces](./Decision%20Spaces.md)
+Dedicated executive venues for high-impact governance:
+- **Cabinet Chamber**: Deliberate appointments of portfolio ministers balancing competence, loyalty, and integrity
+- **Economic Briefing Hall**: REPU national budget, taxation, enabling environment investments, and development projects
+- **Situation Room**: Defense readiness, armed branches, and border deterrence
+- **Diplomatic Reception Hall**: Bilateral trade agreements, treaties, alliances, and summits
+- **Intelligence Office**: Classified dossiers, covert operations, and surveillance
+- **Press Briefing Room**: Press conferences and media sentiment tracking
+
+### 📡 [Communication System](./Communication%20System.md)
+How statecraft intelligence reaches the president:
+- Secure telephone calls for breaking geopolitical crises
+- Official memoranda and cabinet recommendations
+- Intelligence dossiers filtered by national intelligence capacity
+- Breaking news broadcasts reflecting world consequences
+
+### 🔄 [Player Flow](./Player%20Flow.md)
+The persistent player progression:
+- Authentication & procedural country founding (Independence Day timestamping in WAT)
+- Temporary Founding Period (10x National Yield and momentum buffs)
+- Continuous governance loop on the shared global clock
+- Offline persistence and National Briefing reconnection flow
+
+### 🗺️ [Scene Navigation](./Scene%20Navigation.md)
+Architectural transitions between the Executive Workspace, decision spaces, and national maps.
+
+---
+
+## 3. Guiding Interaction Principles
+
+1. **Information Priority**: Present vital national indicators, State Capacity, and urgent security threats prominently.
+2. **Trade-Off Transparency**: Ensure the costs, risks, and benefits of every executive action are clearly visible before confirmation.
+3. **Persistent Immersion**: Reinforce that the nation and its geopolitical neighbors continue to live and evolve around the clock.

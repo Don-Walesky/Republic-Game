@@ -1,586 +1,168 @@
 # Time System Specification
 
-**Feature**: Time System  
+**Feature**: Persistent Simulation Clock & Real-World Time System  
 **Epic**: EPIC-01 Foundation  
-**Sprint**: Sprint 1  
-**Status**: Design  
-**Priority**: P0 (Critical)
+**Version**: 2.0 (Canonical Revised Republic Design)  
+**Status**: Specification  
+**Priority**: P0 (Critical Core Architecture)  
 
 ---
 
-## Overview
+## 1. Overview & Vision
 
-The Time System provides deterministic, fixed-rate time stepping for the simulation engine. It enables consistent, reproducible simulation behavior independent of real-world execution time. The system supports time control (pause/resume), time scaling, and a game calendar with day/month/year tracking.
+Republic operates on a **persistent, real-world aligned simulation clock**.
 
----
+Unlike traditional single-player strategy games that feature fictional calendars, arbitrary year leaps, or user-toggled pause and fast-forward buttons, Republic's world is a **persistent multiplayer universe** where time advances continuously on a shared global simulation timeline.
 
-## Objectives
-
-- Provide deterministic simulation ticks at configurable fixed rate
-- Enable time control (pause, resume, time scaling)
-- Implement game calendar (day/month/year)
-- Emit time-based events for other systems
-- Support serialization for save/load functionality
-- Require no UI or platform dependencies
-
----
-
-## Acceptance Criteria
-
-- [ ] Simulation ticks at fixed, configurable rate (default 60 ticks/second)
-- [ ] Tick rate is deterministic (same inputs = same outputs)
-- [ ] `Pause()` stops simulation advancement
-- [ ] `Resume()` resumes simulation
-- [ ] `SetTimeScale(float)` changes simulation speed (1.0 = normal)
-- [ ] Game calendar tracks day, month, year
-- [ ] `OnSimulationTickEvent` emitted every tick
-- [ ] `OnSimulationDayEvent`, `OnSimulationMonthEvent`, `OnSimulationYearEvent` emitted on calendar transitions
-- [ ] Time state is fully serializable (JSON/binary)
-- [ ] No UI dependencies
-- [ ] >90% unit test coverage
-- [ ] All XML documentation complete
+### Core Principles
+1. **Real-World Date Alignment**: The in-game calendar strictly follows the **real-world calendar**. There is no fictional calendar disconnected from real-world date progression.
+2. **Official Time Zone**: The authoritative game clock is anchored to **West Africa Time (WAT / UTC+1)**.
+3. **Launch Moment Epoch**: The simulation timeline begins at official launch:
+   > **Republic Day 0, 00:00 WAT**
+4. **Shared Global Simulation Clock**: Every nation—player-governed and AI-governed—exists concurrently within the exact same global timeline.
+5. **Synchronized National Yield Cycles**: National Yield cycles are globally synchronized to the simulated game clock, ensuring fair macroeconomic progression across all nations rather than fragmented cycles tied to individual player login times.
+6. **Continuous Progression & Offline Persistence**:
+   > *"Revenue is continuous. Development is continuous. Politics is continuous. The player is not."*  
+   The simulation never halts when an individual player disconnects. Revenue collects, development projects build, institutions run, and international events unfold continuously.
 
 ---
 
-## Architecture
+## 2. System Architecture & Objectives
 
-### Core Components
+### Objectives
+- Maintain continuous, deterministic simulation tick progression anchored to real-world time.
+- Provide a synchronized world clock in West Africa Time (WAT / UTC+1).
+- Synchronize global National Yield cycles to the world clock.
+- Track precise nation founding metadata (Independence Day, time, country age).
+- Power offline catch-up and event replay for the player's National Briefing upon login.
+- Provide headless, high-performance time query interfaces free of presentation or platform dependencies.
+
+### Architectural Structure
 
 ```
-TimeSystem (main coordinator)
-├── TickCounter (tracks ticks)
-├── GameCalendar (day/month/year)
-└── TimeScaleController (pause, scale)
+GlobalSimulationClock (authoritative world timeline)
+├── RealWorldTimeProvider (WAT / UTC+1 time synchronization)
+├── EpochManager (tracks elapsed ticks and days since Republic Day 0, 00:00 WAT)
+├── YieldCycleCoordinator (triggers synchronized National Yield cycles)
+├── IndependenceTracker (records founding timestamps and calculates National Age)
+└── EventBus (emits global time and cycle events)
 ```
 
-### Dependencies
+---
 
-```
-TimeSystem
-├── EventBus (emits time events)
-├── Logger (debug logging)
-└── Configuration (default tick rate)
-```
+## 3. Detailed Specifications
 
-### Interfaces
+### 3.1 Real-World Date Alignment & West Africa Time (WAT)
+- The date in Republic matches the real-world Gregorian calendar date.
+- All global timestamps, scheduled diplomatic summits, yield cycles, and legislative deadlines are expressed in **West Africa Time (WAT / UTC+1)**.
+- Example timestamp: `2026-10-06 14:37:00 WAT`.
+
+### 3.2 Republic Launch Epoch (Day 0)
+- Epoch baseline: `Republic Day 0, 00:00 WAT`.
+- All historical simulation records, national age calculations, and treaty timelines reference the continuous elapsed time since this baseline.
+
+### 3.3 Synchronized National Yield Cycles
+- National Yield is not calculated on arbitrary ad-hoc player timers.
+- Instead, the global simulation clock coordinates periodic **Yield Cycles** across all nations concurrently.
+- Macroeconomic parameters, tax collections in REPU (`R`), and capacity updates occur at deterministic cycle intervals tied to the global clock.
+
+### 3.4 Country Founding & Independence Day
+When a player creates their country, the time system permanently records:
+- **Independence Date** (e.g., `6 October 2026`)
+- **Independence Time** (e.g., `14:37 WAT`)
+- **Founding Epoch Tick** (exact simulation tick)
+- **National Age**: The exact duration elapsed since the nation's Independence Day.
+  - *Design Rule*: **AGE MUST NOT AUTOMATICALLY EQUAL STRENGTH.** National Age conveys constitutional maturity and historical legitimacy, but governance and State Capacity determine actual strength.
+
+### 3.5 Founding Period Duration
+- The time system tracks the active window of the nation's temporary **Founding Period** (e.g., initial founding duration from Independence Day).
+- During this window, the country receives the **10x National Yield Multiplier** and temporary founding momentum buffs, after which the time system transitions the nation smoothly into standard sovereign status.
+
+### 3.6 Continuous Offline Persistence
+- Because the world operates on a shared real-world clock, a player logging off does **not** stop their nation's timeline.
+- When a player returns:
+  1. The time system determines the elapsed duration between the last active session and the current global WAT timestamp.
+  2. The simulation engine processes all accumulated yield cycles, completed development projects, and diplomatic events that occurred during the absence.
+  3. The Presidential Office compiles these events into a concise **National Briefing**.
+
+---
+
+## 4. Interfaces & Data Contracts
 
 ```csharp
-public interface ITimeSystem
+namespace Republic.Core.Time;
+
+/// <summary>
+/// Authoritative simulation clock operating on West Africa Time (WAT / UTC+1)
+/// aligned with real-world calendar dates.
+/// </summary>
+public interface ISimulationClock
 {
-    // Time control
-    void Pause();
-    void Resume();
-    bool IsPaused { get; }
-    
-    // Time scaling
-    void SetTimeScale(float scale);
-    float TimeScale { get; }
-    
-    // Time queries
-    ulong CurrentTick { get; }
-    TimeSpan ElapsedTime { get; }
-    float DeltaTime { get; } // in seconds
-    
-    // Calendar
-    GameDate CurrentDate { get; }
-    
-    // Advancement
-    void Tick(float realDeltaTime);
-    
-    // Serialization
-    TimeSystemState Serialize();
-    void Deserialize(TimeSystemState state);
+    /// <summary>
+    /// Current real-world aligned simulation time in West Africa Time (WAT / UTC+1).
+    /// </summary>
+    DateTime CurrentWatTime { get; }
+
+    /// <summary>
+    /// Current calendar date in the global simulation.
+    /// </summary>
+    DateOnly CurrentDate { get; }
+
+    /// <summary>
+    /// Total simulation days elapsed since Republic Day 0, 00:00 WAT.
+    /// </summary>
+    long DaysSinceLaunch { get; }
+
+    /// <summary>
+    /// Total deterministic ticks elapsed since Republic Day 0.
+    /// </summary>
+    ulong TotalSimulationTicks { get; }
+
+    /// <summary>
+    /// Timestamp when Republic Day 0 was initialized.
+    /// </summary>
+    DateTime LaunchEpochWat { get; }
+
+    /// <summary>
+    /// Calculates national age for a country founded at the specified Independence timestamp.
+    /// </summary>
+    TimeSpan CalculateNationalAge(DateTime independenceTimestampWat);
+
+    /// <summary>
+    /// Determines whether a country is within its initial temporary Founding Period.
+    /// </summary>
+    bool IsWithinFoundingPeriod(DateTime independenceTimestampWat, TimeSpan foundingDuration);
 }
 
-public class GameDate
-{
-    public int Day { get; set; }
-    public int Month { get; set; }
-    public int Year { get; set; }
-}
-
-public class TimeSystemState
-{
-    public ulong TickCount { get; set; }
-    public GameDate CurrentDate { get; set; }
-    public float TimeScale { get; set; }
-    public bool IsPaused { get; set; }
-}
+/// <summary>
+/// Domain model recording immutable nation founding metadata.
+/// </summary>
+public sealed record IndependenceMetadata(
+    string CountryId,
+    DateOnly IndependenceDate,
+    TimeOnly IndependenceTime,
+    DateTime IndependenceTimestampWat,
+    long FoundingSimulationTick,
+    string FoundingGlobalConditionSummary
+);
 ```
 
 ---
 
-## Detailed Specification
+## 5. Global Time Events
 
-### 1. Fixed Time Stepping
+The Time System emits high-performance domain events via the `IEventBus`:
 
-**Requirement**: Simulation ticks at a fixed, configurable rate independent of real-world execution time.
-
-**Implementation**:
-```csharp
-private float tickRate = 60f; // ticks per second
-private float fixedDeltaTime = 1f / 60f; // ~0.0167 seconds
-
-public void SetFixedTickRate(float ticksPerSecond)
-{
-    tickRate = ticksPerSecond;
-    fixedDeltaTime = 1f / ticksPerSecond;
-}
-
-public void Tick(float realDeltaTime)
-{
-    if (IsPaused) return;
-    
-    accumulatedTime += realDeltaTime * timeScale;
-    
-    while (accumulatedTime >= fixedDeltaTime)
-    {
-        SimulationTick();
-        accumulatedTime -= fixedDeltaTime;
-    }
-}
-```
-
-**Test Cases**:
-- [ ] Tick rate can be set to 30, 60, 120 ticks/second
-- [ ] Fixed delta time matches tick rate
-- [ ] Ticks are consistent (1000 ticks = 1000/tickRate seconds)
-- [ ] No accumulation errors over long periods
+1. `OnGlobalSimulationTickEvent`: Fired every deterministic simulation tick with current WAT timestamp and tick count.
+2. `OnGlobalYieldCycleEvent`: Fired synchronously when a global National Yield cycle executes across all nations.
+3. `OnGlobalDayTransitionEvent`: Fired at `00:00 WAT` as the real-world calendar day advances.
+4. `OnCountryFoundingEvent`: Fired when a new player nation is founded and its Independence Day is stamped.
+5. `OnFoundingPeriodExpiredEvent`: Fired when a nation's temporary 10x founding boost and momentum buffs conclude.
 
 ---
 
-### 2. Time Control
-
-**Requirement**: Support pause and resume functionality without losing state.
-
-**Implementation**:
-```csharp
-private bool isPaused = false;
-
-public void Pause()
-{
-    isPaused = true;
-    logger.LogDebug("Time system paused");
-    eventBus.Publish(new OnSimulationPausedEvent());
-}
-
-public void Resume()
-{
-    isPaused = false;
-    logger.LogDebug("Time system resumed");
-    eventBus.Publish(new OnSimulationResumedEvent());
-}
-
-public bool IsPaused => isPaused;
-```
-
-**Test Cases**:
-- [ ] Pausing stops tick advancement
-- [ ] Resuming continues tick advancement
-- [ ] Calendar doesn't advance while paused
-- [ ] Time scale is preserved after pause/resume
-
----
-
-### 3. Time Scaling
-
-**Requirement**: Allow simulation speed adjustment (0.5x, 1.0x, 2.0x, etc).
-
-**Implementation**:
-```csharp
-private float timeScale = 1.0f;
-
-public void SetTimeScale(float scale)
-{
-    if (scale < 0f)
-    {
-        logger.LogWarning("Time scale cannot be negative, clamping to 0");
-        scale = 0f;
-    }
-    
-    timeScale = scale;
-    logger.LogDebug($"Time scale set to {scale}x");
-    eventBus.Publish(new OnTimeScaleChangedEvent { Scale = scale });
-}
-
-public float TimeScale => timeScale;
-```
-
-**Test Cases**:
-- [ ] 1.0x = normal speed (60 ticks/second real time)
-- [ ] 2.0x = double speed (120 ticks/second real time)
-- [ ] 0.5x = half speed (30 ticks/second real time)
-- [ ] 0.0x = no advancement (effectively paused)
-- [ ] Negative scales are rejected or clamped
-
----
-
-### 4. Game Calendar
-
-**Requirement**: Track in-game time with day, month, year.
-
-**Implementation**:
-```csharp
-public class GameCalendar
-{
-    public int Day { get; set; } = 1;
-    public int Month { get; set; } = 1;
-    public int Year { get; set; } = 1;
-    
-    public int DaysPerMonth { get; set; } = 30;
-    public int MonthsPerYear { get; set; } = 12;
-    
-    public void AdvanceDay()
-    {
-        Day++;
-        
-        if (Day > DaysPerMonth)
-        {
-            Day = 1;
-            AdvanceMonth();
-        }
-    }
-    
-    private void AdvanceMonth()
-    {
-        Month++;
-        
-        if (Month > MonthsPerYear)
-        {
-            Month = 1;
-            AdvanceYear();
-        }
-    }
-    
-    private void AdvanceYear()
-    {
-        Year++;
-    }
-}
-```
-
-**Configuration**:
-- Days per month: Configurable (default 30)
-- Months per year: Configurable (default 12)
-- Calendar can be reset to arbitrary date
-
-**Test Cases**:
-- [ ] Day advances correctly (1 to 30, wraps to 1)
-- [ ] Month advances on day overflow
-- [ ] Year advances on month overflow
-- [ ] Custom calendar settings work
-- [ ] Calendar state is persisted correctly
-
----
-
-### 5. Event Emissions
-
-**Requirement**: Emit events for time-based triggers that other systems can listen to.
-
-**Events**:
-
-```csharp
-public class OnSimulationTickEvent : IEvent
-{
-    public ulong TickNumber { get; set; }
-    public float DeltaTime { get; set; }
-    public GameDate CurrentDate { get; set; }
-}
-
-public class OnSimulationSecondEvent : IEvent
-{
-    public ulong TickNumber { get; set; }
-    public int ElapsedSeconds { get; set; }
-}
-
-public class OnSimulationDayEvent : IEvent
-{
-    public GameDate NewDate { get; set; }
-    public int DaysPassed { get; set; }
-}
-
-public class OnSimulationMonthEvent : IEvent
-{
-    public GameDate NewDate { get; set; }
-    public int MonthsPassed { get; set; }
-}
-
-public class OnSimulationYearEvent : IEvent
-{
-    public GameDate NewDate { get; set; }
-    public int YearsPassed { get; set; }
-}
-```
-
-**Emission Rules**:
-- `OnSimulationTickEvent` emitted on every simulation tick
-- `OnSimulationSecondEvent` emitted every N ticks (where N = tickRate)
-- `OnSimulationDayEvent` emitted when day changes
-- `OnSimulationMonthEvent` emitted when month changes
-- `OnSimulationYearEvent` emitted when year changes
-
-**Test Cases**:
-- [ ] OnSimulationTickEvent fires every tick
-- [ ] OnSimulationSecondEvent fires every second
-- [ ] OnSimulationDayEvent fires when day changes
-- [ ] Event data is accurate
-- [ ] Events include necessary context
-
----
-
-### 6. Serialization
-
-**Requirement**: Save and restore time system state without losing precision.
-
-**Implementation**:
-```csharp
-public class TimeSystemState
-{
-    public ulong TickCount { get; set; }
-    public int Day { get; set; }
-    public int Month { get; set; }
-    public int Year { get; set; }
-    public float TimeScale { get; set; }
-    public bool IsPaused { get; set; }
-    public float AccumulatedTime { get; set; }
-}
-
-public TimeSystemState Serialize()
-{
-    return new TimeSystemState
-    {
-        TickCount = currentTick,
-        Day = calendar.Day,
-        Month = calendar.Month,
-        Year = calendar.Year,
-        TimeScale = timeScale,
-        IsPaused = isPaused,
-        AccumulatedTime = accumulatedTime
-    };
-}
-
-public void Deserialize(TimeSystemState state)
-{
-    currentTick = state.TickCount;
-    calendar.Day = state.Day;
-    calendar.Month = state.Month;
-    calendar.Year = state.Year;
-    timeScale = state.TimeScale;
-    isPaused = state.IsPaused;
-    accumulatedTime = state.AccumulatedTime;
-    
-    logger.LogInfo($"Time system restored to tick {currentTick}, {state.Year}/{state.Month}/{state.Day}");
-}
-```
-
-**Test Cases**:
-- [ ] Serialization produces valid state object
-- [ ] Deserialization restores exact state
-- [ ] JSON serialization works
-- [ ] Binary serialization works
-- [ ] No precision loss in large numbers
-
----
-
-### 7. No UI Dependency
-
-**Requirement**: Time System must be completely independent of UI frameworks.
-
-**Constraints**:
-- No Unity MonoBehaviour references
-- No WPF/WinForms references
-- Pure C# implementation
-- Can run in headless mode
-
-**Verification**:
-- [ ] No UI framework imports
-- [ ] Works in console application
-- [ ] Works in headless simulation
-- [ ] No graphics or rendering calls
-
----
-
-## Usage Examples
-
-### Basic Time Stepping
-
-```csharp
-ITimeSystem timeSystem = container.Resolve<ITimeSystem>();
-timeSystem.SetFixedTickRate(60); // 60 ticks/second
-
-while (gameRunning)
-{
-    float realDeltaTime = GetRealDeltaTime();
-    timeSystem.Tick(realDeltaTime);
-}
-```
-
-### Listening for Time Events
-
-```csharp
-eventBus.Subscribe<OnSimulationDayEvent>(e => 
-{
-    Console.WriteLine($"Day changed to {e.NewDate.Day}/{e.NewDate.Month}/{e.NewDate.Year}");
-});
-
-eventBus.Subscribe<OnSimulationTickEvent>(e => 
-{
-    // Update simulation logic every tick
-    UpdateSimulation(e.DeltaTime);
-});
-```
-
-### Time Control
-
-```csharp
-// Speed up
-timeSystem.SetTimeScale(2.0f);
-
-// Pause
-timeSystem.Pause();
-
-// Resume at normal speed
-timeSystem.SetTimeScale(1.0f);
-timeSystem.Resume();
-```
-
-### Save/Load
-
-```csharp
-// Save
-TimeSystemState state = timeSystem.Serialize();
-string json = JsonConvert.SerializeObject(state);
-File.WriteAllText("save.json", json);
-
-// Load
-string json = File.ReadAllText("save.json");
-TimeSystemState state = JsonConvert.DeserializeObject<TimeSystemState>(json);
-timeSystem.Deserialize(state);
-```
-
----
-
-## Testing Strategy
-
-### Unit Tests
-
-**Test Coverage**: >90%
-
-**Test Categories**:
-1. Fixed time stepping accuracy
-2. Pause/resume functionality
-3. Time scaling behavior
-4. Calendar advancement
-5. Event emission
-6. Serialization/deserialization
-7. Edge cases (overflow, negative values, etc)
-
-**Example Tests**:
-```csharp
-[Test]
-public void Tick_AdvancesTimeCorrectly()
-{
-    timeSystem.Tick(0.0167f); // 1 frame at 60fps
-    Assert.AreEqual(1, timeSystem.CurrentTick);
-}
-
-[Test]
-public void Pause_StopsTimeAdvancement()
-{
-    timeSystem.Pause();
-    timeSystem.Tick(0.0167f);
-    Assert.AreEqual(0, timeSystem.CurrentTick);
-}
-
-[Test]
-public void TimeScale_DoublesAdvancement()
-{
-    timeSystem.SetTimeScale(2.0f);
-    timeSystem.Tick(0.0167f);
-    Assert.AreEqual(2, timeSystem.CurrentTick);
-}
-
-[Test]
-public void Calendar_AdvancesCorrectly()
-{
-    for (int i = 0; i < 30; i++)
-    {
-        calendar.AdvanceDay();
-    }
-    Assert.AreEqual(1, calendar.Day);
-    Assert.AreEqual(2, calendar.Month);
-}
-```
-
-### Integration Tests
-
-- TimeSystem with EventBus
-- TimeSystem with Logger
-- TimeSystem serialization with SaveSystem (in Sprint 2)
-
----
-
-## Performance Considerations
-
-- **Tick rate**: 60 ticks/second is standard; configurable for faster/slower sims
-- **Event overhead**: Events should be minimal (<0.1ms per tick)
-- **Memory**: TimeSystemState is small (<1KB)
-- **No allocations**: Minimize GC allocations in Tick() method
-
----
-
-## Dependencies
-
-- **EventBus** (for event publishing)
-- **Logger** (for debugging)
-- **Configuration** (for default tick rate)
-- **JSON serializer** (for save/load)
-
----
-
-## Files to Create
-
-```
-/Source/Core/Time/
-├── ITimeSystem.cs
-├── TimeSystem.cs
-├── GameCalendar.cs
-├── TimeSystemState.cs
-├── TimeSystemEvents.cs
-└── TimeSystemConfiguration.cs
-
-/Source/Tests/Core/Time/
-├── TimeSystemTests.cs
-├── GameCalendarTests.cs
-└── TimeSystemSerializationTests.cs
-```
-
----
-
-## Deliverables
-
-- [ ] Full implementation of TimeSystem
-- [ ] Full implementation of GameCalendar
-- [ ] All event types defined
-- [ ] Unit tests (>90% coverage)
-- [ ] XML documentation
-- [ ] Integration with EventBus
-- [ ] Integration with Logger
-- [ ] Usage examples
-- [ ] Code review approved
-
----
-
-## Definition of Done
-
-- All acceptance criteria met
-- All unit tests passing
-- All XML documentation complete
-- Code review approved
-- No compiler warnings
-- Builds successfully
-- Ready for integration with other Sprint 1 systems
-
----
-
-*Time System Specification - Version 1.0*
+## 6. Testing & Determinism Strategy
+
+- **Time Provider Abstraction**: Unit and integration tests utilize an injectable `ITimeProvider` or `ISimulationClock` mock to verify deterministic behavior without waiting for real-world hours.
+- **Leap Year and Calendar Accuracy**: Validates standard real-world Gregorian calendar rules across months, leap years, and daylight-independent WAT (UTC+1).
+- **Concurrency & Reconnection**: Verifies that offline periods accurately calculate all completed yield cycles, infrastructure project completions, and scheduled events upon player return.

@@ -1,7 +1,11 @@
 # Republic Game - Structured Backlog
 
+> [!NOTE]
+> **Canonical Notice**: This backlog reflects technical topic mapping and must be interpreted in alignment with the authoritative **[10-Wave Delivery Model](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/Docs/Roadmap/README.md)** and the **[Revised Republic Design](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/Docs/Gameplay%20Philosophy/Design%20Principles.md)**.
+> Multiplayer is a foundational architectural property from day one; the official currency is REPU (`R`); and the country itself is the central simulation object.
+
 This document maps the Technical Design Document topics into a structured backlog following the progression:
-**Epic → Feature → Issue → Unity AI Prompt → Code → Review → Merge**
+**Epic → Feature → Issue → Implementation → Review → Merge**
 
 ---
 
@@ -50,7 +54,7 @@ This document maps the Technical Design Document topics into a structured backlo
 ### Feature 3.1: Game State Data Models
 - **Description**: Design and implement the core data structures representing game entities and state
 - **Issues**:
-  - [ ] Issue 3.1.1: Define entity data models (Nations, Regions, Citizens, etc.)
+  - [ ] Issue 3.1.1: Define entity data models (Country as central simulation object, Regions, Demographics, etc.)
   - [ ] Issue 3.1.2: Define component/property systems
   - [ ] Issue 3.1.3: Implement serializable game state containers
   - [ ] Issue 3.1.4: Create data validation and integrity checks
@@ -66,10 +70,11 @@ This document maps the Technical Design Document topics into a structured backlo
 
 ---
 
-## Epic 4: Networking & Multiplayer
+## Epic 4: Networking & Multiplayer Transport
+*(Multiplayer is foundational to Republic from Wave 0; this epic covers live client-server network transport and synchronization in Wave 9)*
 
 ### Feature 4.1: Network Architecture
-- **Description**: Design and implement the networking foundation for multiplayer gameplay
+- **Description**: Design and implement the networking transport foundation for live multiplayer gameplay
 - **Issues**:
   - [ ] Issue 4.1.1: Design network protocol and message format
   - [ ] Issue 4.1.2: Implement connection management and player sessions

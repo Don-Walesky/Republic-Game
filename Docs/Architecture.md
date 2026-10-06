@@ -1,333 +1,198 @@
-# Technical Design Document - Architecture
+# Technical Design Document — Architecture
 
-**Version**: 2.0  
+**Version**: 2.0 (Canonical Revised Republic Architecture)  
 **Status**: Active  
-**Last Updated**: 2026-07-20
+**Last Updated**: 2026-10-06  
 
 ---
 
-## Architectural Overview
+## 1. Architectural Vision & Identity
 
-Republic's architecture is built in **five distinct layers**, each serving a specific purpose in the player interaction model. This layered architecture ensures **clean separation of concerns** and allows each layer to evolve independently.
+Republic's architecture is engineered to support a **persistent multiplayer political and nation-building simulation**.
 
----
+### The Country as the Central Simulation Object
+The core simulation models the **country itself** as the foundational entity:
+- Territorial provinces and geography
+- Demographic composition, living standards, and public sentiment
+- Macroeconomic production, fiscal budgets, and sovereign reserves in **REPU** (`R`)
+- **State Capacity** and institutional effectiveness
+- **National Yield** capacity across 14 vital categories
 
-## The Five Layers
+The **Presidential Office** serves as the player's executive command interface and command centre. The player directs statecraft from the executive desk, but the entire country is what lives, evolves, and endures.
 
-### Layer 1: Simulation Engine (Foundation)
+### Foundational Multiplayer Architecture
+Multiplayer is a foundational architectural property of Republic from day one:
+- The domain models, country entities, world state, persistence architecture, and event bus are designed for **concurrent multi-nation persistence**.
+- Sovereign player-governed nations coexist and interact through bilateral trade, diplomacy, treaties, alliances, intelligence, and conflict.
+- While direct client-server network transport and live multi-client synchronization are staged for delivery in Wave 9, all lower architectural layers assume a shared, persistent multiplayer world.
 
-**Responsibility**: Pure simulation without player agency or presentation
-
-**What it does**:
-- Runs deterministic simulation ticks
-- Calculates economic production, population growth, military logistics
-- Applies environmental and systemic effects
-- Generates autonomous AI decisions
-- Updates world state based on rules
-
-**Key Components**:
-- Time System (deterministic tick rate)
-- Entity management (countries, regions, populations)
-- Physics/economic calculations
-- Random number generation (seeded for replays)
-
-**Characteristics**:
-- No UI dependencies
-- Completely deterministic (same input = same output)
-- Can run offline/headless
-- Runs at fixed time step (60 ticks/second)
-
-**Example**: *The economy produces resources. Population grows. Military units advance. This happens whether the player is watching or not.*
+### Real-World Global Simulation Clock & Offline Continuity
+- Republic operates on a shared global simulation clock aligned to the **real-world Gregorian calendar** in **West Africa Time (WAT / UTC+1)**, anchored to **Republic Day 0, 00:00 WAT**.
+- **Continuous Offline Simulation**:  
+  > *"Revenue is continuous. Development is continuous. Politics is continuous. The player is not."*  
+  The simulation never halts when an individual player logs off. The engine processes yield cycles, advances construction of development projects, executes institutional functions, and records world events, generating a concise **National Briefing** upon the player's return.
 
 ---
 
-### Layer 2: Gameplay Systems (Rules & Events)
+## 2. The Five Architectural Layers
 
-**Responsibility**: Transform simulation state into meaningful game rules and events
-
-**What it does**:
-- Interprets simulation results as game rules
-- Generates game events from simulation state changes
-- Manages victory/defeat conditions
-- Enforces turn structures (if applicable)
-- Coordinates cross-system interactions
-
-**Key Components**:
-- Event bus (system-to-system communication)
-- Rule engine (game rules derived from simulation)
-- Victory/defeat conditions
-- Turn/phase management
-- System integration coordinator
-
-**Characteristics**:
-- Stateless (derives everything from simulation)
-- Event-driven (responds to simulation changes)
-- Extensible (new rules added without changing simulation)
-- No UI dependencies (yet)
-
-**Example**: *When population satisfaction drops below 50%, the rule engine triggers an "Unrest" event. This event can then be communicated to the player and affect their decisions.*
-
----
-
-### Layer 3: Communication Layer (Information Flow)
-
-**Responsibility**: Translate simulation and game state into player-understandable information
-
-**What it does**:
-- Analyzes game state and extracts relevant information
-- Generates player-facing messages and alerts
-- Creates reports and summaries
-- Formats data for UI consumption
-- Manages information privacy/fog of war
-
-**Key Components**:
-- State analyzer (what information is relevant?)
-- Message generator (how to communicate it?)
-- Report system (aggregated information)
-- Information broker (privacy/visibility rules)
-- Analytics engine (metrics for decision-making)
-
-**Characteristics**:
-- Derives from lower layers (doesn't change them)
-- Generates player-facing output
-- Implements "fog of war" (what player can know)
-- Provides multiple data views (detailed, summary, trending)
-
-**Example**: *The communication layer sees that a neighboring country's military is mobilizing. It generates an alert: "Nation X has moved 5,000 troops to border." It also generates a report showing military readiness trends. But it only shows information based on player's intelligence capabilities.*
-
----
-
-### Layer 4: Decision Space Layer (Agency)
-
-**Responsibility**: Define what decisions are available to the player and their constraints
-
-**What it does**:
-- Determines which actions are available
-- Validates player decisions against rules
-- Queues player decisions for execution
-- Manages action costs (resources, time, political capital)
-- Provides decision information (outcomes, side effects)
-
-**Key Components**:
-- Action registry (all possible player actions)
-- Action validator (is this action legal?)
-- Action queue (pending player decisions)
-- Cost calculator (what does this action cost?)
-- Consequence predictor (what will happen?)
-
-**Characteristics**:
-- Defines player agency
-- Enforces constraints
-- Transparent (player sees costs and consequences)
-- Modular (new actions can be added)
-
-**Example**: *Player wants to lower taxes. Decision Space Layer checks: Is the government able to do this? What will happen to treasury? What will happen to population happiness? What are the military implications? It presents all this information so the player can make an informed decision. Then it queues the decision for execution next tick.*
-
----
-
-### Layer 5: Presentation Layer (Player Interface)
-
-**Responsibility**: Display game state and receive player input
-
-**What it does**:
-- Renders map, UI, and graphics
-- Displays reports and information
-- Receives player input (clicks, commands)
-- Manages camera, scrolling, filtering
-- Provides player feedback (animations, sounds, notifications)
-
-**Key Components**:
-- Map renderer
-- UI framework
-- Input handler
-- Camera system
-- Animation system
-- Audio system
-
-**Characteristics**:
-- Purely presentational (doesn't affect simulation)
-- Can be replaced without breaking game
-- Multiple UI modes (tactical, strategic, diplomatic)
-- Responsive to player input
-
-**Example**: *Player sees the map. They see a button "Lower Taxes". They click it. The presentation layer sends that command to the Decision Space Layer. The Decision Space Layer validates it and queues it. Eventually, the Gameplay Systems layer executes it in the simulation. The Simulation Engine updates the world. The Communication Layer generates new information. The Presentation Layer displays the results.*
-
----
-
-## Data Flow Architecture
+Republic's technical architecture is structured in **five distinct layers**, ensuring clean separation of concerns, testability, and modularity:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   PRESENTATION LAYER                        │
-│              (UI, Graphics, Player Input)                   │
-│                                                              │
-│  Player clicks button → Input Queue → Actions              │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│              DECISION SPACE LAYER                           │
-│         (Agency, Choices, Constraints)                     │
-│                                                              │
-│  Validate Action → Calculate Costs → Queue Decision         │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│             COMMUNICATION LAYER                             │
-│       (Information, Reporting, Analysis)                    │
-│                                                              │
-│  Extract Relevant Info → Generate Reports → Cache Data      │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│            GAMEPLAY SYSTEMS LAYER                           │
-│       (Rules, Events, Integration)                          │
-│                                                              │
-│  Apply Decisions → Generate Events → Enforce Rules          │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│           SIMULATION ENGINE LAYER                           │
-│      (Deterministic World Physics)                          │
-│                                                              │
-│  Execute Tick → Calculate Production → Update State         │
-│  Generate Events → Create Autonomous Decisions             │
+│                 LAYER 5: PRESENTATION LAYER                 │
+│         (Presidential Office Suite, Desk UI, Audio)         │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Player Actions
+┌──────────────────────────────▼──────────────────────────────┐
+│              LAYER 4: DECISION SPACE LAYER                  │
+│       (Executive Agency, Trade-Offs, Pros & Cons)           │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Validated Decrees & Projects
+┌──────────────────────────────▼──────────────────────────────┐
+│               LAYER 3: COMMUNICATION LAYER                  │
+│        (Intelligence Dossiers, National Briefing)           │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ State Insights & Alerts
+┌──────────────────────────────▼──────────────────────────────┐
+│              LAYER 2: GAMEPLAY SYSTEMS LAYER                │
+│    (Cabinet Appointments, Treaties, Legislative Rules)      │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Systemic Rules & Events
+┌──────────────────────────────▼──────────────────────────────┐
+│              LAYER 1: SIMULATION ENGINE LAYER               │
+│   (Country State, WAT Clock, National Yield, Persistence)   │
 └─────────────────────────────────────────────────────────────┘
-                     │
-                     └──► World State Changes ──┐
-                                                │
-                         ┌──────────────────────┘
-                         │
-        ┌────────────────▼───────────────────┐
-        │   Communication Layer reads new    │
-        │   state and generates new info     │
-        │   for next presentation cycle      │
-        └────────────────────────────────────┘
 ```
 
 ---
 
-## Key Principles
+### Layer 1: Simulation Engine Layer (Foundation)
 
-### 1. Layered Independence
-Each layer should be independently testable and deployable. Changes to the Presentation Layer shouldn't require changes to the Simulation Engine.
+**Responsibility**: Pure, headless, deterministic simulation of the physical, economic, and institutional world.
 
-### 2. Information Flows Down
-- Upper layers depend on lower layers
-- Lower layers don't depend on upper layers
-- Simulation Engine is pure (no framework/UI dependencies)
+**Key Subsystems**:
+- **Persistent Global Simulation Clock**: Operates continuously on West Africa Time (WAT / UTC+1). Synchronizes global National Yield cycles across all nations.
+- **Country & World Entities**: Models sovereign countries, provinces, demographics, resources, and geography.
+- **National Yield Engine**: Calculates measurable state output across 14 categories based on actual country conditions:
+  - REPU Treasury Revenue
+  - Science / Research Capacity
+  - Industrial Capacity
+  - Energy Capacity
+  - Infrastructure Capacity
+  - Human Capital
+  - Administrative Capacity
+  - Military Readiness
+  - Intelligence Capacity
+  - Diplomatic Capacity
+  - Innovation Capacity
+  - Financial Capacity
+  - Security Capacity
+  - Natural Resource Output
+- **State Capacity Engine**: Computes conversion efficiency based on government effectiveness, civil service competence, corruption, institutional strength, and legitimacy.
+- **Emergent Food Economy**: Simulates private agricultural production fostered by government-enabled infrastructure (irrigation, roads, research, credit) rather than direct yield handouts.
+- **Persistence & Checksum System**: Saves/loads state with SHA256 integrity checks; handles offline time catch-up calculations.
 
-### 3. Control Flows Down
-Player input flows down through layers:
-- Presentation (I want to do X)
-- Decision Space (Is X valid? What does it cost?)
-- Gameplay Systems (Execute X through the rules)
-- Simulation Engine (X's effects on world)
-
-### 4. State Flows Up
-World state flows up through layers:
-- Simulation Engine (here's what happened)
-- Gameplay Systems (here's what it means)
-- Communication Layer (here's how to understand it)
-- Presentation (here's how to see it)
-
-### 5. No Circular Dependencies
-No layer should depend on a layer above it. This prevents circular dependencies and makes testing possible.
-
----
-
-## Benefits of This Architecture
-
-### For Development
-- Each layer can be developed independently
-- Clear interfaces between layers
-- Easy to test (mock lower layers)
-- New features can be added to any layer
-
-### For Gameplay
-- Clean separation between mechanics and presentation
-- Easy to change how players interact without changing simulation
-- Multiple UI modes (tactical view, strategic view, reporting view)
-- Easy to implement fog of war, hidden information, etc.
-
-### For Modding/Extensibility
-- Modders can add features at any layer
-- Clear extension points
-- Can't accidentally break lower layers
-
-### For Performance
-- Simulation runs at fixed rate (60 ticks/sec)
-- Presentation updates at variable rate (60 FPS)
-- Communication layer caches information
-- Each layer can be optimized independently
+**Characteristics**:
+- Completely independent of UI and game engines.
+- Deterministic, high-performance C# domain logic.
+- Capable of running headless in server, CLI, or test harness environments.
 
 ---
 
-## System Responsibilities By Layer
+### Layer 2: Gameplay Systems Layer (Rules & Inter-Country Systems)
 
-### Simulation Engine
-- Time system (ticks)
-- Entity management
-- Resource production
-- Population dynamics
-- Military logistics
-- Environmental effects
-- Autonomous AI decisions
-- Random events
+**Responsibility**: Enforce constitutional rules, inter-country relations, and systemic events.
 
-### Gameplay Systems
-- Rule enforcement
-- Victory/defeat conditions
-- Event aggregation
-- System integration
-- Replay system
-- Save/load system
+**Key Subsystems**:
+- **Cabinet & Appointments Engine**: Manages appointment of ministers with authentic trade-offs (e.g., technical competence vs. political loyalty vs. integrity). Vacant or poorly staffed portfolios degrade sector capacity and yield.
+- **Development Project Manager**: Tracks infrastructure projects with REPU costs, build durations, and maintenance costs. Construction progresses continuously across real time, independent of scheduled National Yield cycles.
+- **Diplomacy & Treaty System**: Models bilateral trade contracts, non-aggression pacts, defense alliances, and diplomatic summits between sovereign nations.
+- **Military & Defense Systems**: DEFCON readiness, armed branch mobilization, border deterrence, and strategic directives.
+- **Legislature & Constitutional System**: Parliamentary bills, coalition politics, and constitutional amendments.
+- **Rival AI & Autonomy**: Simulates foreign nations with distinct strategic behavioral postures.
 
-### Communication Layer
-- World state analysis
-- Report generation
-- Message formatting
-- Information privacy (fog of war)
-- Analytics and metrics
-- Data caching
-
-### Decision Space Layer
-- Action registry and validation
-- Cost calculation
-- Consequence prediction
-- Action queuing
-- Constraint checking
-
-### Presentation Layer
-- Map rendering
-- UI rendering
-- Player input handling
-- Camera/viewport management
-- Animation and effects
-- Audio
+**Characteristics**:
+- Stateless rule enforcement derived from Layer 1 entity states.
+- Event-driven communication via decoupled `IEventBus`.
 
 ---
 
-## Sprint 1 Implementation Focus
+### Layer 3: Communication Layer (Information & Briefings)
 
-**Sprint 1 focuses on Layers 1-3 foundations:**
+**Responsibility**: Translate deep simulation dynamics into executive intelligence and actionable player briefings.
 
-- **Simulation Engine**: Time System, basic entity management, event system
-- **Gameplay Systems**: Event bus, system integration points
-- **Communication Layer**: Logging system (precursor to information layer)
+**Key Subsystems**:
+- **National Briefing Engine**: Compiles a concise briefing of revenues collected, projects completed, diplomatic overtures, and urgent crises that unfolded while the player was offline.
+- **Classified Intelligence Dossiers**: Summarizes covert surveillance and military intelligence filtered by national intelligence capacity (fog of war).
+- **Executive Desk Channels**: Dispatches memoranda, phone calls, cabinet alerts, and official visitors to the presidential desk.
+- **Media & Press System**: Generates news broadcasts and monitors public sentiment.
 
-**Layers 4-5 come in later sprints** once the foundation is solid.
-
----
-
-## This Architecture Guides All Future Decisions
-
-- **Feature Design**: Where does this feature belong? Which layer(s)?
-- **UI Design**: Is this presentation or decision-space?
-- **System Integration**: Does this layer respect the architecture?
-- **Testing**: Can we test each layer independently?
-- **Performance**: Which layer is the bottleneck?
+**Characteristics**:
+- Derives from lower layers without altering simulation state directly.
+- Caches and formats information for executive consumption.
 
 ---
 
-*Technical Design Document - Architecture v2.0*
-*The guiding principle for all Republic technical decisions*
+### Layer 4: Decision Space Layer (Agency & Trade-offs)
+
+**Responsibility**: Provide structured executive decision spaces where choices involve explicit trade-offs.
+
+**Key Subsystems**:
+- **Action Registry & Validator**: Verifies legal authority, constitutional mandates, and REPU treasury availability for proposed decrees.
+- **Trade-Off Calculator (Pros & Cons)**: Evaluates and displays the unavoidable costs and benefits of any decision (e.g., economic growth vs. political stability; military spending vs. education; competence vs. loyalty).
+- **Decree & Policy Queue**: Schedules executive orders and project commitments for deterministic execution in the simulation loop.
+
+**Characteristics**:
+- Enforces the core principle: **Every important decision has pros and cons.**
+- Prevents simplistic "optimal stat" exploitation.
+
+---
+
+### Layer 5: Presentation Layer (Executive Command Interface)
+
+**Responsibility**: Visual presentation and player interaction.
+
+**Key Subsystems**:
+- **Executive Suite Shell**: The presidential office environment acting as the player's command centre.
+- **Interactive Desk Items**: Phone, computer, dossier binders, and calendar linked to executive channels.
+- **Decision Space Canvases**: Dedicated views for the Cabinet Room, Situation Room, and National Map.
+- **Audiovisuals & Lighting**: Office atmosphere, ambient audio, and responsive visual feedback.
+
+**Characteristics**:
+- Presentation-only; communicates with lower layers exclusively through the `RepublicUnityBridge` or host presenter interfaces.
+- Can be adapted, swapped, or operated via CLI without altering game simulation rules.
+
+---
+
+## 3. Data Flow Architecture
+
+```
+[Player Interaction in Presidential Office]
+                 ↓
+      (Layer 5: Presentation)
+                 ↓
+      (Layer 4: Decision Space)  ──► Validates REPU Budget & Displays Pros/Cons
+                 ↓
+      (Layer 2: Gameplay Rules)  ──► Enforces Constitutional & Cabinet Rules
+                 ↓
+      (Layer 1: Simulation Engine) ──► Advances Continuous Real-Time Tick (WAT)
+                 ↓                     Calculates National Yield & State Capacity
+                 ↓                     Progresses Development Projects
+                 ↓
+[World State Updates & Yield Cycles]
+                 ↓
+      (Layer 3: Communication)   ──► Synthesizes Intelligence & National Briefing
+                 ↓
+      (Layer 5: Presentation)    ──► Updates Desk Telemetry & Alerts
+```
+
+---
+
+## 4. Key Architectural Guarantees
+
+1. **Deterministic Core**: The simulation logic in `src/Republic.Core` remains deterministic and testable through automated xUnit test suites without runtime presentation coupling.
+2. **Multiplayer Integrity**: All entity schemas and persistence containers assume multi-country concurrency and a shared world timeline.
+3. **Monetary Consistency**: All economic systems denominate currency exclusively in **REPU** (`R`).
+4. **Continuous Simulation**: Game time strictly aligns with real-world dates on West Africa Time (WAT / UTC+1), running continuously during offline periods.
+5. **Emergent Economy**: Food and consumer goods are produced by private citizens and businesses supported by state-funded enabling infrastructure, rather than through direct yield deposits.

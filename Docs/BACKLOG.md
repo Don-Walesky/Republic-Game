@@ -1,5 +1,9 @@
 # Republic Game - Backlog
 
+> [!NOTE]
+> **Canonical Notice**: This backlog reflects internal development issue tracking and must be interpreted in alignment with the authoritative **[10-Wave Delivery Model](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/Docs/Roadmap/README.md)** and the **[Revised Republic Design](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/Docs/Gameplay%20Philosophy/Design%20Principles.md)**.
+> Multiplayer is a foundational architectural property from day one; the official currency is REPU (`R`); and the country itself is the central simulation object.
+
 ## Backlog Structure
 Hierarchical breakdown: Epic → Feature → Issue
 
@@ -32,9 +36,9 @@ Hierarchical breakdown: Epic → Feature → Issue
 
 ### Feature 2.1: Entity Framework
 - [ ] Issue 2.1.1: World manager
-- [ ] Issue 2.1.2: Country entity definition
+- [ ] Issue 2.1.2: Country entity definition (central simulation object)
 - [ ] Issue 2.1.3: Government entity definition
-- [ ] Issue 2.1.4: Currency entity system
+- [ ] Issue 2.1.4: REPU currency entity system (R symbol, sovereign treasury)
 
 ### Feature 2.2: Economy Simulation
 - [ ] Issue 2.2.1: Economic model design
@@ -78,8 +82,8 @@ Hierarchical breakdown: Epic → Feature → Issue
 
 ---
 
-## EPIC 4: Networking & Multiplayer
-**Purpose:** Enable persistent multiplayer persistent functionality.
+## EPIC 4: Networking & Multiplayer Transport
+**Purpose:** Implement live client-server network transport and session synchronization (Wave 9), built on the multiplayer-first world and domain models established from Wave 0.
 **Status:** Planned
 
 ### Feature 4.1: Networking Architecture
@@ -187,9 +191,9 @@ Merge to Main
 
 ---
 
-## Milestones
-- **Phase 1 (Pre-Production):** Foundation + Simulation Engine
-- **Phase 2 (Alpha):** Data Architecture + Gameplay Systems
-- **Phase 3 (Beta):** Networking + AI Architecture
-- **Phase 4 (Launch):** Polish + Optimization
+## Delivery Milestones (Aligned with Canonical 10 Waves)
+- **Wave 0-2 (Core Foundation & World Simulation):** Headless .NET core, WAT clock, country entities, REPU currency, National Yield engine
+- **Wave 3-6 (Domestic Governance & Economy):** Campaign, cabinet appointments, REPU economy & development, legislature
+- **Wave 7-9 (Defense, Diplomacy & Live Networking):** Military, sovereign diplomacy & treaties, live multiplayer transport
+- **Live Operations:** Polish, persistent multi-country balance, community scenarios
 
