@@ -1,6 +1,7 @@
 namespace Republic.Core.World.Models;
 
 using System.Text.Json.Serialization;
+using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
 using Republic.Core.Time;
 
@@ -53,6 +54,12 @@ public sealed class Country
     /// Each sovereign country owns an independent, isolated instance.
     /// </summary>
     public NationalYield Yield { get; init; } = new();
+
+    /// <summary>
+    /// Gets the authoritative sovereign treasury holding accumulated liquid REPU balance.
+    /// Each sovereign country owns an independent, isolated instance.
+    /// </summary>
+    public RepuTreasury Treasury { get; init; } = new();
 
     /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
@@ -167,12 +174,14 @@ public sealed class Country
         string governmentType = "Democratic Republic",
         double territorySizeSqKm = 500000,
         double baselineStability = 75.0,
-        NationalYield? yield = null)
+        NationalYield? yield = null,
+        RepuTreasury? treasury = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
         return new Country
         {
-            Id = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id,
+            Id = countryId,
             Name = name,
             FoundingTime = foundingTime,
             CapitalCity = capitalCity,
@@ -180,7 +189,8 @@ public sealed class Country
             TerritorySizeSqKm = territorySizeSqKm,
             BaselineStability = baselineStability,
             FoundingStatus = CountryFoundingStatus.NewlyFounded,
-            Yield = yield?.Clone() ?? new NationalYield()
+            Yield = yield?.Clone() ?? new NationalYield(),
+            Treasury = treasury?.Clone() ?? new RepuTreasury(0.0, countryId)
         };
     }
 }
