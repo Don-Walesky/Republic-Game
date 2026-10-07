@@ -2,9 +2,9 @@ namespace Republic.Core.NationalYield;
 
 /// <summary>
 /// Isolated, deterministic calculation engine for sovereign National Yield.
-/// Evaluates <see cref="NationalYieldCalculationInputs"/> across the 6-stage pipeline (ADR-0006),
-/// establishing the first working calibrated model derived from the approved relationships in ADR-0008
-/// and the numerical calibration principles in ADR-0009.
+/// Evaluates <see cref="NationalYieldCalculationInputs"/> across the 6-stage pipeline (ADR-0006).
+/// Implements a simplified, clean calibration model: direct relationships map directly,
+/// and enabling factors act as transparent bottleneck constraints on dependent capabilities.
 /// </summary>
 public sealed class NationalYieldCalculator : INationalYieldCalculator
 {
@@ -15,8 +15,8 @@ public sealed class NationalYieldCalculator : INationalYieldCalculator
 
         // =====================================================================
         // STAGE 1: INPUT SNAPSHOTTING & RESOLUTION
-        // Read input factors safely; inputs remain completely immutable.
-        // Guarantee non-negativity across all incoming sovereign factors.
+        // Read input factors safely; guarantee non-negativity across all inputs.
+        // Inputs remain completely immutable.
         // =====================================================================
         var economicCapacity = Math.Max(0.0, inputs.EconomicCapacity);
         var govtEffectiveness = Math.Max(0.0, inputs.GovernmentEffectiveness);
@@ -33,95 +33,56 @@ public sealed class NationalYieldCalculator : INationalYieldCalculator
 
         // =====================================================================
         // STAGE 2: BASE POTENTIAL EVALUATION
-        // Establish foundational structural potential directly from relevant inputs.
-        // Capacities reflect their core physical, human, and institutional substrates.
+        // Direct baseline mappings where clear conceptual relationships exist.
         // =====================================================================
         var human = humanCapital;
-        var science = scienceTech;
         var infrastructure = infraCondition;
         var admin = govtEffectiveness;
         var security = securityLevel;
-        var industrial = economicCapacity;
 
-        // Energy capacity requires physical infrastructure to generate and distribute power
-        var energy = infraCondition;
+        // Energy capability requires physical infrastructure to generate and distribute power
+        var energy = infrastructure;
 
-        // Financial capacity reflects commercial banking depth and credit liquidity
-        var financial = economicCapacity;
-
-        // Innovation capacity reflects commercial technology adoption, rooted in science & tech
-        var innovation = scienceTech;
-
-        // Intelligence capacity reflects strategic early warning and security apparatus
-        var intelligence = securityLevel;
-
-        // Military readiness reflects defense capability and armed forces posture
-        var military = securityLevel;
-
-        // Diplomatic capacity reflects international standing and bilateral representation
-        var diplomatic = govtEffectiveness;
-
-        // Natural resource extraction requires physical transport corridors to access and move deposits
-        var naturalResource = Math.Min(economicCapacity, infraCondition);
+        // Intelligence capability is rooted in the domestic security apparatus
+        var intelligence = security;
 
         // =====================================================================
-        // STAGE 3: CROSS-CATEGORY UPSTREAM RELATIONSHIPS
-        // Propagate causal synergies and enabling throughput across categories (ADR-0008).
-        // Uses bounded, monotonic combinations without arbitrary multiplier inflation.
+        // STAGE 3: CROSS-CATEGORY RELATIONSHIPS & ENABLING CONSTRAINTS
+        // Direct relationships map simply; enabling factors constrain dependent capabilities.
         // =====================================================================
 
-        // 1. Human Capital helps Science: educated talent fuels research labs
-        science = (science * 2.0 + human) / 3.0;
+        // Scientific research capacity is supported and constrained by educated human capital
+        var science = Math.Min(scienceTech, human);
 
-        // 2. Science helps Innovation: research breakthroughs feed commercial technology adoption
-        innovation = (science * 2.0 + human) / 3.0;
+        // Strong science directly powers commercial innovation
+        var innovation = science;
 
-        // 3. Infrastructure & Energy support Industry: factories require logistics corridors and base-load power
-        var energySupport = (energy + infrastructure) / 2.0;
-        industrial = (industrial * 2.0 + energySupport) / 3.0;
+        // Weak infrastructure constrains industrial fabrication throughput
+        var industrial = Math.Min(economicCapacity, infrastructure);
 
-        // 4. Administration supports Infrastructure: public works oversight ensures maintenance
-        infrastructure = (infrastructure * 2.0 + admin) / 3.0;
+        // Natural resource extraction is constrained by physical transport infrastructure
+        var naturalResource = Math.Min(economicCapacity, infrastructure);
 
-        // 5. Infrastructure & Resources support Energy: grid transmission and domestic fuel feed power generation
-        var energyInputs = (infrastructure + naturalResource) / 2.0;
-        energy = (energy * 2.0 + energyInputs) / 3.0;
+        // Commercial banking depth requires political stability to prevent capital flight
+        var financial = Math.Min(economicCapacity, stability);
 
-        // 6. Administration supports Human Capital: public health and education services sustain vitality
-        human = (human * 2.0 + admin) / 3.0;
+        // Military defense readiness depends on security, constrained by industrial equipment
+        var military = Math.Min(security, industrial);
 
-        // 7. Administration supports Intelligence: institutional oversight and vetting
-        var adminStability = (admin + stability) / 2.0;
-        intelligence = (intelligence * 2.0 + adminStability) / 3.0;
-
-        // 8. Intelligence supports Security: threat early warning aids law enforcement
-        security = (security * 2.0 + intelligence) / 3.0;
-
-        // 9. Stability & Security support Financial Capacity: depositor confidence and rule of law
-        var financialSecurity = (stability + security) / 2.0;
-        financial = (financial * 2.0 + financialSecurity) / 3.0;
-
-        // 10. Industry & Human Capital support Military Readiness: equipment fabrication and trained recruits
-        var militarySupport = (industrial + human) / 2.0;
-        military = (military * 2.0 + militarySupport) / 3.0;
-
-        // 11. Institutional & Strategic strength support Diplomatic Capacity: governance legitimacy and defense deterrence
-        var institutionalStrength = (admin + stability) / 2.0;
-        diplomatic = (institutionalStrength * 2.0 + military) / 3.0;
+        // Diplomatic capacity reflects institutional governance and political stability
+        var diplomatic = Math.Min(admin, stability);
 
         // =====================================================================
         // STAGE 4: STATE CAPACITY / GOVERNANCE CONVERSION & REPU REVENUE FLOW
-        // Evaluate the country's institutional ability to convert capabilities into output.
-        // Industrial strength, financial volume, and resources generate the taxable economic base,
-        // while administrative effectiveness determines tax compliance and anti-leakage realization.
+        // Economic revenue emerges from the productive base (industry or natural resources),
+        // but realization is constrained by administrative collection capacity against leakage.
         // =====================================================================
-        var taxableBase = (industrial + financial + naturalResource) / 3.0;
-        var repuRevenue = (taxableBase + admin) / 2.0;
+        var revenueBase = Math.Max(industrial, naturalResource);
+        var repuRevenue = Math.Min(revenueBase, admin);
 
         // =====================================================================
         // STAGE 5: NATIONAL & CATEGORY MODIFIERS
-        // Apply active modifiers targeting specific categories or broad scope additively.
-        // Stably sorted by Id to eliminate iteration order variance; non-negativity clamped.
+        // Apply active modifiers deterministically with non-negativity clamping.
         // =====================================================================
         repuRevenue = ApplyModifiers(repuRevenue, NationalYieldCategory.RepuTreasuryRevenue, sortedModifiers);
         industrial = ApplyModifiers(industrial, NationalYieldCategory.IndustrialCapacity, sortedModifiers);

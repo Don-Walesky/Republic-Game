@@ -7,9 +7,9 @@ using Republic.Core.World.Models;
 using Xunit;
 
 /// <summary>
-/// Unit tests for the calibrated, deterministic National Yield calculation engine.
+/// Unit tests for the simplified, deterministic National Yield calculation engine.
 /// Validates determinism, country isolation, input immutability, complete 14-category coverage,
-/// food exclusion, causal downstream sensitivity, archetypal country behaviors, and boundedness.
+/// food exclusion, enabling constraints, archetypal country behaviors, and non-negativity.
 /// </summary>
 public sealed class NationalYieldCalculatorTests
 {
@@ -151,20 +151,20 @@ public sealed class NationalYieldCalculatorTests
         }
 
         // Verify sensible outputs on a matched scale without explosive multipliers
-        Assert.InRange(result.IndustrialCapacity, 30.0, 70.0);
-        Assert.InRange(result.EnergyCapacity, 30.0, 70.0);
-        Assert.InRange(result.InfrastructureCapacity, 30.0, 70.0);
-        Assert.InRange(result.FinancialCapacity, 30.0, 70.0);
-        Assert.InRange(result.HumanCapital, 30.0, 70.0);
-        Assert.InRange(result.ScienceCapacity, 30.0, 70.0);
-        Assert.InRange(result.InnovationCapacity, 30.0, 70.0);
-        Assert.InRange(result.AdministrativeCapacity, 30.0, 70.0);
-        Assert.InRange(result.SecurityCapacity, 30.0, 70.0);
-        Assert.InRange(result.IntelligenceCapacity, 30.0, 70.0);
-        Assert.InRange(result.MilitaryReadiness, 30.0, 70.0);
-        Assert.InRange(result.DiplomaticCapacity, 30.0, 70.0);
-        Assert.InRange(result.NaturalResourceOutput, 30.0, 70.0);
-        Assert.InRange(result.RepuTreasuryRevenue, 30.0, 70.0);
+        Assert.Equal(50.0, result.IndustrialCapacity);
+        Assert.Equal(50.0, result.EnergyCapacity);
+        Assert.Equal(50.0, result.InfrastructureCapacity);
+        Assert.Equal(50.0, result.FinancialCapacity);
+        Assert.Equal(50.0, result.HumanCapital);
+        Assert.Equal(50.0, result.ScienceCapacity);
+        Assert.Equal(50.0, result.InnovationCapacity);
+        Assert.Equal(50.0, result.AdministrativeCapacity);
+        Assert.Equal(50.0, result.SecurityCapacity);
+        Assert.Equal(50.0, result.IntelligenceCapacity);
+        Assert.Equal(50.0, result.MilitaryReadiness);
+        Assert.Equal(50.0, result.DiplomaticCapacity);
+        Assert.Equal(50.0, result.NaturalResourceOutput);
+        Assert.Equal(50.0, result.RepuTreasuryRevenue);
     }
 
     [Fact]
@@ -229,7 +229,9 @@ public sealed class NationalYieldCalculatorTests
         var baseInputs = new NationalYieldCalculationInputs
         {
             EconomicCapacity = 50.0,
-            ScienceTechnology = 50.0
+            InfrastructureCondition = 50.0,
+            ScienceTechnology = 50.0,
+            HumanCapital = 50.0
         };
 
         var inputsWithMod = baseInputs.Clone();
@@ -267,6 +269,7 @@ public sealed class NationalYieldCalculatorTests
         var inputs = new NationalYieldCalculationInputs
         {
             EconomicCapacity = 45.67,
+            InfrastructureCondition = 60.0,
             GovernmentEffectiveness = 81.23,
             PoliticalStability = 67.89
         };
@@ -281,56 +284,62 @@ public sealed class NationalYieldCalculatorTests
     }
 
     [Fact]
-    public void TestI_CausalDownstreamSensitivity_SpecificInputImprovementsBoostExpectedCategories()
+    public void TestI_EnablingConstraintsAndDirectRelationships_WorkAsExpected()
     {
-        var baseline = new NationalYieldCalculationInputs
+        // 1. Weak Infrastructure constrains Industrial Capacity
+        var weakInfra = new NationalYieldCalculationInputs
         {
-            EconomicCapacity = 50.0,
+            EconomicCapacity = 90.0,
+            InfrastructureCondition = 20.0,
             GovernmentEffectiveness = 50.0,
-            InfrastructureCondition = 50.0,
-            HumanCapital = 50.0,
-            ScienceTechnology = 50.0,
-            SecurityLevel = 50.0,
             PoliticalStability = 50.0
         };
-        var baseResult = _calculator.Calculate(baseline);
+        var weakInfraResult = _calculator.Calculate(weakInfra);
+        Assert.Equal(20.0, weakInfraResult.IndustrialCapacity);
 
-        // 1. Better Human Capital should improve Science and Innovation
-        var improvedHuman = baseline.Clone();
-        improvedHuman.HumanCapital = 80.0;
-        var humanResult = _calculator.Calculate(improvedHuman);
-        Assert.True(humanResult.ScienceCapacity > baseResult.ScienceCapacity);
-        Assert.True(humanResult.InnovationCapacity > baseResult.InnovationCapacity);
+        // Upgrading Infrastructure unbottlenecks Industrial Capacity
+        var strongInfra = weakInfra.Clone();
+        strongInfra.InfrastructureCondition = 90.0;
+        var strongInfraResult = _calculator.Calculate(strongInfra);
+        Assert.Equal(90.0, strongInfraResult.IndustrialCapacity);
 
-        // 2. Better Science should improve Innovation
-        var improvedScience = baseline.Clone();
-        improvedScience.ScienceTechnology = 80.0;
-        var scienceResult = _calculator.Calculate(improvedScience);
-        Assert.True(scienceResult.InnovationCapacity > baseResult.InnovationCapacity);
+        // 2. Strong Science directly helps Innovation
+        var scienceInputs = new NationalYieldCalculationInputs
+        {
+            ScienceTechnology = 80.0,
+            HumanCapital = 80.0
+        };
+        var scienceResult = _calculator.Calculate(scienceInputs);
+        Assert.Equal(80.0, scienceResult.ScienceCapacity);
+        Assert.Equal(80.0, scienceResult.InnovationCapacity);
 
-        // 3. Better Infrastructure and Energy should support Industry
-        var improvedInfra = baseline.Clone();
-        improvedInfra.InfrastructureCondition = 80.0;
-        var infraResult = _calculator.Calculate(improvedInfra);
-        Assert.True(infraResult.IndustrialCapacity > baseResult.IndustrialCapacity);
-        Assert.True(infraResult.EnergyCapacity > baseResult.EnergyCapacity);
+        // 3. Weak Human Capital constrains Science
+        var lowHumanInputs = new NationalYieldCalculationInputs
+        {
+            ScienceTechnology = 80.0,
+            HumanCapital = 30.0
+        };
+        var lowHumanResult = _calculator.Calculate(lowHumanInputs);
+        Assert.Equal(30.0, lowHumanResult.ScienceCapacity);
+        Assert.Equal(30.0, lowHumanResult.InnovationCapacity);
 
-        // 4. Better Administration should improve revenue realization and governance
-        var improvedAdmin = baseline.Clone();
-        improvedAdmin.GovernmentEffectiveness = 80.0;
-        var adminResult = _calculator.Calculate(improvedAdmin);
-        Assert.True(adminResult.AdministrativeCapacity > baseResult.AdministrativeCapacity);
-        Assert.True(adminResult.RepuTreasuryRevenue > baseResult.RepuTreasuryRevenue);
-        Assert.True(adminResult.DiplomaticCapacity > baseResult.DiplomaticCapacity);
+        // 4. Strong Administration unbottlenecks REPU Treasury Revenue
+        var corruptState = new NationalYieldCalculationInputs
+        {
+            EconomicCapacity = 90.0,
+            InfrastructureCondition = 90.0,
+            GovernmentEffectiveness = 15.0,
+            PoliticalStability = 50.0
+        };
+        var corruptResult = _calculator.Calculate(corruptState);
+        Assert.Equal(90.0, corruptResult.IndustrialCapacity);
+        Assert.Equal(15.0, corruptResult.RepuTreasuryRevenue);
 
-        // 5. Better Security should support Intelligence, Military, and Financial confidence
-        var improvedSec = baseline.Clone();
-        improvedSec.SecurityLevel = 80.0;
-        var secResult = _calculator.Calculate(improvedSec);
-        Assert.True(secResult.SecurityCapacity > baseResult.SecurityCapacity);
-        Assert.True(secResult.IntelligenceCapacity > baseResult.IntelligenceCapacity);
-        Assert.True(secResult.MilitaryReadiness > baseResult.MilitaryReadiness);
-        Assert.True(secResult.FinancialCapacity > baseResult.FinancialCapacity);
+        // Cleaning up administration unbottlenecks revenue
+        var cleanState = corruptState.Clone();
+        cleanState.GovernmentEffectiveness = 85.0;
+        var cleanResult = _calculator.Calculate(cleanState);
+        Assert.Equal(85.0, cleanResult.RepuTreasuryRevenue);
     }
 
     [Fact]
@@ -340,36 +349,36 @@ public sealed class NationalYieldCalculatorTests
         var weakInputs = new NationalYieldCalculationInputs
         {
             EconomicCapacity = 15.0,
-            InfrastructureCondition = 10.0,
+            InfrastructureCondition = 15.0,
             HumanCapital = 15.0,
-            ScienceTechnology = 5.0,
-            GovernmentEffectiveness = 10.0,
+            ScienceTechnology = 15.0,
+            GovernmentEffectiveness = 15.0,
             SecurityLevel = 15.0,
-            PoliticalStability = 20.0
+            PoliticalStability = 15.0
         };
         var weakResult = _calculator.Calculate(weakInputs);
 
-        // Does not magically become a superpower; modest, functioning values
-        Assert.InRange(weakResult.IndustrialCapacity, 5.0, 25.0);
-        Assert.InRange(weakResult.ScienceCapacity, 2.0, 20.0);
-        Assert.InRange(weakResult.RepuTreasuryRevenue, 5.0, 25.0);
+        // Modest, functioning values; does not magically become a superpower
+        Assert.Equal(15.0, weakResult.IndustrialCapacity);
+        Assert.Equal(15.0, weakResult.ScienceCapacity);
+        Assert.Equal(15.0, weakResult.RepuTreasuryRevenue);
         Assert.True(weakResult.IndustrialCapacity < 30.0);
 
         // 2. Developing Country: moderate capabilities with room to grow
         var devInputs = new NationalYieldCalculationInputs
         {
             EconomicCapacity = 50.0,
-            InfrastructureCondition = 45.0,
+            InfrastructureCondition = 50.0,
             HumanCapital = 50.0,
-            ScienceTechnology = 40.0,
-            GovernmentEffectiveness = 45.0,
+            ScienceTechnology = 50.0,
+            GovernmentEffectiveness = 50.0,
             SecurityLevel = 50.0,
-            PoliticalStability = 55.0
+            PoliticalStability = 50.0
         };
         var devResult = _calculator.Calculate(devInputs);
 
-        Assert.InRange(devResult.IndustrialCapacity, 40.0, 60.0);
-        Assert.InRange(devResult.RepuTreasuryRevenue, 35.0, 55.0);
+        Assert.Equal(50.0, devResult.IndustrialCapacity);
+        Assert.Equal(50.0, devResult.RepuTreasuryRevenue);
         Assert.True(devResult.IndustrialCapacity > weakResult.IndustrialCapacity);
 
         // 3. Strong Country: high capabilities across all sectors
@@ -378,39 +387,40 @@ public sealed class NationalYieldCalculatorTests
             EconomicCapacity = 90.0,
             InfrastructureCondition = 90.0,
             HumanCapital = 90.0,
-            ScienceTechnology = 85.0,
-            GovernmentEffectiveness = 85.0,
+            ScienceTechnology = 90.0,
+            GovernmentEffectiveness = 90.0,
             SecurityLevel = 90.0,
             PoliticalStability = 90.0
         };
         var strongResult = _calculator.Calculate(strongInputs);
 
         // Strong output, but bounded (not absurdly huge numbers)
-        Assert.InRange(strongResult.IndustrialCapacity, 80.0, 100.0);
-        Assert.InRange(strongResult.RepuTreasuryRevenue, 75.0, 95.0);
+        Assert.Equal(90.0, strongResult.IndustrialCapacity);
+        Assert.Equal(90.0, strongResult.RepuTreasuryRevenue);
         Assert.True(strongResult.IndustrialCapacity > devResult.IndustrialCapacity);
         Assert.True(strongResult.RepuTreasuryRevenue < 200.0, "Revenue should not arbitrarily explode.");
 
         // 4. Specialized Country: Knowledge/Tech Hub (High Science & Human Capital, modest Industry & Military)
         var techHubInputs = new NationalYieldCalculationInputs
         {
-            EconomicCapacity = 30.0,
-            InfrastructureCondition = 60.0,
+            EconomicCapacity = 25.0,
+            InfrastructureCondition = 25.0,
             HumanCapital = 95.0,
             ScienceTechnology = 95.0,
-            GovernmentEffectiveness = 75.0,
-            SecurityLevel = 30.0,
+            GovernmentEffectiveness = 80.0,
+            SecurityLevel = 20.0,
             PoliticalStability = 80.0
         };
         var techHubResult = _calculator.Calculate(techHubInputs);
 
         // High Science and Innovation reflect its national specialty
-        Assert.True(techHubResult.ScienceCapacity > 85.0);
-        Assert.True(techHubResult.InnovationCapacity > 85.0);
+        Assert.Equal(95.0, techHubResult.ScienceCapacity);
+        Assert.Equal(95.0, techHubResult.InnovationCapacity);
+        Assert.Equal(95.0, techHubResult.HumanCapital);
 
         // Modest Industrial and Military reflect its trade-offs
-        Assert.True(techHubResult.IndustrialCapacity < 50.0);
-        Assert.True(techHubResult.MilitaryReadiness < 60.0);
+        Assert.Equal(25.0, techHubResult.IndustrialCapacity);
+        Assert.Equal(20.0, techHubResult.MilitaryReadiness);
         Assert.True(techHubResult.ScienceCapacity > techHubResult.IndustrialCapacity);
     }
 
