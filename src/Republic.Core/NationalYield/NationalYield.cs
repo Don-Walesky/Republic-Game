@@ -280,4 +280,50 @@ public sealed class NationalYield
         State = State.Clone(),
         ResourceOutput = ResourceOutput.Clone()
     };
+
+    /// <summary>
+    /// Creates an independent copy of the National Yield with all 14 canonical categories scaled by the specified multiplier.
+    /// </summary>
+    /// <param name="multiplier">The non-negative multiplier to apply.</param>
+    /// <returns>A newly allocated <see cref="NationalYield"/> with scaled capacities.</returns>
+    public NationalYield Multiply(double multiplier)
+    {
+        if (multiplier < 0.0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(multiplier), "Yield multiplier cannot be negative.");
+        }
+
+        return new NationalYield
+        {
+            RepuTreasuryRevenue = RepuTreasuryRevenue * multiplier,
+            IndustrialCapacity = IndustrialCapacity * multiplier,
+            EnergyCapacity = EnergyCapacity * multiplier,
+            InfrastructureCapacity = InfrastructureCapacity * multiplier,
+            FinancialCapacity = FinancialCapacity * multiplier,
+            HumanCapital = HumanCapital * multiplier,
+            ScienceCapacity = ScienceCapacity * multiplier,
+            InnovationCapacity = InnovationCapacity * multiplier,
+            AdministrativeCapacity = AdministrativeCapacity * multiplier,
+            SecurityCapacity = SecurityCapacity * multiplier,
+            IntelligenceCapacity = IntelligenceCapacity * multiplier,
+            MilitaryReadiness = MilitaryReadiness * multiplier,
+            DiplomaticCapacity = DiplomaticCapacity * multiplier,
+            NaturalResourceOutput = NaturalResourceOutput * multiplier
+        };
+    }
+
+    /// <summary>
+    /// Multiplies all 14 canonical categories of the National Yield by the specified scalar.
+    /// </summary>
+    public static NationalYield operator *(NationalYield yield, double multiplier)
+    {
+        ArgumentNullException.ThrowIfNull(yield);
+        return yield.Multiply(multiplier);
+    }
+
+    /// <summary>
+    /// Multiplies all 14 canonical categories of the National Yield by the specified scalar.
+    /// </summary>
+    public static NationalYield operator *(double multiplier, NationalYield yield) => yield * multiplier;
 }
+

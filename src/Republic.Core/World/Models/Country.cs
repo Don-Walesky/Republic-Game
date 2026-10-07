@@ -164,6 +164,30 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Determines whether the specified simulation time falls within the country's founding day (Independence Day in WAT).
+    /// Respects the exact WAT day boundary (simulation day number), not simply 24 elapsed hours.
+    /// </summary>
+    public bool IsInFoundingDay(RepublicTime simulationTime)
+    {
+        if (!IsFounded)
+        {
+            return false;
+        }
+
+        return simulationTime >= FoundingTime && simulationTime.DayNumber == FoundingRepublicDay;
+    }
+
+    /// <summary>
+    /// Determines whether the country is currently within its founding day relative to the authoritative Republic clock.
+    /// </summary>
+    public bool IsInFoundingDay(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return IsInFoundingDay(clock.CurrentTime);
+    }
+
+
+    /// <summary>
     /// Factory method to create and found a new sovereign country with an authoritative founding moment.
     /// </summary>
     public static Country Found(
