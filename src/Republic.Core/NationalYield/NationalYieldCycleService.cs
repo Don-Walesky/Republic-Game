@@ -6,9 +6,10 @@ using Republic.Core.World.Models;
 
 /// <summary>
 /// Service implementation for National Yield cycle execution.
-/// Acts as the execution mechanism: at a given simulation time, derives calculation inputs from the country,
-/// delegates pure evaluation to <see cref="INationalYieldCalculator"/>, stores the latest snapshot in-memory,
-/// and returns the resulting <see cref="NationalYieldSnapshot"/>.
+/// Acts as the execution mechanism: at a given simulation time, derives calculation inputs from the country's
+/// current in-memory state, delegates pure evaluation to <see cref="INationalYieldCalculator"/>, stores an
+/// independent snapshot in-memory, and returns a defensive copy to protect snapshot integrity.
+/// The recorded simulation timestamp identifies the time of calculation; it does not reconstruct historical state.
 /// </summary>
 public sealed class NationalYieldCycleService : INationalYieldCycleService
 {
@@ -29,24 +30,21 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
     {
         ArgumentNullException.ThrowIfNull(country);
 
-        // 1. Obtain country's current calculation inputs via existing domain abstraction
+        // 1. Obtain country's current in-memory calculation inputs via existing domain abstraction
+        // Evaluates current in-memory state; does not reconstruct historical state based on simulationTime.
         var inputs = NationalYieldCalculationInputs.FromCountry(country);
 
         // 2. Calculate National Yield using the reused calculator (zero duplicate math)
         var yieldResult = _calculator.Calculate(inputs);
 
-        // 3. Construct the immutable yield snapshot representing the country's state at the requested simulation time
-        var snapshot = new NationalYieldSnapshot
-        {
-            CountryId = country.Id,
-            SimulationTime = simulationTime,
-            Yield = yieldResult
-        };
+        // 3. Construct an independent yield snapshot representing the country's state at the recorded simulation time
+        var storedSnapshot = new NationalYieldSnapshot(country.Id, simulationTime, yieldResult);
 
-        // 4. Store the resulting snapshot isolated by country ID
-        _latestSnapshots[country.Id] = snapshot;
+        // 4. Store the independent snapshot isolated by country ID
+        _latestSnapshots[country.Id] = storedSnapshot;
 
-        return snapshot;
+        // 5. Return an independent defensive copy so callers cannot mutate the service's stored cache
+        return storedSnapshot.Clone();
     }
 
     /// <inheritdoc />
@@ -60,7 +58,7 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
     public NationalYieldSnapshot? GetLatestSnapshot(string countryId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
-        return _latestSnapshots.TryGetValue(countryId, out var snapshot) ? snapshot : null;
+        return _latestSnapshots.TryGetValue(countryId, out var snapshot) ? snapshot.Clone() : null;
     }
 
     /// <inheritdoc />

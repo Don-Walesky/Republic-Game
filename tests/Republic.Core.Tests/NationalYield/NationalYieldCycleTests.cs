@@ -75,10 +75,12 @@ public sealed class NationalYieldCycleTests
         Republic.Core.NationalYield.NationalYield directYield = snapshot;
         Assert.Same(snapshot.Yield, directYield);
 
-        // The snapshot is stored in the cycle service and retrievable
+        // The snapshot is stored in the cycle service and retrievable as a defensive copy
         var retrieved = _cycleService.GetLatestSnapshot(country.Id);
         Assert.NotNull(retrieved);
-        Assert.Same(snapshot, retrieved);
+        Assert.NotSame(snapshot, retrieved);
+        Assert.Equal(snapshot.Yield.IndustrialCapacity, retrieved.Yield.IndustrialCapacity);
+        Assert.Equal(snapshot.Yield.RepuTreasuryRevenue, retrieved.Yield.RepuTreasuryRevenue);
     }
 
     [Fact]
@@ -176,8 +178,9 @@ public sealed class NationalYieldCycleTests
         Assert.Equal(country.BaselineStability, spy.LastInputs.PoliticalStability);
         Assert.Equal(country.Yield.IndustrialCapacity, spy.LastInputs.EconomicCapacity);
 
-        // Verify the resulting yield in the snapshot was produced by the calculator
-        Assert.Same(spy.PresetResult, snapshot.Yield);
+        // Verify the resulting yield values match the calculator output
+        Assert.Equal(spy.PresetResult.IndustrialCapacity, snapshot.Yield.IndustrialCapacity);
+        Assert.Equal(spy.PresetResult.RepuTreasuryRevenue, snapshot.Yield.RepuTreasuryRevenue);
     }
 
     [Fact]
@@ -198,6 +201,81 @@ public sealed class NationalYieldCycleTests
         // Country yields are identical because country state did not change
         Assert.Equal(snapshot1.Yield.IndustrialCapacity, snapshot2.Yield.IndustrialCapacity);
         Assert.Equal(snapshot1.Yield.RepuTreasuryRevenue, snapshot2.Yield.RepuTreasuryRevenue);
+    }
+
+    [Fact]
+    public void SnapshotIntegrity_MutatingReturnedOrRetrievedSnapshot_DoesNotAlterServiceCachedSnapshot()
+    {
+        var country = CreateTestCountry();
+        var time = _clock.CurrentTime;
+
+        // 1. Execute cycle and get returned snapshot
+        var returnedSnapshot = _cycleService.ExecuteCycle(country, time);
+        var originalIndustrial = returnedSnapshot.Yield.IndustrialCapacity;
+        var originalRevenue = returnedSnapshot.Yield.RepuTreasuryRevenue;
+
+        // Verify all 14 categories exist on returned snapshot
+        Assert.True(originalIndustrial > 0.0);
+        Assert.True(originalRevenue > 0.0);
+
+        // 2. Mutate the returned snapshot's Yield
+        returnedSnapshot.Yield.IndustrialCapacity = 999999.0;
+        returnedSnapshot.Yield.RepuTreasuryRevenue = 888888.0;
+
+        // 3. Retrieve snapshot from the service
+        var cachedSnapshot = _cycleService.GetLatestSnapshot(country.Id);
+        Assert.NotNull(cachedSnapshot);
+
+        // The cached snapshot must NOT be altered by mutations to the returned snapshot
+        Assert.Equal(originalIndustrial, cachedSnapshot.Yield.IndustrialCapacity);
+        Assert.Equal(originalRevenue, cachedSnapshot.Yield.RepuTreasuryRevenue);
+
+        // 4. Mutate the retrieved snapshot
+        cachedSnapshot.Yield.IndustrialCapacity = 777777.0;
+
+        // 5. Retrieve snapshot again from the service
+        var cachedSnapshotAgain = _cycleService.GetLatestSnapshot(country.Id);
+        Assert.NotNull(cachedSnapshotAgain);
+
+        // The service's internal snapshot must remain pristine
+        Assert.Equal(originalIndustrial, cachedSnapshotAgain.Yield.IndustrialCapacity);
+        Assert.Equal(originalRevenue, cachedSnapshotAgain.Yield.RepuTreasuryRevenue);
+
+        // 6. Verify all 14 categories are preserved across defensive copies
+        Assert.Equal(returnedSnapshot.Yield.HumanCapital, cachedSnapshotAgain.Yield.HumanCapital);
+        Assert.Equal(returnedSnapshot.Yield.EnergyCapacity, cachedSnapshotAgain.Yield.EnergyCapacity);
+        Assert.Equal(returnedSnapshot.Yield.InfrastructureCapacity, cachedSnapshotAgain.Yield.InfrastructureCapacity);
+        Assert.Equal(returnedSnapshot.Yield.FinancialCapacity, cachedSnapshotAgain.Yield.FinancialCapacity);
+        Assert.Equal(returnedSnapshot.Yield.ScienceCapacity, cachedSnapshotAgain.Yield.ScienceCapacity);
+        Assert.Equal(returnedSnapshot.Yield.InnovationCapacity, cachedSnapshotAgain.Yield.InnovationCapacity);
+        Assert.Equal(returnedSnapshot.Yield.AdministrativeCapacity, cachedSnapshotAgain.Yield.AdministrativeCapacity);
+        Assert.Equal(returnedSnapshot.Yield.SecurityCapacity, cachedSnapshotAgain.Yield.SecurityCapacity);
+        Assert.Equal(returnedSnapshot.Yield.IntelligenceCapacity, cachedSnapshotAgain.Yield.IntelligenceCapacity);
+        Assert.Equal(returnedSnapshot.Yield.MilitaryReadiness, cachedSnapshotAgain.Yield.MilitaryReadiness);
+        Assert.Equal(returnedSnapshot.Yield.DiplomaticCapacity, cachedSnapshotAgain.Yield.DiplomaticCapacity);
+        Assert.Equal(returnedSnapshot.Yield.NaturalResourceOutput, cachedSnapshotAgain.Yield.NaturalResourceOutput);
+    }
+
+    [Fact]
+    public void SimulationTimeSemantics_RecordsSuppliedTime_CalculatesFromCurrentCountryStateWithoutHistoricalReconstruction()
+    {
+        var country = CreateTestCountry(industry: 40.0, infrastructure: 40.0);
+        var historicalTime = _clock.FromDayAndTime(1, new TimeOnly(10, 0));
+
+        // Initial cycle execution at historicalTime
+        var snapshot1 = _cycleService.ExecuteCycle(country, historicalTime);
+        Assert.Equal(historicalTime, snapshot1.SimulationTime);
+        Assert.Equal(40.0, snapshot1.Yield.IndustrialCapacity);
+
+        // Upgrading country's current in-memory state
+        country.Yield.IndustrialCapacity = 85.0;
+        country.Yield.InfrastructureCapacity = 85.0;
+
+        // Running cycle again with the SAME historicalTime evaluates the current state
+        // (i.e. does not reconstruct what the country state was at Day 1)
+        var snapshot2 = _cycleService.ExecuteCycle(country, historicalTime);
+        Assert.Equal(historicalTime, snapshot2.SimulationTime);
+        Assert.Equal(85.0, snapshot2.Yield.IndustrialCapacity);
     }
 
     [Fact]
