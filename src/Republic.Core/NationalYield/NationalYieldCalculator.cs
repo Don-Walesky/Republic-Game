@@ -2,9 +2,9 @@ namespace Republic.Core.NationalYield;
 
 /// <summary>
 /// Isolated, deterministic calculation engine for sovereign National Yield.
-/// Evaluates <see cref="NationalYieldCalculationInputs"/> across the 6-stage pipeline (ADR-0006).
-/// Provides a minimal neutral baseline without hard-coded economic coefficients, arbitrary balancing curves,
-/// or premature State Capacity formulas, leaving mathematical calibration for subsequent design steps.
+/// Evaluates <see cref="NationalYieldCalculationInputs"/> across the 6-stage pipeline (ADR-0006),
+/// establishing the first working calibrated model derived from the approved relationships in ADR-0008
+/// and the numerical calibration principles in ADR-0009.
 /// </summary>
 public sealed class NationalYieldCalculator : INationalYieldCalculator
 {
@@ -16,53 +16,112 @@ public sealed class NationalYieldCalculator : INationalYieldCalculator
         // =====================================================================
         // STAGE 1: INPUT SNAPSHOTTING & RESOLUTION
         // Read input factors safely; inputs remain completely immutable.
+        // Guarantee non-negativity across all incoming sovereign factors.
         // =====================================================================
+        var economicCapacity = Math.Max(0.0, inputs.EconomicCapacity);
+        var govtEffectiveness = Math.Max(0.0, inputs.GovernmentEffectiveness);
+        var infraCondition = Math.Max(0.0, inputs.InfrastructureCondition);
+        var humanCapital = Math.Max(0.0, inputs.HumanCapital);
+        var scienceTech = Math.Max(0.0, inputs.ScienceTechnology);
+        var stability = Math.Max(0.0, inputs.PoliticalStability);
+        var securityLevel = Math.Max(0.0, inputs.SecurityLevel);
+        var cabinetEffectiveness = Math.Max(0.0, inputs.CabinetEffectiveness);
+
         var sortedModifiers = inputs.Modifiers
             .OrderBy(m => m.Id, StringComparer.Ordinal)
             .ToList();
 
         // =====================================================================
         // STAGE 2: BASE POTENTIAL EVALUATION
-        // Direct mappings are used where a straightforward conceptual relationship exists.
-        // Categories requiring future domain/economic models use an explicit neutral baseline (0.0).
-        // Arbitrary conversion multipliers, GDP formulas, and tax rates are intentionally excluded.
+        // Establish foundational structural potential directly from relevant inputs.
+        // Capacities reflect their core physical, human, and institutional substrates.
         // =====================================================================
-        var industrial = Math.Max(0.0, inputs.EconomicCapacity);
-        var infrastructure = Math.Max(0.0, inputs.InfrastructureCondition);
-        var humanCapital = Math.Max(0.0, inputs.HumanCapital);
-        var science = Math.Max(0.0, inputs.ScienceTechnology);
-        var admin = Math.Max(0.0, inputs.GovernmentEffectiveness);
-        var security = Math.Max(0.0, inputs.SecurityLevel);
+        var human = humanCapital;
+        var science = scienceTech;
+        var infrastructure = infraCondition;
+        var admin = govtEffectiveness;
+        var security = securityLevel;
+        var industrial = economicCapacity;
 
-        // Explicit neutral baselines for categories requiring dedicated future domain models
-        var energy = 0.0;
-        var financial = 0.0;
-        var innovation = 0.0;
-        var intelligence = 0.0;
-        var military = 0.0;
-        var diplomatic = 0.0;
-        var naturalResource = 0.0;
-        var repuRevenue = 0.0;
+        // Energy capacity requires physical infrastructure to generate and distribute power
+        var energy = infraCondition;
+
+        // Financial capacity reflects commercial banking depth and credit liquidity
+        var financial = economicCapacity;
+
+        // Innovation capacity reflects commercial technology adoption, rooted in science & tech
+        var innovation = scienceTech;
+
+        // Intelligence capacity reflects strategic early warning and security apparatus
+        var intelligence = securityLevel;
+
+        // Military readiness reflects defense capability and armed forces posture
+        var military = securityLevel;
+
+        // Diplomatic capacity reflects international standing and bilateral representation
+        var diplomatic = govtEffectiveness;
+
+        // Natural resource extraction requires physical transport corridors to access and move deposits
+        var naturalResource = Math.Min(economicCapacity, infraCondition);
 
         // =====================================================================
         // STAGE 3: CROSS-CATEGORY UPSTREAM RELATIONSHIPS
-        // Architectural boundary for upstream synergies (Science, Energy, Infrastructure).
-        // Numerical multipliers and cross-system coefficients are intentionally deferred.
-        // Current baseline passes through base potential values unchanged.
+        // Propagate causal synergies and enabling throughput across categories (ADR-0008).
+        // Uses bounded, monotonic combinations without arbitrary multiplier inflation.
         // =====================================================================
 
+        // 1. Human Capital helps Science: educated talent fuels research labs
+        science = (science * 2.0 + human) / 3.0;
+
+        // 2. Science helps Innovation: research breakthroughs feed commercial technology adoption
+        innovation = (science * 2.0 + human) / 3.0;
+
+        // 3. Infrastructure & Energy support Industry: factories require logistics corridors and base-load power
+        var energySupport = (energy + infrastructure) / 2.0;
+        industrial = (industrial * 2.0 + energySupport) / 3.0;
+
+        // 4. Administration supports Infrastructure: public works oversight ensures maintenance
+        infrastructure = (infrastructure * 2.0 + admin) / 3.0;
+
+        // 5. Infrastructure & Resources support Energy: grid transmission and domestic fuel feed power generation
+        var energyInputs = (infrastructure + naturalResource) / 2.0;
+        energy = (energy * 2.0 + energyInputs) / 3.0;
+
+        // 6. Administration supports Human Capital: public health and education services sustain vitality
+        human = (human * 2.0 + admin) / 3.0;
+
+        // 7. Administration supports Intelligence: institutional oversight and vetting
+        var adminStability = (admin + stability) / 2.0;
+        intelligence = (intelligence * 2.0 + adminStability) / 3.0;
+
+        // 8. Intelligence supports Security: threat early warning aids law enforcement
+        security = (security * 2.0 + intelligence) / 3.0;
+
+        // 9. Stability & Security support Financial Capacity: depositor confidence and rule of law
+        var financialSecurity = (stability + security) / 2.0;
+        financial = (financial * 2.0 + financialSecurity) / 3.0;
+
+        // 10. Industry & Human Capital support Military Readiness: equipment fabrication and trained recruits
+        var militarySupport = (industrial + human) / 2.0;
+        military = (military * 2.0 + militarySupport) / 3.0;
+
+        // 11. Institutional & Strategic strength support Diplomatic Capacity: governance legitimacy and defense deterrence
+        var institutionalStrength = (admin + stability) / 2.0;
+        diplomatic = (institutionalStrength * 2.0 + military) / 3.0;
+
         // =====================================================================
-        // STAGE 4: STATE CAPACITY / GOVERNANCE CONVERSION
-        // Architectural boundary for institutional conversion efficiency.
-        // Mathematical conversion formulas and coefficients are intentionally deferred to future governance calibration.
-        // Current baseline passes through potential values unchanged.
+        // STAGE 4: STATE CAPACITY / GOVERNANCE CONVERSION & REPU REVENUE FLOW
+        // Evaluate the country's institutional ability to convert capabilities into output.
+        // Industrial strength, financial volume, and resources generate the taxable economic base,
+        // while administrative effectiveness determines tax compliance and anti-leakage realization.
         // =====================================================================
+        var taxableBase = (industrial + financial + naturalResource) / 3.0;
+        var repuRevenue = (taxableBase + admin) / 2.0;
 
         // =====================================================================
         // STAGE 5: NATIONAL & CATEGORY MODIFIERS
-        // Evaluate active modifiers targeting specific categories or broad scope.
-        // NOTE: Simple additive application is a temporary Step 4D baseline implementation.
-        // Advanced modifier stacking, percentages, diminishing returns, and curves remain deferred.
+        // Apply active modifiers targeting specific categories or broad scope additively.
+        // Stably sorted by Id to eliminate iteration order variance; non-negativity clamped.
         // =====================================================================
         repuRevenue = ApplyModifiers(repuRevenue, NationalYieldCategory.RepuTreasuryRevenue, sortedModifiers);
         industrial = ApplyModifiers(industrial, NationalYieldCategory.IndustrialCapacity, sortedModifiers);
@@ -70,7 +129,7 @@ public sealed class NationalYieldCalculator : INationalYieldCalculator
         infrastructure = ApplyModifiers(infrastructure, NationalYieldCategory.InfrastructureCapacity, sortedModifiers);
         financial = ApplyModifiers(financial, NationalYieldCategory.FinancialCapacity, sortedModifiers);
 
-        humanCapital = ApplyModifiers(humanCapital, NationalYieldCategory.HumanCapital, sortedModifiers);
+        human = ApplyModifiers(human, NationalYieldCategory.HumanCapital, sortedModifiers);
         science = ApplyModifiers(science, NationalYieldCategory.ScienceCapacity, sortedModifiers);
         innovation = ApplyModifiers(innovation, NationalYieldCategory.InnovationCapacity, sortedModifiers);
 
@@ -84,7 +143,7 @@ public sealed class NationalYieldCalculator : INationalYieldCalculator
 
         // =====================================================================
         // STAGE 6: FINAL CATEGORY OUTPUT & FLOW RESOLUTION
-        // Allocate a new NationalYield instance containing all 14 canonical categories.
+        // Allocate a new, independent NationalYield instance containing all 14 canonical categories.
         // =====================================================================
         return new NationalYield
         {
@@ -94,7 +153,7 @@ public sealed class NationalYieldCalculator : INationalYieldCalculator
             InfrastructureCapacity = Math.Max(0.0, infrastructure),
             FinancialCapacity = Math.Max(0.0, financial),
 
-            HumanCapital = Math.Max(0.0, humanCapital),
+            HumanCapital = Math.Max(0.0, human),
             ScienceCapacity = Math.Max(0.0, science),
             InnovationCapacity = Math.Max(0.0, innovation),
 
