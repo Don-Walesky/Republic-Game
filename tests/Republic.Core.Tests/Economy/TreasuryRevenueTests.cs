@@ -212,4 +212,156 @@ public sealed class TreasuryRevenueTests
         Assert.Throws<ArgumentOutOfRangeException>(() => treasury.Deposit(-5.0));
         Assert.Throws<ArgumentOutOfRangeException>(() => treasury.Withdraw(-5.0));
     }
+
+    [Fact]
+    public void FirstCredit_IncreasesBalance_BySnapshotRepuTreasuryRevenue()
+    {
+        var clock = RepublicClock.CreateControlled();
+        var country = CreateTestCountry("First Credit Nation", initialTreasury: 100.0);
+        var snapshot = new NationalYieldSnapshot(
+            country.Id,
+            clock.CurrentTime,
+            new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = 450.0 });
+
+        var treasury = _revenueService.ApplyRevenue(country, snapshot);
+
+        Assert.Equal(550.0, treasury.Balance);
+        Assert.Equal(550.0, country.Treasury.Balance);
+    }
+
+    [Fact]
+    public void SecondCredit_OfSameSnapshot_DoesNotChangeBalance()
+    {
+        var clock = RepublicClock.CreateControlled();
+        var country = CreateTestCountry("Idempotent Credit Nation", initialTreasury: 50.0);
+        var snapshot = new NationalYieldSnapshot(
+            country.Id,
+            clock.CurrentTime,
+            new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = 200.0 });
+
+        _revenueService.ApplyRevenue(country, snapshot);
+        Assert.Equal(250.0, country.Treasury.Balance);
+
+        // Second credit with identical snapshot identity returns existing balance and does not deposit again
+        var secondResult = _revenueService.ApplyRevenue(country, snapshot);
+        Assert.Equal(250.0, secondResult.Balance);
+        Assert.Equal(250.0, country.Treasury.Balance);
+    }
+
+    [Fact]
+    public void DifferentSimulationTime_CanCreditAgain()
+    {
+        var clock = RepublicClock.CreateControlled();
+        var country = CreateTestCountry("MultiTime Nation", initialTreasury: 0.0);
+
+        var time1 = clock.FromDayAndTime(1, new TimeOnly(6, 0));
+        var time2 = clock.FromDayAndTime(1, new TimeOnly(12, 0));
+
+        var snapshot1 = new NationalYieldSnapshot(country.Id, time1, new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = 100.0 });
+        var snapshot2 = new NationalYieldSnapshot(country.Id, time2, new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = 150.0 });
+
+        _revenueService.ApplyRevenue(country, snapshot1);
+        Assert.Equal(100.0, country.Treasury.Balance);
+
+        _revenueService.ApplyRevenue(country, snapshot2);
+        Assert.Equal(250.0, country.Treasury.Balance);
+    }
+
+    [Fact]
+    public void FoundingDayCredit_IsGreaterThan_NonFoundingDayCredit_ForEqualInputs()
+    {
+        var clock = RepublicClock.CreateControlled();
+        var foundingTime = clock.FromDayAndTime(5, new TimeOnly(10, 0));
+        var nonFoundingTime = clock.FromDayAndTime(6, new TimeOnly(10, 0));
+
+        var foundingCountry = Country.Found("Founding Nation", foundingTime, baselineStability: 75.0,
+            yield: new Republic.Core.NationalYield.NationalYield
+            {
+                IndustrialCapacity = 60.0,
+                InfrastructureCapacity = 60.0,
+                AdministrativeCapacity = 70.0
+            });
+
+        var nonFoundingCountry = Country.Found("Non-Founding Nation", foundingTime, baselineStability: 75.0,
+            yield: new Republic.Core.NationalYield.NationalYield
+            {
+                IndustrialCapacity = 60.0,
+                InfrastructureCapacity = 60.0,
+                AdministrativeCapacity = 70.0
+            });
+
+        var cycleService = new NationalYieldCycleService();
+
+        // Founding day cycle execution applies x10 scaled yield to treasury
+        cycleService.ExecuteCycle(foundingCountry, foundingTime);
+        var foundingBalance = foundingCountry.Treasury.Balance;
+
+        // Non-founding day cycle execution applies 1x scaled yield to treasury
+        cycleService.ExecuteCycle(nonFoundingCountry, nonFoundingTime);
+        var nonFoundingBalance = nonFoundingCountry.Treasury.Balance;
+
+        Assert.True(foundingBalance > nonFoundingBalance);
+        Assert.Equal(nonFoundingBalance * 10.0, foundingBalance);
+    }
+
+    [Fact]
+    public void CountryIsolation_CreditingCountryA_DoesNotChangeCountryB()
+    {
+        var clock = RepublicClock.CreateControlled();
+        var countryA = CreateTestCountry("Country A", initialTreasury: 100.0);
+        var countryB = CreateTestCountry("Country B", initialTreasury: 200.0);
+
+        var snapshotA = new NationalYieldSnapshot(
+            countryA.Id,
+            clock.CurrentTime,
+            new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = 50.0 });
+
+        _revenueService.ApplyRevenue(countryA, snapshotA);
+
+        Assert.Equal(150.0, countryA.Treasury.Balance);
+        Assert.Equal(200.0, countryB.Treasury.Balance);
+        Assert.True(countryA.Treasury.HasAppliedSnapshot(snapshotA.Id));
+        Assert.False(countryB.Treasury.HasAppliedSnapshot(snapshotA.Id));
+    }
+
+    [Fact]
+    public void NegativeOrZeroRevenue_DoesNotThrow_AndDoesNotDecreaseBalance()
+    {
+        var clock = RepublicClock.CreateControlled();
+        var country = CreateTestCountry("Zero Revenue Nation", initialTreasury: 300.0);
+
+        // Zero revenue snapshot
+        var zeroSnapshot = new NationalYieldSnapshot(
+            country.Id,
+            clock.FromDayAndTime(1, new TimeOnly(6, 0)),
+            new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = 0.0 });
+
+        _revenueService.ApplyRevenue(country, zeroSnapshot);
+        Assert.Equal(300.0, country.Treasury.Balance);
+
+        // Negative revenue snapshot (defensive verification)
+        var negativeSnapshot = new NationalYieldSnapshot(
+            country.Id,
+            clock.FromDayAndTime(1, new TimeOnly(12, 0)),
+            new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = -50.0 });
+
+        _revenueService.ApplyRevenue(country, negativeSnapshot);
+        Assert.Equal(300.0, country.Treasury.Balance);
+    }
+
+    [Fact]
+    public void ApplyingRevenue_DoesNotMutateYieldSnapshot()
+    {
+        var clock = RepublicClock.CreateControlled();
+        var snapshot = new NationalYieldSnapshot(
+            "c1",
+            clock.CurrentTime,
+            new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = 250.0, IndustrialCapacity = 80.0 });
+
+        var treasury = new RepuTreasury(50.0, "c1");
+        _revenueService.ApplyRevenue(treasury, snapshot);
+
+        Assert.Equal(250.0, snapshot.Yield.RepuTreasuryRevenue);
+        Assert.Equal(80.0, snapshot.Yield.IndustrialCapacity);
+    }
 }

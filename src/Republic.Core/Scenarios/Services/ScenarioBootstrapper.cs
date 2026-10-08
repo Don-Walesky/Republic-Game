@@ -8,6 +8,7 @@ using Republic.Core.Legislature.Services;
 using Republic.Core.Scenarios.Models;
 using Republic.Core.World;
 using Republic.Core.World.Models;
+using Republic.Core.Economy.Treasury;
 using Republic.Core.Workspace.Models;
 using Republic.Core.Workspace.Services;
 
@@ -102,7 +103,8 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
         {
             Id = "player-country",
             Name = preset.PlayerCountryName,
-            BaselineStability = preset.StartingStability
+            BaselineStability = preset.StartingStability,
+            Treasury = new RepuTreasury(preset.StartingTreasury, "player-country")
         });
 
         // Register neighbors

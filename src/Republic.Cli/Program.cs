@@ -1,8 +1,10 @@
 namespace Republic.Cli;
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Republic.App;
+using Republic.Core.Economy.Treasury;
 using Republic.Core.Cabinet.Models;
 using Republic.Core.Cabinet.Services;
 using Republic.Core.Decisions.Services;
@@ -116,6 +118,9 @@ public static class Program
         var demo = app.WorldManager.Demographics.GetDemographics();
         var tick = app.TimeSystem.CurrentTick;
 
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+        var treasury = playerCountry?.Treasury ?? new RepuTreasury(econ.TreasuryBalance);
+
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("==============================================================");
         Console.WriteLine("          REPUBLIC OF ARCADIA - PRESIDENTIAL DESK            ");
@@ -123,8 +128,8 @@ public static class Program
         Console.ResetColor();
 
         Console.WriteLine($" Tick: {tick} | Republic Time: {app.TimeSystem.CurrentRepublicTime} ({app.TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC)");
-        Console.WriteLine($" Treasury: ${econ.TreasuryBalance:N0} | GDP: ${econ.GrossDomesticProduct:N0}");
-        Console.WriteLine($" Inflation: {econ.InflationRate * 100:0.0}% | Trade Balance: ${econ.TradeBalance:N0}");
+        Console.WriteLine($" Treasury: {treasury.FormattedBalance} | GDP: R{econ.GrossDomesticProduct:N0}");
+        Console.WriteLine($" Inflation: {econ.InflationRate * 100:0.0}% | Trade Balance: R{econ.TradeBalance:N0}");
         Console.WriteLine($" Demographics: Population ({demo.TotalPopulation:N0}) | Happiness ({demo.HappinessRating:0.0}%)");
         Console.WriteLine("--------------------------------------------------------------");
 

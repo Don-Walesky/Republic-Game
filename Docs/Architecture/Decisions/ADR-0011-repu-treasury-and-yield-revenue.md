@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-Following the establishment of the National Yield domain model ([ADR-0004](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/Docs/Architecture/Decisions/ADR-0004-national-yield-domain-model.md)), the isolated calculation engine ([ADR-0007](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/Docs/Architecture/Decisions/ADR-0007-isolated-national-yield-calculation-engine.md)), and cycle execution ([ADR-0010](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/Docs/Architecture/Decisions/ADR-0010-national-yield-cycle-execution.md)), Step 4I establishes the bridge between National Yield revenue generation and sovereign treasury balances.
+Following the establishment of the National Yield domain model ([ADR-0004](ADR-0004-national-yield-domain-model.md)), the isolated calculation engine ([ADR-0007](ADR-0007-isolated-national-yield-calculation-engine.md)), and cycle execution ([ADR-0010](ADR-0010-national-yield-cycle-execution.md)), Step 4I establishes the bridge between National Yield revenue generation and sovereign treasury balances.
 
 ## Decision
 
@@ -14,16 +14,16 @@ Following the establishment of the National Yield domain model ([ADR-0004](file:
    - These concepts remain strictly decoupled and are never merged or conflated into a single property.
 
 2. **Sovereign Treasury Domain Model (`RepuTreasury`)**:
-   - Each sovereign country owns an isolated [`RepuTreasury`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Economy/Treasury/RepuTreasury.cs) instance.
+   - Each sovereign country owns an isolated [`RepuTreasury`](../../../src/Republic.Core/Economy/Treasury/RepuTreasury.cs) instance.
    - Defaults to `0.0` REPU (R0) as the smallest sensible starting baseline.
    - Standard REPU notation (e.g., R0, R45M, R450M, R1.2B) is used exclusively; foreign/real-world currencies are prohibited.
    - Deficit spending, overdrafts, and national debt are prohibited; withdrawals exceeding current balance fail safely.
 
-3. **Controlled Revenue Application and Duplicate Protection (`ITreasuryRevenueService`)**:
-   - Revenue application is encapsulated in [`ITreasuryRevenueService`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Economy/Treasury/ITreasuryRevenueService.cs) and [`TreasuryRevenueService`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Economy/Treasury/TreasuryRevenueService.cs).
-   - Consumes an existing, completed [`NationalYield`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/NationalYield/NationalYield.cs) or [`NationalYieldSnapshot`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/NationalYield/NationalYieldSnapshot.cs) and credits `RepuTreasuryRevenue` to the target treasury.
+3. **Controlled Revenue Application and Once-Only Cycle Credit (`ITreasuryRevenueService`)**:
+   - Revenue application is encapsulated in [`ITreasuryRevenueService`](../../../src/Republic.Core/Economy/Treasury/ITreasuryRevenueService.cs) and [`TreasuryRevenueService`](../../../src/Republic.Core/Economy/Treasury/TreasuryRevenueService.cs).
+   - Consumes an existing, completed [`NationalYield`](../../../src/Republic.Core/NationalYield/NationalYield.cs) or [`NationalYieldSnapshot`](../../../src/Republic.Core/NationalYield/NationalYieldSnapshot.cs) and credits `RepuTreasuryRevenue` to the target treasury.
    - Does not invoke or duplicate yield calculation formulas, and leaves the input yield state completely unmutated.
-   - **Duplicate Protection**: Anchored in the authoritative identity of the completed yield cycle snapshot ([`NationalYieldSnapshot.Id`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/NationalYield/NationalYieldSnapshot.cs)). [`RepuTreasury`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Economy/Treasury/RepuTreasury.cs) records applied snapshot IDs, ensuring that executing or applying the same completed cycle twice cannot accidentally double-credit sovereign funds.
+   - **Once-Only Cycle Credit**: Each completed cycle credit is once-only. Identity is anchored to the snapshot's country ID plus simulation timestamp (or explicit cycle ID) stored on [`NationalYieldSnapshot.Id`](../../../src/Republic.Core/NationalYield/NationalYieldSnapshot.cs). [`RepuTreasury`](../../../src/Republic.Core/Economy/Treasury/RepuTreasury.cs) records applied snapshot IDs: attempting to credit the exact same cycle/snapshot a second time returns the existing balance without applying a second deposit.
 
 4. **Country Isolation**:
    - Treasuries are sovereign and strictly isolated per country.
