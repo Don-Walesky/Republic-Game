@@ -156,8 +156,15 @@ public static class Program
         Console.WriteLine("==============================================================");
         Console.ResetColor();
 
+        var foundingBuffs = playerCountry != null
+            ? playerCountry.EvaluateFoundingBuffs(currentRepuTime)
+            : new FoundingBuffEvaluator().Evaluate(currentRepuTime, currentRepuTime);
+
         Console.WriteLine($" Tick: {tick} | Republic Time: {app.TimeSystem.CurrentRepublicTime} ({app.TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC)");
-        Console.WriteLine($" Treasury: {treasury.FormattedBalance} | Next WAT Boundary: Day {nextBoundary.DayNumber}, {nextBoundary.Time:HH\\:mm} WAT | GDP: R{econ.GrossDomesticProduct:N0}");
+        Console.WriteLine($" Treasury: {treasury.FormattedBalance} (Founding Buffs: Admin {foundingBuffs.AdministrativeEfficiency:P0}, Innov {foundingBuffs.InnovationDrive:P0}, Dev {foundingBuffs.DevelopmentInitiative:P0}, Invest {foundingBuffs.InvestorConfidence:P0}, Diplo {foundingBuffs.DiplomaticRecognitionMomentum:P0}, Inst {foundingBuffs.InstitutionBuilding:P0}, Unity {foundingBuffs.TemporaryNationalUnity:P0}) | Next WAT Boundary: Day {nextBoundary.DayNumber}, {nextBoundary.Time:HH\\:mm} WAT | GDP: R{econ.GrossDomesticProduct:N0}");
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.WriteLine($" Founding Buffs: Admin: {foundingBuffs.AdministrativeEfficiency:P0} | Innovation: {foundingBuffs.InnovationDrive:P0} | Dev: {foundingBuffs.DevelopmentInitiative:P0} | Investor: {foundingBuffs.InvestorConfidence:P0} | Diplo: {foundingBuffs.DiplomaticRecognitionMomentum:P0} | Institution: {foundingBuffs.InstitutionBuilding:P0} | Unity: {foundingBuffs.TemporaryNationalUnity:P0}");
+        Console.ResetColor();
         Console.WriteLine($" Inflation: {econ.InflationRate * 100:0.0}% | Trade Balance: R{econ.TradeBalance:N0}");
         Console.WriteLine($" Demographics: Population ({demo.TotalPopulation:N0}) | Happiness ({demo.HappinessRating:0.0}%)");
         Console.WriteLine("--------------------------------------------------------------");
@@ -498,6 +505,10 @@ public static class Program
             Console.WriteLine(" - Remaining Due Boundaries: 0");
         }
         Console.WriteLine($" - Next Due WAT Boundary: Day {briefing.NextDueBoundary.DayNumber}, {briefing.NextDueBoundary.Time:HH\\:mm} WAT");
+        if (briefing.ActiveFoundingBuffs != null)
+        {
+            Console.WriteLine($" - Active Founding Buffs: Admin: {briefing.ActiveFoundingBuffs.AdministrativeEfficiency:P0}, Innovation: {briefing.ActiveFoundingBuffs.InnovationDrive:P0}, Dev: {briefing.ActiveFoundingBuffs.DevelopmentInitiative:P0}, Investor: {briefing.ActiveFoundingBuffs.InvestorConfidence:P0}, Diplo: {briefing.ActiveFoundingBuffs.DiplomaticRecognitionMomentum:P0}, Inst: {briefing.ActiveFoundingBuffs.InstitutionBuilding:P0}, Unity: {briefing.ActiveFoundingBuffs.TemporaryNationalUnity:P0}");
+        }
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("==============================================================");
         Console.ResetColor();

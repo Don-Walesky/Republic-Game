@@ -64,6 +64,11 @@ public sealed class OfflineYieldCatchUpService : IOfflineYieldCatchUpService
         // 7. Determine the next six-hour cycle boundary due after this execution
         var nextDue = _schedule.GetNextDueBoundary(country, returnTime);
 
+        // 8. Snapshot active temporary founding buffs at return time without altering REPU revenue
+        var activeBuffs = country.IsFounded
+            ? country.EvaluateFoundingBuffs(returnTime)
+            : null;
+
         return new OfflineYieldBriefing
         {
             CountryId = country.Id,
@@ -72,7 +77,8 @@ public sealed class OfflineYieldCatchUpService : IOfflineYieldCatchUpService
             BoundariesCredited = creditedCount,
             RepuDeposited = repuDeposited,
             RemainingBoundaries = remainingBoundaries,
-            NextDueBoundary = nextDue
+            NextDueBoundary = nextDue,
+            ActiveFoundingBuffs = activeBuffs
         };
     }
 

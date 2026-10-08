@@ -49,6 +49,11 @@ public sealed class OfflineYieldBriefing
     public RepublicTime NextDueBoundary { get; init; }
 
     /// <summary>
+    /// Gets the snapshot of active temporary founding buffs at the time of return, if available.
+    /// </summary>
+    public FoundingBuffSnapshot? ActiveFoundingBuffs { get; init; }
+
+    /// <summary>
     /// Gets the formatted REPU currency string for the deposited revenue (e.g. R0, R45M, R1.2B).
     /// </summary>
     public string FormattedRepuDeposited => RepuTreasury.Format(RepuDeposited);
@@ -75,7 +80,8 @@ public sealed class OfflineYieldBriefing
         int boundariesCredited,
         double repuDeposited,
         int remainingBoundaries,
-        RepublicTime nextDueBoundary)
+        RepublicTime nextDueBoundary,
+        FoundingBuffSnapshot? activeFoundingBuffs = null)
     {
         CountryId = countryId ?? string.Empty;
         FromTime = fromTime;
@@ -84,6 +90,7 @@ public sealed class OfflineYieldBriefing
         RepuDeposited = repuDeposited;
         RemainingBoundaries = remainingBoundaries;
         NextDueBoundary = nextDueBoundary;
+        ActiveFoundingBuffs = activeFoundingBuffs;
     }
 
     /// <inheritdoc />

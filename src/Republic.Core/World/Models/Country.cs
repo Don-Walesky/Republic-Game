@@ -69,6 +69,12 @@ public sealed class Country
     public RepublicTime? LastCreditedBoundary { get; set; }
 
     /// <summary>
+    /// Gets or sets the authoritative snapshot of temporary tapering founding buffs evaluated for this sovereign country.
+    /// Null if not yet evaluated.
+    /// </summary>
+    public FoundingBuffSnapshot? FoundingBuffs { get; set; }
+
+    /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
     /// Init-only to prevent casual post-creation mutation.
     /// </summary>
@@ -193,6 +199,27 @@ public sealed class Country
         return IsInFoundingDay(clock.CurrentTime);
     }
 
+    /// <summary>
+    /// Evaluates and returns the sovereign country's temporary tapering founding buffs at the specified simulation time,
+    /// storing the snapshot on the country.
+    /// </summary>
+    public FoundingBuffSnapshot EvaluateFoundingBuffs(RepublicTime currentSimulationTime, IFoundingBuffEvaluator? evaluator = null)
+    {
+        evaluator ??= new FoundingBuffEvaluator();
+        var snapshot = evaluator.Evaluate(this, currentSimulationTime);
+        FoundingBuffs = snapshot;
+        return snapshot;
+    }
+
+    /// <summary>
+    /// Evaluates and returns the sovereign country's temporary tapering founding buffs at the current clock time,
+    /// storing the snapshot on the country.
+    /// </summary>
+    public FoundingBuffSnapshot EvaluateFoundingBuffs(IRepublicClock clock, IFoundingBuffEvaluator? evaluator = null)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return EvaluateFoundingBuffs(clock.CurrentTime, evaluator);
+    }
 
     /// <summary>
     /// Factory method to create and found a new sovereign country with an authoritative founding moment.
@@ -207,7 +234,8 @@ public sealed class Country
         double baselineStability = 75.0,
         NationalYield? yield = null,
         RepuTreasury? treasury = null,
-        RepublicTime? lastCreditedBoundary = null)
+        RepublicTime? lastCreditedBoundary = null,
+        FoundingBuffSnapshot? foundingBuffs = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -223,7 +251,8 @@ public sealed class Country
             FoundingStatus = CountryFoundingStatus.NewlyFounded,
             Yield = yield?.Clone() ?? new NationalYield(),
             Treasury = treasury?.Clone() ?? new RepuTreasury(0.0, countryId),
-            LastCreditedBoundary = lastCreditedBoundary
+            LastCreditedBoundary = lastCreditedBoundary,
+            FoundingBuffs = foundingBuffs
         };
     }
 }
