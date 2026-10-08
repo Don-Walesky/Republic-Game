@@ -797,6 +797,17 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Evaluates and returns the read-only comparable national strength metrics for this sovereign country.
+    /// Induces zero mutation or side-effects on country or simulation state.
+    /// </summary>
+    public NationalStrength GetNationalStrength() => new(this);
+
+    /// <summary>
+    /// Evaluates and returns the read-only comparable national strength metrics for this sovereign country with an explicit founding buff snapshot.
+    /// </summary>
+    public NationalStrength GetNationalStrength(FoundingBuffSnapshot? foundingBuffs) => new(this, foundingBuffs);
+
+    /// <summary>
     /// Factory method to create and found a new sovereign country with an authoritative founding moment.
     /// </summary>
     public static Country Found(

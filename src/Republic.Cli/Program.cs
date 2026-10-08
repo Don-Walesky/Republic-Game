@@ -184,6 +184,18 @@ public static class Program
         }
         Console.WriteLine("--------------------------------------------------------------");
 
+        var strength = countryForDashboard.GetNationalStrength();
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.WriteLine("--------------------------------------------------------------");
+        Console.WriteLine("                     NATIONAL STRENGTH                        ");
+        Console.WriteLine("--------------------------------------------------------------");
+        Console.ResetColor();
+        foreach (var line in strength.Lines)
+        {
+            Console.WriteLine($" {line}");
+        }
+        Console.WriteLine("--------------------------------------------------------------");
+
         var emails = app.WorkspaceManager.Email.GetInbox();
         var news = app.WorkspaceManager.News.GetNewsFeed();
         var decisions = app.DecisionEngine.GetPendingDecisions();
