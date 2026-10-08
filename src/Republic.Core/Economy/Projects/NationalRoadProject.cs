@@ -31,10 +31,14 @@ public sealed class NationalRoadProject : DevelopmentProject
     /// </summary>
     public const double InfrastructureBonus = 0.1;
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets the categorical development project type (<see cref="DevelopmentProjectType.Road"/>).
+    /// </summary>
     public override DevelopmentProjectType ProjectType => DevelopmentProjectType.Road;
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets the display name of the National Road Program.
+    /// </summary>
     public override string Name => "National Road Program";
 
     /// <summary>
