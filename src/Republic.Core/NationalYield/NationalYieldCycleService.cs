@@ -19,6 +19,7 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
     private readonly INationalYieldCalculator _calculator;
     private readonly IFoundingDayYieldRule _foundingDayYieldRule;
     private readonly ITreasuryRevenueService _treasuryRevenueService;
+    private readonly INationalYieldSchedule _schedule;
     private readonly ConcurrentDictionary<string, NationalYieldSnapshot> _latestSnapshots = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -27,14 +28,17 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
     /// <param name="calculator">The pure National Yield calculator to reuse. If null, a default <see cref="NationalYieldCalculator"/> is instantiated.</param>
     /// <param name="foundingDayYieldRule">The founding-day yield rule to apply. If null, a default <see cref="FoundingDayYieldRule"/> is instantiated.</param>
     /// <param name="treasuryRevenueService">The treasury revenue service to apply cycle revenue. If null, a default <see cref="TreasuryRevenueService"/> is instantiated.</param>
+    /// <param name="schedule">The cycle schedule engine to use. If null, a default <see cref="NationalYieldSchedule"/> is instantiated.</param>
     public NationalYieldCycleService(
         INationalYieldCalculator? calculator = null,
         IFoundingDayYieldRule? foundingDayYieldRule = null,
-        ITreasuryRevenueService? treasuryRevenueService = null)
+        ITreasuryRevenueService? treasuryRevenueService = null,
+        INationalYieldSchedule? schedule = null)
     {
         _calculator = calculator ?? new NationalYieldCalculator();
         _foundingDayYieldRule = foundingDayYieldRule ?? new FoundingDayYieldRule();
         _treasuryRevenueService = treasuryRevenueService ?? new TreasuryRevenueService();
+        _schedule = schedule ?? new NationalYieldSchedule();
     }
 
     /// <inheritdoc />
@@ -78,6 +82,59 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
         return _latestSnapshots.TryGetValue(countryId, out var snapshot) ? snapshot.Clone() : null;
+    }
+
+    /// <inheritdoc />
+    public INationalYieldSchedule Schedule => _schedule;
+
+    /// <inheritdoc />
+    public IReadOnlyList<NationalYieldSnapshot> ExecuteDueCycles(Country country, RepublicTime simulationTime)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        // 1. Calculate due boundaries up to simulation time, capped at 8
+        var dueBoundaries = _schedule.GetDueBoundaries(country, simulationTime, NationalYieldSchedule.MaxBoundaryCap);
+        if (dueBoundaries.Count == 0)
+        {
+            return Array.Empty<NationalYieldSnapshot>();
+        }
+
+        var results = new List<NationalYieldSnapshot>(dueBoundaries.Count);
+        foreach (var boundary in dueBoundaries)
+        {
+            // ExecuteCycle evaluates the country's current in-memory state,
+            // applies founding-day rule, constructs snapshot with deterministic boundary ID,
+            // deposits revenue once to treasury, caches snapshot, and returns defensive copy.
+            var snapshot = ExecuteCycle(country, boundary);
+
+            // Update the country's authoritative last credited boundary
+            country.LastCreditedBoundary = boundary;
+
+            results.Add(snapshot);
+        }
+
+        return results;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<NationalYieldSnapshot> ExecuteDueCycles(Country country, IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return ExecuteDueCycles(country, clock.CurrentTime);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<RepublicTime> GetDueBoundaries(Country country, RepublicTime simulationTime)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+        return _schedule.GetDueBoundaries(country, simulationTime, NationalYieldSchedule.MaxBoundaryCap);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<RepublicTime> GetDueBoundaries(Country country, IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return GetDueBoundaries(country, clock.CurrentTime);
     }
 
     /// <inheritdoc />

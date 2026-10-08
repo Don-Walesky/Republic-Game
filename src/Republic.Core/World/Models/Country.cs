@@ -62,6 +62,13 @@ public sealed class Country
     public RepuTreasury Treasury { get; init; } = new();
 
     /// <summary>
+    /// Gets or sets the authoritative Republic simulation timestamp of the most recently credited
+    /// six-hour National Yield cycle boundary for this sovereign country.
+    /// Null if no cycle boundary has been credited yet.
+    /// </summary>
+    public RepublicTime? LastCreditedBoundary { get; set; }
+
+    /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
     /// Init-only to prevent casual post-creation mutation.
     /// </summary>
@@ -199,7 +206,8 @@ public sealed class Country
         double territorySizeSqKm = 500000,
         double baselineStability = 75.0,
         NationalYield? yield = null,
-        RepuTreasury? treasury = null)
+        RepuTreasury? treasury = null,
+        RepublicTime? lastCreditedBoundary = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -214,7 +222,8 @@ public sealed class Country
             BaselineStability = baselineStability,
             FoundingStatus = CountryFoundingStatus.NewlyFounded,
             Yield = yield?.Clone() ?? new NationalYield(),
-            Treasury = treasury?.Clone() ?? new RepuTreasury(0.0, countryId)
+            Treasury = treasury?.Clone() ?? new RepuTreasury(0.0, countryId),
+            LastCreditedBoundary = lastCreditedBoundary
         };
     }
 }

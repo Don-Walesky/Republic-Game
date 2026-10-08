@@ -18,6 +18,7 @@ using Republic.Core.Intelligence.Services;
 using Republic.Core.Legislature.Models;
 using Republic.Core.Legislature.Services;
 using Republic.Core.Military.Models;
+using Republic.Core.NationalYield;
 using Republic.Core.Scenarios.Services;
 
 public static class Program
@@ -121,6 +122,12 @@ public static class Program
         var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
         var treasury = playerCountry?.Treasury ?? new RepuTreasury(econ.TreasuryBalance);
 
+        var schedule = new NationalYieldSchedule();
+        var currentRepuTime = app.TimeSystem.CurrentRepublicTime;
+        var nextBoundary = playerCountry != null
+            ? schedule.GetNextDueBoundary(playerCountry, currentRepuTime)
+            : schedule.GetNextBoundary(currentRepuTime);
+
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("==============================================================");
         Console.WriteLine("          REPUBLIC OF ARCADIA - PRESIDENTIAL DESK            ");
@@ -128,7 +135,7 @@ public static class Program
         Console.ResetColor();
 
         Console.WriteLine($" Tick: {tick} | Republic Time: {app.TimeSystem.CurrentRepublicTime} ({app.TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC)");
-        Console.WriteLine($" Treasury: {treasury.FormattedBalance} | GDP: R{econ.GrossDomesticProduct:N0}");
+        Console.WriteLine($" Treasury: {treasury.FormattedBalance} | Next WAT Boundary: Day {nextBoundary.DayNumber}, {nextBoundary.Time:HH\\:mm} WAT | GDP: R{econ.GrossDomesticProduct:N0}");
         Console.WriteLine($" Inflation: {econ.InflationRate * 100:0.0}% | Trade Balance: R{econ.TradeBalance:N0}");
         Console.WriteLine($" Demographics: Population ({demo.TotalPopulation:N0}) | Happiness ({demo.HappinessRating:0.0}%)");
         Console.WriteLine("--------------------------------------------------------------");
@@ -267,6 +274,12 @@ public static class Program
     {
         Console.WriteLine("Advancing time by 10 simulation frames...");
         await app.Engine.RunAsync(10, TimeSpan.FromSeconds(0.1));
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+        if (playerCountry != null)
+        {
+            var cycleService = new NationalYieldCycleService();
+            cycleService.ExecuteDueCycles(playerCountry, app.TimeSystem.CurrentRepublicTime);
+        }
         Console.WriteLine($"Advanced to Tick {app.TimeSystem.CurrentTick}. Press Enter to continue...");
         Console.ReadLine();
     }

@@ -40,6 +40,51 @@ public interface INationalYieldCycleService
     NationalYieldSnapshot? GetLatestSnapshot(string countryId);
 
     /// <summary>
+    /// Gets the schedule engine used to evaluate six-hour cycle boundaries.
+    /// </summary>
+    INationalYieldSchedule Schedule { get; }
+
+    /// <summary>
+    /// Evaluates and credits all due six-hour production cycle boundaries for the specified country
+    /// up to <paramref name="simulationTime"/>, capped at 8 boundaries per call.
+    /// Credits each boundary through the existing once-only treasury path, updates the country's
+    /// <see cref="Country.LastCreditedBoundary"/>, and returns the snapshots generated.
+    /// </summary>
+    /// <param name="country">The sovereign country whose due cycles are to be evaluated.</param>
+    /// <param name="simulationTime">The current Republic simulation timestamp.</param>
+    /// <returns>A read-only list of snapshots generated for the credited boundaries.</returns>
+    IReadOnlyList<NationalYieldSnapshot> ExecuteDueCycles(Country country, RepublicTime simulationTime);
+
+    /// <summary>
+    /// Evaluates and credits all due six-hour production cycle boundaries for the specified country
+    /// up to the clock's current time, capped at 8 boundaries per call.
+    /// Credits each boundary through the existing once-only treasury path, updates the country's
+    /// <see cref="Country.LastCreditedBoundary"/>, and returns the snapshots generated.
+    /// </summary>
+    /// <param name="country">The sovereign country whose due cycles are to be evaluated.</param>
+    /// <param name="clock">The authoritative Republic clock.</param>
+    /// <returns>A read-only list of snapshots generated for the credited boundaries.</returns>
+    IReadOnlyList<NationalYieldSnapshot> ExecuteDueCycles(Country country, IRepublicClock clock);
+
+    /// <summary>
+    /// Calculates the due six-hour production cycle boundaries for the specified country
+    /// up to <paramref name="simulationTime"/> without executing them, capped at 8 boundaries per call.
+    /// </summary>
+    /// <param name="country">The sovereign country.</param>
+    /// <param name="simulationTime">The current Republic simulation timestamp.</param>
+    /// <returns>A read-only list of due boundary timestamps.</returns>
+    IReadOnlyList<RepublicTime> GetDueBoundaries(Country country, RepublicTime simulationTime);
+
+    /// <summary>
+    /// Calculates the due six-hour production cycle boundaries for the specified country
+    /// up to the clock's current time without executing them, capped at 8 boundaries per call.
+    /// </summary>
+    /// <param name="country">The sovereign country.</param>
+    /// <param name="clock">The authoritative Republic clock.</param>
+    /// <returns>A read-only list of due boundary timestamps.</returns>
+    IReadOnlyList<RepublicTime> GetDueBoundaries(Country country, IRepublicClock clock);
+
+    /// <summary>
     /// Clears any cached snapshots stored in this service instance.
     /// </summary>
     void ClearSnapshots();
