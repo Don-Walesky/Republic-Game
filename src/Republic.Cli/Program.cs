@@ -160,8 +160,11 @@ public static class Program
             ? playerCountry.EvaluateFoundingBuffs(currentRepuTime)
             : new FoundingBuffEvaluator().Evaluate(currentRepuTime, currentRepuTime);
 
+        var stateCapacity = playerCountry?.EvaluateStateCapacity()
+            ?? new StateCapacityEvaluator().Evaluate(new StateCapacityInputs());
+
         Console.WriteLine($" Tick: {tick} | Republic Time: {app.TimeSystem.CurrentRepublicTime} ({app.TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC)");
-        Console.WriteLine($" Treasury: {treasury.FormattedBalance} (Founding Buffs: Admin {foundingBuffs.AdministrativeEfficiency:P0}, Innov {foundingBuffs.InnovationDrive:P0}, Dev {foundingBuffs.DevelopmentInitiative:P0}, Invest {foundingBuffs.InvestorConfidence:P0}, Diplo {foundingBuffs.DiplomaticRecognitionMomentum:P0}, Inst {foundingBuffs.InstitutionBuilding:P0}, Unity {foundingBuffs.TemporaryNationalUnity:P0}) | Next WAT Boundary: Day {nextBoundary.DayNumber}, {nextBoundary.Time:HH\\:mm} WAT | GDP: R{econ.GrossDomesticProduct:N0}");
+        Console.WriteLine($" Treasury: {treasury.FormattedBalance} | State Capacity: {stateCapacity.FormattedScore} | Next WAT Boundary: Day {nextBoundary.DayNumber}, {nextBoundary.Time:HH\\:mm} WAT | GDP: R{econ.GrossDomesticProduct:N0}");
         Console.ForegroundColor = ConsoleColor.DarkYellow;
         Console.WriteLine($" Founding Buffs: Admin: {foundingBuffs.AdministrativeEfficiency:P0} | Innovation: {foundingBuffs.InnovationDrive:P0} | Dev: {foundingBuffs.DevelopmentInitiative:P0} | Investor: {foundingBuffs.InvestorConfidence:P0} | Diplo: {foundingBuffs.DiplomaticRecognitionMomentum:P0} | Institution: {foundingBuffs.InstitutionBuilding:P0} | Unity: {foundingBuffs.TemporaryNationalUnity:P0}");
         Console.ResetColor();

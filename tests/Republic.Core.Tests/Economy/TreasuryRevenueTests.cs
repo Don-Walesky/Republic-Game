@@ -18,7 +18,8 @@ public sealed class TreasuryRevenueTests
             name: name,
             foundingTime: clock.CurrentTime,
             id: countryId,
-            treasury: new RepuTreasury(initialTreasury, countryId));
+            treasury: new RepuTreasury(initialTreasury, countryId),
+            stateCapacity: StateCapacityInputs.All(1.0));
     }
 
     [Fact]

@@ -6,26 +6,29 @@ using Republic.Core.World.Models;
 /// <summary>
 /// Service implementation for applying evaluated National Yield REPU revenue to sovereign treasuries.
 /// Strictly consumes existing calculation outputs without recalculating or modifying yield data.
+/// Scales revenue at credit time by sovereign State Capacity.
 /// </summary>
 public sealed class TreasuryRevenueService : ITreasuryRevenueService
 {
     /// <inheritdoc />
-    public RepuTreasury ApplyRevenue(RepuTreasury treasury, NationalYield yield)
+    public RepuTreasury ApplyRevenue(RepuTreasury treasury, NationalYield yield, double stateCapacityScore = 1.0)
     {
         ArgumentNullException.ThrowIfNull(treasury);
         ArgumentNullException.ThrowIfNull(yield);
 
-        var revenue = yield.RepuTreasuryRevenue;
-        if (revenue > 0.0)
+        var clampedScore = Math.Clamp(stateCapacityScore, 0.0, 1.0);
+        var unscaledRevenue = yield.RepuTreasuryRevenue;
+        if (unscaledRevenue > 0.0 && clampedScore > 0.0)
         {
-            treasury.Deposit(revenue);
+            var scaledRevenue = unscaledRevenue * clampedScore;
+            treasury.Deposit(scaledRevenue);
         }
 
         return treasury;
     }
 
     /// <inheritdoc />
-    public RepuTreasury ApplyRevenue(RepuTreasury treasury, NationalYieldSnapshot snapshot)
+    public RepuTreasury ApplyRevenue(RepuTreasury treasury, NationalYieldSnapshot snapshot, double stateCapacityScore = 1.0)
     {
         ArgumentNullException.ThrowIfNull(treasury);
         ArgumentNullException.ThrowIfNull(snapshot);
@@ -41,10 +44,12 @@ public sealed class TreasuryRevenueService : ITreasuryRevenueService
             treasury.RecordSnapshotApplied(snapshot.Id);
         }
 
-        var revenue = snapshot.Yield.RepuTreasuryRevenue;
-        if (revenue > 0.0)
+        var clampedScore = Math.Clamp(stateCapacityScore, 0.0, 1.0);
+        var unscaledRevenue = snapshot.Yield.RepuTreasuryRevenue;
+        if (unscaledRevenue > 0.0 && clampedScore > 0.0)
         {
-            treasury.Deposit(revenue);
+            var scaledRevenue = unscaledRevenue * clampedScore;
+            treasury.Deposit(scaledRevenue);
         }
 
         return treasury;
@@ -54,7 +59,8 @@ public sealed class TreasuryRevenueService : ITreasuryRevenueService
     public RepuTreasury ApplyRevenue(Country country, NationalYield yield)
     {
         ArgumentNullException.ThrowIfNull(country);
-        return ApplyRevenue(country.Treasury, yield);
+        ArgumentNullException.ThrowIfNull(yield);
+        return ApplyRevenue(country.Treasury, yield, country.StateCapacityScore);
     }
 
     /// <inheritdoc />
@@ -62,6 +68,6 @@ public sealed class TreasuryRevenueService : ITreasuryRevenueService
     {
         ArgumentNullException.ThrowIfNull(country);
         ArgumentNullException.ThrowIfNull(snapshot);
-        return ApplyRevenue(country.Treasury, snapshot);
+        return ApplyRevenue(country.Treasury, snapshot, country.StateCapacityScore);
     }
 }

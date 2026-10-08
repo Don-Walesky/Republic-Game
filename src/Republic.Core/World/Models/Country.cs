@@ -75,6 +75,13 @@ public sealed class Country
     public FoundingBuffSnapshot? FoundingBuffs { get; set; }
 
     /// <summary>
+    /// Gets or sets the sovereign State Capacity institutional inputs determining conversion rate into results.
+    /// Defaults to 0.6 across all seven inputs so existing countries are not suddenly at zero.
+    /// Each sovereign country owns an independent, isolated instance.
+    /// </summary>
+    public StateCapacityInputs StateCapacity { get; set; } = new();
+
+    /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
     /// Init-only to prevent casual post-creation mutation.
     /// </summary>
@@ -222,6 +229,23 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Evaluates and returns the sovereign country's State Capacity snapshot from its in-memory state.
+    /// Does not call real-time APIs (never calls DateTime.Now).
+    /// </summary>
+    public StateCapacitySnapshot EvaluateStateCapacity(IStateCapacityEvaluator? evaluator = null)
+    {
+        evaluator ??= new StateCapacityEvaluator();
+        return evaluator.Evaluate(this);
+    }
+
+    /// <summary>
+    /// Gets the authoritative sovereign State Capacity score (0.0 to 1.0) evaluated from current country inputs.
+    /// Represents the conversion rate applied at REPU revenue credit time.
+    /// </summary>
+    [JsonIgnore]
+    public double StateCapacityScore => EvaluateStateCapacity().Score;
+
+    /// <summary>
     /// Factory method to create and found a new sovereign country with an authoritative founding moment.
     /// </summary>
     public static Country Found(
@@ -235,7 +259,8 @@ public sealed class Country
         NationalYield? yield = null,
         RepuTreasury? treasury = null,
         RepublicTime? lastCreditedBoundary = null,
-        FoundingBuffSnapshot? foundingBuffs = null)
+        FoundingBuffSnapshot? foundingBuffs = null,
+        StateCapacityInputs? stateCapacity = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -252,7 +277,8 @@ public sealed class Country
             Yield = yield?.Clone() ?? new NationalYield(),
             Treasury = treasury?.Clone() ?? new RepuTreasury(0.0, countryId),
             LastCreditedBoundary = lastCreditedBoundary,
-            FoundingBuffs = foundingBuffs
+            FoundingBuffs = foundingBuffs,
+            StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs()
         };
     }
 }

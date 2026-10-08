@@ -59,9 +59,9 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
         // 4. Construct an independent yield snapshot representing the country's final yield at the recorded simulation time
         var storedSnapshot = new NationalYieldSnapshot(country.Id, simulationTime, finalYield);
 
-        // 5. Apply the REPU Treasury Revenue from the final yield snapshot to the country's existing REPU Treasury
-        // Deterministic duplicate protection prevents double-crediting if the same cycle is executed again.
-        _treasuryRevenueService.ApplyRevenue(country.Treasury, storedSnapshot);
+        // 5. Apply the REPU Treasury Revenue from the final yield snapshot to the country's existing REPU Treasury,
+        // scaled by sovereign State Capacity at credit time with deterministic duplicate protection.
+        _treasuryRevenueService.ApplyRevenue(country, storedSnapshot);
 
         // 6. Store the independent snapshot isolated by country ID
         _latestSnapshots[country.Id] = storedSnapshot;

@@ -44,7 +44,8 @@ public sealed class OfflineYieldCatchUpTests
             foundingTime: time,
             baselineStability: stability,
             yield: yield,
-            treasury: new RepuTreasury(treasury));
+            treasury: new RepuTreasury(treasury),
+            stateCapacity: StateCapacityInputs.All(1.0));
 
         return country;
     }

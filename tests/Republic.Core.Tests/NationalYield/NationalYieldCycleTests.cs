@@ -42,7 +42,8 @@ public sealed class NationalYieldCycleTests
             name: name,
             foundingTime: clock.CurrentTime,
             baselineStability: stability,
-            yield: yield);
+            yield: yield,
+            stateCapacity: StateCapacityInputs.All(1.0));
 
         country.NationalTraits.Add("Industrious");
         return country;
@@ -503,7 +504,8 @@ public sealed class NationalYieldCycleTests
                 IndustrialCapacity = 60.0,
                 InfrastructureCapacity = 60.0,
                 AdministrativeCapacity = 70.0
-            });
+            },
+            stateCapacity: StateCapacityInputs.All(1.0));
 
         Assert.Equal(0.0, country.Treasury.Balance);
 
@@ -532,7 +534,8 @@ public sealed class NationalYieldCycleTests
                 IndustrialCapacity = 60.0,
                 InfrastructureCapacity = 60.0,
                 AdministrativeCapacity = 70.0
-            });
+            },
+            stateCapacity: StateCapacityInputs.All(1.0));
 
         var baseRevenue = new NationalYieldCalculator().Calculate(NationalYieldCalculationInputs.FromCountry(country)).RepuTreasuryRevenue;
 
