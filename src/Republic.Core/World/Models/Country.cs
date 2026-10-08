@@ -173,6 +173,20 @@ public sealed class Country
     public DevelopmentProject? ActiveProject => Projects.FirstOrDefault(p => p.IsActive);
 
     /// <summary>
+    /// Gets the national university development project record for this country, if any.
+    /// Backed authoritatively by <see cref="Projects"/>.
+    /// </summary>
+    [JsonIgnore]
+    public NationalUniversityProject? UniversityProject => Projects.OfType<NationalUniversityProject>().LastOrDefault();
+
+    /// <summary>
+    /// Gets the currently active (in-progress) university project, or null if none is active.
+    /// Backed authoritatively by <see cref="Projects"/>.
+    /// </summary>
+    [JsonIgnore]
+    public NationalUniversityProject? ActiveUniversityProject => Projects.OfType<NationalUniversityProject>().FirstOrDefault(p => p.IsActive);
+
+    /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
     /// Init-only to prevent casual post-creation mutation.
     /// </summary>
@@ -510,6 +524,32 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Initiates a National University development project starting from the specified boundary/simulation time.
+    /// Costs R750,000, withdrawn once from this country's RepuTreasury.
+    /// Takes 8 six-hour boundaries (48 hours on the Republic clock) from the start boundary.
+    /// Returns null if the treasury cannot pay, country ID is invalid, or if another university project is currently active.
+    /// </summary>
+    public NationalUniversityProject? StartUniversityProject(RepublicTime startedBoundary, double cost = NationalUniversityProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id))
+        {
+            return null;
+        }
+
+        var project = new NationalUniversityProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    /// <summary>
+    /// Overload for starting a national university project using an authoritative Republic clock.
+    /// </summary>
+    public NationalUniversityProject? StartUniversityProject(IRepublicClock clock, double cost = NationalUniversityProject.StandardCost)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return StartUniversityProject(clock.CurrentTime, cost);
+    }
+
+    /// <summary>
     /// Initiates a generic development project for this sovereign country.
     /// Withdraws project cost immediately from the country's RepuTreasury.
     /// Enforces strict country ownership and ensures no duplicate active project of the same type.
@@ -584,6 +624,30 @@ public sealed class Country
     {
         ArgumentNullException.ThrowIfNull(clock);
         return GetRoadProgress(clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Completes the active National University project if the current simulation time has reached or passed its finish boundary.
+    /// Elevates Human Capital and Science / Research Capacity upon completion.
+    /// </summary>
+    public bool CompleteUniversityProject(RepublicTime? currentTime = null)
+    {
+        var university = ActiveUniversityProject ?? UniversityProject;
+        return university != null && CompleteProject(university, currentTime);
+    }
+
+    /// <summary>
+    /// Gets the construction progress (0.0 to 1.0) of the national university project, or null if no university project exists.
+    /// </summary>
+    public double? GetUniversityProgress(RepublicTime currentTime) => UniversityProject?.GetProgress(currentTime);
+
+    /// <summary>
+    /// Overload for getting national university construction progress using an authoritative clock.
+    /// </summary>
+    public double? GetUniversityProgress(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return GetUniversityProgress(clock.CurrentTime);
     }
 
     /// <summary>

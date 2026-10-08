@@ -11,6 +11,7 @@ using Republic.Core.World.Models;
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
 [JsonDerivedType(typeof(NationalRoadProject), typeDiscriminator: nameof(NationalRoadProject))]
+[JsonDerivedType(typeof(NationalUniversityProject), typeDiscriminator: nameof(NationalUniversityProject))]
 public interface IDevelopmentProject
 {
     /// <summary>
