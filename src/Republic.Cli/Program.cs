@@ -524,7 +524,103 @@ public static class Program
 
     private static async Task ManageProvincesAsync(RepublicApplication app)
     {
-        Console.WriteLine("=== REGIONAL PROVINCE ADMINISTRATION ===");
+        Console.WriteLine("==============================================================");
+        Console.WriteLine("      REGIONAL PROVINCES & INFRASTRUCTURE INVESTMENT          ");
+        Console.WriteLine("==============================================================");
+
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+        var currentTime = app.TimeSystem.CurrentRepublicTime;
+
+        if (playerCountry != null)
+        {
+            // Check if active road project has reached or passed its finish boundary
+            if (playerCountry.RoadProject is { Completed: false } activeRoad && currentTime >= activeRoad.FinishBoundary)
+            {
+                playerCountry.CompleteRoadProject(currentTime);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n[DEVELOPMENT NOTICE]: National Road Program completed!");
+                Console.WriteLine($"New Infrastructure Condition: {playerCountry.StateCapacity.InfrastructureCondition:P0} | State Capacity: {playerCountry.StateCapacityScore:P0}");
+                Console.ResetColor();
+            }
+
+            Console.WriteLine($"Nation: {playerCountry.Name} | Liquid Treasury: {playerCountry.Treasury.FormattedBalance}");
+            Console.WriteLine($"Infrastructure Condition: {playerCountry.StateCapacity.InfrastructureCondition:P0} | State Capacity: {playerCountry.StateCapacityScore:P0}");
+
+            if (playerCountry.RoadProject != null)
+            {
+                if (playerCountry.RoadProject.Completed)
+                {
+                    Console.WriteLine("Road Program Status: COMPLETED (+10% Infrastructure Condition Applied)");
+                }
+                else
+                {
+                    Console.WriteLine($"Road Program Status: UNDER CONSTRUCTION (Started: {playerCountry.RoadProject.StartedBoundary}, Finishes: {playerCountry.RoadProject.FinishBoundary})");
+                }
+            }
+            Console.WriteLine("--------------------------------------------------------------");
+        }
+
+        Console.WriteLine("Options:");
+        Console.WriteLine(" [1] Start National Road Program (Cost: R500,000 | 24h / 4 boundaries | +0.1 Infra Condition)");
+        Console.WriteLine(" [2] Invest in Specific Regional Province");
+        Console.WriteLine(" [0] Return to Main Menu");
+        Console.Write("\nSelect Option (1, 2, 0) > ");
+        var selection = Console.ReadLine()?.Trim().ToUpperInvariant();
+
+        if (selection == "1" || selection == "R" || selection == "ROAD")
+        {
+            if (playerCountry == null)
+            {
+                Console.WriteLine("No player country available.");
+                Console.ReadLine();
+                return;
+            }
+
+            if (playerCountry.RoadProject is { Completed: false })
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\nA National Road Program is already active and under construction!");
+                Console.WriteLine($"Finishes at: {playerCountry.RoadProject.FinishBoundary}");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            if (playerCountry.Treasury.Balance < 500_000.0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"\nInsufficient funds in sovereign treasury! Required: R500,000, Available: {playerCountry.Treasury.FormattedBalance}.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            var project = playerCountry.StartRoadProject(currentTime);
+            if (project != null)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n[CONSTRUCTION COMMENCED]: National Road Program initiated successfully!");
+                Console.WriteLine($"Treasury Balance: {playerCountry.Treasury.FormattedBalance}");
+                Console.WriteLine($"Infrastructure Condition: {playerCountry.StateCapacity.InfrastructureCondition:P0}");
+                Console.WriteLine($"Target Finish Boundary: {project.FinishBoundary} (4 six-hour cycles / 24 hours)");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.WriteLine("\nFailed to start National Road Program.");
+            }
+
+            Console.WriteLine("\nPress Enter to return...");
+            Console.ReadLine();
+            return;
+        }
+
+        if (selection == "0" || string.IsNullOrWhiteSpace(selection))
+        {
+            return;
+        }
+
+        Console.WriteLine("\n=== REGIONAL PROVINCE ADMINISTRATION ===");
         var provinces = app.GeographyService.GetAllProvinces();
         if (provinces.Count == 0)
         {
@@ -612,6 +708,12 @@ public static class Program
         if (briefing.ActiveFoundingBuffs != null)
         {
             Console.WriteLine($" - Active Founding Buffs: Admin: {briefing.ActiveFoundingBuffs.AdministrativeEfficiency:P0}, Innovation: {briefing.ActiveFoundingBuffs.InnovationDrive:P0}, Dev: {briefing.ActiveFoundingBuffs.DevelopmentInitiative:P0}, Investor: {briefing.ActiveFoundingBuffs.InvestorConfidence:P0}, Diplo: {briefing.ActiveFoundingBuffs.DiplomaticRecognitionMomentum:P0}, Inst: {briefing.ActiveFoundingBuffs.InstitutionBuilding:P0}, Unity: {briefing.ActiveFoundingBuffs.TemporaryNationalUnity:P0}");
+        }
+        if (briefing.RoadProgramCompleted)
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(" - Development: National Road Program completed! Infrastructure condition increased by +10%.");
+            Console.ResetColor();
         }
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("==============================================================");

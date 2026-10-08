@@ -69,6 +69,9 @@ public sealed class OfflineYieldCatchUpService : IOfflineYieldCatchUpService
             ? country.EvaluateFoundingBuffs(returnTime)
             : null;
 
+        // 9. Complete active National Road Program if return time has reached or passed its finish boundary
+        var roadCompleted = country.CheckRoadProjectCompletion(returnTime);
+
         return new OfflineYieldBriefing
         {
             CountryId = country.Id,
@@ -78,7 +81,8 @@ public sealed class OfflineYieldCatchUpService : IOfflineYieldCatchUpService
             RepuDeposited = repuDeposited,
             RemainingBoundaries = remainingBoundaries,
             NextDueBoundary = nextDue,
-            ActiveFoundingBuffs = activeBuffs
+            ActiveFoundingBuffs = activeBuffs,
+            RoadProgramCompleted = roadCompleted
         };
     }
 

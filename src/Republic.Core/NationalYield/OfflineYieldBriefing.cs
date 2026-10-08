@@ -54,6 +54,11 @@ public sealed class OfflineYieldBriefing
     public FoundingBuffSnapshot? ActiveFoundingBuffs { get; init; }
 
     /// <summary>
+    /// Gets a value indicating whether an active National Road Program was completed during this catch-up.
+    /// </summary>
+    public bool RoadProgramCompleted { get; init; }
+
+    /// <summary>
     /// Gets the formatted REPU currency string for the deposited revenue (e.g. R0, R45M, R1.2B).
     /// </summary>
     public string FormattedRepuDeposited => RepuTreasury.Format(RepuDeposited);
@@ -81,7 +86,8 @@ public sealed class OfflineYieldBriefing
         double repuDeposited,
         int remainingBoundaries,
         RepublicTime nextDueBoundary,
-        FoundingBuffSnapshot? activeFoundingBuffs = null)
+        FoundingBuffSnapshot? activeFoundingBuffs = null,
+        bool roadProgramCompleted = false)
     {
         CountryId = countryId ?? string.Empty;
         FromTime = fromTime;
@@ -91,6 +97,7 @@ public sealed class OfflineYieldBriefing
         RemainingBoundaries = remainingBoundaries;
         NextDueBoundary = nextDueBoundary;
         ActiveFoundingBuffs = activeFoundingBuffs;
+        RoadProgramCompleted = roadProgramCompleted;
     }
 
     /// <inheritdoc />

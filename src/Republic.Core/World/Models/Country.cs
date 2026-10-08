@@ -2,6 +2,7 @@ namespace Republic.Core.World.Models;
 
 using System.Text.Json.Serialization;
 using Republic.Core.Cabinet.Models;
+using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
 using Republic.Core.Time;
@@ -93,6 +94,29 @@ public sealed class Country
     /// Each sovereign country owns an independent, isolated instance.
     /// </summary>
     public Dictionary<CabinetPortfolio, Minister?> Cabinet { get; init; } = new();
+
+    /// <summary>
+    /// Gets or sets the national road development project record for this country.
+    /// Null if no road program has been initiated.
+    /// Each sovereign country owns an independent, isolated instance.
+    /// </summary>
+    public NationalRoadProject? RoadProject { get; set; }
+
+    /// <summary>
+    /// Alias for <see cref="RoadProject"/> to support generic project queries.
+    /// </summary>
+    [JsonIgnore]
+    public NationalRoadProject? Project
+    {
+        get => RoadProject;
+        set => RoadProject = value;
+    }
+
+    /// <summary>
+    /// Gets the currently active (in-progress) road project, or null if none is active.
+    /// </summary>
+    [JsonIgnore]
+    public NationalRoadProject? ActiveRoadProject => RoadProject is { Completed: false } ? RoadProject : null;
 
     /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
@@ -350,6 +374,126 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Recalculates and updates the sovereign State Capacity snapshot from current institutional inputs.
+    /// </summary>
+    public StateCapacitySnapshot RecalculateStateCapacity()
+    {
+        return EvaluateStateCapacity();
+    }
+
+    /// <summary>
+    /// Initiates a National Road Program development project starting from the specified boundary/simulation time.
+    /// Costs R500,000, withdrawn once from this country's RepuTreasury.
+    /// Takes 4 six-hour boundaries (24 hours on the Republic clock) from the start boundary.
+    /// Returns null if the treasury cannot pay or if another road project is currently active.
+    /// The treasury balance remains unchanged on a failed start.
+    /// </summary>
+    public NationalRoadProject? StartRoadProject(RepublicTime startedBoundary, double cost = NationalRoadProject.StandardCost)
+    {
+        // 1. Cannot start a second road while one is active
+        if (RoadProject is { Completed: false })
+        {
+            return null;
+        }
+
+        // 2. Cannot start if treasury cannot pay; balance must not change on failed start
+        if (Treasury.Balance < cost)
+        {
+            return null;
+        }
+
+        // 3. Withdraw exactly R500,000 once from that country's RepuTreasury
+        if (!Treasury.TryWithdraw(cost))
+        {
+            return null;
+        }
+
+        // 4. Takes 4 six-hour boundaries (24 hours on the Republic clock) from the start boundary
+        var finishBoundary = startedBoundary.Add(NationalRoadProject.Duration);
+        var project = new NationalRoadProject
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            StartedBoundary = startedBoundary,
+            FinishBoundary = finishBoundary,
+            Cost = cost,
+            Completed = false
+        };
+
+        RoadProject = project;
+        return project;
+    }
+
+    /// <summary>
+    /// Overload for starting a road project using an authoritative Republic clock.
+    /// </summary>
+    public NationalRoadProject? StartRoadProject(IRepublicClock clock, double cost = NationalRoadProject.StandardCost)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return StartRoadProject(clock.CurrentTime, cost);
+    }
+
+    /// <summary>
+    /// Initiates a National Road Program, returning true on success and false on failure.
+    /// </summary>
+    public bool StartRoadProgram(RepublicTime startedBoundary, double cost = NationalRoadProject.StandardCost)
+    {
+        return StartRoadProject(startedBoundary, cost) != null;
+    }
+
+    /// <summary>
+    /// Overload for starting a road program using an authoritative clock, returning true on success.
+    /// </summary>
+    public bool StartRoadProgram(IRepublicClock clock, double cost = NationalRoadProject.StandardCost)
+    {
+        return StartRoadProject(clock, cost) != null;
+    }
+
+    /// <summary>
+    /// Completes the active National Road Program if the current simulation time has reached or passed its finish boundary.
+    /// Raises this country's infrastructure condition by 0.1 (clamped at 1.0) and recalculates State Capacity.
+    /// If no simulation time is provided, force-completes the active road project.
+    /// Returns false if no road project is active or if current time is before the finish boundary.
+    /// </summary>
+    public bool CompleteRoadProject(RepublicTime? currentTime = null)
+    {
+        if (RoadProject == null || RoadProject.Completed)
+        {
+            return false;
+        }
+
+        // Before the finish boundary, infrastructure condition is unchanged and project remains incomplete
+        if (currentTime.HasValue && currentTime.Value < RoadProject.FinishBoundary)
+        {
+            return false;
+        }
+
+        // Mark completed
+        RoadProject.Completed = true;
+
+        // On completion, raises country's infrastructure condition by 0.1, clamped at 1.0
+        var currentInfra = StateCapacity.InfrastructureCondition ?? 0.0;
+        StateCapacity.InfrastructureCondition = Math.Clamp(
+            currentInfra + NationalRoadProject.InfrastructureBonus,
+            0.0,
+            1.0);
+
+        // Completion recalculates State Capacity
+        RecalculateStateCapacity();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Alias for <see cref="CompleteRoadProject"/>.
+    /// </summary>
+    public bool CompleteRoadProgram(RepublicTime? currentTime = null) => CompleteRoadProject(currentTime);
+
+    /// <summary>
+    /// Checks and completes the active road project if the simulation time has reached or passed the finish boundary.
+    /// </summary>
+    public bool CheckRoadProjectCompletion(RepublicTime currentTime) => CompleteRoadProject(currentTime);
+
+    /// <summary>
     /// Factory method to create and found a new sovereign country with an authoritative founding moment.
     /// </summary>
     public static Country Found(
@@ -365,7 +509,8 @@ public sealed class Country
         RepublicTime? lastCreditedBoundary = null,
         FoundingBuffSnapshot? foundingBuffs = null,
         StateCapacityInputs? stateCapacity = null,
-        Dictionary<CabinetPortfolio, Minister?>? cabinet = null)
+        Dictionary<CabinetPortfolio, Minister?>? cabinet = null,
+        NationalRoadProject? roadProject = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -384,7 +529,8 @@ public sealed class Country
             LastCreditedBoundary = lastCreditedBoundary,
             FoundingBuffs = foundingBuffs,
             StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs(),
-            Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>()
+            Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>(),
+            RoadProject = roadProject
         };
 
         if (cabinet != null)
