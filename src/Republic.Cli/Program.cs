@@ -21,6 +21,7 @@ using Republic.Core.Military.Models;
 using Republic.Core.NationalYield;
 using Republic.Core.Scenarios.Services;
 using Republic.Core.Time;
+using Republic.Core.World.Models;
 using Republic.Core.World.Rules;
 
 public static class Program
@@ -166,6 +167,10 @@ public static class Program
 
         Console.WriteLine($" Tick: {tick} | Republic Time: {app.TimeSystem.CurrentRepublicTime} ({app.TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC)");
         Console.WriteLine($" Treasury: {treasury.FormattedBalance} | State Capacity: {stateCapacity.FormattedScore} | Next WAT Boundary: Day {nextBoundary.DayNumber}, {nextBoundary.Time:HH\\:mm} WAT | GDP: R{econ.GrossDomesticProduct:N0}");
+        var profile = playerCountry?.Profile ?? CountryProfile.CreateArcadia(app.TimeSystem.CurrentRepublicTime);
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine($" Profile: {profile.OfficialName} | Capital: {profile.Capital} | Region: {profile.Region} | Pop: {profile.Population:N0} | Form: {profile.GovernmentForm} | Resource: {profile.PrimaryResource}");
+        Console.ResetColor();
         Console.ForegroundColor = ConsoleColor.DarkYellow;
         Console.WriteLine($" Founding Buffs: Admin: {foundingBuffs.AdministrativeEfficiency:P0} | Innovation: {foundingBuffs.InnovationDrive:P0} | Dev: {foundingBuffs.DevelopmentInitiative:P0} | Investor: {foundingBuffs.InvestorConfidence:P0} | Diplo: {foundingBuffs.DiplomaticRecognitionMomentum:P0} | Institution: {foundingBuffs.InstitutionBuilding:P0} | Unity: {foundingBuffs.TemporaryNationalUnity:P0}");
         Console.ResetColor();

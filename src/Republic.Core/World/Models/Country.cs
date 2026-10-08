@@ -6,6 +6,7 @@ using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
 using Republic.Core.Time;
+using Republic.Core.World.Rules;
 
 /// <summary>
 /// Domain model representing a sovereign nation entity.
@@ -15,6 +16,7 @@ public sealed class Country
 {
     private RepublicTime _foundingTime;
     private bool _isFoundingSealed;
+    private CountryProfile? _profile;
 
     /// <summary>
     /// Gets the unique identifier of the sovereign country.
@@ -147,6 +149,42 @@ public sealed class Country
             }
         }
     }
+
+    /// <summary>
+    /// Gets or sets the sovereign country profile containing descriptive identity, geography, and demographics.
+    /// Lazy-initialized to stable Arcadia defaults if this country is Arcadia, or default unspecified profile.
+    /// </summary>
+    public CountryProfile Profile
+    {
+        get
+        {
+            if (_profile == null)
+            {
+                if (IsArcadia(Name) || Id == "player-country")
+                {
+                    var arcadiaName = CountryNameRule.Default.IsValid(Name) ? Name : "Republic of Arcadia";
+                    _profile = CountryProfile.CreateArcadia(
+                        foundingTime: FoundingTime,
+                        officialName: arcadiaName,
+                        capital: string.IsNullOrWhiteSpace(CapitalCity) ? "Grand Arcadia" : CapitalCity);
+                }
+                else
+                {
+                    var officialName = CountryNameRule.Default.IsValid(Name) ? Name : CountryProfile.DefaultUnspecified;
+                    _profile = new CountryProfile(
+                        officialName: officialName,
+                        capital: string.IsNullOrWhiteSpace(CapitalCity) ? CountryProfile.DefaultUnspecified : CapitalCity,
+                        foundingTime: FoundingTime);
+                }
+            }
+
+            return _profile;
+        }
+        set => _profile = value;
+    }
+
+    private static bool IsArcadia(string? name) =>
+        !string.IsNullOrWhiteSpace(name) && name.Contains("Arcadia", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Alias for <see cref="RoadProject"/> to support generic project queries.
@@ -723,7 +761,8 @@ public sealed class Country
         StateCapacityInputs? stateCapacity = null,
         Dictionary<CabinetPortfolio, Minister?>? cabinet = null,
         NationalRoadProject? roadProject = null,
-        IEnumerable<DevelopmentProject>? projects = null)
+        IEnumerable<DevelopmentProject>? projects = null,
+        CountryProfile? profile = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -744,6 +783,11 @@ public sealed class Country
             StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs(),
             Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>()
         };
+
+        if (profile != null)
+        {
+            country.Profile = profile;
+        }
 
         if (roadProject != null)
         {
