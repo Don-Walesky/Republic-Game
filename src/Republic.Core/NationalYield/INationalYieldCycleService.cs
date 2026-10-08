@@ -12,7 +12,8 @@ public interface INationalYieldCycleService
 {
     /// <summary>
     /// Executes a yield cycle for the specified country at the given simulation time.
-    /// Evaluates the country's current in-memory state and records <paramref name="simulationTime"/> as the authoritative simulation timestamp.
+    /// Evaluates the country's current in-memory state, applies the founding-day multiplier rule (x10 on founding day),
+    /// and records <paramref name="simulationTime"/> as the authoritative simulation timestamp.
     /// Does not reconstruct historical country state.
     /// </summary>
     /// <param name="country">The sovereign country whose current state is to be evaluated.</param>

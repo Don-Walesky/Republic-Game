@@ -1,5 +1,6 @@
 namespace Republic.Core.Tests.NationalYield;
 
+using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
@@ -167,7 +168,7 @@ public sealed class NationalYieldCycleTests
         var spy = new SpyNationalYieldCalculator();
         var cycleServiceWithSpy = new NationalYieldCycleService(spy);
         var country = CreateTestCountry();
-        var simulationTime = _clock.CurrentTime;
+        var simulationTime = _clock.FromDayAndTime(1, new TimeOnly(12, 0));
 
         var snapshot = cycleServiceWithSpy.ExecuteCycle(country, simulationTime);
 
@@ -310,6 +311,192 @@ public sealed class NationalYieldCycleTests
         Assert.Null(_cycleService.GetLatestSnapshot(country.Id));
     }
 
+    [Fact]
+    public void FoundingDayMultiplier_AppliesTenXMultiplier_AndSnapshotContainsFinalYield()
+    {
+        // 1 & 5. A country whose cycle executes during its founding day receives x10 yield and snapshot contains final yield
+        var foundingTime = _clock.FromDayAndTime(5, new TimeOnly(10, 0));
+        var country = Country.Found("Founding Nation", foundingTime, baselineStability: 80.0);
+        var evalTime = _clock.FromDayAndTime(5, new TimeOnly(15, 0));
+
+        var snapshot = _cycleService.ExecuteCycle(country, evalTime);
+
+        // Expected unscaled baseline from calculator
+        var expectedBase = new NationalYieldCalculator().Calculate(NationalYieldCalculationInputs.FromCountry(country));
+
+        // Output yield receives x10 across all 14 canonical categories
+        Assert.Equal(expectedBase.RepuTreasuryRevenue * 10.0, snapshot.Yield.RepuTreasuryRevenue);
+        Assert.Equal(expectedBase.IndustrialCapacity * 10.0, snapshot.Yield.IndustrialCapacity);
+        Assert.Equal(expectedBase.EnergyCapacity * 10.0, snapshot.Yield.EnergyCapacity);
+        Assert.Equal(expectedBase.InfrastructureCapacity * 10.0, snapshot.Yield.InfrastructureCapacity);
+        Assert.Equal(expectedBase.FinancialCapacity * 10.0, snapshot.Yield.FinancialCapacity);
+        Assert.Equal(expectedBase.HumanCapital * 10.0, snapshot.Yield.HumanCapital);
+        Assert.Equal(expectedBase.ScienceCapacity * 10.0, snapshot.Yield.ScienceCapacity);
+        Assert.Equal(expectedBase.InnovationCapacity * 10.0, snapshot.Yield.InnovationCapacity);
+        Assert.Equal(expectedBase.AdministrativeCapacity * 10.0, snapshot.Yield.AdministrativeCapacity);
+        Assert.Equal(expectedBase.SecurityCapacity * 10.0, snapshot.Yield.SecurityCapacity);
+        Assert.Equal(expectedBase.IntelligenceCapacity * 10.0, snapshot.Yield.IntelligenceCapacity);
+        Assert.Equal(expectedBase.MilitaryReadiness * 10.0, snapshot.Yield.MilitaryReadiness);
+        Assert.Equal(expectedBase.DiplomaticCapacity * 10.0, snapshot.Yield.DiplomaticCapacity);
+        Assert.Equal(expectedBase.NaturalResourceOutput * 10.0, snapshot.Yield.NaturalResourceOutput);
+
+        // Snapshot stored in service also contains the final post-multiplier yield
+        var cached = _cycleService.GetLatestSnapshot(country.Id);
+        Assert.NotNull(cached);
+        Assert.Equal(snapshot.Yield.IndustrialCapacity, cached.Yield.IndustrialCapacity);
+        Assert.Equal(snapshot.Yield.RepuTreasuryRevenue, cached.Yield.RepuTreasuryRevenue);
+    }
+
+    [Fact]
+    public void PostFoundingDay_CycleExecution_YieldRemainsNormalOneX()
+    {
+        // 2. A country whose cycle executes after its founding day receives normal x1 yield
+        var foundingTime = _clock.FromDayAndTime(5, new TimeOnly(10, 0));
+        var country = Country.Found("Post-Founding Nation", foundingTime, baselineStability: 80.0);
+        var postFoundingTime = _clock.FromDayAndTime(6, new TimeOnly(10, 0));
+
+        var snapshot = _cycleService.ExecuteCycle(country, postFoundingTime);
+
+        var expectedBase = new NationalYieldCalculator().Calculate(NationalYieldCalculationInputs.FromCountry(country));
+
+        Assert.Equal(expectedBase.RepuTreasuryRevenue, snapshot.Yield.RepuTreasuryRevenue);
+        Assert.Equal(expectedBase.IndustrialCapacity, snapshot.Yield.IndustrialCapacity);
+        Assert.Equal(expectedBase.EnergyCapacity, snapshot.Yield.EnergyCapacity);
+        Assert.Equal(expectedBase.InfrastructureCapacity, snapshot.Yield.InfrastructureCapacity);
+        Assert.Equal(expectedBase.FinancialCapacity, snapshot.Yield.FinancialCapacity);
+        Assert.Equal(expectedBase.HumanCapital, snapshot.Yield.HumanCapital);
+        Assert.Equal(expectedBase.ScienceCapacity, snapshot.Yield.ScienceCapacity);
+        Assert.Equal(expectedBase.InnovationCapacity, snapshot.Yield.InnovationCapacity);
+        Assert.Equal(expectedBase.AdministrativeCapacity, snapshot.Yield.AdministrativeCapacity);
+        Assert.Equal(expectedBase.SecurityCapacity, snapshot.Yield.SecurityCapacity);
+        Assert.Equal(expectedBase.IntelligenceCapacity, snapshot.Yield.IntelligenceCapacity);
+        Assert.Equal(expectedBase.MilitaryReadiness, snapshot.Yield.MilitaryReadiness);
+        Assert.Equal(expectedBase.DiplomaticCapacity, snapshot.Yield.DiplomaticCapacity);
+        Assert.Equal(expectedBase.NaturalResourceOutput, snapshot.Yield.NaturalResourceOutput);
+    }
+
+    [Fact]
+    public void CycleExecution_UsesExistingFoundingDayRule_RatherThanDuplicatingRuleInternally()
+    {
+        // 3. The cycle uses the existing founding-day rule rather than duplicating the rule internally
+        var spyCalculator = new SpyNationalYieldCalculator();
+        var spyRule = new SpyFoundingDayYieldRule();
+        var cycleService = new NationalYieldCycleService(spyCalculator, spyRule);
+
+        var country = CreateTestCountry();
+        var simulationTime = _clock.FromDayAndTime(12, new TimeOnly(14, 0));
+
+        var snapshot = cycleService.ExecuteCycle(country, simulationTime);
+
+        // Verify cycle service delegated directly to IFoundingDayYieldRule
+        Assert.Equal(1, spyRule.ApplyCount);
+        Assert.Same(country, spyRule.LastCountry);
+        Assert.Equal(simulationTime, spyRule.LastSimulationTime);
+        Assert.Same(spyCalculator.PresetResult, spyRule.LastYield);
+        Assert.Equal(spyRule.CustomResult.IndustrialCapacity, snapshot.Yield.IndustrialCapacity);
+        Assert.Equal(spyRule.CustomResult.RepuTreasuryRevenue, snapshot.Yield.RepuTreasuryRevenue);
+    }
+
+    [Fact]
+    public void CycleExecution_OriginalCalculatedYield_IsNotMutated()
+    {
+        // 4. The original calculated yield is not mutated
+        var original = new Republic.Core.NationalYield.NationalYield
+        {
+            IndustrialCapacity = 50.0,
+            RepuTreasuryRevenue = 20.0,
+            EnergyCapacity = 30.0
+        };
+        var fixedCalculator = new FixedYieldCalculator(original);
+        var cycleService = new NationalYieldCycleService(fixedCalculator);
+
+        var foundingTime = _clock.FromDayAndTime(5, new TimeOnly(10, 0));
+        var country = Country.Found("Test Country", foundingTime, baselineStability: 75.0);
+
+        var snapshot = cycleService.ExecuteCycle(country, foundingTime);
+
+        // Snapshot receives x10
+        Assert.Equal(500.0, snapshot.Yield.IndustrialCapacity);
+        Assert.Equal(200.0, snapshot.Yield.RepuTreasuryRevenue);
+
+        // Original yield object returned by calculator is completely unmutated
+        Assert.Equal(50.0, original.IndustrialCapacity);
+        Assert.Equal(20.0, original.RepuTreasuryRevenue);
+        Assert.Equal(30.0, original.EnergyCapacity);
+    }
+
+    [Fact]
+    public void WatMidnightBoundary_TransitionsCorrectly_FromTenXToNormalOneX()
+    {
+        // 6. The exact WAT midnight boundary works correctly: before midnight -> x10, after midnight -> x1
+        var foundingTime = _clock.FromDayAndTime(5, new TimeOnly(23, 45));
+        var country = Country.Found("Late Nation", foundingTime, baselineStability: 70.0);
+
+        var expectedBase = new NationalYieldCalculator().Calculate(NationalYieldCalculationInputs.FromCountry(country));
+
+        // 1. One second before midnight WAT (Day 5, 23:59:59 WAT) -> x10
+        var beforeMidnight = _clock.FromDayAndTime(5, new TimeOnly(23, 59, 59));
+        var snapshotBefore = _cycleService.ExecuteCycle(country, beforeMidnight);
+        Assert.Equal(expectedBase.IndustrialCapacity * 10.0, snapshotBefore.Yield.IndustrialCapacity);
+        Assert.Equal(expectedBase.RepuTreasuryRevenue * 10.0, snapshotBefore.Yield.RepuTreasuryRevenue);
+
+        // 2. Exactly at midnight WAT (Day 6, 00:00:00 WAT) -> normal x1
+        var atMidnight = _clock.FromDayAndTime(6, new TimeOnly(0, 0, 0));
+        var snapshotAfter = _cycleService.ExecuteCycle(country, atMidnight);
+        Assert.Equal(expectedBase.IndustrialCapacity, snapshotAfter.Yield.IndustrialCapacity);
+        Assert.Equal(expectedBase.RepuTreasuryRevenue, snapshotAfter.Yield.RepuTreasuryRevenue);
+    }
+
+    [Fact]
+    public void TwoCountries_WithDifferentFoundingDates_AreEvaluatedIndependently()
+    {
+        // 7. Two countries with different founding dates are evaluated independently
+        var countryAFounding = _clock.FromDayAndTime(5, new TimeOnly(12, 0));
+        var countryBFounding = _clock.FromDayAndTime(6, new TimeOnly(12, 0));
+
+        var countryA = Country.Found("Country A", countryAFounding, baselineStability: 75.0);
+        var countryB = Country.Found("Country B", countryBFounding, baselineStability: 75.0);
+
+        var calculator = new NationalYieldCalculator();
+        var baseA = calculator.Calculate(NationalYieldCalculationInputs.FromCountry(countryA));
+        var baseB = calculator.Calculate(NationalYieldCalculationInputs.FromCountry(countryB));
+
+        // At Day 5, 14:00 WAT: Country A is in founding day (x10), Country B is not yet founded
+        var day5Time = _clock.FromDayAndTime(5, new TimeOnly(14, 0));
+        var snapshotA_Day5 = _cycleService.ExecuteCycle(countryA, day5Time);
+        var snapshotB_Day5 = _cycleService.ExecuteCycle(countryB, day5Time);
+
+        Assert.Equal(baseA.IndustrialCapacity * 10.0, snapshotA_Day5.Yield.IndustrialCapacity);
+        Assert.Equal(baseB.IndustrialCapacity, snapshotB_Day5.Yield.IndustrialCapacity); // not founded yet -> 1x
+
+        // At Day 6, 14:00 WAT: Country A is past founding day (1x), Country B is in founding day (x10)
+        var day6Time = _clock.FromDayAndTime(6, new TimeOnly(14, 0));
+        var snapshotA_Day6 = _cycleService.ExecuteCycle(countryA, day6Time);
+        var snapshotB_Day6 = _cycleService.ExecuteCycle(countryB, day6Time);
+
+        Assert.Equal(baseA.IndustrialCapacity, snapshotA_Day6.Yield.IndustrialCapacity);
+        Assert.Equal(baseB.IndustrialCapacity * 10.0, snapshotB_Day6.Yield.IndustrialCapacity);
+    }
+
+    [Fact]
+    public void TreasuryBalance_IsNotChanged_MerelyBecauseFoundingDayMultiplierWasApplied()
+    {
+        // 8. Treasury balance is NOT changed merely because the founding-day multiplier was applied
+        var country = CreateTestCountry("Treasury Guard Nation");
+        country.Treasury.Deposit(500.0);
+
+        Assert.Equal(500.0, country.Treasury.Balance);
+
+        // Execute cycle during founding day (country.FoundingTime) which applies x10 to calculated yield
+        var snapshot = _cycleService.ExecuteCycle(country, country.FoundingTime);
+
+        // Yield output receives x10
+        Assert.True(snapshot.Yield.RepuTreasuryRevenue > 0.0);
+
+        // Treasury balance remains strictly 500.0 (no automatic or accidental accumulation)
+        Assert.Equal(500.0, country.Treasury.Balance);
+    }
+
     private sealed class SpyNationalYieldCalculator : INationalYieldCalculator
     {
         public int CallCount { get; private set; }
@@ -326,5 +513,43 @@ public sealed class NationalYieldCycleTests
             LastInputs = inputs;
             return PresetResult;
         }
+    }
+
+    private sealed class FixedYieldCalculator : INationalYieldCalculator
+    {
+        private readonly Republic.Core.NationalYield.NationalYield _yield;
+        public FixedYieldCalculator(Republic.Core.NationalYield.NationalYield yield) => _yield = yield;
+        public Republic.Core.NationalYield.NationalYield Calculate(NationalYieldCalculationInputs inputs) => _yield;
+    }
+
+    private sealed class SpyFoundingDayYieldRule : IFoundingDayYieldRule
+    {
+        public int ApplyCount { get; private set; }
+        public Country? LastCountry { get; private set; }
+        public RepublicTime? LastSimulationTime { get; private set; }
+        public Republic.Core.NationalYield.NationalYield? LastYield { get; private set; }
+        public Republic.Core.NationalYield.NationalYield CustomResult { get; } = new()
+        {
+            IndustrialCapacity = 999.0,
+            RepuTreasuryRevenue = 888.0
+        };
+
+        public bool IsFoundingDay(Country country, RepublicTime simulationTime) => false;
+        public bool IsFoundingDay(Country country, IRepublicClock clock) => false;
+        public double GetMultiplier(Country country, RepublicTime simulationTime) => 1.0;
+
+        public Republic.Core.NationalYield.NationalYield Apply(Country country, Republic.Core.NationalYield.NationalYield yield, RepublicTime simulationTime)
+        {
+            ApplyCount++;
+            LastCountry = country;
+            LastSimulationTime = simulationTime;
+            LastYield = yield;
+            return CustomResult;
+        }
+
+        public Republic.Core.NationalYield.NationalYield Apply(Country country, Republic.Core.NationalYield.NationalYield yield, IRepublicClock clock) =>
+            Apply(country, yield, clock.CurrentTime);
+
+        public NationalYieldSnapshot Apply(Country country, NationalYieldSnapshot snapshot) => snapshot;
     }
 }
