@@ -65,6 +65,7 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
 
         // 6. Store the independent snapshot isolated by country ID
         _latestSnapshots[country.Id] = storedSnapshot;
+        country.LatestYieldSnapshot = storedSnapshot.Clone();
 
         // 7. Return an independent defensive copy so callers cannot mutate the service's stored cache
         return storedSnapshot.Clone();

@@ -158,24 +158,30 @@ public static class Program
         Console.WriteLine("==============================================================");
         Console.ResetColor();
 
-        var foundingBuffs = playerCountry != null
-            ? playerCountry.EvaluateFoundingBuffs(currentRepuTime)
-            : new FoundingBuffEvaluator().Evaluate(currentRepuTime, currentRepuTime);
-
-        var stateCapacity = playerCountry?.EvaluateStateCapacity()
-            ?? new StateCapacityEvaluator().Evaluate(new StateCapacityInputs());
-
         Console.WriteLine($" Tick: {tick} | Republic Time: {app.TimeSystem.CurrentRepublicTime} ({app.TimeSystem.CurrentSimulatedDateTime:yyyy-MM-dd HH:mm:ss} UTC)");
-        Console.WriteLine($" Treasury: {treasury.FormattedBalance} | State Capacity: {stateCapacity.FormattedScore} | Next WAT Boundary: Day {nextBoundary.DayNumber}, {nextBoundary.Time:HH\\:mm} WAT | GDP: R{econ.GrossDomesticProduct:N0}");
-        var profile = playerCountry?.Profile ?? CountryProfile.CreateArcadia(app.TimeSystem.CurrentRepublicTime);
+        var profile = playerCountry?.Profile ?? CountryProfile.CreateArcadia(currentRepuTime);
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine($" Profile: {profile.OfficialName} | Capital: {profile.Capital} | Region: {profile.Region} | Pop: {profile.Population:N0} | Form: {profile.GovernmentForm} | Resource: {profile.PrimaryResource}");
         Console.ResetColor();
-        Console.ForegroundColor = ConsoleColor.DarkYellow;
-        Console.WriteLine($" Founding Buffs: Admin: {foundingBuffs.AdministrativeEfficiency:P0} | Innovation: {foundingBuffs.InnovationDrive:P0} | Dev: {foundingBuffs.DevelopmentInitiative:P0} | Investor: {foundingBuffs.InvestorConfidence:P0} | Diplo: {foundingBuffs.DiplomaticRecognitionMomentum:P0} | Institution: {foundingBuffs.InstitutionBuilding:P0} | Unity: {foundingBuffs.TemporaryNationalUnity:P0}");
+
+        if (playerCountry != null)
+        {
+            playerCountry.GrossDomesticProduct = econ.GrossDomesticProduct;
+            playerCountry.HappinessRating = demo.HappinessRating;
+        }
+
+        var countryForDashboard = playerCountry ?? Country.Found("Republic of Arcadia", currentRepuTime);
+        var dashboard = countryForDashboard.GetDashboard(currentRepuTime);
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("--------------------------------------------------------------");
+        Console.WriteLine("                    NATIONAL DASHBOARD                        ");
+        Console.WriteLine("--------------------------------------------------------------");
         Console.ResetColor();
-        Console.WriteLine($" Inflation: {econ.InflationRate * 100:0.0}% | Trade Balance: R{econ.TradeBalance:N0}");
-        Console.WriteLine($" Demographics: Population ({demo.TotalPopulation:N0}) | Happiness ({demo.HappinessRating:0.0}%)");
+        foreach (var line in dashboard.Lines)
+        {
+            Console.WriteLine($" {line}");
+        }
         Console.WriteLine("--------------------------------------------------------------");
 
         var emails = app.WorkspaceManager.Email.GetInbox();

@@ -54,6 +54,44 @@ public sealed class Country
     public double BaselineStability { get; set; } = 75.0;
 
     /// <summary>
+    /// Gets or sets the sovereign public approval / happiness rating percentage (0.0 to 100.0).
+    /// Defaults to the standard national baseline (68.5).
+    /// </summary>
+    public double HappinessRating { get; set; } = 68.5;
+
+    /// <summary>
+    /// Alias for <see cref="HappinessRating"/> representing public approval sentiment.
+    /// </summary>
+    [JsonIgnore]
+    public double ApprovalRating
+    {
+        get => HappinessRating;
+        set => HappinessRating = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the sovereign gross domestic product (GDP) in REPU.
+    /// Defaults to the standard national baseline (450,000,000,000.0).
+    /// </summary>
+    public double GrossDomesticProduct { get; set; } = 450_000_000_000.0;
+
+    /// <summary>
+    /// Alias for <see cref="GrossDomesticProduct"/>.
+    /// </summary>
+    [JsonIgnore]
+    public double GDP
+    {
+        get => GrossDomesticProduct;
+        set => GrossDomesticProduct = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the latest National Yield calculation snapshot for this sovereign country.
+    /// Null if no yield cycle has been executed yet.
+    /// </summary>
+    public NationalYieldSnapshot? LatestYieldSnapshot { get; set; }
+
+    /// <summary>
     /// Gets the authoritative National Yield state representing the country's productive, human, institutional, and resource capacities.
     /// Each sovereign country owns an independent, isolated instance.
     /// </summary>
@@ -744,6 +782,21 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Evaluates and returns the read-only national dashboard for this sovereign country at the specified simulation time.
+    /// Induces zero mutation or side-effects on country or simulation state.
+    /// </summary>
+    public NationalDashboard GetDashboard(RepublicTime simulationTime) => new(this, simulationTime);
+
+    /// <summary>
+    /// Evaluates and returns the read-only national dashboard for this sovereign country using an authoritative clock.
+    /// </summary>
+    public NationalDashboard GetDashboard(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return GetDashboard(clock.CurrentTime);
+    }
+
+    /// <summary>
     /// Factory method to create and found a new sovereign country with an authoritative founding moment.
     /// </summary>
     public static Country Found(
@@ -762,7 +815,10 @@ public sealed class Country
         Dictionary<CabinetPortfolio, Minister?>? cabinet = null,
         NationalRoadProject? roadProject = null,
         IEnumerable<DevelopmentProject>? projects = null,
-        CountryProfile? profile = null)
+        CountryProfile? profile = null,
+        double grossDomesticProduct = 450_000_000_000.0,
+        double happinessRating = 68.5,
+        NationalYieldSnapshot? latestYieldSnapshot = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -781,7 +837,10 @@ public sealed class Country
             LastCreditedBoundary = lastCreditedBoundary,
             FoundingBuffs = foundingBuffs,
             StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs(),
-            Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>()
+            Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>(),
+            GrossDomesticProduct = grossDomesticProduct,
+            HappinessRating = happinessRating,
+            LatestYieldSnapshot = latestYieldSnapshot
         };
 
         if (profile != null)
