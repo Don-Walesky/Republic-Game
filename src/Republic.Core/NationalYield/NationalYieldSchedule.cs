@@ -106,4 +106,37 @@ public sealed class NationalYieldSchedule : INationalYieldSchedule
 
         return GetDueBoundaries(baseTime, currentSimulationTime, maxBoundaries);
     }
+
+    /// <inheritdoc />
+    public int CountDueBoundaries(RepublicTime? lastCreditedBoundary, RepublicTime currentSimulationTime)
+    {
+        var start = lastCreditedBoundary ?? RepublicTime.FromDayAndTime(0, new TimeOnly(0, 0, 0), currentSimulationTime.LaunchEpochWat);
+        var candidate = GetNextBoundary(start);
+
+        int count = 0;
+        while (candidate <= currentSimulationTime)
+        {
+            count++;
+            candidate = candidate.Add(CycleDuration);
+        }
+
+        return count;
+    }
+
+    /// <inheritdoc />
+    public int CountDueBoundaries(Country country, RepublicTime currentSimulationTime)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        if (country.LastCreditedBoundary.HasValue)
+        {
+            return CountDueBoundaries(country.LastCreditedBoundary.Value, currentSimulationTime);
+        }
+
+        var baseTime = country.IsFounded
+            ? country.FoundingTime
+            : RepublicTime.FromDayAndTime(0, new TimeOnly(0, 0, 0), currentSimulationTime.LaunchEpochWat);
+
+        return CountDueBoundaries(baseTime, currentSimulationTime);
+    }
 }

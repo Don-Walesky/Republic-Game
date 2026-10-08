@@ -20,6 +20,7 @@ using Republic.Core.Legislature.Services;
 using Republic.Core.Military.Models;
 using Republic.Core.NationalYield;
 using Republic.Core.Scenarios.Services;
+using Republic.Core.Time;
 
 public static class Program
 {
@@ -35,10 +36,26 @@ public static class Program
         var bootstrapperService = new ScenarioBootstrapper(app.WorldManager, app.WorkspaceManager, app.CabinetService, app.LegislatureService);
         await bootstrapperService.BootstrapScenarioAsync("arcadia-day1");
 
+        // Process any startup offline gap specified in CLI arguments
+        ApplyStartupGapIfSpecified(app, args);
+
+        // Check if player country has due boundaries on startup and brief the president
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+        OfflineYieldBriefing? startupBriefing = null;
+        if (playerCountry != null)
+        {
+            var catchUpService = new OfflineYieldCatchUpService();
+            if (catchUpService.Schedule.CountDueBoundaries(playerCountry, app.TimeSystem.CurrentRepublicTime) > 0)
+            {
+                startupBriefing = catchUpService.CatchUp(playerCountry, app.TimeSystem.CurrentRepublicTime);
+            }
+        }
+
         var running = true;
         while (running)
         {
-            RenderDashboard(app);
+            RenderDashboard(app, startupBriefing);
+            startupBriefing = null;
 
             Console.WriteLine("==============================================================");
             Console.WriteLine("                EXECUTIVE DIRECTIVE MENU                      ");
@@ -112,7 +129,7 @@ public static class Program
         Console.WriteLine("Executive session terminated.");
     }
 
-    private static void RenderDashboard(RepublicApplication app)
+    private static void RenderDashboard(RepublicApplication app, OfflineYieldBriefing? briefing = null)
     {
         try { Console.Clear(); } catch { /* ignore in non-interactive console */ }
         var econ = app.WorldManager.Economic.GetIndicators();
@@ -127,6 +144,11 @@ public static class Program
         var nextBoundary = playerCountry != null
             ? schedule.GetNextDueBoundary(playerCountry, currentRepuTime)
             : schedule.GetNextBoundary(currentRepuTime);
+
+        if (briefing != null && briefing.BoundariesCredited > 0)
+        {
+            PrintPresidentialBriefing(briefing);
+        }
 
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("==============================================================");
@@ -451,5 +473,72 @@ public static class Program
             Console.WriteLine($"[PRESS BRIEFING QUESTION]:\n Journalist: {question.JournalistName} ({question.NewsOutlet})\n Prompt: {question.QuestionText}");
         }
         Console.ReadLine();
+    }
+
+    private static void PrintPresidentialBriefing(OfflineYieldBriefing briefing)
+    {
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("==============================================================");
+        Console.WriteLine("        PRESIDENTIAL BRIEFING: OFFLINE YIELD RECOVERY         ");
+        Console.WriteLine("==============================================================");
+        Console.ResetColor();
+        Console.WriteLine(" Welcome back, Mr. President.");
+        Console.WriteLine($" Country ID: {briefing.CountryId}");
+        Console.WriteLine($" Offline Period: {briefing.FromTime} -> {briefing.ToTime}");
+        Console.WriteLine($" - Production Boundaries Credited: {briefing.BoundariesCredited}");
+        Console.WriteLine($" - Sovereign REPU Deposited: {briefing.FormattedRepuDeposited}");
+        if (briefing.RemainingBoundaries > 0)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($" - Remaining Uncredited Boundaries: {briefing.RemainingBoundaries} (cap of 8 reached)");
+            Console.ResetColor();
+        }
+        else
+        {
+            Console.WriteLine(" - Remaining Due Boundaries: 0");
+        }
+        Console.WriteLine($" - Next Due WAT Boundary: Day {briefing.NextDueBoundary.DayNumber}, {briefing.NextDueBoundary.Time:HH\\:mm} WAT");
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("==============================================================");
+        Console.ResetColor();
+        Console.WriteLine();
+    }
+
+    private static void ApplyStartupGapIfSpecified(RepublicApplication app, string[] args)
+    {
+        if (args == null || args.Length == 0) return;
+        if (app.Clock is not IControlledRepublicClock controlledClock) return;
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+            if ((arg.Equals("--gap-hours", StringComparison.OrdinalIgnoreCase)
+                 || arg.Equals("--gap", StringComparison.OrdinalIgnoreCase)
+                 || arg.Equals("--advance-hours", StringComparison.OrdinalIgnoreCase))
+                && i + 1 < args.Length)
+            {
+                if (double.TryParse(args[i + 1], out var hours) && hours > 0)
+                {
+                    controlledClock.Advance(TimeSpan.FromHours(hours));
+                    return;
+                }
+            }
+            else if (arg.StartsWith("--gap-hours=", StringComparison.OrdinalIgnoreCase)
+                     || arg.StartsWith("--gap=", StringComparison.OrdinalIgnoreCase)
+                     || arg.StartsWith("--advance-hours=", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = arg.Split('=')[1];
+                if (double.TryParse(val, out var hours) && hours > 0)
+                {
+                    controlledClock.Advance(TimeSpan.FromHours(hours));
+                    return;
+                }
+            }
+            else if (double.TryParse(arg, out var directHours) && directHours > 0)
+            {
+                controlledClock.Advance(TimeSpan.FromHours(directHours));
+                return;
+            }
+        }
     }
 }

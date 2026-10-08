@@ -56,7 +56,7 @@ public sealed class TimeSystem : ITimeSystem
     public IRepublicClock Clock => _clock;
 
     /// <inheritdoc />
-    public RepublicTime CurrentRepublicTime => _clock.FromElapsed(ElapsedTime);
+    public RepublicTime CurrentRepublicTime => _clock.CurrentTime;
 
     /// <inheritdoc />
     public ValueTask PauseAsync(CancellationToken cancellationToken = default)

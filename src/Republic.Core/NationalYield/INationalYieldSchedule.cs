@@ -51,4 +51,23 @@ public interface INationalYieldSchedule
         Country country,
         RepublicTime currentSimulationTime,
         int maxBoundaries = 8);
+
+    /// <summary>
+    /// Counts the total number of due six-hour production cycle boundaries strictly after
+    /// <paramref name="lastCreditedBoundary"/> and up to <paramref name="currentSimulationTime"/>
+    /// without imposing a cap.
+    /// </summary>
+    /// <param name="lastCreditedBoundary">The timestamp of the last credited cycle boundary, or null if none credited yet.</param>
+    /// <param name="currentSimulationTime">The current Republic simulation time.</param>
+    /// <returns>The total number of due six-hour boundaries.</returns>
+    int CountDueBoundaries(RepublicTime? lastCreditedBoundary, RepublicTime currentSimulationTime);
+
+    /// <summary>
+    /// Counts the total number of due six-hour production cycle boundaries for the specified country
+    /// up to <paramref name="currentSimulationTime"/> without imposing a cap.
+    /// </summary>
+    /// <param name="country">The sovereign country.</param>
+    /// <param name="currentSimulationTime">The current Republic simulation time.</param>
+    /// <returns>The total number of due six-hour boundaries.</returns>
+    int CountDueBoundaries(Country country, RepublicTime currentSimulationTime);
 }

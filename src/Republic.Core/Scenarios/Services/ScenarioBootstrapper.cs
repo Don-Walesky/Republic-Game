@@ -104,7 +104,16 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
             Id = "player-country",
             Name = preset.PlayerCountryName,
             BaselineStability = preset.StartingStability,
-            Treasury = new RepuTreasury(preset.StartingTreasury, "player-country")
+            Treasury = new RepuTreasury(preset.StartingTreasury, "player-country"),
+            Yield = new Republic.Core.NationalYield.NationalYield
+            {
+                IndustrialCapacity = 60.0,
+                AdministrativeCapacity = 60.0,
+                InfrastructureCapacity = 60.0,
+                HumanCapital = 60.0,
+                ScienceCapacity = 60.0,
+                SecurityCapacity = 60.0
+            }
         });
 
         // Register neighbors
