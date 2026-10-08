@@ -1,12 +1,15 @@
 namespace Republic.Core.Economy.Projects;
 
 using Republic.Core.Time;
+using Republic.Core.World.Models;
 
 /// <summary>
 /// Domain model representing a timed National Road Program development project.
-/// Encapsulates the unique identifier, started boundary, finish boundary, fixed cost, and completion state.
+/// First concrete implementation of the generic <see cref="DevelopmentProject"/> architecture.
+/// Costs R500,000, takes 4 six-hour cycle boundaries (24 hours on the Republic clock),
+/// and elevates national Infrastructure Condition by +0.1 (clamped at 1.0) on completion.
 /// </summary>
-public sealed class NationalRoadProject
+public sealed class NationalRoadProject : DevelopmentProject
 {
     /// <summary>
     /// Fixed cost in liquid REPU to initiate the National Road Program (R500,000).
@@ -28,44 +31,29 @@ public sealed class NationalRoadProject
     /// </summary>
     public const double InfrastructureBonus = 0.1;
 
-    /// <summary>
-    /// Gets the unique identifier of the road project.
-    /// </summary>
-    public string Id { get; init; } = Guid.NewGuid().ToString("N");
+    /// <inheritdoc />
+    public override DevelopmentProjectType ProjectType => DevelopmentProjectType.Road;
+
+    /// <inheritdoc />
+    public override string Name => "National Road Program";
 
     /// <summary>
-    /// Gets the authoritative Republic simulation timestamp / boundary at which construction started.
+    /// Initializes a new instance of the <see cref="NationalRoadProject"/> class with default standard cost.
     /// </summary>
-    public RepublicTime StartedBoundary { get; init; }
-
-    /// <summary>
-    /// Gets the authoritative Republic simulation timestamp / boundary at which construction finishes
-    /// (strictly 4 six-hour boundaries / 24 hours from <see cref="StartedBoundary"/>).
-    /// </summary>
-    public RepublicTime FinishBoundary { get; init; }
-
-    /// <summary>
-    /// Gets the liquid REPU cost withdrawn at project initiation (defaults to R500,000).
-    /// </summary>
-    public double Cost { get; init; } = StandardCost;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether construction of the road program has completed.
-    /// </summary>
-    public bool Completed { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether construction of the road program has completed.
-    /// Synchronized with <see cref="Completed"/>.
-    /// </summary>
-    public bool IsCompleted
+    public NationalRoadProject()
     {
-        get => Completed;
-        set => Completed = value;
+        Cost = StandardCost;
     }
 
-    /// <summary>
-    /// Gets a value indicating whether the project is currently in-progress and active.
-    /// </summary>
-    public bool IsActive => !Completed;
+    /// <inheritdoc />
+    protected override void ApplyCompletionEffect(Country country)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        var currentInfra = country.StateCapacity.InfrastructureCondition ?? 0.0;
+        country.StateCapacity.InfrastructureCondition = Math.Clamp(
+            currentInfra + InfrastructureBonus,
+            0.0,
+            1.0);
+    }
 }

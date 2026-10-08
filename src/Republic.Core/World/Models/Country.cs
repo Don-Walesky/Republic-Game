@@ -103,6 +103,12 @@ public sealed class Country
     public NationalRoadProject? RoadProject { get; set; }
 
     /// <summary>
+    /// Gets the list of development projects associated with this sovereign country.
+    /// Each sovereign country owns an independent, isolated list.
+    /// </summary>
+    public List<DevelopmentProject> Projects { get; init; } = new();
+
+    /// <summary>
     /// Alias for <see cref="RoadProject"/> to support generic project queries.
     /// </summary>
     [JsonIgnore]
@@ -117,6 +123,12 @@ public sealed class Country
     /// </summary>
     [JsonIgnore]
     public NationalRoadProject? ActiveRoadProject => RoadProject is { Completed: false } ? RoadProject : null;
+
+    /// <summary>
+    /// Gets the currently active development project, or null if none is active.
+    /// </summary>
+    [JsonIgnore]
+    public DevelopmentProject? ActiveProject => Projects.FirstOrDefault(p => p.IsActive) ?? (RoadProject is { IsActive: true } ? RoadProject : null);
 
     /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
@@ -413,6 +425,7 @@ public sealed class Country
         var project = new NationalRoadProject
         {
             Id = Guid.NewGuid().ToString("N"),
+            CountryId = Id,
             StartedBoundary = startedBoundary,
             FinishBoundary = finishBoundary,
             Cost = cost,
@@ -420,6 +433,10 @@ public sealed class Country
         };
 
         RoadProject = project;
+        if (!Projects.Contains(project))
+        {
+            Projects.Add(project);
+        }
         return project;
     }
 
@@ -449,6 +466,50 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Initiates a generic development project for this sovereign country.
+    /// Withdraws project cost immediately from the country's RepuTreasury.
+    /// Enforces country ownership and ensures no duplicate active project of the same type.
+    /// </summary>
+    public bool StartProject(DevelopmentProject project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        // Country isolation check
+        if (!string.IsNullOrEmpty(project.CountryId) && !string.Equals(project.CountryId, Id, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Cannot start if an active project of the same type is already in progress
+        if (Projects.Any(p => p.ProjectType == project.ProjectType && p.IsActive))
+        {
+            return false;
+        }
+
+        if (Treasury.Balance < project.Cost)
+        {
+            return false;
+        }
+
+        if (!Treasury.TryWithdraw(project.Cost))
+        {
+            return false;
+        }
+
+        if (!Projects.Contains(project))
+        {
+            Projects.Add(project);
+        }
+
+        if (project is NationalRoadProject road)
+        {
+            RoadProject = road;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Completes the active National Road Program if the current simulation time has reached or passed its finish boundary.
     /// Raises this country's infrastructure condition by 0.1 (clamped at 1.0) and recalculates State Capacity.
     /// If no simulation time is provided, force-completes the active road project.
@@ -456,31 +517,12 @@ public sealed class Country
     /// </summary>
     public bool CompleteRoadProject(RepublicTime? currentTime = null)
     {
-        if (RoadProject == null || RoadProject.Completed)
+        if (RoadProject == null)
         {
             return false;
         }
 
-        // Before the finish boundary, infrastructure condition is unchanged and project remains incomplete
-        if (currentTime.HasValue && currentTime.Value < RoadProject.FinishBoundary)
-        {
-            return false;
-        }
-
-        // Mark completed
-        RoadProject.Completed = true;
-
-        // On completion, raises country's infrastructure condition by 0.1, clamped at 1.0
-        var currentInfra = StateCapacity.InfrastructureCondition ?? 0.0;
-        StateCapacity.InfrastructureCondition = Math.Clamp(
-            currentInfra + NationalRoadProject.InfrastructureBonus,
-            0.0,
-            1.0);
-
-        // Completion recalculates State Capacity
-        RecalculateStateCapacity();
-
-        return true;
+        return RoadProject.Complete(this, currentTime);
     }
 
     /// <summary>
@@ -492,6 +534,47 @@ public sealed class Country
     /// Checks and completes the active road project if the simulation time has reached or passed the finish boundary.
     /// </summary>
     public bool CheckRoadProjectCompletion(RepublicTime currentTime) => CompleteRoadProject(currentTime);
+
+    /// <summary>
+    /// Completes the specified development project for this country.
+    /// Idempotent and enforces country isolation.
+    /// </summary>
+    public bool CompleteProject(DevelopmentProject project, RepublicTime? currentTime = null)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        if (!string.IsNullOrEmpty(project.CountryId) && !string.Equals(project.CountryId, Id, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return project.Complete(this, currentTime);
+    }
+
+    /// <summary>
+    /// Checks and completes any active development projects whose finish boundary has been reached.
+    /// </summary>
+    public int CheckProjectsCompletion(RepublicTime currentTime)
+    {
+        var completed = 0;
+        foreach (var project in Projects.Where(p => p.IsActive).ToList())
+        {
+            if (project.CanComplete(currentTime) && CompleteProject(project, currentTime))
+            {
+                completed++;
+            }
+        }
+
+        if (RoadProject is { Completed: false } road && road.CanComplete(currentTime))
+        {
+            if (CompleteRoadProject(currentTime))
+            {
+                completed++;
+            }
+        }
+
+        return completed;
+    }
 
     /// <summary>
     /// Factory method to create and found a new sovereign country with an authoritative founding moment.
@@ -510,7 +593,8 @@ public sealed class Country
         FoundingBuffSnapshot? foundingBuffs = null,
         StateCapacityInputs? stateCapacity = null,
         Dictionary<CabinetPortfolio, Minister?>? cabinet = null,
-        NationalRoadProject? roadProject = null)
+        NationalRoadProject? roadProject = null,
+        IEnumerable<DevelopmentProject>? projects = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -532,6 +616,11 @@ public sealed class Country
             Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>(),
             RoadProject = roadProject
         };
+
+        if (projects != null)
+        {
+            country.Projects.AddRange(projects);
+        }
 
         if (cabinet != null)
         {
