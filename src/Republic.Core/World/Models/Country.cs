@@ -1,6 +1,7 @@
 namespace Republic.Core.World.Models;
 
 using System.Text.Json.Serialization;
+using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
 using Republic.Core.Time;
@@ -80,6 +81,18 @@ public sealed class Country
     /// Each sovereign country owns an independent, isolated instance.
     /// </summary>
     public StateCapacityInputs StateCapacity { get; set; } = new();
+
+    /// <summary>
+    /// Default State Capacity factor for a vacant cabinet portfolio (0.3).
+    /// </summary>
+    public const double VacantPortfolioFactor = 0.3;
+
+    /// <summary>
+    /// Gets the authoritative dictionary of cabinet appointments by portfolio for this sovereign country.
+    /// A portfolio mapping to null or absent indicates a vacant portfolio.
+    /// Each sovereign country owns an independent, isolated instance.
+    /// </summary>
+    public Dictionary<CabinetPortfolio, Minister?> Cabinet { get; init; } = new();
 
     /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
@@ -246,6 +259,97 @@ public sealed class Country
     public double StateCapacityScore => EvaluateStateCapacity().Score;
 
     /// <summary>
+    /// Gets the currently appointed minister for the specified portfolio, or null if the portfolio is vacant.
+    /// </summary>
+    public Minister? GetMinister(CabinetPortfolio portfolio)
+    {
+        return Cabinet.TryGetValue(portfolio, out var minister) ? minister : null;
+    }
+
+    /// <summary>
+    /// Appoints a minister to the specified portfolio (or vacates if null), stores the appointment,
+    /// and recalculates the three affected State Capacity inputs (Civil Service Quality, Corruption Control, Infrastructure Condition).
+    /// Spends nothing in this slice.
+    /// </summary>
+    public Minister? AppointMinister(Minister? minister, CabinetPortfolio portfolio)
+    {
+        if (minister != null)
+        {
+            minister.Portfolio = portfolio;
+            minister.IsAppointed = true;
+            Cabinet[portfolio] = minister;
+        }
+        else
+        {
+            if (Cabinet.TryGetValue(portfolio, out var existing) && existing != null)
+            {
+                existing.IsAppointed = false;
+            }
+            Cabinet[portfolio] = null;
+        }
+
+        RecalculateCabinetStateCapacity();
+        return minister;
+    }
+
+    /// <summary>
+    /// Appoints a minister to the portfolio configured on the minister object, stores the appointment,
+    /// and recalculates the three affected State Capacity inputs.
+    /// </summary>
+    public Minister AppointMinister(Minister minister)
+    {
+        ArgumentNullException.ThrowIfNull(minister);
+        AppointMinister(minister, minister.Portfolio);
+        return minister;
+    }
+
+    /// <summary>
+    /// Dismisses the minister from the specified portfolio, marking it vacant,
+    /// and recalculates the three affected State Capacity inputs.
+    /// </summary>
+    public bool DismissMinister(CabinetPortfolio portfolio)
+    {
+        AppointMinister(null, portfolio);
+        return true;
+    }
+
+    /// <summary>
+    /// Vacates the specified ministerial portfolio and recalculates the three affected State Capacity inputs.
+    /// </summary>
+    public bool VacatePortfolio(CabinetPortfolio portfolio)
+    {
+        return DismissMinister(portfolio);
+    }
+
+    /// <summary>
+    /// Recalculates the three State Capacity inputs affected by cabinet appointments:
+    /// - Finance competence and integrity set civil service quality to their minimum (or 0.3 if vacant).
+    /// - Interior competence and integrity set corruption control to their minimum (or 0.3 if vacant).
+    /// - Infrastructure competence and experience set infrastructure condition to their minimum (or 0.3 if vacant).
+    /// Loyalty and political connections do not raise capacity.
+    /// </summary>
+    public void RecalculateCabinetStateCapacity()
+    {
+        // 1. Finance -> Civil Service Quality
+        var finance = GetMinister(CabinetPortfolio.Finance);
+        StateCapacity.CivilServiceQuality = finance != null
+            ? Math.Min(finance.Competence, finance.Integrity)
+            : VacantPortfolioFactor;
+
+        // 2. Interior -> Corruption Control
+        var interior = GetMinister(CabinetPortfolio.Interior);
+        StateCapacity.CorruptionControl = interior != null
+            ? Math.Min(interior.Competence, interior.Integrity)
+            : VacantPortfolioFactor;
+
+        // 3. Infrastructure -> Infrastructure Condition
+        var infra = GetMinister(CabinetPortfolio.Infrastructure);
+        StateCapacity.InfrastructureCondition = infra != null
+            ? Math.Min(infra.Competence, infra.Experience)
+            : VacantPortfolioFactor;
+    }
+
+    /// <summary>
     /// Factory method to create and found a new sovereign country with an authoritative founding moment.
     /// </summary>
     public static Country Found(
@@ -260,11 +364,12 @@ public sealed class Country
         RepuTreasury? treasury = null,
         RepublicTime? lastCreditedBoundary = null,
         FoundingBuffSnapshot? foundingBuffs = null,
-        StateCapacityInputs? stateCapacity = null)
+        StateCapacityInputs? stateCapacity = null,
+        Dictionary<CabinetPortfolio, Minister?>? cabinet = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
-        return new Country
+        var country = new Country
         {
             Id = countryId,
             Name = name,
@@ -278,7 +383,15 @@ public sealed class Country
             Treasury = treasury?.Clone() ?? new RepuTreasury(0.0, countryId),
             LastCreditedBoundary = lastCreditedBoundary,
             FoundingBuffs = foundingBuffs,
-            StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs()
+            StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs(),
+            Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>()
         };
+
+        if (cabinet != null)
+        {
+            country.RecalculateCabinetStateCapacity();
+        }
+
+        return country;
     }
 }

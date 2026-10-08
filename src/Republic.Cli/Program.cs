@@ -242,21 +242,122 @@ public static class Program
 
     private static async Task ManageCabinetAsync(RepublicApplication app)
     {
-        Console.WriteLine("=== EXECUTIVE CABINET ===");
+        Console.WriteLine("==============================================================");
+        Console.WriteLine("              EXECUTIVE CABINET & MINISTRIES                  ");
+        Console.WriteLine("==============================================================");
+
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+
+        Console.WriteLine("Current Ministerial Appointments:");
+        var finance = playerCountry?.GetMinister(CabinetPortfolio.Finance) ?? app.CabinetService.GetAppointedMinister(CabinetPortfolio.Finance);
+        var interior = playerCountry?.GetMinister(CabinetPortfolio.Interior) ?? app.CabinetService.GetAppointedMinister(CabinetPortfolio.Interior);
+        var infra = playerCountry?.GetMinister(CabinetPortfolio.Infrastructure) ?? app.CabinetService.GetAppointedMinister(CabinetPortfolio.Infrastructure);
+
+        Console.WriteLine($" - [Finance]        {(finance != null ? $"{finance.Name} | Competence: {finance.Competence:P0} | Integrity: {finance.Integrity:P0}" : "VACANT (Input: 30%)")}");
+        Console.WriteLine($" - [Interior]       {(interior != null ? $"{interior.Name} | Competence: {interior.Competence:P0} | Integrity: {interior.Integrity:P0}" : "VACANT (Input: 30%)")}");
+        Console.WriteLine($" - [Infrastructure] {(infra != null ? $"{infra.Name} | Competence: {infra.Competence:P0} | Experience: {infra.Experience:P0}" : "VACANT (Input: 30%)")}");
+
         var ministers = app.CabinetService.GetAllMinisters();
-        foreach (var m in ministers)
+        foreach (var m in ministers.Where(m => m.Portfolio != CabinetPortfolio.Finance && m.Portfolio != CabinetPortfolio.Interior && m.Portfolio != CabinetPortfolio.Infrastructure))
         {
-            Console.WriteLine($" - [{m.Portfolio}] {m.Name} | Competence: {m.CompetenceRating:0}% | Loyalty: {m.LoyaltyRating:0}%");
+            Console.WriteLine($" - [{m.Portfolio}] {m.Name} | Competence: {m.Competence:P0} | Loyalty: {m.Loyalty:P0}");
         }
 
-        Console.WriteLine("\nAppoint new Minister of Foreign Affairs?");
-        Console.Write("Enter Minister Name (or press Enter to skip) > ");
-        var name = Console.ReadLine()?.Trim();
-        if (!string.IsNullOrWhiteSpace(name))
+        var currentCapacity = playerCountry?.EvaluateStateCapacity();
+        Console.WriteLine($"\nCurrent State Capacity: {currentCapacity?.FormattedScore ?? "N/A"} (Bottleneck: {currentCapacity?.BottleneckFactor ?? "N/A"})");
+        Console.WriteLine("--------------------------------------------------------------");
+        Console.WriteLine("Select Portfolio to Appoint:");
+        Console.WriteLine(" [1] Finance (Governs Civil Service Quality)");
+        Console.WriteLine(" [2] Interior (Governs Corruption Control)");
+        Console.WriteLine(" [3] Infrastructure (Governs Infrastructure Condition)");
+        Console.WriteLine(" [0] Return to Main Menu");
+        Console.Write("Select Portfolio (1-3, 0 to cancel) > ");
+
+        var choice = Console.ReadLine()?.Trim();
+        if (choice == "0" || string.IsNullOrWhiteSpace(choice))
         {
-            await app.CabinetService.AppointMinisterAsync(new Minister { Name = name, CompetenceRating = 85.0, LoyaltyRating = 90.0 }, CabinetPortfolio.ForeignAffairs);
-            Console.WriteLine($"Appointed {name} as Minister of Foreign Affairs!");
+            return;
         }
+
+        CabinetPortfolio targetPortfolio;
+        string portfolioName;
+        switch (choice)
+        {
+            case "1":
+                targetPortfolio = CabinetPortfolio.Finance;
+                portfolioName = "Finance";
+                break;
+            case "2":
+                targetPortfolio = CabinetPortfolio.Interior;
+                portfolioName = "Interior";
+                break;
+            case "3":
+                targetPortfolio = CabinetPortfolio.Infrastructure;
+                portfolioName = "Infrastructure";
+                break;
+            default:
+                Console.WriteLine("Invalid selection.");
+                return;
+        }
+
+        Console.Write($"Enter Minister Name for {portfolioName} (default candidate if empty) > ");
+        var nameInput = Console.ReadLine()?.Trim();
+        var ministerName = !string.IsNullOrWhiteSpace(nameInput)
+            ? nameInput
+            : targetPortfolio switch
+            {
+                CabinetPortfolio.Finance => "Dr. Elena Rostova",
+                CabinetPortfolio.Interior => "Hon. Marcus Holloway",
+                _ => "Eng. Victoria Sterling"
+            };
+
+        Console.Write("Enter Competence (0.0 to 1.0, default 0.85) > ");
+        var compStr = Console.ReadLine()?.Trim();
+        var competence = double.TryParse(compStr, out var cVal) ? Math.Clamp(cVal, 0.0, 1.0) : 0.85;
+
+        double integrity = 0.80;
+        double experience = 0.80;
+
+        if (targetPortfolio == CabinetPortfolio.Finance || targetPortfolio == CabinetPortfolio.Interior)
+        {
+            Console.Write("Enter Integrity (0.0 to 1.0, default 0.85) > ");
+            var intStr = Console.ReadLine()?.Trim();
+            integrity = double.TryParse(intStr, out var iVal) ? Math.Clamp(iVal, 0.0, 1.0) : 0.85;
+        }
+
+        if (targetPortfolio == CabinetPortfolio.Infrastructure)
+        {
+            Console.Write("Enter Experience (0.0 to 1.0, default 0.85) > ");
+            var expStr = Console.ReadLine()?.Trim();
+            experience = double.TryParse(expStr, out var eVal) ? Math.Clamp(eVal, 0.0, 1.0) : 0.85;
+        }
+
+        var newMinister = new Minister
+        {
+            Name = ministerName,
+            Competence = competence,
+            Integrity = integrity,
+            Experience = experience,
+            Loyalty = 0.80,
+            PoliticalConnections = 0.60
+        };
+
+        if (playerCountry != null)
+        {
+            await app.CabinetService.AppointMinisterAsync(playerCountry, newMinister, targetPortfolio).ConfigureAwait(false);
+        }
+        else
+        {
+            await app.CabinetService.AppointMinisterAsync(newMinister, targetPortfolio).ConfigureAwait(false);
+        }
+
+        var newCapacity = playerCountry?.EvaluateStateCapacity();
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"\n[APPOINTMENT CONFIRMED]: {newMinister.Name} appointed as Minister of {portfolioName}!");
+        Console.WriteLine($"New State Capacity: {newCapacity?.FormattedScore} (Bottleneck: {newCapacity?.BottleneckFactor})");
+        Console.ResetColor();
+        Console.WriteLine("\nPress Enter to return to main menu...");
+        Console.ReadLine();
     }
 
     private static async Task ManageBudgetAsync(RepublicApplication app)

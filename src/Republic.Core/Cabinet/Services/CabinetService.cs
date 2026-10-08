@@ -5,6 +5,7 @@ using Republic.Core.Cabinet.Models;
 using Republic.Core.Diagnostics;
 using Republic.Core.Events;
 using Republic.Core.World;
+using Republic.Core.World.Models;
 using Republic.Core.Workspace.Models;
 using Republic.Core.Workspace.Services;
 
@@ -48,9 +49,61 @@ public sealed class CabinetService : ICabinetService
         }
     }
 
+    public Minister? GetAppointedMinister(Country country, CabinetPortfolio portfolio)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+        return country.GetMinister(portfolio) ?? GetAppointedMinister(portfolio);
+    }
+
+    public async Task<Minister> AppointMinisterAsync(Country country, Minister minister, CabinetPortfolio portfolio, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+        ArgumentNullException.ThrowIfNull(minister);
+
+        lock (_lock)
+        {
+            var existing = _ministers.FirstOrDefault(m => m.IsAppointed && m.Portfolio == portfolio);
+            if (existing != null)
+            {
+                existing.IsAppointed = false;
+            }
+
+            minister.Portfolio = portfolio;
+            minister.IsAppointed = true;
+
+            if (!_ministers.Contains(minister))
+            {
+                _ministers.Add(minister);
+            }
+        }
+
+        // Store appointment on country and recalculate affected State Capacity inputs
+        country.AppointMinister(minister, portfolio);
+
+        _logger?.LogInfo($"Cabinet appointment: '{minister.Name}' appointed to Portfolio [{portfolio}] in country '{country.Name}'.");
+        await _eventBus.PublishAsync(new MinisterAppointedEvent(minister, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+
+        _workspaceManager?.Email.ReceiveEmail(new EmailMessage
+        {
+            Sender = "Cabinet Secretariat",
+            Subject = $"OFFICIAL CONFIRMATION: {minister.Name} Appointed as Minister of {portfolio}",
+            Body = $"Executive decree confirmed. Minister {minister.Name} has assumed leadership of the Ministry of {portfolio}.",
+            Folder = "Inbox",
+            ActionRequired = false
+        });
+
+        return minister;
+    }
+
     public async Task<Minister> AppointMinisterAsync(Minister minister, CabinetPortfolio portfolio, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(minister);
+
+        var playerCountry = _worldManager.Countries.GetCountry("player-country") ?? _worldManager.Countries.GetAllCountries().FirstOrDefault();
+        if (playerCountry != null)
+        {
+            return await AppointMinisterAsync(playerCountry, minister, portfolio, cancellationToken).ConfigureAwait(false);
+        }
 
         lock (_lock)
         {
@@ -85,8 +138,35 @@ public sealed class CabinetService : ICabinetService
         return minister;
     }
 
+    public async Task<bool> DismissMinisterAsync(Country country, CabinetPortfolio portfolio, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        Minister? minister;
+        lock (_lock)
+        {
+            minister = _ministers.FirstOrDefault(m => m.IsAppointed && m.Portfolio == portfolio);
+            if (minister != null)
+            {
+                minister.IsAppointed = false;
+            }
+        }
+
+        country.DismissMinister(portfolio);
+
+        _logger?.LogWarning($"Cabinet dismissal: Portfolio [{portfolio}] vacated in country '{country.Name}'.");
+        await _eventBus.PublishAsync(new MinisterDismissedEvent(minister?.Id ?? Guid.NewGuid().ToString("N"), portfolio, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
     public async Task<bool> DismissMinisterAsync(CabinetPortfolio portfolio, CancellationToken cancellationToken = default)
     {
+        var playerCountry = _worldManager.Countries.GetCountry("player-country") ?? _worldManager.Countries.GetAllCountries().FirstOrDefault();
+        if (playerCountry != null)
+        {
+            return await DismissMinisterAsync(playerCountry, portfolio, cancellationToken).ConfigureAwait(false);
+        }
+
         Minister? minister;
         lock (_lock)
         {
