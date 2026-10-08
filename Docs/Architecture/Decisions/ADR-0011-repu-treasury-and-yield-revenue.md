@@ -19,18 +19,19 @@ Following the establishment of the National Yield domain model ([ADR-0004](file:
    - Standard REPU notation (e.g., R0, R45M, R450M, R1.2B) is used exclusively; foreign/real-world currencies are prohibited.
    - Deficit spending, overdrafts, and national debt are prohibited; withdrawals exceeding current balance fail safely.
 
-3. **Controlled Revenue Application (`ITreasuryRevenueService`)**:
+3. **Controlled Revenue Application and Duplicate Protection (`ITreasuryRevenueService`)**:
    - Revenue application is encapsulated in [`ITreasuryRevenueService`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Economy/Treasury/ITreasuryRevenueService.cs) and [`TreasuryRevenueService`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Economy/Treasury/TreasuryRevenueService.cs).
    - Consumes an existing, completed [`NationalYield`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/NationalYield/NationalYield.cs) or [`NationalYieldSnapshot`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/NationalYield/NationalYieldSnapshot.cs) and credits `RepuTreasuryRevenue` to the target treasury.
    - Does not invoke or duplicate yield calculation formulas, and leaves the input yield state completely unmutated.
+   - **Duplicate Protection**: Anchored in the authoritative identity of the completed yield cycle snapshot ([`NationalYieldSnapshot.Id`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/NationalYield/NationalYieldSnapshot.cs)). [`RepuTreasury`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Economy/Treasury/RepuTreasury.cs) records applied snapshot IDs, ensuring that executing or applying the same completed cycle twice cannot accidentally double-credit sovereign funds.
 
 4. **Country Isolation**:
    - Treasuries are sovereign and strictly isolated per country.
    - Applying revenue or withdrawing funds on Country A has zero side-effects on Country B.
 
 5. **Intentional Scope Boundaries**:
-   - **No Yield Scheduling**: Revenue application is a direct, controlled operation and is not tied to automatic hourly or daily timers.
-   - **No Offline Progression or Founding Bonuses**: Founding multipliers ($\times 10$), offline income, and tax systems belong to future phases.
+   - **No Yield Scheduling**: Revenue application occurs upon cycle execution and is not yet tied to automatic periodic background timers.
+   - **No Offline Progression or Additional Buffs**: Offline progression mechanics and non-yield founding buffs remain deferred to future phases.
 
 ## Consequences
 - Republic now possesses a clean, safe mechanism for converting evaluated national revenue flow into liquid sovereign treasury balances.

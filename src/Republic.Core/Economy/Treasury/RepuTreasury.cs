@@ -18,6 +18,57 @@ public sealed class RepuTreasury
     public const string CurrencyCode = "REPU";
 
     private double _balance;
+    private readonly HashSet<string> _appliedSnapshotIds = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Gets the collection of completed yield cycle / snapshot identifiers that have been applied to this treasury.
+    /// </summary>
+    public IReadOnlyCollection<string> AppliedSnapshotIds
+    {
+        get
+        {
+            lock (_appliedSnapshotIds)
+            {
+                return _appliedSnapshotIds.ToArray();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Determines whether the specified yield cycle snapshot has already been applied to this treasury.
+    /// </summary>
+    /// <param name="snapshotId">The unique snapshot / cycle identifier.</param>
+    /// <returns><c>true</c> if already applied; otherwise, <c>false</c>.</returns>
+    public bool HasAppliedSnapshot(string snapshotId)
+    {
+        if (string.IsNullOrWhiteSpace(snapshotId))
+        {
+            return false;
+        }
+
+        lock (_appliedSnapshotIds)
+        {
+            return _appliedSnapshotIds.Contains(snapshotId);
+        }
+    }
+
+    /// <summary>
+    /// Records that the specified yield cycle snapshot has been applied to this treasury.
+    /// </summary>
+    /// <param name="snapshotId">The unique snapshot / cycle identifier.</param>
+    /// <returns><c>true</c> if successfully recorded; <c>false</c> if already present.</returns>
+    public bool RecordSnapshotApplied(string snapshotId)
+    {
+        if (string.IsNullOrWhiteSpace(snapshotId))
+        {
+            return false;
+        }
+
+        lock (_appliedSnapshotIds)
+        {
+            return _appliedSnapshotIds.Add(snapshotId);
+        }
+    }
 
     /// <summary>
     /// Gets the unique identifier of the country that owns this treasury.
@@ -151,13 +202,20 @@ public sealed class RepuTreasury
     }
 
     /// <summary>
-    /// Creates an independent deep clone of the treasury instance.
+    /// Creates an independent deep clone of the treasury instance, preserving applied snapshot history.
     /// </summary>
-    public RepuTreasury Clone() => new()
+    public RepuTreasury Clone()
     {
-        CountryId = CountryId,
-        Balance = _balance
-    };
+        var clone = new RepuTreasury(_balance, CountryId);
+        lock (_appliedSnapshotIds)
+        {
+            foreach (var id in _appliedSnapshotIds)
+            {
+                clone._appliedSnapshotIds.Add(id);
+            }
+        }
+        return clone;
+    }
 
     public override string ToString() => FormattedBalance;
 }

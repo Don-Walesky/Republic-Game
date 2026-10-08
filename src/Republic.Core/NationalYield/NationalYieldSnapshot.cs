@@ -10,6 +10,22 @@ using Republic.Core.Time;
 public sealed class NationalYieldSnapshot
 {
     private readonly NationalYield _yield;
+    private string _id = string.Empty;
+
+    /// <summary>
+    /// Gets the unique identifier of this yield snapshot / completed cycle.
+    /// Defaults to a deterministic identifier based on <see cref="CountryId"/> and <see cref="SimulationTime"/>.
+    /// </summary>
+    public string Id
+    {
+        get => string.IsNullOrEmpty(_id) ? GenerateSnapshotId(CountryId, SimulationTime) : _id;
+        init => _id = value;
+    }
+
+    /// <summary>
+    /// Gets the unique identifier of this yield snapshot (alias for <see cref="Id"/>).
+    /// </summary>
+    public string SnapshotId => Id;
 
     /// <summary>
     /// Gets the unique identifier of the sovereign country.
@@ -48,11 +64,26 @@ public sealed class NationalYieldSnapshot
     /// <param name="countryId">The unique identifier of the sovereign country.</param>
     /// <param name="simulationTime">The simulation timestamp recorded for the calculation.</param>
     /// <param name="yield">The evaluated National Yield result.</param>
-    public NationalYieldSnapshot(string countryId, RepublicTime simulationTime, NationalYield yield)
+    /// <param name="id">Optional unique snapshot identifier. If null or empty, a deterministic cycle identifier is generated.</param>
+    public NationalYieldSnapshot(string countryId, RepublicTime simulationTime, NationalYield yield, string? id = null)
     {
         CountryId = countryId ?? string.Empty;
         SimulationTime = simulationTime;
+        _id = id ?? GenerateSnapshotId(CountryId, simulationTime);
         _yield = yield?.Clone() ?? new NationalYield();
+    }
+
+    /// <summary>
+    /// Generates a deterministic cycle snapshot identifier for a sovereign country at a simulation timestamp.
+    /// </summary>
+    public static string GenerateSnapshotId(string countryId, RepublicTime simulationTime)
+    {
+        if (string.IsNullOrWhiteSpace(countryId))
+        {
+            return $"snapshot_{Guid.NewGuid():N}";
+        }
+
+        return $"{countryId}:Day{simulationTime.DayNumber}:{simulationTime.Time:HHmmss.fffffff}";
     }
 
     /// <summary>
@@ -61,10 +92,11 @@ public sealed class NationalYieldSnapshot
     public static implicit operator NationalYield(NationalYieldSnapshot snapshot) => snapshot.Yield;
 
     /// <summary>
-    /// Creates an independent deep clone of the snapshot, ensuring all 14 categories are defensively preserved.
+    /// Creates an independent deep clone of the snapshot, ensuring all 14 categories and identity are defensively preserved.
     /// </summary>
     public NationalYieldSnapshot Clone() => new()
     {
+        Id = Id,
         CountryId = CountryId,
         SimulationTime = SimulationTime,
         Yield = _yield.Clone()

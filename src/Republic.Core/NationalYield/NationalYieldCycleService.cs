@@ -1,6 +1,7 @@
 namespace Republic.Core.NationalYield;
 
 using System.Collections.Concurrent;
+using Republic.Core.Economy.Treasury;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
 
@@ -9,6 +10,7 @@ using Republic.Core.World.Models;
 /// Acts as the execution mechanism: at a given simulation time, derives calculation inputs from the country's
 /// current in-memory state, delegates pure evaluation to <see cref="INationalYieldCalculator"/>, applies the
 /// authoritative <see cref="IFoundingDayYieldRule"/> to scale yield by x10 on the country's founding day,
+/// applies the resulting REPU Treasury Revenue to the sovereign <see cref="RepuTreasury"/> with duplicate protection,
 /// stores an independent snapshot in-memory, and returns a defensive copy to protect snapshot integrity.
 /// The recorded simulation timestamp identifies the time of calculation; it does not reconstruct historical state.
 /// </summary>
@@ -16,6 +18,7 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
 {
     private readonly INationalYieldCalculator _calculator;
     private readonly IFoundingDayYieldRule _foundingDayYieldRule;
+    private readonly ITreasuryRevenueService _treasuryRevenueService;
     private readonly ConcurrentDictionary<string, NationalYieldSnapshot> _latestSnapshots = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -23,12 +26,15 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
     /// </summary>
     /// <param name="calculator">The pure National Yield calculator to reuse. If null, a default <see cref="NationalYieldCalculator"/> is instantiated.</param>
     /// <param name="foundingDayYieldRule">The founding-day yield rule to apply. If null, a default <see cref="FoundingDayYieldRule"/> is instantiated.</param>
+    /// <param name="treasuryRevenueService">The treasury revenue service to apply cycle revenue. If null, a default <see cref="TreasuryRevenueService"/> is instantiated.</param>
     public NationalYieldCycleService(
         INationalYieldCalculator? calculator = null,
-        IFoundingDayYieldRule? foundingDayYieldRule = null)
+        IFoundingDayYieldRule? foundingDayYieldRule = null,
+        ITreasuryRevenueService? treasuryRevenueService = null)
     {
         _calculator = calculator ?? new NationalYieldCalculator();
         _foundingDayYieldRule = foundingDayYieldRule ?? new FoundingDayYieldRule();
+        _treasuryRevenueService = treasuryRevenueService ?? new TreasuryRevenueService();
     }
 
     /// <inheritdoc />
@@ -49,10 +55,14 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
         // 4. Construct an independent yield snapshot representing the country's final yield at the recorded simulation time
         var storedSnapshot = new NationalYieldSnapshot(country.Id, simulationTime, finalYield);
 
-        // 4. Store the independent snapshot isolated by country ID
+        // 5. Apply the REPU Treasury Revenue from the final yield snapshot to the country's existing REPU Treasury
+        // Deterministic duplicate protection prevents double-crediting if the same cycle is executed again.
+        _treasuryRevenueService.ApplyRevenue(country.Treasury, storedSnapshot);
+
+        // 6. Store the independent snapshot isolated by country ID
         _latestSnapshots[country.Id] = storedSnapshot;
 
-        // 5. Return an independent defensive copy so callers cannot mutate the service's stored cache
+        // 7. Return an independent defensive copy so callers cannot mutate the service's stored cache
         return storedSnapshot.Clone();
     }
 

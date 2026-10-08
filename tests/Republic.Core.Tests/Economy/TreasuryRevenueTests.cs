@@ -184,6 +184,26 @@ public sealed class TreasuryRevenueTests
     }
 
     [Fact]
+    public void DuplicateSnapshotApplication_DoesNotDoubleCreditTreasury()
+    {
+        var clock = RepublicClock.CreateControlled();
+        var snapshot = new NationalYieldSnapshot(
+            "c1",
+            clock.CurrentTime,
+            new Republic.Core.NationalYield.NationalYield { RepuTreasuryRevenue = 250.0 });
+
+        var treasury = new RepuTreasury(10.0, "c1");
+
+        // First application deposits revenue
+        _revenueService.ApplyRevenue(treasury, snapshot);
+        Assert.Equal(260.0, treasury.Balance);
+
+        // Second application of the exact same snapshot is ignored
+        _revenueService.ApplyRevenue(treasury, snapshot);
+        Assert.Equal(260.0, treasury.Balance);
+    }
+
+    [Fact]
     public void NegativeAmounts_ThrowArgumentOutOfRangeException()
     {
         var treasury = new RepuTreasury();

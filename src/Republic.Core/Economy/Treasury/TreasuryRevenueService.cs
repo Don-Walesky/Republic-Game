@@ -27,8 +27,27 @@ public sealed class TreasuryRevenueService : ITreasuryRevenueService
     /// <inheritdoc />
     public RepuTreasury ApplyRevenue(RepuTreasury treasury, NationalYieldSnapshot snapshot)
     {
+        ArgumentNullException.ThrowIfNull(treasury);
         ArgumentNullException.ThrowIfNull(snapshot);
-        return ApplyRevenue(treasury, snapshot.Yield);
+
+        // Prevent duplicate revenue application for the same completed snapshot/cycle
+        if (!string.IsNullOrWhiteSpace(snapshot.Id))
+        {
+            if (treasury.HasAppliedSnapshot(snapshot.Id))
+            {
+                return treasury;
+            }
+
+            treasury.RecordSnapshotApplied(snapshot.Id);
+        }
+
+        var revenue = snapshot.Yield.RepuTreasuryRevenue;
+        if (revenue > 0.0)
+        {
+            treasury.Deposit(revenue);
+        }
+
+        return treasury;
     }
 
     /// <inheritdoc />
@@ -43,6 +62,6 @@ public sealed class TreasuryRevenueService : ITreasuryRevenueService
     {
         ArgumentNullException.ThrowIfNull(country);
         ArgumentNullException.ThrowIfNull(snapshot);
-        return ApplyRevenue(country.Treasury, snapshot.Yield);
+        return ApplyRevenue(country.Treasury, snapshot);
     }
 }

@@ -479,22 +479,192 @@ public sealed class NationalYieldCycleTests
     }
 
     [Fact]
-    public void TreasuryBalance_IsNotChanged_MerelyBecauseFoundingDayMultiplierWasApplied()
+    public void Test1_NormalYieldCycle_DepositsRepuTreasuryRevenue_IntoTreasury()
     {
-        // 8. Treasury balance is NOT changed merely because the founding-day multiplier was applied
-        var country = CreateTestCountry("Treasury Guard Nation");
-        country.Treasury.Deposit(500.0);
+        // 1. A normal yield cycle deposits its RepuTreasuryRevenue into the Treasury.
+        var country = CreateTestCountry("Normal Cycle Nation");
+        country.Treasury.Deposit(100.0);
 
-        Assert.Equal(500.0, country.Treasury.Balance);
+        var normalTime = _clock.FromDayAndTime(5, new TimeOnly(12, 0));
+        var snapshot = _cycleService.ExecuteCycle(country, normalTime);
 
-        // Execute cycle during founding day (country.FoundingTime) which applies x10 to calculated yield
-        var snapshot = _cycleService.ExecuteCycle(country, country.FoundingTime);
-
-        // Yield output receives x10
         Assert.True(snapshot.Yield.RepuTreasuryRevenue > 0.0);
+        Assert.Equal(100.0 + snapshot.Yield.RepuTreasuryRevenue, country.Treasury.Balance);
+    }
 
-        // Treasury balance remains strictly 500.0 (no automatic or accidental accumulation)
-        Assert.Equal(500.0, country.Treasury.Balance);
+    [Fact]
+    public void Test2_FoundingDayCycle_DepositsTenXRevenue_IntoTreasury()
+    {
+        // 2. A founding-day cycle deposits the x10 final revenue into the Treasury.
+        var foundingTime = _clock.FromDayAndTime(5, new TimeOnly(10, 0));
+        var country = Country.Found("Founding Nation", foundingTime, baselineStability: 75.0,
+            yield: new Republic.Core.NationalYield.NationalYield
+            {
+                IndustrialCapacity = 60.0,
+                InfrastructureCapacity = 60.0,
+                AdministrativeCapacity = 70.0
+            });
+
+        Assert.Equal(0.0, country.Treasury.Balance);
+
+        var calculator = new NationalYieldCalculator();
+        var baseRevenue = calculator.Calculate(NationalYieldCalculationInputs.FromCountry(country)).RepuTreasuryRevenue;
+        Assert.True(baseRevenue > 0.0);
+
+        var evalTime = _clock.FromDayAndTime(5, new TimeOnly(15, 0));
+        var snapshot = _cycleService.ExecuteCycle(country, evalTime);
+
+        // Snapshot has x10 revenue
+        Assert.Equal(baseRevenue * 10.0, snapshot.Yield.RepuTreasuryRevenue);
+
+        // Treasury receives x10 final revenue
+        Assert.Equal(baseRevenue * 10.0, country.Treasury.Balance);
+    }
+
+    [Fact]
+    public void Test3_PreMultiplierCalculatedRevenue_IsNotWhatGetsDepositedDuringFoundingDay()
+    {
+        // 3. The pre-multiplier calculated revenue is NOT what gets deposited during founding day.
+        var foundingTime = _clock.FromDayAndTime(5, new TimeOnly(10, 0));
+        var country = Country.Found("Founding Nation", foundingTime, baselineStability: 75.0,
+            yield: new Republic.Core.NationalYield.NationalYield
+            {
+                IndustrialCapacity = 60.0,
+                InfrastructureCapacity = 60.0,
+                AdministrativeCapacity = 70.0
+            });
+
+        var baseRevenue = new NationalYieldCalculator().Calculate(NationalYieldCalculationInputs.FromCountry(country)).RepuTreasuryRevenue;
+
+        var snapshot = _cycleService.ExecuteCycle(country, foundingTime);
+
+        // Treasury balance must strictly reflect the x10 revenue, NOT the pre-multiplier revenue
+        Assert.NotEqual(baseRevenue, country.Treasury.Balance);
+        Assert.Equal(baseRevenue * 10.0, country.Treasury.Balance);
+    }
+
+    [Fact]
+    public void Test4_YieldSnapshot_RemainsUnchanged_AfterTreasuryRevenueApplication()
+    {
+        // 4. The yield snapshot remains unchanged after Treasury revenue application.
+        var country = CreateTestCountry("Snapshot Integrity Nation");
+        var evalTime = _clock.FromDayAndTime(2, new TimeOnly(12, 0));
+
+        var snapshot = _cycleService.ExecuteCycle(country, evalTime);
+        var originalRevenue = snapshot.Yield.RepuTreasuryRevenue;
+        var originalIndustry = snapshot.Yield.IndustrialCapacity;
+        var originalHuman = snapshot.Yield.HumanCapital;
+        var originalAdmin = snapshot.Yield.AdministrativeCapacity;
+
+        // Mutate treasury balance directly afterwards
+        country.Treasury.Deposit(999_999.0);
+        country.Treasury.Withdraw(50.0);
+
+        // Assert snapshot values remained completely pristine
+        Assert.Equal(originalRevenue, snapshot.Yield.RepuTreasuryRevenue);
+        Assert.Equal(originalIndustry, snapshot.Yield.IndustrialCapacity);
+        Assert.Equal(originalHuman, snapshot.Yield.HumanCapital);
+        Assert.Equal(originalAdmin, snapshot.Yield.AdministrativeCapacity);
+    }
+
+    [Fact]
+    public void Test5_ExecutingSameCompletedCycleTwice_DoesNotDoubleCreditTreasury()
+    {
+        // 5. Executing the same completed cycle/result twice does not double-credit the Treasury.
+        var country = CreateTestCountry("Idempotency Nation");
+        country.Treasury.Deposit(50.0);
+        var cycleTime = _clock.FromDayAndTime(3, new TimeOnly(14, 0));
+
+        // First cycle execution
+        var snapshot1 = _cycleService.ExecuteCycle(country, cycleTime);
+        var expectedBalance = 50.0 + snapshot1.Yield.RepuTreasuryRevenue;
+        Assert.Equal(expectedBalance, country.Treasury.Balance);
+
+        // Second cycle execution of the same completed cycle at the same simulation time
+        var snapshot2 = _cycleService.ExecuteCycle(country, cycleTime);
+        Assert.Equal(expectedBalance, country.Treasury.Balance);
+
+        // Explicit application of snapshot1 via TreasuryRevenueService directly also does not double-credit
+        var revenueService = new TreasuryRevenueService();
+        revenueService.ApplyRevenue(country, snapshot1);
+        Assert.Equal(expectedBalance, country.Treasury.Balance);
+
+        revenueService.ApplyRevenue(country.Treasury, snapshot2);
+        Assert.Equal(expectedBalance, country.Treasury.Balance);
+    }
+
+    [Fact]
+    public void Test6_TwoDifferentCycles_CorrectlyProduceTwoSeparateRevenueApplications()
+    {
+        // 6. Two different cycles correctly produce two separate revenue applications.
+        var country = CreateTestCountry("Multi-Cycle Nation");
+        var time1 = _clock.FromDayAndTime(2, new TimeOnly(6, 0));
+        var time2 = _clock.FromDayAndTime(2, new TimeOnly(12, 0));
+
+        var snapshot1 = _cycleService.ExecuteCycle(country, time1);
+        var balanceAfter1 = country.Treasury.Balance;
+        Assert.Equal(snapshot1.Yield.RepuTreasuryRevenue, balanceAfter1);
+
+        var snapshot2 = _cycleService.ExecuteCycle(country, time2);
+        var balanceAfter2 = country.Treasury.Balance;
+        Assert.Equal(snapshot1.Yield.RepuTreasuryRevenue + snapshot2.Yield.RepuTreasuryRevenue, balanceAfter2);
+    }
+
+    [Fact]
+    public void Test7_TwoDifferentCountries_HaveCompletelyIndependentTreasuryBalances()
+    {
+        // 7. Two different countries have completely independent Treasury balances.
+        var countryA = CreateTestCountry("Country A", industry: 50.0);
+        var countryB = CreateTestCountry("Country B", industry: 80.0);
+        countryA.Treasury.Deposit(100.0);
+        countryB.Treasury.Deposit(200.0);
+
+        var evalTime = _clock.FromDayAndTime(4, new TimeOnly(12, 0));
+
+        // Execute cycle on Country A
+        var snapshotA = _cycleService.ExecuteCycle(countryA, evalTime);
+        Assert.Equal(100.0 + snapshotA.Yield.RepuTreasuryRevenue, countryA.Treasury.Balance);
+        Assert.Equal(200.0, countryB.Treasury.Balance); // Country B strictly untouched
+
+        // Execute cycle on Country B
+        var snapshotB = _cycleService.ExecuteCycle(countryB, evalTime);
+        Assert.Equal(100.0 + snapshotA.Yield.RepuTreasuryRevenue, countryA.Treasury.Balance); // Country A unaffected
+        Assert.Equal(200.0 + snapshotB.Yield.RepuTreasuryRevenue, countryB.Treasury.Balance);
+    }
+
+    [Fact]
+    public void Test8_ZeroRevenueCycle_DoesNotCreateInvalidTreasuryTransaction()
+    {
+        // 8. A zero-revenue cycle does not create an invalid Treasury transaction.
+        var zeroYield = new Republic.Core.NationalYield.NationalYield(); // all 0.0
+        var country = Country.Found("Zero Revenue Nation", _clock.CurrentTime, baselineStability: 50.0, yield: zeroYield);
+        country.Treasury.Deposit(300.0);
+
+        var snapshot = _cycleService.ExecuteCycle(country, _clock.FromDayAndTime(5, new TimeOnly(10, 0)));
+
+        Assert.Equal(0.0, snapshot.Yield.RepuTreasuryRevenue);
+        Assert.Equal(300.0, country.Treasury.Balance); // Balance untouched, no exception
+    }
+
+    [Fact]
+    public void Test9_ExistingTreasurySpendingAndWithdrawal_WorksAfterCycleRevenueApplication()
+    {
+        // 9. Existing Treasury spending/withdrawal behaviour still works.
+        var country = CreateTestCountry("Spending Nation");
+        var snapshot = _cycleService.ExecuteCycle(country, _clock.FromDayAndTime(3, new TimeOnly(10, 0)));
+        var initialBalance = country.Treasury.Balance;
+        Assert.True(initialBalance >= 50.0);
+
+        // Valid spend
+        country.Treasury.Withdraw(20.0);
+        Assert.Equal(initialBalance - 20.0, country.Treasury.Balance);
+
+        // TryWithdraw with valid and invalid amounts
+        Assert.True(country.Treasury.TryWithdraw(10.0));
+        Assert.False(country.Treasury.TryWithdraw(999_999.0));
+
+        // Overdraft prevention
+        Assert.Throws<InvalidOperationException>(() => country.Treasury.Withdraw(999_999.0));
     }
 
     private sealed class SpyNationalYieldCalculator : INationalYieldCalculator

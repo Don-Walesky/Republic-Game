@@ -13,6 +13,7 @@ public interface INationalYieldCycleService
     /// <summary>
     /// Executes a yield cycle for the specified country at the given simulation time.
     /// Evaluates the country's current in-memory state, applies the founding-day multiplier rule (x10 on founding day),
+    /// applies the resulting REPU Treasury Revenue to the country's treasury with duplicate protection,
     /// and records <paramref name="simulationTime"/> as the authoritative simulation timestamp.
     /// Does not reconstruct historical country state.
     /// </summary>
