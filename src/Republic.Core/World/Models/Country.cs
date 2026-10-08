@@ -573,6 +573,34 @@ public sealed class Country
     public bool CompleteRoadProgram(RepublicTime? currentTime = null) => CompleteRoadProject(currentTime);
 
     /// <summary>
+    /// Gets the construction progress (0.0 to 1.0) of the national road program, or null if no road program exists.
+    /// </summary>
+    public double? GetRoadProgress(RepublicTime currentTime) => RoadProject?.GetProgress(currentTime);
+
+    /// <summary>
+    /// Overload for getting national road program construction progress using an authoritative clock.
+    /// </summary>
+    public double? GetRoadProgress(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return GetRoadProgress(clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Gets the construction progress (0.0 to 1.0) of the currently active development project, or null if none is active.
+    /// </summary>
+    public double? GetActiveProjectProgress(RepublicTime currentTime) => ActiveProject?.GetProgress(currentTime);
+
+    /// <summary>
+    /// Overload for getting active project construction progress using an authoritative clock.
+    /// </summary>
+    public double? GetActiveProjectProgress(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return GetActiveProjectProgress(clock.CurrentTime);
+    }
+
+    /// <summary>
     /// Checks and completes the active road project if the simulation time has reached or passed the finish boundary.
     /// </summary>
     public bool CheckRoadProjectCompletion(RepublicTime currentTime) => CompleteRoadProject(currentTime);

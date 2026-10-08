@@ -75,6 +75,18 @@ public interface IDevelopmentProject
     bool IsActive { get; }
 
     /// <summary>
+    /// Calculates the deterministic construction progress as a ratio from 0.0 (not started) to 1.0 (completed)
+    /// based on the supplied simulation time.
+    /// Does not mutate the project and does not trigger completion.
+    /// </summary>
+    double GetProgress(RepublicTime currentTime);
+
+    /// <summary>
+    /// Calculates the deterministic construction progress as a ratio from 0.0 to 1.0 relative to the authoritative clock.
+    /// </summary>
+    double GetProgress(IRepublicClock clock);
+
+    /// <summary>
     /// Evaluates whether the project can be completed at the specified simulation time.
     /// </summary>
     bool CanComplete(RepublicTime currentTime);

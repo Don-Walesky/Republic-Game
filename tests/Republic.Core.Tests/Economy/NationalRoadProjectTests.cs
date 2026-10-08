@@ -550,4 +550,185 @@ public sealed class NationalRoadProjectTests
         Assert.False(restored.CheckRoadProjectCompletion(finishBoundary));
         Assert.Equal(0.7, restored.StateCapacity.InfrastructureCondition);
     }
+
+    [Fact]
+    public void Test20_Progress_IsZero_BeforeStartBoundary()
+    {
+        // Given a road project starting at Day 1, 00:00
+        var country = CreateTestCountry("Before Start Republic", 1_000_000.0);
+        var startBoundary = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        // When evaluated before the start boundary (Day 0, 12:00 or Day 0, 23:59)
+        var wayBefore = _clock.FromDayAndTime(0, new TimeOnly(12, 0));
+        var justBefore = _clock.FromDayAndTime(0, new TimeOnly(23, 59));
+
+        // Then progress is exactly 0.0
+        Assert.Equal(0.0, project.GetProgress(wayBefore));
+        Assert.Equal(0.0, project.GetProgress(justBefore));
+        Assert.Equal(0.0, country.GetRoadProgress(wayBefore));
+        Assert.Equal(0.0, country.GetActiveProjectProgress(wayBefore));
+    }
+
+    [Fact]
+    public void Test21_Progress_IsZero_ExactlyAtStartBoundary()
+    {
+        // Given a road project starting at Day 1, 00:00
+        var country = CreateTestCountry("Start Boundary Republic", 1_000_000.0);
+        var startBoundary = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        // When evaluated exactly at the start boundary
+        var progress = project.GetProgress(startBoundary);
+
+        // Then progress is exactly 0.0
+        Assert.Equal(0.0, progress);
+        Assert.Equal(0.0, country.GetRoadProgress(startBoundary));
+    }
+
+    [Fact]
+    public void Test22_Progress_IsCorrect_HalfwayThroughConstruction()
+    {
+        // Given a road project lasting 24 hours from Day 1, 00:00 to Day 2, 00:00
+        var country = CreateTestCountry("Halfway Republic", 1_000_000.0);
+        var startBoundary = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        // When evaluated exactly halfway (Day 1, 12:00: 12 hours elapsed out of 24)
+        var halfway = _clock.FromDayAndTime(1, new TimeOnly(12, 0));
+        var progress = project.GetProgress(halfway);
+
+        // Then progress is exactly 0.5
+        Assert.Equal(0.5, progress, precision: 6);
+        Assert.Equal(0.5, country.GetRoadProgress(halfway)!.Value, precision: 6);
+    }
+
+    [Fact]
+    public void Test23_Progress_IsCorrect_AtIntermediatePoints()
+    {
+        // Given a road project lasting 24 hours
+        var country = CreateTestCountry("Intermediate Republic", 1_000_000.0);
+        var startBoundary = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        // 6 hours elapsed (1 boundary) = 0.25 progress
+        var quarter = _clock.FromDayAndTime(1, new TimeOnly(6, 0));
+        Assert.Equal(0.25, project.GetProgress(quarter), precision: 6);
+
+        // 18 hours elapsed (3 boundaries) = 0.75 progress
+        var threeQuarters = _clock.FromDayAndTime(1, new TimeOnly(18, 0));
+        Assert.Equal(0.75, project.GetProgress(threeQuarters), precision: 6);
+
+        // 8 hours elapsed = 8/24 = 1/3 progress
+        var eightHours = _clock.FromDayAndTime(1, new TimeOnly(8, 0));
+        Assert.Equal(8.0 / 24.0, project.GetProgress(eightHours), precision: 6);
+    }
+
+    [Fact]
+    public void Test24_Progress_IsOne_ExactlyAtFinishBoundary()
+    {
+        // Given a road project finishing at Day 2, 00:00
+        var country = CreateTestCountry("Finish Boundary Republic", 1_000_000.0);
+        var startBoundary = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        // When evaluated exactly at finish boundary
+        var finishBoundary = _clock.FromDayAndTime(2, new TimeOnly(0, 0));
+        var progress = project.GetProgress(finishBoundary);
+
+        // Then progress is exactly 1.0
+        Assert.Equal(1.0, progress);
+        Assert.Equal(1.0, country.GetRoadProgress(finishBoundary));
+    }
+
+    [Fact]
+    public void Test25_Progress_RemainsOne_AfterFinishBoundary()
+    {
+        // Given a road project finishing at Day 2, 00:00
+        var country = CreateTestCountry("After Finish Republic", 1_000_000.0);
+        var startBoundary = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        // When evaluated after the finish boundary
+        var fourHoursLate = _clock.FromDayAndTime(2, new TimeOnly(4, 0));
+        var twoDaysLate = _clock.FromDayAndTime(4, new TimeOnly(0, 0));
+
+        // Then progress remains strictly 1.0
+        Assert.Equal(1.0, project.GetProgress(fourHoursLate));
+        Assert.Equal(1.0, project.GetProgress(twoDaysLate));
+    }
+
+    [Fact]
+    public void Test26_CompletedProjects_ReportOne()
+    {
+        // Given a completed project
+        var country = CreateTestCountry("Completed Report Republic", 1_000_000.0);
+        var startBoundary = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        // When project completes at finish boundary
+        var finishBoundary = _clock.FromDayAndTime(2, new TimeOnly(0, 0));
+        country.CompleteRoadProject(finishBoundary);
+        Assert.True(project.Completed);
+
+        // Then it reports 1.0 at any evaluation time (even times before or at finish)
+        var earlyTime = _clock.FromDayAndTime(1, new TimeOnly(6, 0));
+        Assert.Equal(1.0, project.GetProgress(earlyTime));
+        Assert.Equal(1.0, project.GetProgress(finishBoundary));
+        Assert.Equal(1.0, country.GetRoadProgress(earlyTime));
+    }
+
+    [Fact]
+    public void Test27_Progress_IsNeverBelowZero_OrAboveOne()
+    {
+        // Given a project with defined boundaries
+        var country = CreateTestCountry("Clamp Republic", 1_000_000.0);
+        var startBoundary = _clock.FromDayAndTime(5, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        // Days before start
+        var farPast = _clock.FromDayAndTime(0, new TimeOnly(0, 0));
+        Assert.True(project.GetProgress(farPast) >= 0.0);
+        Assert.Equal(0.0, project.GetProgress(farPast));
+
+        // Days after finish
+        var farFuture = _clock.FromDayAndTime(50, new TimeOnly(0, 0));
+        Assert.True(project.GetProgress(farFuture) <= 1.0);
+        Assert.Equal(1.0, project.GetProgress(farFuture));
+    }
+
+    [Fact]
+    public void Test28_ProgressCalculation_DoesNotMutateProject()
+    {
+        // Given an active road project and baseline country state
+        var country = CreateTestCountry("No Mutation Republic", 1_000_000.0, infrastructureCondition: 0.6);
+        var startBoundary = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var project = country.StartRoadProject(startBoundary);
+        Assert.NotNull(project);
+
+        var balanceAfterStart = country.Treasury.Balance;
+        var finishBoundary = _clock.FromDayAndTime(2, new TimeOnly(0, 0));
+
+        // When GetProgress is called at and past the finish boundary
+        var progressAtFinish = project.GetProgress(finishBoundary);
+        var progressPastFinish = project.GetProgress(_clock.FromDayAndTime(3, new TimeOnly(0, 0)));
+
+        // Then progress reports 1.0 but project is NOT automatically completed
+        Assert.Equal(1.0, progressAtFinish);
+        Assert.Equal(1.0, progressPastFinish);
+        Assert.False(project.Completed);
+        Assert.True(project.IsActive);
+
+        // And country state is completely unmutated
+        Assert.Equal(balanceAfterStart, country.Treasury.Balance);
+        Assert.Equal(0.6, country.StateCapacity.InfrastructureCondition);
+    }
 }

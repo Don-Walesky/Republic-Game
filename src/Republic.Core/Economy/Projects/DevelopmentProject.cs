@@ -85,6 +85,47 @@ public abstract class DevelopmentProject : IDevelopmentProject
     public bool IsActive => !Completed;
 
     /// <summary>
+    /// Calculates the deterministic construction progress as a ratio from 0.0 (not started) to 1.0 (completed)
+    /// based on the supplied simulation time.
+    /// Does not mutate the project and does not trigger completion.
+    /// </summary>
+    public virtual double GetProgress(RepublicTime currentTime)
+    {
+        if (Completed)
+        {
+            return 1.0;
+        }
+
+        if (currentTime <= StartedBoundary)
+        {
+            return 0.0;
+        }
+
+        if (currentTime >= FinishBoundary)
+        {
+            return 1.0;
+        }
+
+        var totalDuration = (FinishBoundary - StartedBoundary).TotalSeconds;
+        if (totalDuration <= 0.0)
+        {
+            return 1.0;
+        }
+
+        var elapsedDuration = (currentTime - StartedBoundary).TotalSeconds;
+        return Math.Clamp(elapsedDuration / totalDuration, 0.0, 1.0);
+    }
+
+    /// <summary>
+    /// Calculates the deterministic construction progress as a ratio from 0.0 to 1.0 relative to the authoritative clock.
+    /// </summary>
+    public double GetProgress(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return GetProgress(clock.CurrentTime);
+    }
+
+    /// <summary>
     /// Determines whether the project can be completed at the specified simulation time.
     /// Requires a valid non-empty CountryId and that the finish boundary has been reached.
     /// </summary>
