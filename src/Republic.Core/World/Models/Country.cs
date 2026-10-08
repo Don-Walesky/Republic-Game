@@ -96,17 +96,57 @@ public sealed class Country
     public Dictionary<CabinetPortfolio, Minister?> Cabinet { get; init; } = new();
 
     /// <summary>
-    /// Gets or sets the national road development project record for this country.
-    /// Null if no road program has been initiated.
-    /// Each sovereign country owns an independent, isolated instance.
-    /// </summary>
-    public NationalRoadProject? RoadProject { get; set; }
-
-    /// <summary>
     /// Gets the list of development projects associated with this sovereign country.
     /// Each sovereign country owns an independent, isolated list.
+    /// This is the authoritative collection for all development projects in Republic.
     /// </summary>
     public List<DevelopmentProject> Projects { get; init; } = new();
+
+    /// <summary>
+    /// Gets or sets the national road development project record for this country.
+    /// Backward-compatibility accessor backed authoritatively by <see cref="Projects"/>.
+    /// </summary>
+    [JsonIgnore]
+    public NationalRoadProject? RoadProject
+    {
+        get => Projects.OfType<NationalRoadProject>().LastOrDefault();
+        set
+        {
+            if (value == null)
+            {
+                Projects.RemoveAll(p => p is NationalRoadProject);
+                return;
+            }
+
+            var existingIndex = Projects.FindIndex(p => p.Id == value.Id || (p is NationalRoadProject && p.IsActive));
+            if (existingIndex >= 0)
+            {
+                Projects[existingIndex] = value;
+            }
+            else
+            {
+                Projects.Add(value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Deserialization fallback for legacy save payloads containing a top-level roadProject property.
+    /// Never written to serialized output.
+    /// </summary>
+    [JsonPropertyName("roadProject")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NationalRoadProject? LegacyRoadProject
+    {
+        get => null;
+        set
+        {
+            if (value != null && !Projects.Any(p => p.Id == value.Id))
+            {
+                Projects.Add(value);
+            }
+        }
+    }
 
     /// <summary>
     /// Alias for <see cref="RoadProject"/> to support generic project queries.
@@ -120,15 +160,17 @@ public sealed class Country
 
     /// <summary>
     /// Gets the currently active (in-progress) road project, or null if none is active.
+    /// Backed authoritatively by <see cref="Projects"/>.
     /// </summary>
     [JsonIgnore]
-    public NationalRoadProject? ActiveRoadProject => RoadProject is { Completed: false } ? RoadProject : null;
+    public NationalRoadProject? ActiveRoadProject => Projects.OfType<NationalRoadProject>().FirstOrDefault(p => p.IsActive);
 
     /// <summary>
     /// Gets the currently active development project, or null if none is active.
+    /// Backed authoritatively by <see cref="Projects"/>.
     /// </summary>
     [JsonIgnore]
-    public DevelopmentProject? ActiveProject => Projects.FirstOrDefault(p => p.IsActive) ?? (RoadProject is { IsActive: true } ? RoadProject : null);
+    public DevelopmentProject? ActiveProject => Projects.FirstOrDefault(p => p.IsActive);
 
     /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
@@ -402,25 +444,31 @@ public sealed class Country
     /// </summary>
     public NationalRoadProject? StartRoadProject(RepublicTime startedBoundary, double cost = NationalRoadProject.StandardCost)
     {
-        // 1. Cannot start a second road while one is active
-        if (RoadProject is { Completed: false })
+        // 1. Must have a valid sovereign country ID
+        if (string.IsNullOrWhiteSpace(Id))
         {
             return null;
         }
 
-        // 2. Cannot start if treasury cannot pay; balance must not change on failed start
+        // 2. Cannot start a second road while one is active
+        if (Projects.OfType<NationalRoadProject>().Any(p => p.IsActive))
+        {
+            return null;
+        }
+
+        // 3. Cannot start if treasury cannot pay; balance must not change on failed start
         if (Treasury.Balance < cost)
         {
             return null;
         }
 
-        // 3. Withdraw exactly R500,000 once from that country's RepuTreasury
+        // 4. Withdraw exactly R500,000 once from that country's RepuTreasury
         if (!Treasury.TryWithdraw(cost))
         {
             return null;
         }
 
-        // 4. Takes 4 six-hour boundaries (24 hours on the Republic clock) from the start boundary
+        // 5. Takes 4 six-hour boundaries (24 hours on the Republic clock) from the start boundary
         var finishBoundary = startedBoundary.Add(NationalRoadProject.Duration);
         var project = new NationalRoadProject
         {
@@ -432,11 +480,7 @@ public sealed class Country
             Completed = false
         };
 
-        RoadProject = project;
-        if (!Projects.Contains(project))
-        {
-            Projects.Add(project);
-        }
+        Projects.Add(project);
         return project;
     }
 
@@ -468,14 +512,16 @@ public sealed class Country
     /// <summary>
     /// Initiates a generic development project for this sovereign country.
     /// Withdraws project cost immediately from the country's RepuTreasury.
-    /// Enforces country ownership and ensures no duplicate active project of the same type.
+    /// Enforces strict country ownership and ensures no duplicate active project of the same type.
     /// </summary>
     public bool StartProject(DevelopmentProject project)
     {
         ArgumentNullException.ThrowIfNull(project);
 
-        // Country isolation check
-        if (!string.IsNullOrEmpty(project.CountryId) && !string.Equals(project.CountryId, Id, StringComparison.Ordinal))
+        // Project must have a valid non-empty CountryId belonging strictly to this country
+        if (string.IsNullOrWhiteSpace(project.CountryId) ||
+            string.IsNullOrWhiteSpace(Id) ||
+            !string.Equals(project.CountryId, Id, StringComparison.Ordinal))
         {
             return false;
         }
@@ -501,11 +547,6 @@ public sealed class Country
             Projects.Add(project);
         }
 
-        if (project is NationalRoadProject road)
-        {
-            RoadProject = road;
-        }
-
         return true;
     }
 
@@ -517,12 +558,13 @@ public sealed class Country
     /// </summary>
     public bool CompleteRoadProject(RepublicTime? currentTime = null)
     {
-        if (RoadProject == null)
+        var road = ActiveRoadProject ?? RoadProject;
+        if (road == null)
         {
             return false;
         }
 
-        return RoadProject.Complete(this, currentTime);
+        return road.Complete(this, currentTime);
     }
 
     /// <summary>
@@ -537,13 +579,16 @@ public sealed class Country
 
     /// <summary>
     /// Completes the specified development project for this country.
-    /// Idempotent and enforces country isolation.
+    /// Idempotent and enforces strict country ownership.
     /// </summary>
     public bool CompleteProject(DevelopmentProject project, RepublicTime? currentTime = null)
     {
         ArgumentNullException.ThrowIfNull(project);
 
-        if (!string.IsNullOrEmpty(project.CountryId) && !string.Equals(project.CountryId, Id, StringComparison.Ordinal))
+        // Project must have a valid non-empty CountryId belonging strictly to this country
+        if (string.IsNullOrWhiteSpace(project.CountryId) ||
+            string.IsNullOrWhiteSpace(Id) ||
+            !string.Equals(project.CountryId, Id, StringComparison.Ordinal))
         {
             return false;
         }
@@ -560,14 +605,6 @@ public sealed class Country
         foreach (var project in Projects.Where(p => p.IsActive).ToList())
         {
             if (project.CanComplete(currentTime) && CompleteProject(project, currentTime))
-            {
-                completed++;
-            }
-        }
-
-        if (RoadProject is { Completed: false } road && road.CanComplete(currentTime))
-        {
-            if (CompleteRoadProject(currentTime))
             {
                 completed++;
             }
@@ -613,13 +650,31 @@ public sealed class Country
             LastCreditedBoundary = lastCreditedBoundary,
             FoundingBuffs = foundingBuffs,
             StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs(),
-            Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>(),
-            RoadProject = roadProject
+            Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>()
         };
+
+        if (roadProject != null)
+        {
+            if (string.IsNullOrWhiteSpace(roadProject.CountryId))
+            {
+                roadProject.CountryId = countryId;
+            }
+
+            if (!country.Projects.Any(p => p.Id == roadProject.Id))
+            {
+                country.Projects.Add(roadProject);
+            }
+        }
 
         if (projects != null)
         {
-            country.Projects.AddRange(projects);
+            foreach (var p in projects)
+            {
+                if (!country.Projects.Any(existing => existing.Id == p.Id))
+                {
+                    country.Projects.Add(p);
+                }
+            }
         }
 
         if (cabinet != null)

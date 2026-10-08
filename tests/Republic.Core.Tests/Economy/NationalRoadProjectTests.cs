@@ -323,4 +323,231 @@ public sealed class NationalRoadProjectTests
         Assert.False(project.IsActive);
         Assert.Equal(0.6, country.StateCapacity.InfrastructureCondition);
     }
+
+    [Fact]
+    public void Test13_Project_WithMissingOrInvalidCountryId_CannotStartOrComplete()
+    {
+        // Given a country with funds and projects with missing or invalid CountryId
+        var country = CreateTestCountry("Ownership Republic", 1_000_000.0);
+        var startTime = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var finishTime = startTime.Add(TimeSpan.FromHours(24));
+
+        var projectWithEmptyCountryId = new NationalRoadProject
+        {
+            CountryId = string.Empty,
+            StartedBoundary = startTime,
+            FinishBoundary = finishTime
+        };
+
+        var projectWithWhitespaceCountryId = new NationalRoadProject
+        {
+            CountryId = "   ",
+            StartedBoundary = startTime,
+            FinishBoundary = finishTime
+        };
+
+        // When attempting to start projects with missing/invalid CountryId
+        var emptyStartResult = country.StartProject(projectWithEmptyCountryId);
+        var whitespaceStartResult = country.StartProject(projectWithWhitespaceCountryId);
+
+        // Then starts fail, treasury balance is unaffected, and projects collection remains empty
+        Assert.False(emptyStartResult);
+        Assert.False(whitespaceStartResult);
+        Assert.Equal(1_000_000.0, country.Treasury.Balance);
+        Assert.Empty(country.Projects);
+
+        // And completion is also refused
+        Assert.False(projectWithEmptyCountryId.CanComplete(finishTime));
+        Assert.False(projectWithEmptyCountryId.Complete(country, finishTime));
+        Assert.False(country.CompleteProject(projectWithEmptyCountryId, finishTime));
+    }
+
+    [Fact]
+    public void Test14_CountryA_CannotStart_CountryBProject()
+    {
+        // Given two sovereign nations and a project created for Country B
+        var countryA = CreateTestCountry("Country A", 1_000_000.0, id: "country-a");
+        var countryB = CreateTestCountry("Country B", 1_000_000.0, id: "country-b");
+        var startTime = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+
+        var projectB = new NationalRoadProject
+        {
+            CountryId = countryB.Id,
+            StartedBoundary = startTime,
+            FinishBoundary = startTime.Add(TimeSpan.FromHours(24))
+        };
+
+        // When Country A attempts to start Country B's project
+        var startResult = countryA.StartProject(projectB);
+
+        // Then start is rejected, Country A is not charged, and project is not in Country A
+        Assert.False(startResult);
+        Assert.Equal(1_000_000.0, countryA.Treasury.Balance);
+        Assert.Empty(countryA.Projects);
+        Assert.Null(countryA.ActiveProject);
+    }
+
+    [Fact]
+    public void Test15_CountryA_CannotComplete_CountryBProject()
+    {
+        // Given Country B starting its own road project
+        var countryA = CreateTestCountry("Country A", 1_000_000.0, infrastructureCondition: 0.5, id: "country-a");
+        var countryB = CreateTestCountry("Country B", 1_000_000.0, infrastructureCondition: 0.5, id: "country-b");
+        var startTime = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        var finishTime = startTime.Add(TimeSpan.FromHours(24));
+
+        var projectB = countryB.StartRoadProject(startTime);
+        Assert.NotNull(projectB);
+
+        // When Country A attempts to complete Country B's project at the finish boundary
+        var foreignCompleteViaCountry = countryA.CompleteProject(projectB, finishTime);
+        var foreignCompleteViaProject = projectB.Complete(countryA, finishTime);
+
+        // Then both completion attempts fail and project remains incomplete
+        Assert.False(foreignCompleteViaCountry);
+        Assert.False(foreignCompleteViaProject);
+        Assert.False(projectB.Completed);
+        Assert.Equal(0.5, countryA.StateCapacity.InfrastructureCondition);
+        Assert.Equal(0.5, countryB.StateCapacity.InfrastructureCondition);
+
+        // When Country B completes its own project
+        var ownComplete = countryB.CompleteProject(projectB, finishTime);
+        Assert.True(ownComplete);
+        Assert.True(projectB.Completed);
+        Assert.Equal(0.6, countryB.StateCapacity.InfrastructureCondition);
+    }
+
+    [Fact]
+    public void Test16_NoDuplicateProjectRecord_BetweenProjectsCollectionAndRoadProperty()
+    {
+        // Given a country starting a National Road Program
+        var country = CreateTestCountry("No Duplicates Republic", 1_000_000.0);
+        var startTime = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+
+        var project = country.StartRoadProject(startTime);
+        Assert.NotNull(project);
+
+        // Then Projects contains exactly one item
+        Assert.Single(country.Projects);
+
+        // And RoadProject references the exact same in-memory instance
+        Assert.Same(project, country.Projects[0]);
+        Assert.Same(project, country.RoadProject);
+        Assert.Same(project, country.ActiveProject);
+        Assert.Same(project, country.ActiveRoadProject);
+
+        // And setting RoadProject updates the authoritative Projects collection without duplication
+        var updatedProject = new NationalRoadProject
+        {
+            Id = project.Id,
+            CountryId = country.Id,
+            StartedBoundary = startTime,
+            FinishBoundary = startTime.Add(TimeSpan.FromHours(24))
+        };
+        country.RoadProject = updatedProject;
+
+        Assert.Single(country.Projects);
+        Assert.Same(updatedProject, country.Projects[0]);
+        Assert.Same(updatedProject, country.RoadProject);
+    }
+
+    [Fact]
+    public void Test17_Project_RemainsAssociatedWithCountry_AfterSerializationAndRestoration()
+    {
+        // Given a country with an active road project
+        var originalCountry = CreateTestCountry("Persist Republic", 1_000_000.0, infrastructureCondition: 0.5, id: "persist-country-1");
+        var startTime = _clock.FromDayAndTime(2, new TimeOnly(0, 0));
+        var originalProject = originalCountry.StartRoadProject(startTime);
+        Assert.NotNull(originalProject);
+
+        // When serialized to JSON and deserialized back
+        var json = System.Text.Json.JsonSerializer.Serialize(originalCountry);
+        var restoredCountry = System.Text.Json.JsonSerializer.Deserialize<Country>(json);
+
+        // Then restored country has project correctly associated with its country ID
+        Assert.NotNull(restoredCountry);
+        Assert.Equal(originalCountry.Id, restoredCountry.Id);
+        Assert.Single(restoredCountry.Projects);
+
+        var restoredProject = restoredCountry.Projects[0];
+        Assert.Equal(restoredCountry.Id, restoredProject.CountryId);
+        Assert.Equal(originalCountry.Id, restoredProject.CountryId);
+        Assert.Same(restoredProject, restoredCountry.RoadProject);
+    }
+
+    [Fact]
+    public void Test18_ActiveRoadProject_SurvivesSerializationAndRestoration()
+    {
+        // Given a country with an active road program
+        var country = CreateTestCountry("Survive Republic", 1_000_000.0, infrastructureCondition: 0.5, id: "survive-1");
+        var startTime = _clock.FromDayAndTime(1, new TimeOnly(6, 0));
+        var project = country.StartRoadProject(startTime);
+        Assert.NotNull(project);
+
+        // When serialized through SaveEnvelope and JsonStateSerializer
+        var serializer = new Republic.Core.Persistence.JsonStateSerializer();
+        var worldState = new Republic.Core.World.WorldState
+        {
+            WorldId = Guid.NewGuid(),
+            Name = "Test World",
+            Countries = new List<Country> { country }
+        };
+        var envelope = new Republic.Core.Persistence.SaveEnvelope<Republic.Core.World.WorldState>
+        {
+            FormatVersion = 1,
+            State = worldState
+        };
+
+        var json = serializer.Serialize(envelope);
+        var loadedEnvelope = serializer.Deserialize<Republic.Core.World.WorldState>(json);
+        Assert.NotNull(loadedEnvelope.State);
+        var loadedCountry = loadedEnvelope.State.Countries.Single();
+
+        // Then active road project survives with all fields intact
+        Assert.Single(loadedCountry.Projects);
+        var loadedProject = Assert.IsType<NationalRoadProject>(loadedCountry.Projects[0]);
+
+        Assert.Equal(DevelopmentProjectType.Road, loadedProject.ProjectType);
+        Assert.Equal("National Road Program", loadedProject.Name);
+        Assert.Equal(500_000.0, loadedProject.Cost);
+        Assert.Equal(project.StartedBoundary, loadedProject.StartedBoundary);
+        Assert.Equal(project.FinishBoundary, loadedProject.FinishBoundary);
+        Assert.False(loadedProject.Completed);
+        Assert.True(loadedProject.IsActive);
+        Assert.Equal(country.Id, loadedProject.CountryId);
+    }
+
+    [Fact]
+    public void Test19_RestoredRoadProject_CanStillComplete_AtFinishBoundary()
+    {
+        // Given an active road project serialized while under construction
+        var country = CreateTestCountry("Restored Complete Republic", 1_000_000.0, infrastructureCondition: 0.6, id: "complete-restored");
+        var startTime = _clock.FromDayAndTime(1, new TimeOnly(0, 0));
+        country.StartRoadProject(startTime);
+
+        var json = System.Text.Json.JsonSerializer.Serialize(country);
+        var restored = System.Text.Json.JsonSerializer.Deserialize<Country>(json);
+        Assert.NotNull(restored);
+        Assert.NotNull(restored.RoadProject);
+
+        var finishBoundary = _clock.FromDayAndTime(2, new TimeOnly(0, 0));
+        var beforeFinish = _clock.FromDayAndTime(1, new TimeOnly(18, 0));
+
+        // When checked before finish boundary, remains incomplete
+        Assert.False(restored.CheckRoadProjectCompletion(beforeFinish));
+        Assert.Equal(0.6, restored.StateCapacity.InfrastructureCondition);
+        Assert.False(restored.RoadProject.Completed);
+
+        // When checked at finish boundary, completes and raises infrastructure condition
+        var completed = restored.CheckRoadProjectCompletion(finishBoundary);
+        Assert.True(completed);
+        Assert.True(restored.RoadProject.Completed);
+        Assert.False(restored.RoadProject.IsActive);
+        Assert.Equal(0.7, restored.StateCapacity.InfrastructureCondition);
+        Assert.Equal(0.7, restored.StateCapacityScore);
+
+        // Subsequent check is idempotent
+        Assert.False(restored.CheckRoadProjectCompletion(finishBoundary));
+        Assert.Equal(0.7, restored.StateCapacity.InfrastructureCondition);
+    }
 }

@@ -1,5 +1,6 @@
 namespace Republic.Core.Economy.Projects;
 
+using System.Text.Json.Serialization;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
 
@@ -8,6 +9,8 @@ using Republic.Core.World.Models;
 /// Encapsulates identity, sovereign country ownership, project type, cost, simulation timing boundaries,
 /// completion lifecycle, deterministic progression, and isolated effect application.
 /// </summary>
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+[JsonDerivedType(typeof(NationalRoadProject), typeDiscriminator: nameof(NationalRoadProject))]
 public interface IDevelopmentProject
 {
     /// <summary>

@@ -39,10 +39,22 @@ public sealed class NationalRoadProject : DevelopmentProject
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NationalRoadProject"/> class with default standard cost.
+    /// Parameterless constructor required for polymorphic JSON deserialization.
     /// </summary>
     public NationalRoadProject()
     {
         Cost = StandardCost;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NationalRoadProject"/> class with explicit ownership and timing boundaries.
+    /// </summary>
+    public NationalRoadProject(string countryId, RepublicTime startedBoundary, double cost = StandardCost) : this()
+    {
+        CountryId = countryId;
+        StartedBoundary = startedBoundary;
+        FinishBoundary = startedBoundary.Add(Duration);
+        Cost = cost;
     }
 
     /// <inheritdoc />
