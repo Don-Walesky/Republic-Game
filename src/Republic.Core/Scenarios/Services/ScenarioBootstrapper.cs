@@ -8,6 +8,7 @@ using Republic.Core.Legislature.Services;
 using Republic.Core.Scenarios.Models;
 using Republic.Core.World;
 using Republic.Core.World.Models;
+using Republic.Core.World.Rules;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Workspace.Models;
 using Republic.Core.Workspace.Services;
@@ -80,13 +81,18 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
         IWorkspaceManager workspaceManager,
         ICabinetService cabinetService,
         ILegislatureService legislatureService,
-        ILogger? logger = null)
+        ILogger? logger = null,
+        IEnumerable<ScenarioPreset>? customPresets = null)
     {
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
         _workspaceManager = workspaceManager ?? throw new ArgumentNullException(nameof(workspaceManager));
         _cabinetService = cabinetService ?? throw new ArgumentNullException(nameof(cabinetService));
         _legislatureService = legislatureService ?? throw new ArgumentNullException(nameof(legislatureService));
         _logger = logger;
+        if (customPresets != null)
+        {
+            _presets.AddRange(customPresets);
+        }
     }
 
     public IReadOnlyList<ScenarioPreset> GetAvailablePresets() => _presets.AsReadOnly();
@@ -99,10 +105,11 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
         await _worldManager.CreateAsync(preset.Name, cancellationToken).ConfigureAwait(false);
 
         // Register main country
+        var playerCountryName = ResolvePlayerCountryName(preset.PlayerCountryName);
         var playerCountry = _worldManager.Countries.RegisterCountry(new Country
         {
             Id = "player-country",
-            Name = preset.PlayerCountryName,
+            Name = playerCountryName,
             BaselineStability = preset.StartingStability,
             Treasury = new RepuTreasury(preset.StartingTreasury, "player-country"),
             Yield = new Republic.Core.NationalYield.NationalYield
@@ -158,12 +165,30 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
         {
             Source = "Presidential Press Corps",
             Headline = $"INCOMPLETION OF INAUGURATION: EXECUTIVE ADMINISTRATION ASSUMES CONTROL",
-            Summary = $"The executive office has assumed formal leadership over {preset.PlayerCountryName}.",
+            Summary = $"The executive office has assumed formal leadership over {playerCountryName}.",
             Category = "Politics",
             ImpactRating = 5
         });
 
         _logger?.LogInfo($"Scenario '{preset.Name}' successfully bootstrapped.");
         return preset;
+    }
+
+    private static string ResolvePlayerCountryName(string? countryName)
+    {
+        var trimmed = countryName?.Trim() ?? string.Empty;
+        if (CountryNameRule.Default.IsValid(trimmed))
+        {
+            return trimmed;
+        }
+
+        // Existing Arcadia keeps its current name if it already contains Republic.
+        // If it does not, set it to "Republic of Arcadia" in the scenario bootstrap only.
+        if (trimmed.Contains("Arcadia", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(trimmed))
+        {
+            return "Republic of Arcadia";
+        }
+
+        return trimmed;
     }
 }

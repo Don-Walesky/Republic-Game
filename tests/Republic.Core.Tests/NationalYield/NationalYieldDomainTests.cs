@@ -59,8 +59,8 @@ public sealed class NationalYieldDomainTests
         var clock = RepublicClock.CreateControlled();
         var countryService = new CountryService(_eventBus, _logger, clock);
 
-        var countryA = countryService.FoundCountry("Solaris");
-        var countryB = countryService.FoundCountry("Lunaris");
+        var countryA = countryService.FoundCountry("Republic of Solaris");
+        var countryB = countryService.FoundCountry("Republic of Lunaris");
 
         // Independent references
         Assert.NotSame(countryA.Yield, countryB.Yield);
@@ -312,12 +312,12 @@ public sealed class NationalYieldDomainTests
         var worldManager = new WorldManager(_eventBus, _logger, clock);
         await worldManager.CreateAsync("Terra Nova");
 
-        var countryA = worldManager.Countries.FoundCountry("Aurelia");
+        var countryA = worldManager.Countries.FoundCountry("Republic of Aurelia");
         countryA.Yield.IndustrialCapacity = 70.0;
         countryA.Yield.ScienceCapacity = 90.0;
         countryA.Yield.RepuTreasuryRevenue = 120_000.0;
 
-        var countryB = worldManager.Countries.FoundCountry("Borealis");
+        var countryB = worldManager.Countries.FoundCountry("Republic of Borealis");
         countryB.Yield.IndustrialCapacity = 40.0;
         countryB.Yield.MilitaryReadiness = 85.0;
         countryB.Yield.DiplomaticCapacity = 92.0;

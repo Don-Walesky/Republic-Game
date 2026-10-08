@@ -102,7 +102,7 @@ public sealed class CountryFoundingTests
         clock.AdvanceHours(4);
 
         // Create Country B on Day 15, 04:00 WAT
-        var countryB = countryService.FoundCountry("Young Commonwealth");
+        var countryB = countryService.FoundCountry("Young Republic");
 
         // Verify different founding moments
         Assert.NotEqual(countryA.FoundingTime, countryB.FoundingTime);
@@ -195,7 +195,7 @@ public sealed class CountryFoundingTests
         clock.AdvanceHours(10);
 
         var service = new CountryService(_eventBus, _logger, clock);
-        var country = service.FoundCountry("Maridia");
+        var country = service.FoundCountry("Republic of Maridia");
         await _eventBus.ProcessQueuedEventsAsync();
 
         Assert.NotNull(capturedEvent);
@@ -244,8 +244,8 @@ public sealed class CountryFoundingTests
         clock.AdvanceDays(5);
 
         var worldManager = new WorldManager(_eventBus, _logger, clock);
-        worldManager.Countries.FoundCountry("Nation One");
-        worldManager.Countries.FoundCountry("Nation Two");
+        worldManager.Countries.FoundCountry("Republic One");
+        worldManager.Countries.FoundCountry("Republic Two");
 
         var snapshot = worldManager.Snapshot();
         Assert.Equal(2, snapshot.Countries.Count);
@@ -255,7 +255,7 @@ public sealed class CountryFoundingTests
 
         var restoredCountries = newWorldManager.Countries.GetAllCountries();
         Assert.Equal(2, restoredCountries.Count);
-        Assert.Contains(restoredCountries, c => c.Name == "Nation One");
-        Assert.Contains(restoredCountries, c => c.Name == "Nation Two");
+        Assert.Contains(restoredCountries, c => c.Name == "Republic One");
+        Assert.Contains(restoredCountries, c => c.Name == "Republic Two");
     }
 }

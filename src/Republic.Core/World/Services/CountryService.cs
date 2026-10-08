@@ -5,6 +5,7 @@ using Republic.Core.Events;
 using Republic.Core.Time;
 using Republic.Core.World.Events;
 using Republic.Core.World.Models;
+using Republic.Core.World.Rules;
 
 /// <summary>
 /// Service implementation for sovereign nation founding, registry, and stability management.
@@ -16,16 +17,18 @@ public sealed class CountryService : ICountryService
     private readonly IEventBus _eventBus;
     private readonly ILogger? _logger;
     private readonly IRepublicClock _clock;
+    private readonly ICountryNameRule _countryNameRule;
     private readonly object _lock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CountryService"/> class.
     /// </summary>
-    public CountryService(IEventBus eventBus, ILogger? logger = null, IRepublicClock? clock = null)
+    public CountryService(IEventBus eventBus, ILogger? logger = null, IRepublicClock? clock = null, ICountryNameRule? countryNameRule = null)
     {
         _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         _logger = logger;
         _clock = clock ?? RepublicClock.CreateControlled();
+        _countryNameRule = countryNameRule ?? CountryNameRule.Default;
     }
 
     /// <inheritdoc />
@@ -34,10 +37,10 @@ public sealed class CountryService : ICountryService
     /// <inheritdoc />
     public Country FoundCountry(string name, string capitalCity = "", string governmentType = "Democratic Republic", string id = "")
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        var validatedName = _countryNameRule.Validate(name);
 
         var country = Country.Found(
-            name: name,
+            name: validatedName,
             foundingTime: _clock.CurrentTime,
             id: id,
             capitalCity: capitalCity,

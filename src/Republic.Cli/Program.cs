@@ -21,6 +21,7 @@ using Republic.Core.Military.Models;
 using Republic.Core.NationalYield;
 using Republic.Core.Scenarios.Services;
 using Republic.Core.Time;
+using Republic.Core.World.Rules;
 
 public static class Program
 {
@@ -756,6 +757,30 @@ public static class Program
                 controlledClock.Advance(TimeSpan.FromHours(directHours));
                 return;
             }
+        }
+    }
+
+    /// <summary>
+    /// Prompts the user for a sovereign country name containing the word 'Republic'.
+    /// Prints the rejection message and re-prompts until a valid name is provided.
+    /// Does not add a new menu number.
+    /// </summary>
+    public static string PromptCountryName(Func<string?>? readLine = null, Action<string>? write = null, Action<string>? writeLine = null)
+    {
+        var read = readLine ?? Console.ReadLine;
+        var print = write ?? Console.Write;
+        var printLine = writeLine ?? Console.WriteLine;
+
+        while (true)
+        {
+            print("Enter Sovereign Country Name > ");
+            var input = read()?.Trim();
+            if (CountryNameRule.Default.IsValid(input))
+            {
+                return CountryNameRule.Default.Validate(input);
+            }
+
+            printLine($"Invalid country name. Every player country name must contain the whole word '{CountryNameRule.RequiredKeyword}'.");
         }
     }
 }
