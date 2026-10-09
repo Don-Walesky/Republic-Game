@@ -40,6 +40,7 @@ public static class Program
 
         // Process any startup offline gap specified in CLI arguments
         ApplyStartupGapIfSpecified(app, args);
+        ApplyStartupPartyIfSpecified(app, args);
 
         // Check if player country has due boundaries on startup and brief the president
         var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
@@ -197,12 +198,14 @@ public static class Program
         Console.WriteLine("--------------------------------------------------------------");
 
         var consequenceText = countryForDashboard.LatestTreasuryConsequence?.ToString() ?? "No consequence";
+        var partyText = countryForDashboard.Party?.ToString() ?? "No party";
         Console.ForegroundColor = ConsoleColor.DarkYellow;
         Console.WriteLine("--------------------------------------------------------------");
         Console.WriteLine("                    SYSTEMIC CONSEQUENCES                     ");
         Console.WriteLine("--------------------------------------------------------------");
         Console.ResetColor();
         Console.WriteLine($" Consequence: {consequenceText}");
+        Console.WriteLine($" Party: {partyText}");
         Console.WriteLine("--------------------------------------------------------------");
 
         var emails = app.WorkspaceManager.Email.GetInbox();
@@ -787,6 +790,29 @@ public static class Program
             else if (double.TryParse(arg, out var directHours) && directHours > 0)
             {
                 controlledClock.Advance(TimeSpan.FromHours(directHours));
+                return;
+            }
+        }
+    }
+
+    private static void ApplyStartupPartyIfSpecified(RepublicApplication app, string[] args)
+    {
+        if (args == null || args.Length == 0) return;
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+        if (playerCountry == null) return;
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+            if (arg.Equals("--party", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                playerCountry.FoundParty(args[i + 1], app.TimeSystem.CurrentRepublicTime);
+                return;
+            }
+            if (arg.StartsWith("--party=", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = arg.Substring("--party=".Length);
+                playerCountry.FoundParty(val, app.TimeSystem.CurrentRepublicTime);
                 return;
             }
         }

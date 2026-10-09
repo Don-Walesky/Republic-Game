@@ -5,6 +5,7 @@ using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
+using Republic.Core.Politics;
 using Republic.Core.Time;
 using Republic.Core.World.Rules;
 
@@ -204,6 +205,72 @@ public sealed class Country
     public TreasuryConsequence? ApplyTreasuryConsequence(RepublicTime boundary)
     {
         return TreasuryConsequence.Apply(this, boundary);
+    }
+
+    /// <summary>
+    /// Gets or sets the sovereign political party founded in this country, or null if none exists.
+    /// In this slice, a country can have at most one political party.
+    /// </summary>
+    public PoliticalParty? Party { get; set; }
+
+    /// <summary>
+    /// Alias for <see cref="Party"/>.
+    /// </summary>
+    [JsonIgnore]
+    public PoliticalParty? PoliticalParty
+    {
+        get => Party;
+        set => Party = value;
+    }
+
+    /// <summary>
+    /// Founds a sovereign political party for this country.
+    /// In this slice, a country can have at most one political party; a second founding is rejected and returns null.
+    /// An empty or whitespace name is rejected and does not create a party.
+    /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
+    /// </summary>
+    public PoliticalParty? FoundParty(string? name, RepublicTime foundedBoundary, double support = PoliticalParty.InitialSupport)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        // A country can have one party in this slice. A second founding is rejected.
+        if (Party != null)
+        {
+            return null;
+        }
+
+        var party = new PoliticalParty(name.Trim(), Id, foundedBoundary, support);
+        Party = party;
+        return party;
+    }
+
+    /// <summary>
+    /// Overload for founding a political party using an authoritative Republic clock.
+    /// </summary>
+    public PoliticalParty? FoundParty(string? name, IRepublicClock clock, double support = PoliticalParty.InitialSupport)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return FoundParty(name, clock.CurrentTime, support);
+    }
+
+    /// <summary>
+    /// Overload for founding a political party defaulting to the country's founding time or last boundary.
+    /// </summary>
+    public PoliticalParty? FoundParty(string? name, double support = PoliticalParty.InitialSupport)
+    {
+        return FoundParty(name, LastCreditedBoundary ?? FoundingTime, support);
+    }
+
+    /// <summary>
+    /// Attempts to found a political party for this country, returning true on success.
+    /// </summary>
+    public bool TryFoundParty(string? name, RepublicTime foundedBoundary, out PoliticalParty? party, double support = PoliticalParty.InitialSupport)
+    {
+        party = FoundParty(name, foundedBoundary, support);
+        return party != null;
     }
 
     /// <summary>
@@ -894,7 +961,8 @@ public sealed class Country
         double grossDomesticProduct = 450_000_000_000.0,
         double happinessRating = 68.5,
         NationalYieldSnapshot? latestYieldSnapshot = null,
-        TreasuryConsequence? latestTreasuryConsequence = null)
+        TreasuryConsequence? latestTreasuryConsequence = null,
+        PoliticalParty? party = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -917,7 +985,8 @@ public sealed class Country
             GrossDomesticProduct = grossDomesticProduct,
             HappinessRating = happinessRating,
             LatestYieldSnapshot = latestYieldSnapshot,
-            LatestTreasuryConsequence = latestTreasuryConsequence
+            LatestTreasuryConsequence = latestTreasuryConsequence,
+            Party = party
         };
 
         if (profile != null)
