@@ -5,8 +5,17 @@ using System.Text.Json.Serialization;
 using Republic.Core.Time;
 
 /// <summary>
+/// Specifies the constitutional and political role of a party within a sovereign country.
+/// </summary>
+public enum PoliticalPartyRole
+{
+    Ruling,
+    Opposition
+}
+
+/// <summary>
 /// Domain model representing a sovereign political party founded in a country.
-/// Holds the party name, country ownership, founding clock boundary, and public support rating.
+/// Holds the party name, country ownership, founding clock boundary, public support rating, and institutional role.
 /// </summary>
 public sealed record PoliticalParty
 {
@@ -53,6 +62,23 @@ public sealed record PoliticalParty
     }
 
     /// <summary>
+    /// Gets the institutional role of the political party (Ruling or Opposition).
+    /// </summary>
+    public PoliticalPartyRole Role { get; init; } = PoliticalPartyRole.Ruling;
+
+    /// <summary>
+    /// Gets a value indicating whether this party is the ruling government party.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsRuling => Role == PoliticalPartyRole.Ruling;
+
+    /// <summary>
+    /// Gets a value indicating whether this party is the opposition party.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsOpposition => Role == PoliticalPartyRole.Opposition;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="PoliticalParty"/> record with default values.
     /// </summary>
     public PoliticalParty() { }
@@ -64,7 +90,13 @@ public sealed record PoliticalParty
     /// <param name="countryId">The owning country identifier.</param>
     /// <param name="foundedBoundary">The Republic clock boundary when founded.</param>
     /// <param name="support">Public support rating between 0 and 100 (defaults to 10.0).</param>
-    public PoliticalParty(string name, string countryId, RepublicTime foundedBoundary, double support = InitialSupport)
+    /// <param name="role">The institutional role (Ruling or Opposition).</param>
+    public PoliticalParty(
+        string name,
+        string countryId,
+        RepublicTime foundedBoundary,
+        double support = InitialSupport,
+        PoliticalPartyRole role = PoliticalPartyRole.Ruling)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         if (support < 0.0 || support > 100.0)
@@ -76,10 +108,23 @@ public sealed record PoliticalParty
         CountryId = countryId ?? string.Empty;
         FoundedBoundary = foundedBoundary;
         Support = support;
+        Role = role;
     }
 
     /// <summary>
-    /// Deconstructs the political party into its constituent components.
+    /// Deconstructs the political party into its constituent components including role.
+    /// </summary>
+    public void Deconstruct(out string name, out string countryId, out RepublicTime foundedBoundary, out double support, out PoliticalPartyRole role)
+    {
+        name = Name;
+        countryId = CountryId;
+        foundedBoundary = FoundedBoundary;
+        support = Support;
+        role = Role;
+    }
+
+    /// <summary>
+    /// Deconstructs the political party into its 4-part representation for backward compatibility.
     /// </summary>
     public void Deconstruct(out string name, out string countryId, out RepublicTime foundedBoundary, out double support)
     {

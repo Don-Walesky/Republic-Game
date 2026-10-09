@@ -208,25 +208,58 @@ public sealed class Country
     }
 
     /// <summary>
-    /// Gets or sets the sovereign political party founded in this country, or null if none exists.
-    /// In this slice, a country can have at most one political party.
+    /// Gets or sets the sovereign ruling political party founded in this country, or null if none exists.
+    /// The first party founded is always the ruling party.
     /// </summary>
-    public PoliticalParty? Party { get; set; }
+    public PoliticalParty? RulingParty { get; set; }
 
     /// <summary>
-    /// Alias for <see cref="Party"/>.
+    /// Gets or sets the sovereign opposition political party founded in this country, or null if none exists.
+    /// The second party founded is always the opposition party.
+    /// </summary>
+    public PoliticalParty? OppositionParty { get; set; }
+
+    /// <summary>
+    /// Alias for <see cref="RulingParty"/> maintaining backward-compatibility with Phase 6.1 single-party slice.
+    /// </summary>
+    [JsonIgnore]
+    public PoliticalParty? Party
+    {
+        get => RulingParty;
+        set => RulingParty = value;
+    }
+
+    /// <summary>
+    /// Alias for <see cref="RulingParty"/>.
     /// </summary>
     [JsonIgnore]
     public PoliticalParty? PoliticalParty
     {
-        get => Party;
-        set => Party = value;
+        get => RulingParty;
+        set => RulingParty = value;
+    }
+
+    /// <summary>
+    /// Gets the list of active political parties in this sovereign country (up to two: ruling and opposition).
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<PoliticalParty> Parties
+    {
+        get
+        {
+            var list = new List<PoliticalParty>(2);
+            if (RulingParty != null) list.Add(RulingParty);
+            if (OppositionParty != null) list.Add(OppositionParty);
+            return list;
+        }
     }
 
     /// <summary>
     /// Founds a sovereign political party for this country.
-    /// In this slice, a country can have at most one political party; a second founding is rejected and returns null.
-    /// An empty or whitespace name is rejected and does not create a party.
+    /// The first party becomes the ruling party; the second becomes the opposition party.
+    /// A third founding is rejected and returns null.
+    /// Names must be trimmed and non-empty. The two party names cannot match (case-insensitive); duplicate names are rejected.
+    /// Opposition support starts at 10.0 while ruling support remains where it is.
     /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
     /// </summary>
     public PoliticalParty? FoundParty(string? name, RepublicTime foundedBoundary, double support = PoliticalParty.InitialSupport)
@@ -236,15 +269,33 @@ public sealed class Country
             return null;
         }
 
-        // A country can have one party in this slice. A second founding is rejected.
-        if (Party != null)
+        var trimmedName = name.Trim();
+
+        // 1. If no ruling party yet: first party becomes Ruling party
+        if (RulingParty == null)
+        {
+            var rulingParty = new PoliticalParty(trimmedName, Id, foundedBoundary, support, PoliticalPartyRole.Ruling);
+            RulingParty = rulingParty;
+            return rulingParty;
+        }
+
+        // 2. If ruling party exists, check for duplicate name (case-insensitive)
+        if (string.Equals(RulingParty.Name, trimmedName, StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
 
-        var party = new PoliticalParty(name.Trim(), Id, foundedBoundary, support);
-        Party = party;
-        return party;
+        // 3. If opposition party does not exist yet: second party becomes Opposition party
+        if (OppositionParty == null)
+        {
+            // Opposition support starts at 10. Ruling support stays where it is.
+            var oppositionParty = new PoliticalParty(trimmedName, Id, foundedBoundary, PoliticalParty.InitialSupport, PoliticalPartyRole.Opposition);
+            OppositionParty = oppositionParty;
+            return oppositionParty;
+        }
+
+        // 4. A third founding is rejected
+        return null;
     }
 
     /// <summary>
@@ -962,7 +1013,8 @@ public sealed class Country
         double happinessRating = 68.5,
         NationalYieldSnapshot? latestYieldSnapshot = null,
         TreasuryConsequence? latestTreasuryConsequence = null,
-        PoliticalParty? party = null)
+        PoliticalParty? party = null,
+        PoliticalParty? oppositionParty = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -986,7 +1038,8 @@ public sealed class Country
             HappinessRating = happinessRating,
             LatestYieldSnapshot = latestYieldSnapshot,
             LatestTreasuryConsequence = latestTreasuryConsequence,
-            Party = party
+            Party = party,
+            OppositionParty = oppositionParty
         };
 
         if (profile != null)

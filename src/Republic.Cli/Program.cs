@@ -198,14 +198,21 @@ public static class Program
         Console.WriteLine("--------------------------------------------------------------");
 
         var consequenceText = countryForDashboard.LatestTreasuryConsequence?.ToString() ?? "No consequence";
-        var partyText = countryForDashboard.Party?.ToString() ?? "No party";
         Console.ForegroundColor = ConsoleColor.DarkYellow;
         Console.WriteLine("--------------------------------------------------------------");
         Console.WriteLine("                    SYSTEMIC CONSEQUENCES                     ");
         Console.WriteLine("--------------------------------------------------------------");
         Console.ResetColor();
         Console.WriteLine($" Consequence: {consequenceText}");
-        Console.WriteLine($" Party: {partyText}");
+        if (countryForDashboard.RulingParty == null && countryForDashboard.OppositionParty == null)
+        {
+            Console.WriteLine(" Party: No party");
+        }
+        else
+        {
+            Console.WriteLine($" Ruling: {countryForDashboard.RulingParty?.ToString() ?? "No party"}");
+            Console.WriteLine($" Opposition: {countryForDashboard.OppositionParty?.ToString() ?? "No party"}");
+        }
         Console.WriteLine("--------------------------------------------------------------");
 
         var emails = app.WorkspaceManager.Email.GetInbox();
@@ -804,16 +811,28 @@ public static class Program
         for (int i = 0; i < args.Length; i++)
         {
             var arg = args[i];
-            if (arg.Equals("--party", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            if ((arg.Equals("--party", StringComparison.OrdinalIgnoreCase) || arg.Equals("--ruling", StringComparison.OrdinalIgnoreCase)) && i + 1 < args.Length)
             {
                 playerCountry.FoundParty(args[i + 1], app.TimeSystem.CurrentRepublicTime);
-                return;
             }
-            if (arg.StartsWith("--party=", StringComparison.OrdinalIgnoreCase))
+            else if (arg.StartsWith("--party=", StringComparison.OrdinalIgnoreCase))
             {
                 var val = arg.Substring("--party=".Length);
                 playerCountry.FoundParty(val, app.TimeSystem.CurrentRepublicTime);
-                return;
+            }
+            else if (arg.StartsWith("--ruling=", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = arg.Substring("--ruling=".Length);
+                playerCountry.FoundParty(val, app.TimeSystem.CurrentRepublicTime);
+            }
+            else if ((arg.Equals("--opposition", StringComparison.OrdinalIgnoreCase) || arg.Equals("--party2", StringComparison.OrdinalIgnoreCase)) && i + 1 < args.Length)
+            {
+                playerCountry.FoundParty(args[i + 1], app.TimeSystem.CurrentRepublicTime);
+            }
+            else if (arg.StartsWith("--opposition=", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = arg.Substring("--opposition=".Length);
+                playerCountry.FoundParty(val, app.TimeSystem.CurrentRepublicTime);
             }
         }
     }
