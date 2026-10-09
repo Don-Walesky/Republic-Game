@@ -1,3 +1,4 @@
+# NOTE: Actions runs since the cabinet commit fail before checkout because of the billing lock. Local `dotnet test Republic.sln` is the verification gate until the lock is cleared.
 name: Build and Test
 
 on:
