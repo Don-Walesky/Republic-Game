@@ -143,6 +143,70 @@ public sealed class Country
     public List<DevelopmentProject> Projects { get; init; } = new();
 
     /// <summary>
+    /// Gets or sets the latest systemic treasury consequence evaluated for this sovereign country.
+    /// Null if no low-treasury consequence has applied yet.
+    /// </summary>
+    public TreasuryConsequence? LatestTreasuryConsequence { get; set; }
+
+    private readonly HashSet<string> _appliedConsequenceBoundaryIds = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Gets the collection of boundary identifiers where treasury consequences have already been evaluated.
+    /// </summary>
+    public IReadOnlyCollection<string> AppliedConsequenceBoundaryIds
+    {
+        get
+        {
+            lock (_appliedConsequenceBoundaryIds)
+            {
+                return _appliedConsequenceBoundaryIds.ToArray();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Determines whether the specified cycle boundary has already had treasury consequences evaluated.
+    /// </summary>
+    public bool HasAppliedConsequenceBoundary(string boundaryId)
+    {
+        if (string.IsNullOrWhiteSpace(boundaryId))
+        {
+            return false;
+        }
+
+        lock (_appliedConsequenceBoundaryIds)
+        {
+            return _appliedConsequenceBoundaryIds.Contains(boundaryId);
+        }
+    }
+
+    /// <summary>
+    /// Records that the specified cycle boundary has had treasury consequences evaluated.
+    /// </summary>
+    public bool RecordConsequenceBoundaryApplied(string boundaryId)
+    {
+        if (string.IsNullOrWhiteSpace(boundaryId))
+        {
+            return false;
+        }
+
+        lock (_appliedConsequenceBoundaryIds)
+        {
+            return _appliedConsequenceBoundaryIds.Add(boundaryId);
+        }
+    }
+
+    /// <summary>
+    /// Evaluates and applies the low-treasury approval consequence at a six-hour cycle boundary.
+    /// If the treasury balance is below R100,000,000, approval falls by 2 points (clamped at 0).
+    /// Runs at most once per country per boundary.
+    /// </summary>
+    public TreasuryConsequence? ApplyTreasuryConsequence(RepublicTime boundary)
+    {
+        return TreasuryConsequence.Apply(this, boundary);
+    }
+
+    /// <summary>
     /// Gets or sets the national road development project record for this country.
     /// Backward-compatibility accessor backed authoritatively by <see cref="Projects"/>.
     /// </summary>
@@ -829,7 +893,8 @@ public sealed class Country
         CountryProfile? profile = null,
         double grossDomesticProduct = 450_000_000_000.0,
         double happinessRating = 68.5,
-        NationalYieldSnapshot? latestYieldSnapshot = null)
+        NationalYieldSnapshot? latestYieldSnapshot = null,
+        TreasuryConsequence? latestTreasuryConsequence = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -851,7 +916,8 @@ public sealed class Country
             Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>(),
             GrossDomesticProduct = grossDomesticProduct,
             HappinessRating = happinessRating,
-            LatestYieldSnapshot = latestYieldSnapshot
+            LatestYieldSnapshot = latestYieldSnapshot,
+            LatestTreasuryConsequence = latestTreasuryConsequence
         };
 
         if (profile != null)

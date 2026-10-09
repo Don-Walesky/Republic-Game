@@ -19,6 +19,16 @@ public sealed class NationalYieldSchedule : INationalYieldSchedule
     /// </summary>
     public static readonly TimeSpan CycleDuration = TimeSpan.FromHours(6);
 
+    /// <summary>
+    /// Determines whether the specified simulation time falls precisely on a six-hour production cycle boundary (00:00, 06:00, 12:00, or 18:00 WAT).
+    /// </summary>
+    public static bool IsBoundary(RepublicTime time)
+    {
+        return time.Time.Minute == 0 &&
+               time.Time.Second == 0 &&
+               (time.Time.Hour == 0 || time.Time.Hour == 6 || time.Time.Hour == 12 || time.Time.Hour == 18);
+    }
+
     /// <inheritdoc />
     public RepublicTime GetNextBoundary(RepublicTime time)
     {

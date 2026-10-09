@@ -196,6 +196,15 @@ public static class Program
         }
         Console.WriteLine("--------------------------------------------------------------");
 
+        var consequenceText = countryForDashboard.LatestTreasuryConsequence?.ToString() ?? "No consequence";
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.WriteLine("--------------------------------------------------------------");
+        Console.WriteLine("                    SYSTEMIC CONSEQUENCES                     ");
+        Console.WriteLine("--------------------------------------------------------------");
+        Console.ResetColor();
+        Console.WriteLine($" Consequence: {consequenceText}");
+        Console.WriteLine("--------------------------------------------------------------");
+
         var emails = app.WorkspaceManager.Email.GetInbox();
         var news = app.WorkspaceManager.News.GetNewsFeed();
         var decisions = app.DecisionEngine.GetPendingDecisions();

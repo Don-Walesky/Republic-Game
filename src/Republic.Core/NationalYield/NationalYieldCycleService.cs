@@ -20,6 +20,7 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
     private readonly IFoundingDayYieldRule _foundingDayYieldRule;
     private readonly ITreasuryRevenueService _treasuryRevenueService;
     private readonly INationalYieldSchedule _schedule;
+    private readonly ITreasuryConsequenceService _consequenceService;
     private readonly ConcurrentDictionary<string, NationalYieldSnapshot> _latestSnapshots = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -29,16 +30,19 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
     /// <param name="foundingDayYieldRule">The founding-day yield rule to apply. If null, a default <see cref="FoundingDayYieldRule"/> is instantiated.</param>
     /// <param name="treasuryRevenueService">The treasury revenue service to apply cycle revenue. If null, a default <see cref="TreasuryRevenueService"/> is instantiated.</param>
     /// <param name="schedule">The cycle schedule engine to use. If null, a default <see cref="NationalYieldSchedule"/> is instantiated.</param>
+    /// <param name="consequenceService">The treasury consequence service to evaluate cycle consequences. If null, a default <see cref="TreasuryConsequenceService"/> is instantiated.</param>
     public NationalYieldCycleService(
         INationalYieldCalculator? calculator = null,
         IFoundingDayYieldRule? foundingDayYieldRule = null,
         ITreasuryRevenueService? treasuryRevenueService = null,
-        INationalYieldSchedule? schedule = null)
+        INationalYieldSchedule? schedule = null,
+        ITreasuryConsequenceService? consequenceService = null)
     {
         _calculator = calculator ?? new NationalYieldCalculator();
         _foundingDayYieldRule = foundingDayYieldRule ?? new FoundingDayYieldRule();
         _treasuryRevenueService = treasuryRevenueService ?? new TreasuryRevenueService();
         _schedule = schedule ?? new NationalYieldSchedule();
+        _consequenceService = consequenceService ?? new TreasuryConsequenceService();
     }
 
     /// <inheritdoc />
@@ -62,6 +66,12 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
         // 5. Apply the REPU Treasury Revenue from the final yield snapshot to the country's existing REPU Treasury,
         // scaled by sovereign State Capacity at credit time with deterministic duplicate protection.
         _treasuryRevenueService.ApplyRevenue(country, storedSnapshot);
+
+        // 5b. Apply low-treasury consequence if simulation time is a six-hour cycle boundary
+        if (NationalYieldSchedule.IsBoundary(simulationTime))
+        {
+            _consequenceService.Apply(country, simulationTime);
+        }
 
         // 6. Store the independent snapshot isolated by country ID
         _latestSnapshots[country.Id] = storedSnapshot;
@@ -110,6 +120,9 @@ public sealed class NationalYieldCycleService : INationalYieldCycleService
 
             // Update the country's authoritative last credited boundary
             country.LastCreditedBoundary = boundary;
+
+            // Apply low-treasury consequence after yield credit
+            _consequenceService.Apply(country, boundary);
 
             results.Add(snapshot);
         }
