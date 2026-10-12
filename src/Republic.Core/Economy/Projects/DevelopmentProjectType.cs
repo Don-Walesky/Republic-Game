@@ -14,6 +14,11 @@ public enum DevelopmentProjectType
     /// <summary>
     /// Higher education and academic research university.
     /// </summary>
-    University = 1
+    University = 1,
+
+    /// <summary>
+    /// National electric power plant and energy generation facility.
+    /// </summary>
+    PowerPlant = 2
 }
 

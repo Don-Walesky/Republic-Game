@@ -445,6 +445,20 @@ public sealed class Country
     public NationalUniversityProject? ActiveUniversityProject => Projects.OfType<NationalUniversityProject>().FirstOrDefault(p => p.IsActive);
 
     /// <summary>
+    /// Gets the national power plant development project record for this country, if any.
+    /// Backed authoritatively by <see cref="Projects"/>.
+    /// </summary>
+    [JsonIgnore]
+    public NationalPowerPlantProject? PowerPlantProject => Projects.OfType<NationalPowerPlantProject>().LastOrDefault();
+
+    /// <summary>
+    /// Gets the currently active (in-progress) power plant project, or null if none is active.
+    /// Backed authoritatively by <see cref="Projects"/>.
+    /// </summary>
+    [JsonIgnore]
+    public NationalPowerPlantProject? ActivePowerPlantProject => Projects.OfType<NationalPowerPlantProject>().FirstOrDefault(p => p.IsActive);
+
+    /// <summary>
     /// Gets the authoritative Republic simulation time at which this nation was founded.
     /// Init-only to prevent casual post-creation mutation.
     /// </summary>
@@ -808,6 +822,32 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Initiates a National Power Plant development project starting from the specified boundary/simulation time.
+    /// Costs R1,000,000, withdrawn once from this country's RepuTreasury.
+    /// Takes 12 six-hour boundaries (72 hours on the Republic clock) from the start boundary.
+    /// Returns null if the treasury cannot pay, country ID is invalid, or if another power plant project is currently active.
+    /// </summary>
+    public NationalPowerPlantProject? StartPowerPlantProject(RepublicTime startedBoundary, double cost = NationalPowerPlantProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id))
+        {
+            return null;
+        }
+
+        var project = new NationalPowerPlantProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    /// <summary>
+    /// Overload for starting a national power plant project using an authoritative Republic clock.
+    /// </summary>
+    public NationalPowerPlantProject? StartPowerPlantProject(IRepublicClock clock, double cost = NationalPowerPlantProject.StandardCost)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return StartPowerPlantProject(clock.CurrentTime, cost);
+    }
+
+    /// <summary>
     /// Initiates a generic development project for this sovereign country.
     /// Withdraws project cost immediately from the country's RepuTreasury.
     /// Enforces strict country ownership and ensures no duplicate active project of the same type.
@@ -906,6 +946,30 @@ public sealed class Country
     {
         ArgumentNullException.ThrowIfNull(clock);
         return GetUniversityProgress(clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Completes the active National Power Plant project if the current simulation time has reached or passed its finish boundary.
+    /// Elevates Energy Capacity upon completion.
+    /// </summary>
+    public bool CompletePowerPlantProject(RepublicTime? currentTime = null)
+    {
+        var powerPlant = ActivePowerPlantProject ?? PowerPlantProject;
+        return powerPlant != null && CompleteProject(powerPlant, currentTime);
+    }
+
+    /// <summary>
+    /// Gets the construction progress (0.0 to 1.0) of the national power plant project, or null if no power plant project exists.
+    /// </summary>
+    public double? GetPowerPlantProgress(RepublicTime currentTime) => PowerPlantProject?.GetProgress(currentTime);
+
+    /// <summary>
+    /// Overload for getting national power plant construction progress using an authoritative clock.
+    /// </summary>
+    public double? GetPowerPlantProgress(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return GetPowerPlantProgress(clock.CurrentTime);
     }
 
     /// <summary>
