@@ -10,6 +10,7 @@ using Republic.Core.Cabinet.Services;
 using Republic.Core.Decisions.Services;
 using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Budget.Services;
+using Republic.Core.Economy.Projects;
 using Republic.Core.Elections.Services;
 using Republic.Core.Government;
 using Republic.Core.Government.Models;
@@ -75,6 +76,7 @@ public static class Program
             Console.WriteLine(" [10] Administer Regional Provinces & Investment");
             Console.WriteLine(" [11] Enact Presidential Executive Decree");
             Console.WriteLine(" [12] Conduct Presidential Press Conference");
+            Console.WriteLine(" [13] Oversee National Development Projects");
             Console.WriteLine(" [0] Exit Application");
             Console.WriteLine("==============================================================");
             Console.Write(" Select Option > ");
@@ -119,6 +121,9 @@ public static class Program
                     break;
                 case "12":
                     await HoldPressConferenceAsync(app);
+                    break;
+                case "13":
+                    await ManageDevelopmentProjectsAsync(app);
                     break;
                 case "0":
                     running = false;
@@ -723,6 +728,170 @@ public static class Program
             Console.WriteLine($"[PRESS BRIEFING QUESTION]:\n Journalist: {question.JournalistName} ({question.NewsOutlet})\n Prompt: {question.QuestionText}");
         }
         Console.ReadLine();
+    }
+
+    public static async Task ManageDevelopmentProjectsAsync(
+        RepublicApplication app,
+        Func<string?>? readLine = null,
+        Action<string>? write = null,
+        Action<string>? writeLine = null)
+    {
+        var read = readLine ?? Console.ReadLine;
+        var print = write ?? Console.Write;
+        var printLine = writeLine ?? Console.WriteLine;
+
+        printLine("==============================================================");
+        printLine("               NATIONAL DEVELOPMENT PROJECTS                  ");
+        printLine("==============================================================");
+
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+        var currentTime = app.TimeSystem.CurrentRepublicTime;
+
+        if (playerCountry == null)
+        {
+            printLine("No sovereign player country available.");
+            printLine("\nPress Enter to return to main menu...");
+            read();
+            return;
+        }
+
+        printLine($"Nation: {playerCountry.Name} | Sovereign Treasury: R{playerCountry.Treasury.Balance:N0} ({playerCountry.Treasury.FormattedBalance})");
+        printLine($"Energy Capacity: {playerCountry.Yield.EnergyCapacity:F1} | State Capacity Score: {playerCountry.StateCapacityScore:P0}");
+        printLine($"Current Simulation Time: {currentTime} (WAT)");
+        printLine("--------------------------------------------------------------");
+
+        printLine("All National Development Projects:");
+        if (playerCountry.Projects.Count == 0)
+        {
+            printLine(" (No development projects have been initiated yet)");
+        }
+        else
+        {
+            for (var i = 0; i < playerCountry.Projects.Count; i++)
+            {
+                var p = playerCountry.Projects[i];
+                var status = p.Completed ? "COMPLETED" : $"UNDER CONSTRUCTION ({p.GetProgress(currentTime):P1})";
+                printLine($" [{i + 1}] {p.Name} | Cost: R{p.Cost:N0} | Status: {status} | Started: {p.StartedBoundary} | Finishes: {p.FinishBoundary}");
+            }
+        }
+        printLine("--------------------------------------------------------------");
+
+        printLine("National Power Plant Specification:");
+        printLine(" - Scope: Major municipal grid infrastructure providing base-load energy.");
+        printLine($" - Cost: R{NationalPowerPlantProject.StandardCost:N0} (withdrawn once from sovereign treasury)");
+        printLine(" - Construction Duration: 72 hours (12 six-hour simulation boundaries)");
+        printLine($" - National Yield Bonus: +{NationalPowerPlantProject.EnergyCapacityBonus:F1} Energy Capacity upon completion");
+
+        var powerPlant = playerCountry.PowerPlantProject;
+        var activePlant = playerCountry.ActivePowerPlantProject;
+
+        if (activePlant != null)
+        {
+            var canComplete = currentTime >= activePlant.FinishBoundary;
+            var readyStatus = canComplete ? "READY TO COMPLETE / COMMISSION" : "IN PROGRESS";
+            printLine($" - Status: UNDER CONSTRUCTION ({readyStatus})");
+            printLine($" - Start Time: {activePlant.StartedBoundary}");
+            printLine($" - Expected Completion Time: {activePlant.FinishBoundary}");
+            printLine($" - Current Progress: {activePlant.GetProgress(currentTime):P1}");
+        }
+        else if (powerPlant is { Completed: true })
+        {
+            printLine(" - Status: COMPLETED (Operational)");
+            printLine($" - Start Time: {powerPlant.StartedBoundary}");
+            printLine($" - Expected Completion Time: {powerPlant.FinishBoundary}");
+            printLine(" - Current Progress: 100.0%");
+        }
+        else
+        {
+            printLine(" - Status: NOT STARTED");
+            printLine(" - Start Time: N/A");
+            printLine(" - Expected Completion Time: N/A");
+            printLine(" - Current Progress: 0.0%");
+        }
+        printLine("--------------------------------------------------------------");
+
+        printLine("Options:");
+        printLine($" [1] Start National Power Plant (Cost: R{NationalPowerPlantProject.StandardCost:N0} | 72h / 12 boundaries | +{NationalPowerPlantProject.EnergyCapacityBonus:F1} Energy)");
+        printLine(" [2] Complete National Power Plant (Commission Facility & Elevate Energy Capacity)");
+        printLine(" [0] Return to Executive Directive Menu");
+        print("\nSelect Option (1, 2, 0) > ");
+
+        var selection = read()?.Trim().ToUpperInvariant();
+
+        if (selection == "1" || selection == "P" || selection == "POWER")
+        {
+            if (activePlant != null)
+            {
+                printLine("\n[ACTION REJECTED]: A National Power Plant project is already active and under construction!");
+                printLine($"Started: {activePlant.StartedBoundary} | Expected Finish: {activePlant.FinishBoundary} | Current Progress: {activePlant.GetProgress(currentTime):P1}.");
+            }
+            else if (playerCountry.Treasury.Balance < NationalPowerPlantProject.StandardCost)
+            {
+                printLine("\n[ACTION REJECTED]: Insufficient funds in sovereign treasury!");
+                printLine($"Required: R{NationalPowerPlantProject.StandardCost:N0} | Available: R{playerCountry.Treasury.Balance:N0} ({playerCountry.Treasury.FormattedBalance}).");
+            }
+            else
+            {
+                var newProject = playerCountry.StartPowerPlantProject(currentTime);
+                if (newProject != null)
+                {
+                    printLine("\n[CONSTRUCTION COMMENCED]: National Power Plant initiated successfully!");
+                    printLine($"Treasury Deducted: R{NationalPowerPlantProject.StandardCost:N0} | Remaining Balance: R{playerCountry.Treasury.Balance:N0} ({playerCountry.Treasury.FormattedBalance})");
+                    printLine($"Started: {newProject.StartedBoundary} | Expected Completion: {newProject.FinishBoundary} (72 hours on Republic simulation clock)");
+                    printLine($"Current Progress: {newProject.GetProgress(currentTime):P1}");
+                }
+                else
+                {
+                    printLine("\n[ACTION REJECTED]: Failed to initiate National Power Plant project.");
+                }
+            }
+
+            printLine("\nPress Enter to return to main menu...");
+            read();
+            return;
+        }
+
+        if (selection == "2" || selection == "C" || selection == "COMPLETE")
+        {
+            if (activePlant == null)
+            {
+                if (powerPlant is { Completed: true })
+                {
+                    printLine("\n[NOTICE]: The National Power Plant is already completed and fully operational (+5.0 Energy Capacity active).");
+                }
+                else
+                {
+                    printLine("\n[NOTICE]: No National Power Plant is currently under construction. Initiate one first with option [1].");
+                }
+            }
+            else if (currentTime < activePlant.FinishBoundary)
+            {
+                printLine("\n[COMPLETION REJECTED]: Construction has not yet finished!");
+                printLine($"Current Simulation Time: {currentTime} | Expected Completion Time: {activePlant.FinishBoundary}");
+                printLine($"Current Progress: {activePlant.GetProgress(currentTime):P1}. Construction requires 72 hours on the Republic simulation clock before commissioning.");
+            }
+            else
+            {
+                var success = playerCountry.CompletePowerPlantProject(currentTime);
+                if (success)
+                {
+                    printLine("\n[PROJECT COMPLETED]: National Power Plant successfully commissioned!");
+                    printLine($"Energy Capacity Bonus Applied: +{NationalPowerPlantProject.EnergyCapacityBonus:F1}");
+                    printLine($"New National Energy Capacity: {playerCountry.Yield.EnergyCapacity:F1}");
+                    printLine($"Recalculated State Capacity Score: {playerCountry.StateCapacityScore:P0}");
+                }
+                else
+                {
+                    printLine("\n[ACTION REJECTED]: Failed to complete National Power Plant project.");
+                }
+            }
+
+            printLine("\nPress Enter to return to main menu...");
+            read();
+            return;
+        }
+
+        await Task.CompletedTask;
     }
 
     private static void PrintPresidentialBriefing(OfflineYieldBriefing briefing)
