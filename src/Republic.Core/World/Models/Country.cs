@@ -565,6 +565,102 @@ public sealed class Country
         return VoteBill(title, clock.CurrentTime);
     }
 
+    private readonly List<CountryElection> _elections = new();
+
+    /// <summary>
+    /// Gets the most recent national election held in this country, or null if none has been held.
+    /// </summary>
+    public CountryElection? LastElection => _elections.LastOrDefault();
+
+    /// <summary>
+    /// Alias for <see cref="LastElection"/>.
+    /// </summary>
+    [JsonIgnore]
+    public CountryElection? Election => LastElection;
+
+    /// <summary>
+    /// Gets the list of democratic national elections conducted in this sovereign country.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<CountryElection> Elections => _elections;
+
+    /// <summary>
+    /// Holds a democratic national election between the country's ruling party and opposition party at the specified clock boundary.
+    /// Requires both a ruling party and an opposition party; otherwise the election is rejected and nothing changes.
+    /// The party with higher Support wins; on a tie, the ruling party wins.
+    /// The winner becomes the ruling party, and the loser becomes the opposition party.
+    /// A second election call at the same clock boundary is idempotent and does not swap roles again.
+    /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
+    /// </summary>
+    public CountryElection? HoldElection(RepublicTime boundary)
+    {
+        // HoldElection requires a ruling party and an opposition party. Otherwise it is rejected and nothing changes.
+        if (RulingParty == null || OppositionParty == null)
+        {
+            return null;
+        }
+
+        // A second election at the same boundary does nothing.
+        if (LastElection != null && LastElection.Boundary == boundary)
+        {
+            return LastElection;
+        }
+
+        var ruling = RulingParty;
+        var opposition = OppositionParty;
+
+        // The party with higher Support wins. On a tie, the ruling party wins.
+        bool oppositionWins = opposition.Support > ruling.Support;
+        var winner = oppositionWins ? opposition : ruling;
+        var loser = oppositionWins ? ruling : opposition;
+
+        // The winner becomes the ruling party. The loser becomes the opposition.
+        var newRuling = winner with { Role = PoliticalPartyRole.Ruling };
+        var newOpposition = loser with { Role = PoliticalPartyRole.Opposition };
+
+        RulingParty = newRuling;
+        OppositionParty = newOpposition;
+
+        var election = new CountryElection(
+            Id,
+            boundary,
+            newRuling.Name,
+            newOpposition.Name,
+            newRuling.Support,
+            newOpposition.Support);
+
+        _elections.Add(election);
+        return election;
+    }
+
+    /// <summary>
+    /// Holds a democratic national election between the ruling party and opposition party using an authoritative Republic clock.
+    /// </summary>
+    public CountryElection? HoldElection(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return HoldElection(clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Attempts to hold a democratic national election in this country, returning true on success.
+    /// </summary>
+    public bool TryHoldElection(RepublicTime boundary, out CountryElection? election)
+    {
+        election = HoldElection(boundary);
+        return election != null;
+    }
+
+    /// <summary>
+    /// Attempts to hold a democratic national election in this country using an authoritative Republic clock.
+    /// </summary>
+    public bool TryHoldElection(IRepublicClock clock, out CountryElection? election)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return TryHoldElection(clock.CurrentTime, out election);
+    }
+
+
 
 
     /// <summary>
@@ -1323,7 +1419,8 @@ public sealed class Country
         PoliticalParty? party = null,
         PoliticalParty? oppositionParty = null,
         InterestGroup? interestGroup = null,
-        CountryBill? bill = null)
+        CountryBill? bill = null,
+        CountryElection? election = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -1352,6 +1449,11 @@ public sealed class Country
             InterestGroup = interestGroup,
             Bill = bill
         };
+
+        if (election != null)
+        {
+            country._elections.Add(election);
+        }
 
         if (profile != null)
         {

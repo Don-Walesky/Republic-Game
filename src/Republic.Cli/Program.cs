@@ -235,6 +235,14 @@ public static class Program
         {
             Console.WriteLine($" Bill: {countryForDashboard.Bill}");
         }
+        if (countryForDashboard.LastElection == null)
+        {
+            Console.WriteLine(" Election: No election");
+        }
+        else
+        {
+            Console.WriteLine($" Election: {countryForDashboard.LastElection}");
+        }
         Console.WriteLine("--------------------------------------------------------------");
 
         var emails = app.WorkspaceManager.Email.GetInbox();
@@ -1046,6 +1054,10 @@ public static class Program
             else if (arg.Equals("--vote-bill", StringComparison.OrdinalIgnoreCase))
             {
                 playerCountry.VoteBill(app.TimeSystem.CurrentRepublicTime);
+            }
+            else if (arg.Equals("--hold-election", StringComparison.OrdinalIgnoreCase) || arg.Equals("--election", StringComparison.OrdinalIgnoreCase))
+            {
+                playerCountry.HoldElection(app.TimeSystem.CurrentRepublicTime);
             }
         }
     }
