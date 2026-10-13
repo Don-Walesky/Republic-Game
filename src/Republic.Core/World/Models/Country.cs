@@ -832,6 +832,425 @@ public sealed class Country
     /// </summary>
     public bool HasRelation(string targetCountryId) => GetRelation(targetCountryId) != null;
 
+    /// <summary>
+    /// Formally recognizes an existing diplomatic relation opened toward the specified target country.
+    /// A country cannot recognize a relation that has not been opened.
+    /// Repeating recognition is safe and idempotent without duplicating records or changing unrelated state.
+    /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
+    /// </summary>
+    public DiplomaticRelation? RecognizeRelation(string targetCountryId, RepublicTime boundary)
+    {
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return null;
+        }
+
+        var trimmedTargetId = targetCountryId.Trim();
+
+        // Cannot recognize own nation
+        if (string.Equals(trimmedTargetId, Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var index = _relations.FindIndex(r => string.Equals(r.ToCountryId, trimmedTargetId, StringComparison.OrdinalIgnoreCase));
+        if (index < 0)
+        {
+            // A country cannot recognize a relation that has not been opened
+            return null;
+        }
+
+        var existing = _relations[index];
+        if (existing.Status == DiplomaticRelationStatus.Recognized)
+        {
+            // Repeating recognition is handled safely without duplicating records or changing unrelated state
+            return existing;
+        }
+
+        var recognized = existing with
+        {
+            Status = DiplomaticRelationStatus.Recognized,
+            RecognizedBoundary = boundary
+        };
+
+        _relations[index] = recognized;
+        return recognized;
+    }
+
+    /// <summary>
+    /// Formally recognizes an existing diplomatic relation opened toward the target country.
+    /// </summary>
+    public DiplomaticRelation? RecognizeRelation(Country targetCountry, RepublicTime boundary)
+    {
+        if (targetCountry == null)
+        {
+            return null;
+        }
+
+        return RecognizeRelation(targetCountry.Id, boundary);
+    }
+
+    /// <summary>
+    /// Formally recognizes an existing diplomatic relation toward the target country using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticRelation? RecognizeRelation(string targetCountryId, IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return RecognizeRelation(targetCountryId, clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Formally recognizes an existing diplomatic relation toward the target country using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticRelation? RecognizeRelation(Country targetCountry, IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return RecognizeRelation(targetCountry, clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Attempts to formally recognize an existing diplomatic relation toward the target country.
+    /// </summary>
+    public bool TryRecognizeRelation(string targetCountryId, RepublicTime boundary, out DiplomaticRelation? relation)
+    {
+        relation = RecognizeRelation(targetCountryId, boundary);
+        return relation != null && relation.IsRecognized;
+    }
+
+    /// <summary>
+    /// Attempts to formally recognize an existing diplomatic relation toward the target country using an authoritative Republic clock.
+    /// </summary>
+    public bool TryRecognizeRelation(string targetCountryId, IRepublicClock clock, out DiplomaticRelation? relation)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return TryRecognizeRelation(targetCountryId, clock.CurrentTime, out relation);
+    }
+
+    private readonly List<DiplomaticAgreement> _agreements = new();
+
+    /// <summary>
+    /// Gets the most recent bilateral diplomatic agreement (trade agreement or alliance), or null if none exists.
+    /// </summary>
+    public DiplomaticAgreement? Agreement => _agreements.LastOrDefault();
+
+    /// <summary>
+    /// Gets the most recent bilateral trade agreement, or null if none exists.
+    /// </summary>
+    [JsonIgnore]
+    public DiplomaticAgreement? TradeAgreement => _agreements.LastOrDefault(a => a.IsTrade);
+
+    /// <summary>
+    /// Gets the most recent bilateral alliance, or null if none exists.
+    /// </summary>
+    [JsonIgnore]
+    public DiplomaticAgreement? Alliance => _agreements.LastOrDefault(a => a.IsAlliance);
+
+    /// <summary>
+    /// Gets the active bilateral trade agreement, or null if none is currently active.
+    /// </summary>
+    [JsonIgnore]
+    public DiplomaticAgreement? ActiveTradeAgreement => _agreements.LastOrDefault(a => a.IsTrade && a.IsActive);
+
+    /// <summary>
+    /// Gets the active bilateral alliance, or null if none is currently active.
+    /// </summary>
+    [JsonIgnore]
+    public DiplomaticAgreement? ActiveAlliance => _agreements.LastOrDefault(a => a.IsAlliance && a.IsActive);
+
+    /// <summary>
+    /// Gets the read-only list of all diplomatic agreements attached to this sovereign country.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<DiplomaticAgreement> Agreements => _agreements;
+
+    /// <summary>
+    /// Gets the read-only list of active (accepted) diplomatic agreements attached to this country.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<DiplomaticAgreement> ActiveAgreements =>
+        _agreements.Where(a => a.IsActive).ToList().AsReadOnly();
+
+    /// <summary>
+    /// Gets the read-only list of pending diplomatic proposals attached to this country.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<DiplomaticAgreement> PendingAgreements =>
+        _agreements.Where(a => a.IsPending).ToList().AsReadOnly();
+
+    /// <summary>
+    /// Retrieves a diplomatic agreement by its unique identifier.
+    /// </summary>
+    public DiplomaticAgreement? GetAgreement(string agreementId)
+    {
+        if (string.IsNullOrWhiteSpace(agreementId))
+        {
+            return null;
+        }
+
+        return _agreements.FirstOrDefault(a => string.Equals(a.Id, agreementId.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Retrieves the most recent agreement with the specified foreign country and agreement type.
+    /// </summary>
+    public DiplomaticAgreement? GetAgreementWith(string targetCountryId, DiplomaticAgreementType type)
+    {
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return null;
+        }
+
+        var trimmed = targetCountryId.Trim();
+        return _agreements.LastOrDefault(a => a.AgreementType == type && a.Involves(trimmed));
+    }
+
+    /// <summary>
+    /// Checks whether this country has an active (accepted) agreement of the specified type with the target country.
+    /// </summary>
+    public bool HasActiveAgreement(string targetCountryId, DiplomaticAgreementType type)
+    {
+        var existing = GetAgreementWith(targetCountryId, type);
+        return existing != null && existing.IsActive;
+    }
+
+    /// <summary>
+    /// Checks whether this country has a pending agreement proposal of the specified type with the target country.
+    /// </summary>
+    public bool HasPendingAgreement(string targetCountryId, DiplomaticAgreementType type)
+    {
+        var existing = GetAgreementWith(targetCountryId, type);
+        return existing != null && existing.IsPending;
+    }
+
+    /// <summary>
+    /// Proposes a bilateral diplomatic agreement (Trade or Alliance) to a target country.
+    /// Requires an existing diplomatic relation. For Alliances, requires an established (recognized) relationship.
+    /// Prevents duplicate active or pending agreements for the same country pair and agreement type.
+    /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
+    /// </summary>
+    public DiplomaticAgreement? ProposeAgreement(
+        string targetCountryId,
+        DiplomaticAgreementType type,
+        RepublicTime boundary,
+        Country? targetCountry = null)
+    {
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return null;
+        }
+
+        var trimmedTargetId = targetCountryId.Trim();
+
+        // Self-agreement prohibited
+        if (string.Equals(trimmedTargetId, Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // Must have an existing diplomatic relation
+        var relation = GetRelation(trimmedTargetId);
+        if (relation == null)
+        {
+            return null;
+        }
+
+        // Alliances require an established (recognized) relationship
+        if (type == DiplomaticAgreementType.Alliance && !relation.IsRecognized)
+        {
+            return null;
+        }
+
+        // Prevent duplicate active or pending agreements for the same country pair and agreement type
+        if (_agreements.Any(a => a.AgreementType == type && a.Involves(trimmedTargetId) && (a.IsActive || a.IsPending)))
+        {
+            return null;
+        }
+
+        var agreement = new DiplomaticAgreement(
+            Id,
+            trimmedTargetId,
+            type,
+            DiplomaticAgreementStatus.Pending,
+            boundary);
+
+        _agreements.Add(agreement);
+
+        if (targetCountry != null && !targetCountry._agreements.Any(a => a.Id == agreement.Id))
+        {
+            targetCountry._agreements.Add(agreement);
+        }
+
+        return agreement;
+    }
+
+    /// <summary>
+    /// Proposes a bilateral diplomatic agreement (Trade or Alliance) to the target country.
+    /// </summary>
+    public DiplomaticAgreement? ProposeAgreement(
+        Country targetCountry,
+        DiplomaticAgreementType type,
+        RepublicTime boundary)
+    {
+        if (targetCountry == null)
+        {
+            return null;
+        }
+
+        return ProposeAgreement(targetCountry.Id, type, boundary, targetCountry);
+    }
+
+    /// <summary>
+    /// Proposes a bilateral diplomatic agreement using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticAgreement? ProposeAgreement(
+        string targetCountryId,
+        DiplomaticAgreementType type,
+        IRepublicClock clock,
+        Country? targetCountry = null)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return ProposeAgreement(targetCountryId, type, clock.CurrentTime, targetCountry);
+    }
+
+    /// <summary>
+    /// Proposes a bilateral diplomatic agreement using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticAgreement? ProposeAgreement(
+        Country targetCountry,
+        DiplomaticAgreementType type,
+        IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return ProposeAgreement(targetCountry, type, clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Proposes a bilateral trade agreement to the target country.
+    /// </summary>
+    public DiplomaticAgreement? ProposeTradeAgreement(Country targetCountry, RepublicTime boundary) =>
+        ProposeAgreement(targetCountry, DiplomaticAgreementType.Trade, boundary);
+
+    /// <summary>
+    /// Proposes a bilateral trade agreement to the target country using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticAgreement? ProposeTradeAgreement(Country targetCountry, IRepublicClock clock) =>
+        ProposeAgreement(targetCountry, DiplomaticAgreementType.Trade, clock);
+
+    /// <summary>
+    /// Proposes a bilateral alliance to the target country.
+    /// </summary>
+    public DiplomaticAgreement? ProposeAlliance(Country targetCountry, RepublicTime boundary) =>
+        ProposeAgreement(targetCountry, DiplomaticAgreementType.Alliance, boundary);
+
+    /// <summary>
+    /// Proposes a bilateral alliance to the target country using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticAgreement? ProposeAlliance(Country targetCountry, IRepublicClock clock) =>
+        ProposeAgreement(targetCountry, DiplomaticAgreementType.Alliance, clock);
+
+    /// <summary>
+    /// Responds to a pending bilateral agreement proposal by accepting or rejecting it.
+    /// Updates the stored agreement state on both countries if provided.
+    /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
+    /// </summary>
+    public DiplomaticAgreement? RespondToAgreement(
+        string agreementId,
+        bool accept,
+        RepublicTime boundary,
+        Country? otherCountry = null)
+    {
+        if (string.IsNullOrWhiteSpace(agreementId))
+        {
+            return null;
+        }
+
+        var index = _agreements.FindIndex(a => string.Equals(a.Id, agreementId.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var agreement = _agreements[index];
+
+        // Safe and idempotent: if already decided, return current record
+        if (agreement.Status != DiplomaticAgreementStatus.Pending)
+        {
+            return agreement;
+        }
+
+        var decided = agreement with
+        {
+            Status = accept ? DiplomaticAgreementStatus.Accepted : DiplomaticAgreementStatus.Rejected,
+            DecidedBoundary = boundary
+        };
+
+        _agreements[index] = decided;
+
+        if (otherCountry != null)
+        {
+            var otherIndex = otherCountry._agreements.FindIndex(a => string.Equals(a.Id, decided.Id, StringComparison.OrdinalIgnoreCase));
+            if (otherIndex >= 0)
+            {
+                otherCountry._agreements[otherIndex] = decided;
+            }
+            else
+            {
+                otherCountry._agreements.Add(decided);
+            }
+        }
+
+        return decided;
+    }
+
+    /// <summary>
+    /// Responds to a pending bilateral agreement proposal using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticAgreement? RespondToAgreement(
+        string agreementId,
+        bool accept,
+        IRepublicClock clock,
+        Country? otherCountry = null)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return RespondToAgreement(agreementId, accept, clock.CurrentTime, otherCountry);
+    }
+
+    /// <summary>
+    /// Accepts a pending bilateral agreement proposal.
+    /// </summary>
+    public DiplomaticAgreement? AcceptAgreement(
+        string agreementId,
+        RepublicTime boundary,
+        Country? otherCountry = null) =>
+        RespondToAgreement(agreementId, accept: true, boundary, otherCountry);
+
+    /// <summary>
+    /// Accepts a pending bilateral agreement proposal using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticAgreement? AcceptAgreement(
+        string agreementId,
+        IRepublicClock clock,
+        Country? otherCountry = null) =>
+        RespondToAgreement(agreementId, accept: true, clock, otherCountry);
+
+    /// <summary>
+    /// Rejects a pending bilateral agreement proposal.
+    /// </summary>
+    public DiplomaticAgreement? RejectAgreement(
+        string agreementId,
+        RepublicTime boundary,
+        Country? otherCountry = null) =>
+        RespondToAgreement(agreementId, accept: false, boundary, otherCountry);
+
+    /// <summary>
+    /// Rejects a pending bilateral agreement proposal using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticAgreement? RejectAgreement(
+        string agreementId,
+        IRepublicClock clock,
+        Country? otherCountry = null) =>
+        RespondToAgreement(agreementId, accept: false, clock, otherCountry);
+
     /// Gets or sets the national road development project record for this country.
     /// Backward-compatibility accessor backed authoritatively by <see cref="Projects"/>.
     /// </summary>
@@ -1589,7 +2008,9 @@ public sealed class Country
         InterestGroup? interestGroup = null,
         CountryBill? bill = null,
         CountryElection? election = null,
-        DiplomaticRelation? relation = null)
+        DiplomaticRelation? relation = null,
+        DiplomaticAgreement? agreement = null,
+        IEnumerable<DiplomaticAgreement>? agreements = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -1627,6 +2048,22 @@ public sealed class Country
         if (relation != null)
         {
             country._relations.Add(relation);
+        }
+
+        if (agreement != null)
+        {
+            country._agreements.Add(agreement);
+        }
+
+        if (agreements != null)
+        {
+            foreach (var a in agreements)
+            {
+                if (!country._agreements.Any(existing => existing.Id == a.Id))
+                {
+                    country._agreements.Add(a);
+                }
+            }
         }
 
         if (profile != null)

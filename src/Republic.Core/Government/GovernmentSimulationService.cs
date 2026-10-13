@@ -89,6 +89,10 @@ public sealed partial class GovernmentSimulationService
         state.RegionalProfile = GenerateProceduralNation(countryName, currencyCode, leaderName);
         InitializeCampaignFramework(state);
         GenerateNeighborAiCountries(state, count: 8);
+        if (state.Currencies.Count > 0)
+        {
+            state.Currencies[0].ExchangeRate = initialExchangeRate;
+        }
         CreateDefaultPeaceAccords(state);
 
         return state;

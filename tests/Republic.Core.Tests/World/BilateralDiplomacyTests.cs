@@ -211,4 +211,71 @@ public sealed class BilateralDiplomacyTests
         Assert.Contains(norse, eligible);
         Assert.Contains(aethel, eligible);
     }
+
+    [Fact]
+    public void IsEligibleTarget_IdentifiesForeignCountriesCorrectly()
+    {
+        var time = CreateTestTime();
+        var (player, norse, _, _) = SetupTestWorld(time);
+
+        Assert.False(BilateralDiplomacyHandler.IsEligibleTarget(player, player));
+        Assert.False(BilateralDiplomacyHandler.IsEligibleTarget(player, null));
+        Assert.False(BilateralDiplomacyHandler.IsEligibleTarget(null!, norse));
+        Assert.True(BilateralDiplomacyHandler.IsEligibleTarget(player, norse));
+    }
+
+    [Fact]
+    public void RecognizeRelation_ThroughHandler_UpdatesStoredStanding()
+    {
+        var openTime = CreateTestTime(day: 0, hour: 6);
+        var recTime = CreateTestTime(day: 1, hour: 18);
+        var (player, norse, _, world) = SetupTestWorld(openTime);
+
+        // Cannot recognize unopened relation
+        var fail = BilateralDiplomacyHandler.RecognizeRelation(player, norse.Id, world, recTime);
+        Assert.False(fail.IsSuccess);
+        Assert.Equal(DiplomaticActionResult.RelationNotFound, fail.Result);
+
+        // Open first
+        var open = BilateralDiplomacyHandler.OpenRelation(player, norse.Id, world, openTime);
+        Assert.True(open.IsSuccess);
+
+        // Recognize
+        var rec = BilateralDiplomacyHandler.RecognizeRelation(player, norse.Id, world, recTime);
+        Assert.True(rec.IsSuccess);
+        Assert.NotNull(rec.Relation);
+        Assert.True(rec.Relation!.IsRecognized);
+        Assert.Equal(recTime, rec.Relation.RecognizedBoundary);
+
+        // Country reflects recognition
+        Assert.True(player.Relation!.IsRecognized);
+    }
+
+    [Fact]
+    public void ProposeAndRespondAgreement_ThroughHandler_FullLifecycle()
+    {
+        var t1 = CreateTestTime(day: 0, hour: 6);
+        var t2 = CreateTestTime(day: 1, hour: 12);
+        var (player, norse, _, world) = SetupTestWorld(t1);
+
+        // Open relation
+        BilateralDiplomacyHandler.OpenRelation(player, norse.Id, world, t1);
+
+        // Propose trade agreement
+        var prop = BilateralDiplomacyHandler.ProposeAgreement(player, norse.Id, DiplomaticAgreementType.Trade, world, t1);
+        Assert.True(prop.IsSuccess);
+        Assert.NotNull(prop.Agreement);
+        Assert.True(prop.Agreement!.IsPending);
+
+        // Norse accepts
+        var accept = BilateralDiplomacyHandler.RespondToAgreement(norse, prop.Agreement.Id, accept: true, world, t2);
+        Assert.True(accept.IsSuccess);
+        Assert.NotNull(accept.Agreement);
+        Assert.True(accept.Agreement!.IsActive);
+        Assert.Equal(t2, accept.Agreement.DecidedBoundary);
+
+        // Stored on both
+        Assert.True(player.HasActiveAgreement(norse.Id, DiplomaticAgreementType.Trade));
+        Assert.True(norse.HasActiveAgreement(player.Id, DiplomaticAgreementType.Trade));
+    }
 }

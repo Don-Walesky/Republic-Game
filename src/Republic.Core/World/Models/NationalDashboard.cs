@@ -164,8 +164,20 @@ public sealed record NationalDashboard
         InfrastructureCondition = country.StateCapacity?.InfrastructureCondition ?? 0.0;
         Infrastructure = FormatUnitPercentage(InfrastructureCondition);
 
-        // 6. Diplomacy, Science, and Military: "Not established"
-        Diplomacy = NotEstablishedText;
+        // 6. Diplomacy, Science, and Military
+        if (country.Relations.Count > 0)
+        {
+            var recognized = country.Relations.Count(r => r.IsRecognized);
+            var total = country.Relations.Count;
+            Diplomacy = recognized > 0
+                ? $"{recognized}/{total} Recognized"
+                : $"{total} Open (Unrecognized)";
+        }
+        else
+        {
+            Diplomacy = NotEstablishedText;
+        }
+
         Science = NotEstablishedText;
         Military = NotEstablishedText;
     }

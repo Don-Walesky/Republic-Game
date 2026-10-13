@@ -256,6 +256,10 @@ public static class Program
         {
             Console.WriteLine($" Relation: {countryForDashboard.Relation}");
         }
+        if (countryForDashboard.ActiveAgreements.Count > 0)
+        {
+            Console.WriteLine($" Agreements: {string.Join("; ", countryForDashboard.ActiveAgreements)}");
+        }
         Console.WriteLine("--------------------------------------------------------------");
 
         var emails = app.WorkspaceManager.Email.GetInbox();
@@ -977,18 +981,53 @@ public static class Program
             var isPlayer = string.Equals(country.Id, playerCountry.Id, StringComparison.OrdinalIgnoreCase);
             var tag = isPlayer ? " [YOUR NATION - CANNOT TARGET]" : "";
             var existingRel = playerCountry.GetRelation(country.Id);
-            var relStatus = existingRel != null ? $" | Relation: {existingRel.Status} (opened at {existingRel.OpenedBoundary})" : "";
-            printLine($" [{i + 1}] {country.Name} (ID: {country.Id}){tag}{relStatus}");
+            var relStatus = existingRel != null
+                ? $" | Relation: {existingRel.Status}{(existingRel.IsRecognized && existingRel.RecognizedBoundary.HasValue ? $" (at {existingRel.RecognizedBoundary.Value})" : "")}"
+                : " | Relation: None";
+            var trade = playerCountry.GetAgreementWith(country.Id, DiplomaticAgreementType.Trade);
+            var tradeStatus = trade != null ? $" | Trade: {trade.Status}" : "";
+            var alliance = playerCountry.GetAgreementWith(country.Id, DiplomaticAgreementType.Alliance);
+            var allianceStatus = alliance != null ? $" | Alliance: {alliance.Status}" : "";
+            printLine($" [{i + 1}] {country.Name} (ID: {country.Id}){tag}{relStatus}{tradeStatus}{allianceStatus}");
         }
 
+        var pendingProposals = playerCountry.PendingAgreements.ToList();
+        if (pendingProposals.Count > 0)
+        {
+            printLine("--------------------------------------------------------------");
+            printLine($"PENDING DIPLOMATIC PROPOSALS ({pendingProposals.Count} pending):");
+            for (var p = 0; p < pendingProposals.Count; p++)
+            {
+                var prop = pendingProposals[p];
+                var otherId = string.Equals(prop.SourceCountryId, playerCountry.Id, StringComparison.OrdinalIgnoreCase)
+                    ? prop.TargetCountryId
+                    : prop.SourceCountryId;
+                var otherName = allCountries.FirstOrDefault(c => c.Id == otherId)?.Name ?? otherId;
+                printLine($"  * {prop.AgreementType} Agreement with {otherName} (proposed at {prop.ProposedBoundary})");
+            }
+        }
+
+        printLine("--------------------------------------------------------------");
+        printLine("Options:");
+        printLine($" [1-{allCountries.Count}] Select Country to Inspect & Manage Diplomacy");
+        if (pendingProposals.Count > 0)
+        {
+            printLine(" [P] Review & Respond to Pending Proposals");
+        }
         printLine(" [0] Return to Executive Directive Menu");
         printLine("--------------------------------------------------------------");
-        print($"Select Target Country Number (1-{allCountries.Count}, 0 to cancel) > ");
+        print($"Select Option (1-{allCountries.Count}, 0 to cancel) > ");
 
         var input = read()?.Trim();
         if (string.IsNullOrWhiteSpace(input) || input == "0")
         {
             printLine("Diplomatic review concluded. Returning to executive menu.");
+            return;
+        }
+
+        if (string.Equals(input, "P", StringComparison.OrdinalIgnoreCase))
+        {
+            await ResolvePendingProposalsAsync(playerCountry, allCountries, currentTime, read, print, printLine);
             return;
         }
 
@@ -1012,45 +1051,194 @@ public static class Program
             return;
         }
 
-        printLine("--------------------------------------------------------------");
-        printLine($"Selected Target: {selectedCountry.Name} (ID: {selectedCountry.Id})");
+        await InspectAndManageCountryAsync(playerCountry, selectedCountry, allCountries, currentTime, read, print, printLine);
+    }
+
+    private static async Task InspectAndManageCountryAsync(
+        Country playerCountry,
+        Country selectedCountry,
+        IReadOnlyList<Country> allCountries,
+        RepublicTime currentTime,
+        Func<string?> read,
+        Action<string> print,
+        Action<string> printLine)
+    {
+        printLine("==============================================================");
+        printLine($"DIPLOMATIC DOSSIER: {selectedCountry.Name} (ID: {selectedCountry.Id})");
+        printLine("==============================================================");
+        printLine($" Capital: {selectedCountry.CapitalCity} | Government: {selectedCountry.GovernmentType}");
+        printLine($" Baseline Stability: {selectedCountry.BaselineStability:0.#}% | GDP: R{selectedCountry.GrossDomesticProduct:N0}");
 
         var currentRelation = playerCountry.GetRelation(selectedCountry.Id);
         if (currentRelation != null)
         {
-            printLine($"Current Diplomatic Relation: {currentRelation}");
-            printLine($"Status: {currentRelation.Status} | Opened At: {currentRelation.OpenedBoundary}");
+            var recInfo = currentRelation.IsRecognized
+                ? $"Formal recognition recorded at {currentRelation.RecognizedBoundary ?? currentRelation.OpenedBoundary}."
+                : "Relation opened but unrecognized.";
+            printLine($" Relation: {currentRelation.Status} (opened at {currentRelation.OpenedBoundary}). {recInfo}");
         }
         else
         {
-            printLine("Current Diplomatic Relation: None (No diplomatic relation established)");
+            printLine(" Relation: None (No diplomatic relation established)");
         }
+
+        var tradeAgreement = playerCountry.GetAgreementWith(selectedCountry.Id, DiplomaticAgreementType.Trade);
+        printLine($" Trade Agreement: {(tradeAgreement != null ? $"{tradeAgreement.Status} (proposed at {tradeAgreement.ProposedBoundary}{(tradeAgreement.DecidedBoundary.HasValue ? $", decided at {tradeAgreement.DecidedBoundary.Value}" : "")})" : "None")}");
+
+        var alliance = playerCountry.GetAgreementWith(selectedCountry.Id, DiplomaticAgreementType.Alliance);
+        printLine($" Bilateral Alliance: {(alliance != null ? $"{alliance.Status} (proposed at {alliance.ProposedBoundary}{(alliance.DecidedBoundary.HasValue ? $", decided at {alliance.DecidedBoundary.Value}" : "")})" : "None")}");
+
+        var pendingWithTarget = playerCountry.Agreements
+            .FirstOrDefault(a => a.Involves(selectedCountry.Id) && a.IsPending);
+
         printLine("--------------------------------------------------------------");
+        printLine("Available Diplomatic Actions:");
+        if (currentRelation == null)
+        {
+            printLine($" [1] Open Diplomatic Relation with {selectedCountry.Name}");
+        }
+        else if (!currentRelation.IsRecognized)
+        {
+            printLine($" [2] Formally Recognize Diplomatic Relation with {selectedCountry.Name}");
+        }
 
-        printLine("Diplomatic Actions:");
-        printLine($" [1] Open Diplomatic Relation with {selectedCountry.Name}");
+        if (currentRelation != null && (tradeAgreement == null || tradeAgreement.IsRejected))
+        {
+            printLine($" [3] Propose Bilateral Trade Agreement to {selectedCountry.Name}");
+        }
+
+        if (currentRelation != null && currentRelation.IsRecognized && (alliance == null || alliance.IsRejected))
+        {
+            printLine($" [4] Propose Bilateral Alliance to {selectedCountry.Name}");
+        }
+
+        if (pendingWithTarget != null)
+        {
+            printLine($" [5] Resolve Pending {pendingWithTarget.AgreementType} Proposal with {selectedCountry.Name}");
+        }
+
         printLine(" [0] Cancel / Return to Executive Menu");
-        print("Select Action (1 to open, 0 to cancel) > ");
+        print("Select Action > ");
 
-        var actionInput = read()?.Trim();
-        if (actionInput != "1" && !string.Equals(actionInput, "y", StringComparison.OrdinalIgnoreCase) && !string.Equals(actionInput, "yes", StringComparison.OrdinalIgnoreCase))
+        var actionChoice = read()?.Trim();
+        if (actionChoice == "0" || string.IsNullOrWhiteSpace(actionChoice))
         {
             printLine("Action cancelled. Returning to executive menu.");
             return;
         }
 
-        var outcome = BilateralDiplomacyHandler.OpenRelation(playerCountry, selectedCountry.Id, allCountries, currentTime);
-        if (outcome.Result == DiplomaticActionResult.Success)
+        if (actionChoice == "1" && currentRelation == null)
         {
-            printLine($"\n[DIPLOMATIC SUCCESS]: {outcome.Message}");
-            if (outcome.Relation != null)
+            var outcome = BilateralDiplomacyHandler.OpenRelation(playerCountry, selectedCountry.Id, allCountries, currentTime);
+            printLine(outcome.IsSuccess ? $"\n[DIPLOMATIC SUCCESS]: {outcome.Message}" : $"\n[DIPLOMATIC REJECTION]: {outcome.Message}");
+        }
+        else if (actionChoice == "2" || (actionChoice == "1" && currentRelation != null && !currentRelation.IsRecognized))
+        {
+            var outcome = BilateralDiplomacyHandler.RecognizeRelation(playerCountry, selectedCountry.Id, allCountries, currentTime);
+            printLine(outcome.IsSuccess ? $"\n[DIPLOMATIC SUCCESS]: {outcome.Message}" : $"\n[DIPLOMATIC REJECTION]: {outcome.Message}");
+        }
+        else if (actionChoice == "3")
+        {
+            var outcome = BilateralDiplomacyHandler.ProposeAgreement(playerCountry, selectedCountry.Id, DiplomaticAgreementType.Trade, allCountries, currentTime);
+            printLine(outcome.IsSuccess ? $"\n[PROPOSAL SUBMITTED]: {outcome.Message}" : $"\n[PROPOSAL REJECTED]: {outcome.Message}");
+        }
+        else if (actionChoice == "4")
+        {
+            var outcome = BilateralDiplomacyHandler.ProposeAgreement(playerCountry, selectedCountry.Id, DiplomaticAgreementType.Alliance, allCountries, currentTime);
+            printLine(outcome.IsSuccess ? $"\n[PROPOSAL SUBMITTED]: {outcome.Message}" : $"\n[PROPOSAL REJECTED]: {outcome.Message}");
+        }
+        else if (actionChoice == "5" && pendingWithTarget != null)
+        {
+            printLine($"\nPending {pendingWithTarget.AgreementType} proposal with {selectedCountry.Name}:");
+            printLine(" [1] Accept Proposal");
+            printLine(" [2] Reject Proposal");
+            printLine(" [0] Cancel");
+            print("Decision (1=Accept, 2=Reject, 0=Cancel) > ");
+            var decInput = read()?.Trim();
+            if (decInput == "1")
             {
-                printLine($"Standing: {outcome.Relation.Status} | Boundary: {outcome.Relation.OpenedBoundary}");
+                var outcome = BilateralDiplomacyHandler.RespondToAgreement(playerCountry, pendingWithTarget.Id, accept: true, allCountries, currentTime);
+                printLine(outcome.IsSuccess ? $"\n[AGREEMENT ACCEPTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+            }
+            else if (decInput == "2")
+            {
+                var outcome = BilateralDiplomacyHandler.RespondToAgreement(playerCountry, pendingWithTarget.Id, accept: false, allCountries, currentTime);
+                printLine(outcome.IsSuccess ? $"\n[AGREEMENT REJECTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+            }
+            else
+            {
+                printLine("Decision cancelled.");
             }
         }
         else
         {
-            printLine($"\n[DIPLOMATIC REJECTION]: {outcome.Message}");
+            printLine("Invalid option or action not eligible at this time.");
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private static async Task ResolvePendingProposalsAsync(
+        Country playerCountry,
+        IReadOnlyList<Country> allCountries,
+        RepublicTime currentTime,
+        Func<string?> read,
+        Action<string> print,
+        Action<string> printLine)
+    {
+        var pending = playerCountry.PendingAgreements.ToList();
+        if (pending.Count == 0)
+        {
+            printLine("No pending proposals requiring action.");
+            return;
+        }
+
+        printLine("==============================================================");
+        printLine("             PENDING DIPLOMATIC PROPOSALS                     ");
+        printLine("==============================================================");
+        for (var i = 0; i < pending.Count; i++)
+        {
+            var p = pending[i];
+            var otherId = string.Equals(p.SourceCountryId, playerCountry.Id, StringComparison.OrdinalIgnoreCase)
+                ? p.TargetCountryId
+                : p.SourceCountryId;
+            var otherName = allCountries.FirstOrDefault(c => c.Id == otherId)?.Name ?? otherId;
+            var direction = string.Equals(p.SourceCountryId, playerCountry.Id, StringComparison.OrdinalIgnoreCase)
+                ? $"Proposed by {playerCountry.Name} to {otherName}"
+                : $"Proposed by {otherName} to {playerCountry.Name}";
+            printLine($" [{i + 1}] {p.AgreementType} Agreement | {direction} | Boundary: {p.ProposedBoundary}");
+        }
+        printLine(" [0] Cancel / Return");
+        print($"Select Proposal to Resolve (1-{pending.Count}, 0 to cancel) > ");
+
+        var input = read()?.Trim();
+        if (string.IsNullOrWhiteSpace(input) || input == "0" || !int.TryParse(input, out var idx) || idx < 1 || idx > pending.Count)
+        {
+            printLine("Cancelled.");
+            return;
+        }
+
+        var selected = pending[idx - 1];
+        printLine($"Selected: {selected.AgreementType} Agreement (ID: {selected.Id})");
+        printLine(" [1] Accept Proposal");
+        printLine(" [2] Reject Proposal");
+        printLine(" [0] Cancel");
+        print("Decision (1=Accept, 2=Reject, 0=Cancel) > ");
+
+        var decInput = read()?.Trim();
+        if (decInput == "1")
+        {
+            var outcome = BilateralDiplomacyHandler.RespondToAgreement(playerCountry, selected.Id, accept: true, allCountries, currentTime);
+            printLine(outcome.IsSuccess ? $"\n[AGREEMENT ACCEPTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+        }
+        else if (decInput == "2")
+        {
+            var outcome = BilateralDiplomacyHandler.RespondToAgreement(playerCountry, selected.Id, accept: false, allCountries, currentTime);
+            printLine(outcome.IsSuccess ? $"\n[AGREEMENT REJECTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+        }
+        else
+        {
+            printLine("Decision cancelled.");
         }
 
         await Task.CompletedTask;
@@ -1208,6 +1396,35 @@ public static class Program
             {
                 var targetId = arg.Substring("--relation=".Length);
                 playerCountry.OpenRelation(targetId, app.TimeSystem.CurrentRepublicTime);
+            }
+            else if (arg.Equals("--recognize", StringComparison.OrdinalIgnoreCase) || arg.Equals("--recognize-relation", StringComparison.OrdinalIgnoreCase))
+            {
+                var other = app.WorldManager.Countries.GetAllCountries().FirstOrDefault(c => c.Id != playerCountry.Id && playerCountry.HasRelation(c.Id));
+                if (other != null)
+                {
+                    playerCountry.RecognizeRelation(other.Id, app.TimeSystem.CurrentRepublicTime);
+                }
+            }
+            else if (arg.StartsWith("--recognize=", StringComparison.OrdinalIgnoreCase))
+            {
+                var targetId = arg.Substring("--recognize=".Length);
+                playerCountry.RecognizeRelation(targetId, app.TimeSystem.CurrentRepublicTime);
+            }
+            else if (arg.Equals("--trade", StringComparison.OrdinalIgnoreCase) || arg.Equals("--trade-agreement", StringComparison.OrdinalIgnoreCase))
+            {
+                var other = app.WorldManager.Countries.GetAllCountries().FirstOrDefault(c => c.Id != playerCountry.Id && playerCountry.HasRelation(c.Id));
+                if (other != null)
+                {
+                    playerCountry.ProposeTradeAgreement(other, app.TimeSystem.CurrentRepublicTime);
+                }
+            }
+            else if (arg.Equals("--alliance", StringComparison.OrdinalIgnoreCase))
+            {
+                var other = app.WorldManager.Countries.GetAllCountries().FirstOrDefault(c => c.Id != playerCountry.Id && playerCountry.HasRelation(c.Id));
+                if (other != null)
+                {
+                    playerCountry.ProposeAlliance(other, app.TimeSystem.CurrentRepublicTime);
+                }
             }
         }
     }

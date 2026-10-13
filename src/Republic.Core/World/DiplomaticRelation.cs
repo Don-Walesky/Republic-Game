@@ -40,6 +40,11 @@ public sealed record DiplomaticRelation
     public RepublicTime OpenedBoundary { get; init; }
 
     /// <summary>
+    /// Gets the authoritative Republic simulation clock boundary when the relation was formally recognized, or null if unrecognized.
+    /// </summary>
+    public RepublicTime? RecognizedBoundary { get; init; }
+
+    /// <summary>
     /// Alias for <see cref="OpenedBoundary"/>.
     /// </summary>
     [JsonIgnore]
@@ -70,13 +75,14 @@ public sealed record DiplomaticRelation
     public bool IsUnrecognized => Status == DiplomaticRelationStatus.Unrecognized;
 
     /// <summary>
-    /// Initializes a new diplomatic relation record with full status specification.
+    /// Initializes a new diplomatic relation record with full status and recognition specification.
     /// </summary>
     public DiplomaticRelation(
         string fromCountryId,
         string toCountryId,
         DiplomaticRelationStatus status,
-        RepublicTime openedBoundary)
+        RepublicTime openedBoundary,
+        RepublicTime? recognizedBoundary = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fromCountryId);
         ArgumentException.ThrowIfNullOrWhiteSpace(toCountryId);
@@ -85,6 +91,7 @@ public sealed record DiplomaticRelation
         ToCountryId = toCountryId.Trim();
         Status = status;
         OpenedBoundary = openedBoundary;
+        RecognizedBoundary = recognizedBoundary;
     }
 
     /// <summary>
@@ -94,7 +101,7 @@ public sealed record DiplomaticRelation
         string fromCountryId,
         string toCountryId,
         RepublicTime openedBoundary)
-        : this(fromCountryId, toCountryId, DiplomaticRelationStatus.Unrecognized, openedBoundary)
+        : this(fromCountryId, toCountryId, DiplomaticRelationStatus.Unrecognized, openedBoundary, null)
     {
     }
 
@@ -114,6 +121,23 @@ public sealed record DiplomaticRelation
     }
 
     /// <summary>
+    /// Deconstructs the diplomatic relation including its recognition boundary.
+    /// </summary>
+    public void Deconstruct(
+        out string fromCountryId,
+        out string toCountryId,
+        out DiplomaticRelationStatus status,
+        out RepublicTime openedBoundary,
+        out RepublicTime? recognizedBoundary)
+    {
+        fromCountryId = FromCountryId;
+        toCountryId = ToCountryId;
+        status = Status;
+        openedBoundary = OpenedBoundary;
+        recognizedBoundary = RecognizedBoundary;
+    }
+
+    /// <summary>
     /// Implicit boolean operator evaluating whether a valid relation reference exists.
     /// </summary>
     public static implicit operator bool(DiplomaticRelation? relation) => relation is not null;
@@ -121,6 +145,11 @@ public sealed record DiplomaticRelation
     /// <summary>
     /// Formats the diplomatic relation for dashboard and diagnostic inspection.
     /// </summary>
-    public override string ToString() =>
-        $"{FromCountryId} -> {ToCountryId} ({Status}) opened at {OpenedBoundary}";
+    public override string ToString()
+    {
+        var recInfo = (Status == DiplomaticRelationStatus.Recognized && RecognizedBoundary.HasValue)
+            ? $" (recognized at {RecognizedBoundary.Value})"
+            : "";
+        return $"{FromCountryId} -> {ToCountryId} ({Status}{recInfo}) opened at {OpenedBoundary}";
+    }
 }

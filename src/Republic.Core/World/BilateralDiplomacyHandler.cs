@@ -16,7 +16,11 @@ public enum DiplomaticActionResult
     TargetNotFound,
     AlreadyExists,
     InvalidInput,
-    Cancelled
+    Cancelled,
+    RelationNotFound,
+    PrerequisitesNotMet,
+    AgreementNotFound,
+    AlreadyDecided
 }
 
 /// <summary>
@@ -25,7 +29,8 @@ public enum DiplomaticActionResult
 public sealed record DiplomaticInteractionOutcome(
     DiplomaticActionResult Result,
     string Message,
-    DiplomaticRelation? Relation = null)
+    DiplomaticRelation? Relation = null,
+    DiplomaticAgreement? Agreement = null)
 {
     /// <summary>
     /// Indicates whether the diplomatic interaction was successfully executed.
@@ -163,5 +168,207 @@ public static class BilateralDiplomacyHandler
             DiplomaticActionResult.AlreadyExists,
             $"Diplomatic relation request toward '{targetCountry.Name}' was rejected by domain policy.",
             playerCountry.GetRelation(trimmedTargetId));
+    }
+
+    /// <summary>
+    /// Executes the formal diplomatic recognition of an existing relation opened from the player country toward the target country.
+    /// Confirms target exists, prevents self-action, verifies existing relation exists, and updates stored relation state.
+    /// </summary>
+    public static DiplomaticInteractionOutcome RecognizeRelation(
+        Country playerCountry,
+        string? targetCountryId,
+        IEnumerable<Country> worldCountries,
+        RepublicTime currentTime)
+    {
+        ArgumentNullException.ThrowIfNull(playerCountry);
+        ArgumentNullException.ThrowIfNull(worldCountries);
+
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.InvalidInput,
+                "Target country identifier cannot be null or empty.");
+        }
+
+        var trimmedTargetId = targetCountryId.Trim();
+
+        if (string.Equals(trimmedTargetId, playerCountry.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.SelfRelationProhibited,
+                $"Cannot recognize diplomatic relations with your own nation ('{playerCountry.Name}'). Self-relations are prohibited.");
+        }
+
+        var targetCountry = worldCountries.FirstOrDefault(c => string.Equals(c.Id, trimmedTargetId, StringComparison.OrdinalIgnoreCase));
+        if (targetCountry == null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.TargetNotFound,
+                $"Target country with ID '{trimmedTargetId}' does not exist in the world registry.");
+        }
+
+        var existing = playerCountry.GetRelation(trimmedTargetId);
+        if (existing == null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.RelationNotFound,
+                $"Cannot recognize diplomatic relation with '{targetCountry.Name}': No relation has been opened yet. Open a relation first.");
+        }
+
+        if (existing.IsRecognized)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.Success,
+                $"Diplomatic relation from '{playerCountry.Name}' to '{targetCountry.Name}' is already formally recognized.",
+                existing);
+        }
+
+        var recognized = playerCountry.RecognizeRelation(trimmedTargetId, currentTime);
+        if (recognized != null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.Success,
+                $"Formally recognized diplomatic relation from '{playerCountry.Name}' to '{targetCountry.Name}'.",
+                recognized);
+        }
+
+        return new DiplomaticInteractionOutcome(
+            DiplomaticActionResult.InvalidInput,
+            $"Recognition request toward '{targetCountry.Name}' was rejected by domain policy.");
+    }
+
+    /// <summary>
+    /// Proposes a bilateral diplomatic agreement (Trade or Alliance) from the player country to a target country.
+    /// Requires an open relation (and for alliances, formal recognition). Prevents duplicates and records simulation time.
+    /// </summary>
+    public static DiplomaticInteractionOutcome ProposeAgreement(
+        Country playerCountry,
+        string? targetCountryId,
+        DiplomaticAgreementType type,
+        IEnumerable<Country> worldCountries,
+        RepublicTime currentTime)
+    {
+        ArgumentNullException.ThrowIfNull(playerCountry);
+        ArgumentNullException.ThrowIfNull(worldCountries);
+
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.InvalidInput,
+                "Target country identifier cannot be null or empty.");
+        }
+
+        var trimmedTargetId = targetCountryId.Trim();
+
+        if (string.Equals(trimmedTargetId, playerCountry.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.SelfRelationProhibited,
+                $"Cannot conclude diplomatic agreements with your own nation ('{playerCountry.Name}').");
+        }
+
+        var targetCountry = worldCountries.FirstOrDefault(c => string.Equals(c.Id, trimmedTargetId, StringComparison.OrdinalIgnoreCase));
+        if (targetCountry == null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.TargetNotFound,
+                $"Target country with ID '{trimmedTargetId}' does not exist in the world registry.");
+        }
+
+        var relation = playerCountry.GetRelation(trimmedTargetId);
+        if (relation == null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.RelationNotFound,
+                $"Cannot propose {type.ToString().ToLowerInvariant()} agreement to '{targetCountry.Name}': No diplomatic relation exists. Open a relation first.");
+        }
+
+        if (type == DiplomaticAgreementType.Alliance && !relation.IsRecognized)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.PrerequisitesNotMet,
+                $"Cannot propose a bilateral alliance to '{targetCountry.Name}': Diplomatic relation must be formally recognized before an alliance can be concluded.");
+        }
+
+        var existingAgreement = playerCountry.GetAgreementWith(trimmedTargetId, type);
+        if (existingAgreement != null && (existingAgreement.IsActive || existingAgreement.IsPending))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.AlreadyExists,
+                $"An active or pending {type.ToString().ToLowerInvariant()} agreement already exists between '{playerCountry.Name}' and '{targetCountry.Name}' (Status: {existingAgreement.Status}).",
+                Agreement: existingAgreement);
+        }
+
+        var agreement = playerCountry.ProposeAgreement(targetCountry, type, currentTime);
+        if (agreement != null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.Success,
+                $"Successfully proposed bilateral {type.ToString().ToLowerInvariant()} agreement to '{targetCountry.Name}'.",
+                Agreement: agreement);
+        }
+
+        return new DiplomaticInteractionOutcome(
+            DiplomaticActionResult.InvalidInput,
+            $"Bilateral {type.ToString().ToLowerInvariant()} proposal to '{targetCountry.Name}' was rejected by domain policy.");
+    }
+
+    /// <summary>
+    /// Executes a deterministic decision (Accept or Reject) on a pending bilateral diplomatic agreement.
+    /// Updates the stored agreement state on both countries and records the decision boundary.
+    /// </summary>
+    public static DiplomaticInteractionOutcome RespondToAgreement(
+        Country respondingCountry,
+        string? agreementId,
+        bool accept,
+        IEnumerable<Country> worldCountries,
+        RepublicTime currentTime)
+    {
+        ArgumentNullException.ThrowIfNull(respondingCountry);
+        ArgumentNullException.ThrowIfNull(worldCountries);
+
+        if (string.IsNullOrWhiteSpace(agreementId))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.InvalidInput,
+                "Agreement identifier cannot be null or empty.");
+        }
+
+        var agreement = respondingCountry.GetAgreement(agreementId.Trim());
+        if (agreement == null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.AgreementNotFound,
+                $"Agreement with ID '{agreementId}' was not found on '{respondingCountry.Name}'.");
+        }
+
+        if (agreement.Status != DiplomaticAgreementStatus.Pending)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.AlreadyDecided,
+                $"Agreement '{agreement.AgreementType}' has already been decided (Status: {agreement.Status}, Decided: {agreement.DecidedBoundary}).",
+                Agreement: agreement);
+        }
+
+        // Find the other country involved in this agreement
+        var otherCountryId = string.Equals(agreement.SourceCountryId, respondingCountry.Id, StringComparison.OrdinalIgnoreCase)
+            ? agreement.TargetCountryId
+            : agreement.SourceCountryId;
+
+        var otherCountry = worldCountries.FirstOrDefault(c => string.Equals(c.Id, otherCountryId, StringComparison.OrdinalIgnoreCase));
+
+        var decided = respondingCountry.RespondToAgreement(agreement.Id, accept, currentTime, otherCountry);
+        if (decided != null)
+        {
+            var actionText = accept ? "accepted" : "rejected";
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.Success,
+                $"Bilateral {decided.AgreementType.ToString().ToLowerInvariant()} agreement proposal was {actionText} at {currentTime}.",
+                Agreement: decided);
+        }
+
+        return new DiplomaticInteractionOutcome(
+            DiplomaticActionResult.InvalidInput,
+            "Failed to resolve agreement proposal.");
     }
 }
