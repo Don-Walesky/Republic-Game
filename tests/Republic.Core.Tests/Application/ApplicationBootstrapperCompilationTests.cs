@@ -2,6 +2,7 @@ namespace Republic.Core.Tests.Application;
 
 using Republic.App;
 using Republic.Core.AI.Services;
+using Republic.Core.Elections.Services;
 
 public sealed class ApplicationBootstrapperCompilationTests
 {
@@ -13,5 +14,6 @@ public sealed class ApplicationBootstrapperCompilationTests
         Assert.NotNull(application);
         Assert.NotNull(application.ElectionService);
         Assert.IsType<RivalAIService>(application.RivalAIService);
+        Assert.Same(application.Clock, ((ElectionService)application.ElectionService).Clock);
     }
 }

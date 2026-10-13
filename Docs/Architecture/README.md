@@ -32,7 +32,7 @@ Republic is built around a **headless, deterministic .NET 8.0 simulation core** 
 - `Republic.Core.Events`: High-performance decoupled domain event bus
 - `Republic.Core.Persistence`: State serialization, offline catch-up, and SHA256 integrity checksums
 - `Republic.Core.Diplomacy` & `Republic.Core.AI`: Bilateral treaties, summits, trade accords, and rival nation simulation
-- `Republic.Core.Military`: Armed branches, defense readiness (DEFCON), and deterrence
+- `Republic.Core.Military`: Armed branches, defense readiness (DEFCON 5, 4, 3, 2, 1), and deterrence
 - `Republic.Core.Intelligence` & `Republic.Core.Media`: Classified intelligence dossiers, press briefings, and public sentiment
 - `Republic.Core.Engine`: Deterministic tick loop, yield cycle coordination, and subsystem orchestration
 

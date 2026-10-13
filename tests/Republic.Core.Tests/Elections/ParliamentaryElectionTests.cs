@@ -14,7 +14,7 @@ public class ParliamentaryElectionTests
     {
         var eventBus = new EventBus(new EventBusOptions(), new TestLogger());
         var worldManager = new WorldManager(eventBus);
-        var service = new ElectionService(worldManager, eventBus);
+        var service = new ElectionService(worldManager, eventBus, worldManager.Countries.Clock);
 
         await service.StartCampaignSeasonAsync();
         Assert.True(service.IsCampaignActive);
@@ -30,7 +30,7 @@ public class ParliamentaryElectionTests
     {
         var eventBus = new EventBus(new EventBusOptions(), new TestLogger());
         var worldManager = new WorldManager(eventBus);
-        var service = new ElectionService(worldManager, eventBus);
+        var service = new ElectionService(worldManager, eventBus, worldManager.Countries.Clock);
 
         await service.StartCampaignSeasonAsync();
         var result = await service.ConductElectionAsync("President Vance", "Senator Sterling");

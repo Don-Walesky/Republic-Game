@@ -26,15 +26,15 @@ public sealed class ElectionService : IElectionService
     public ElectionService(
         IWorldManager worldManager,
         IEventBus eventBus,
+        IRepublicClock clock,
         IWorkspaceManager? workspaceManager = null,
-        ILogger? logger = null,
-        IRepublicClock? clock = null)
+        ILogger? logger = null)
     {
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
         _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
+        _clock = clock ?? throw new ArgumentNullException(nameof(clock));
         _workspaceManager = workspaceManager;
         _logger = logger;
-        _clock = clock ?? RepublicClock.CreateControlled();
     }
 
     /// <summary>

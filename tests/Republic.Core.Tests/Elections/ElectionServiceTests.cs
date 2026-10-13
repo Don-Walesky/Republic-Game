@@ -36,7 +36,7 @@ public sealed class ElectionServiceTests
     [Fact]
     public async Task StartCampaign_AndConductElection_ReturnsWinnerAndSendsEmail()
     {
-        var service = new ElectionService(_world, _eventBus, _workspace, _logger);
+        var service = new ElectionService(_world, _eventBus, _world.Countries.Clock, _workspace, _logger);
         await service.StartCampaignSeasonAsync();
 
         var result = await service.ConductElectionAsync("President Sterling", "Senator Vance");
@@ -48,12 +48,18 @@ public sealed class ElectionServiceTests
     }
 
     [Fact]
-    public void ElectionService_DefaultsToControlledClock_WhenClockParameterIsNull()
+    public void ElectionService_ThrowsArgumentNullException_WhenClockIsNull()
     {
-        var service = new ElectionService(_world, _eventBus);
+        Assert.Throws<ArgumentNullException>(() => new ElectionService(_world, _eventBus, null!));
+    }
 
-        Assert.NotNull(service.Clock);
-        Assert.True(service.Clock.IsControlled);
+    [Fact]
+    public void ElectionService_UsesSuppliedClock()
+    {
+        var clock = _world.Countries.Clock;
+        var service = new ElectionService(_world, _eventBus, clock);
+
+        Assert.Same(clock, service.Clock);
     }
 
     [Fact]
@@ -70,7 +76,7 @@ public sealed class ElectionServiceTests
         clock.AdvanceDays(45);
         clock.AdvanceHours(14);
 
-        var service = new ElectionService(_world, _eventBus, _workspace, _logger, clock);
+        var service = new ElectionService(_world, _eventBus, clock, _workspace, _logger);
         await service.StartCampaignSeasonAsync();
         await _eventBus.ProcessQueuedEventsAsync();
 
@@ -101,7 +107,7 @@ public sealed class ElectionServiceTests
         clock.AdvanceDays(120);
         clock.AdvanceHours(21);
 
-        var service = new ElectionService(_world, _eventBus, _workspace, _logger, clock);
+        var service = new ElectionService(_world, _eventBus, clock, _workspace, _logger);
         await service.StartCampaignSeasonAsync();
         var result = await service.ConductElectionAsync("President Sterling", "Senator Vance");
         await _eventBus.ProcessQueuedEventsAsync();
