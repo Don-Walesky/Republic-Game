@@ -4,6 +4,7 @@ using Republic.Core.Diagnostics;
 using Republic.Core.Elections.Events;
 using Republic.Core.Elections.Models;
 using Republic.Core.Events;
+using Republic.Core.Time;
 using Republic.Core.World;
 using Republic.Core.Workspace.Models;
 using Republic.Core.Workspace.Services;
@@ -18,6 +19,7 @@ public sealed class ElectionService : IElectionService
     private readonly IWorkspaceManager? _workspaceManager;
     private readonly IEventBus _eventBus;
     private readonly ILogger? _logger;
+    private readonly IRepublicClock _clock;
     private readonly object _lock = new();
     private bool _isCampaignActive;
 
@@ -25,13 +27,20 @@ public sealed class ElectionService : IElectionService
         IWorldManager worldManager,
         IEventBus eventBus,
         IWorkspaceManager? workspaceManager = null,
-        ILogger? logger = null)
+        ILogger? logger = null,
+        IRepublicClock? clock = null)
     {
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
         _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         _workspaceManager = workspaceManager;
         _logger = logger;
+        _clock = clock ?? RepublicClock.CreateControlled();
     }
+
+    /// <summary>
+    /// Gets the authoritative Republic simulation clock used by this service.
+    /// </summary>
+    public IRepublicClock Clock => _clock;
 
     public bool IsCampaignActive
     {
@@ -70,7 +79,7 @@ public sealed class ElectionService : IElectionService
         }
 
         _logger?.LogInfo("Campaign Season officially declared!");
-        await _eventBus.PublishAsync(new CampaignSeasonBeganEvent(DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+        await _eventBus.PublishAsync(new CampaignSeasonBeganEvent(_clock.CurrentTime.WatTimestamp), cancellationToken).ConfigureAwait(false);
 
         _workspaceManager?.News.PublishArticle(new NewsArticle
         {
@@ -135,8 +144,8 @@ public sealed class ElectionService : IElectionService
         };
 
         _logger?.LogInfo($"ELECTION NIGHT: Winner: '{winner}' (Incumbent Reelected: {isReelected})");
-        await _eventBus.PublishAsync(new ElectionConductedEvent(result, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
-        await _eventBus.PublishAsync(new PresidentialTransitionEvent(winner, isReelected, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+        await _eventBus.PublishAsync(new ElectionConductedEvent(result, _clock.CurrentTime.WatTimestamp), cancellationToken).ConfigureAwait(false);
+        await _eventBus.PublishAsync(new PresidentialTransitionEvent(winner, isReelected, _clock.CurrentTime.WatTimestamp), cancellationToken).ConfigureAwait(false);
 
         _workspaceManager?.News.PublishArticle(new NewsArticle
         {
