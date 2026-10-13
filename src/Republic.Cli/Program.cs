@@ -79,6 +79,7 @@ public static class Program
             Console.WriteLine(" [11] Enact Presidential Executive Decree");
             Console.WriteLine(" [12] Conduct Presidential Press Conference");
             Console.WriteLine(" [13] Oversee National Development Projects");
+            Console.WriteLine(" [14] Diplomacy & International Relations");
             Console.WriteLine(" [0] Exit Application");
             Console.WriteLine("==============================================================");
             Console.Write(" Select Option > ");
@@ -126,6 +127,9 @@ public static class Program
                     break;
                 case "13":
                     await ManageDevelopmentProjectsAsync(app);
+                    break;
+                case "14":
+                    await ManageDiplomacyAsync(app);
                     break;
                 case "0":
                     running = false;
@@ -923,6 +927,130 @@ public static class Program
             printLine("\nPress Enter to return to main menu...");
             read();
             return;
+        }
+
+        await Task.CompletedTask;
+    }
+
+    public static async Task ManageDiplomacyAsync(
+        RepublicApplication app,
+        Func<string?>? readLine = null,
+        Action<string>? write = null,
+        Action<string>? writeLine = null)
+    {
+        var read = readLine ?? Console.ReadLine;
+        var print = write ?? Console.Write;
+        var printLine = writeLine ?? Console.WriteLine;
+
+        printLine("==============================================================");
+        printLine("             DIPLOMACY & INTERNATIONAL RELATIONS              ");
+        printLine("==============================================================");
+
+        var allCountries = app.WorldManager.Countries.GetAllCountries();
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? allCountries.FirstOrDefault();
+        var currentTime = app.TimeSystem.CurrentRepublicTime;
+
+        if (playerCountry == null)
+        {
+            printLine("No sovereign player country available.");
+            printLine("\nPress Enter to return to main menu...");
+            read();
+            return;
+        }
+
+        printLine($"Home Nation: {playerCountry.Name} (ID: {playerCountry.Id})");
+        printLine($"Current Simulation Time: {currentTime} (WAT)");
+        printLine("--------------------------------------------------------------");
+        printLine("Available Sovereign Nations in World:");
+
+        if (allCountries.Count == 0)
+        {
+            printLine(" (No countries registered in the world)");
+            printLine("\nPress Enter to return to main menu...");
+            read();
+            return;
+        }
+
+        for (var i = 0; i < allCountries.Count; i++)
+        {
+            var country = allCountries[i];
+            var isPlayer = string.Equals(country.Id, playerCountry.Id, StringComparison.OrdinalIgnoreCase);
+            var tag = isPlayer ? " [YOUR NATION - CANNOT TARGET]" : "";
+            var existingRel = playerCountry.GetRelation(country.Id);
+            var relStatus = existingRel != null ? $" | Relation: {existingRel.Status} (opened at {existingRel.OpenedBoundary})" : "";
+            printLine($" [{i + 1}] {country.Name} (ID: {country.Id}){tag}{relStatus}");
+        }
+
+        printLine(" [0] Return to Executive Directive Menu");
+        printLine("--------------------------------------------------------------");
+        print($"Select Target Country Number (1-{allCountries.Count}, 0 to cancel) > ");
+
+        var input = read()?.Trim();
+        if (string.IsNullOrWhiteSpace(input) || input == "0")
+        {
+            printLine("Diplomatic review concluded. Returning to executive menu.");
+            return;
+        }
+
+        if (!int.TryParse(input, out var choiceIdx))
+        {
+            printLine("Invalid input: Selection must be a valid number. Returning to executive menu.");
+            return;
+        }
+
+        var (cancelled, selectedCountry, error) = BilateralDiplomacyHandler.SelectTarget(choiceIdx, allCountries, playerCountry);
+        if (cancelled)
+        {
+            printLine("Diplomatic review concluded. Returning to executive menu.");
+            return;
+        }
+
+        if (selectedCountry == null)
+        {
+            printLine($"\n[REJECTED]: {error}");
+            printLine("Returning to executive menu.");
+            return;
+        }
+
+        printLine("--------------------------------------------------------------");
+        printLine($"Selected Target: {selectedCountry.Name} (ID: {selectedCountry.Id})");
+
+        var currentRelation = playerCountry.GetRelation(selectedCountry.Id);
+        if (currentRelation != null)
+        {
+            printLine($"Current Diplomatic Relation: {currentRelation}");
+            printLine($"Status: {currentRelation.Status} | Opened At: {currentRelation.OpenedBoundary}");
+        }
+        else
+        {
+            printLine("Current Diplomatic Relation: None (No diplomatic relation established)");
+        }
+        printLine("--------------------------------------------------------------");
+
+        printLine("Diplomatic Actions:");
+        printLine($" [1] Open Diplomatic Relation with {selectedCountry.Name}");
+        printLine(" [0] Cancel / Return to Executive Menu");
+        print("Select Action (1 to open, 0 to cancel) > ");
+
+        var actionInput = read()?.Trim();
+        if (actionInput != "1" && !string.Equals(actionInput, "y", StringComparison.OrdinalIgnoreCase) && !string.Equals(actionInput, "yes", StringComparison.OrdinalIgnoreCase))
+        {
+            printLine("Action cancelled. Returning to executive menu.");
+            return;
+        }
+
+        var outcome = BilateralDiplomacyHandler.OpenRelation(playerCountry, selectedCountry.Id, allCountries, currentTime);
+        if (outcome.Result == DiplomaticActionResult.Success)
+        {
+            printLine($"\n[DIPLOMATIC SUCCESS]: {outcome.Message}");
+            if (outcome.Relation != null)
+            {
+                printLine($"Standing: {outcome.Relation.Status} | Boundary: {outcome.Relation.OpenedBoundary}");
+            }
+        }
+        else
+        {
+            printLine($"\n[DIPLOMATIC REJECTION]: {outcome.Message}");
         }
 
         await Task.CompletedTask;
