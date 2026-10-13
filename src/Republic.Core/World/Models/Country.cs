@@ -7,6 +7,7 @@ using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
 using Republic.Core.Politics;
 using Republic.Core.Time;
+using Republic.Core.World;
 using Republic.Core.World.Rules;
 
 /// <summary>
@@ -660,10 +661,177 @@ public sealed class Country
         return TryHoldElection(clock.CurrentTime, out election);
     }
 
-
-
+    private readonly List<DiplomaticRelation> _relations = new();
 
     /// <summary>
+    /// Gets the most recent diplomatic relation opened by this sovereign country, or null if none exists.
+    /// </summary>
+    public DiplomaticRelation? Relation => _relations.LastOrDefault();
+
+    /// <summary>
+    /// Alias for <see cref="Relation"/>.
+    /// </summary>
+    [JsonIgnore]
+    public DiplomaticRelation? DiplomaticRelation => Relation;
+
+    /// <summary>
+    /// Alias for <see cref="Relation"/>.
+    /// </summary>
+    [JsonIgnore]
+    public DiplomaticRelation? LastRelation => Relation;
+
+    /// <summary>
+    /// Gets the read-only list of diplomatic relations opened by this sovereign country.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<DiplomaticRelation> Relations => _relations;
+
+    /// <summary>
+    /// Alias for <see cref="Relations"/>.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<DiplomaticRelation> DiplomaticRelations => _relations;
+
+    /// <summary>
+    /// Opens a diplomatic relation from this sovereign country to the specified target country.
+    /// Requires two different countries; a country cannot open a relation with itself.
+    /// A second relation between the same ordered pair is rejected.
+    /// The reverse pair is a different relation in this slice.
+    /// Returns the newly opened relation, or null if the request was rejected.
+    /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
+    /// </summary>
+    public DiplomaticRelation? OpenRelation(
+        string targetCountryId,
+        RepublicTime boundary,
+        DiplomaticRelationStatus status = DiplomaticRelationStatus.Unrecognized)
+    {
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return null;
+        }
+
+        var trimmedTargetId = targetCountryId.Trim();
+
+        // OpenRelation requires two different countries. A country cannot open a relation with itself.
+        if (string.Equals(trimmedTargetId, Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // A second relation between the same ordered pair is rejected.
+        if (_relations.Any(r => string.Equals(r.ToCountryId, trimmedTargetId, StringComparison.OrdinalIgnoreCase)))
+        {
+            return null;
+        }
+
+        var relation = new DiplomaticRelation(Id, trimmedTargetId, status, boundary);
+        _relations.Add(relation);
+        return relation;
+    }
+
+    /// <summary>
+    /// Opens a diplomatic relation from this sovereign country to the specified target country.
+    /// </summary>
+    public DiplomaticRelation? OpenRelation(
+        Country targetCountry,
+        RepublicTime boundary,
+        DiplomaticRelationStatus status = DiplomaticRelationStatus.Unrecognized)
+    {
+        if (targetCountry == null)
+        {
+            return null;
+        }
+
+        return OpenRelation(targetCountry.Id, boundary, status);
+    }
+
+    /// <summary>
+    /// Opens a diplomatic relation from this sovereign country to the target country using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticRelation? OpenRelation(
+        string targetCountryId,
+        IRepublicClock clock,
+        DiplomaticRelationStatus status = DiplomaticRelationStatus.Unrecognized)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return OpenRelation(targetCountryId, clock.CurrentTime, status);
+    }
+
+    /// <summary>
+    /// Opens a diplomatic relation from this sovereign country to the target country using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticRelation? OpenRelation(
+        Country targetCountry,
+        IRepublicClock clock,
+        DiplomaticRelationStatus status = DiplomaticRelationStatus.Unrecognized)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return OpenRelation(targetCountry, clock.CurrentTime, status);
+    }
+
+    /// <summary>
+    /// Attempts to open a diplomatic relation from this country to the specified target country.
+    /// </summary>
+    public bool TryOpenRelation(
+        string targetCountryId,
+        RepublicTime boundary,
+        out DiplomaticRelation? relation,
+        DiplomaticRelationStatus status = DiplomaticRelationStatus.Unrecognized)
+    {
+        relation = OpenRelation(targetCountryId, boundary, status);
+        return relation != null;
+    }
+
+    /// <summary>
+    /// Attempts to open a diplomatic relation from this country to the target country using an authoritative Republic clock.
+    /// </summary>
+    public bool TryOpenRelation(
+        string targetCountryId,
+        IRepublicClock clock,
+        out DiplomaticRelation? relation,
+        DiplomaticRelationStatus status = DiplomaticRelationStatus.Unrecognized)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return TryOpenRelation(targetCountryId, clock.CurrentTime, out relation, status);
+    }
+
+    /// <summary>
+    /// Attempts to open a diplomatic relation from this country to the target country using an authoritative Republic clock.
+    /// </summary>
+    public bool TryOpenRelation(
+        Country targetCountry,
+        IRepublicClock clock,
+        out DiplomaticRelation? relation,
+        DiplomaticRelationStatus status = DiplomaticRelationStatus.Unrecognized)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        if (targetCountry == null)
+        {
+            relation = null;
+            return false;
+        }
+
+        return TryOpenRelation(targetCountry.Id, clock.CurrentTime, out relation, status);
+    }
+
+    /// <summary>
+    /// Retrieves the diplomatic relation opened by this country toward the specified target country, if any.
+    /// </summary>
+    public DiplomaticRelation? GetRelation(string targetCountryId)
+    {
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return null;
+        }
+
+        return _relations.FirstOrDefault(r => string.Equals(r.ToCountryId, targetCountryId.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Checks whether this sovereign country has an opened diplomatic relation toward the specified target country.
+    /// </summary>
+    public bool HasRelation(string targetCountryId) => GetRelation(targetCountryId) != null;
+
     /// Gets or sets the national road development project record for this country.
     /// Backward-compatibility accessor backed authoritatively by <see cref="Projects"/>.
     /// </summary>
@@ -1420,7 +1588,8 @@ public sealed class Country
         PoliticalParty? oppositionParty = null,
         InterestGroup? interestGroup = null,
         CountryBill? bill = null,
-        CountryElection? election = null)
+        CountryElection? election = null,
+        DiplomaticRelation? relation = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -1453,6 +1622,11 @@ public sealed class Country
         if (election != null)
         {
             country._elections.Add(election);
+        }
+
+        if (relation != null)
+        {
+            country._relations.Add(relation);
         }
 
         if (profile != null)

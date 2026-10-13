@@ -23,6 +23,7 @@ using Republic.Core.NationalYield;
 using Republic.Core.Politics;
 using Republic.Core.Scenarios.Services;
 using Republic.Core.Time;
+using Republic.Core.World;
 using Republic.Core.World.Models;
 using Republic.Core.World.Rules;
 
@@ -242,6 +243,14 @@ public static class Program
         else
         {
             Console.WriteLine($" Election: {countryForDashboard.LastElection}");
+        }
+        if (countryForDashboard.Relation == null)
+        {
+            Console.WriteLine(" Relation: No relation");
+        }
+        else
+        {
+            Console.WriteLine($" Relation: {countryForDashboard.Relation}");
         }
         Console.WriteLine("--------------------------------------------------------------");
 
@@ -1058,6 +1067,19 @@ public static class Program
             else if (arg.Equals("--hold-election", StringComparison.OrdinalIgnoreCase) || arg.Equals("--election", StringComparison.OrdinalIgnoreCase))
             {
                 playerCountry.HoldElection(app.TimeSystem.CurrentRepublicTime);
+            }
+            else if (arg.Equals("--relation", StringComparison.OrdinalIgnoreCase) || arg.Equals("--open-relation", StringComparison.OrdinalIgnoreCase))
+            {
+                var otherCountry = app.WorldManager.Countries.GetAllCountries().FirstOrDefault(c => c.Id != playerCountry.Id);
+                if (otherCountry != null)
+                {
+                    playerCountry.OpenRelation(otherCountry.Id, app.TimeSystem.CurrentRepublicTime);
+                }
+            }
+            else if (arg.StartsWith("--relation=", StringComparison.OrdinalIgnoreCase))
+            {
+                var targetId = arg.Substring("--relation=".Length);
+                playerCountry.OpenRelation(targetId, app.TimeSystem.CurrentRepublicTime);
             }
         }
     }
