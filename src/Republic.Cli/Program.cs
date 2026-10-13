@@ -20,6 +20,7 @@ using Republic.Core.Legislature.Models;
 using Republic.Core.Legislature.Services;
 using Republic.Core.Military.Models;
 using Republic.Core.NationalYield;
+using Republic.Core.Politics;
 using Republic.Core.Scenarios.Services;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
@@ -217,6 +218,14 @@ public static class Program
         {
             Console.WriteLine($" Ruling: {countryForDashboard.RulingParty?.ToString() ?? "No party"}");
             Console.WriteLine($" Opposition: {countryForDashboard.OppositionParty?.ToString() ?? "No party"}");
+        }
+        if (countryForDashboard.InterestGroup == null)
+        {
+            Console.WriteLine(" Interest Group: No interest group");
+        }
+        else
+        {
+            Console.WriteLine($" Interest Group: {countryForDashboard.InterestGroup}");
         }
         Console.WriteLine("--------------------------------------------------------------");
 
@@ -1002,6 +1011,20 @@ public static class Program
             {
                 var val = arg.Substring("--opposition=".Length);
                 playerCountry.FoundParty(val, app.TimeSystem.CurrentRepublicTime);
+            }
+            else if ((arg.Equals("--interest-group", StringComparison.OrdinalIgnoreCase) || arg.Equals("--interestgroup", StringComparison.OrdinalIgnoreCase)) && i + 1 < args.Length)
+            {
+                playerCountry.FoundInterestGroup(args[i + 1], InterestGroupFocus.Labor);
+            }
+            else if (arg.StartsWith("--interest-group=", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = arg.Substring("--interest-group=".Length);
+                playerCountry.FoundInterestGroup(val, InterestGroupFocus.Labor);
+            }
+            else if (arg.StartsWith("--interestgroup=", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = arg.Substring("--interestgroup=".Length);
+                playerCountry.FoundInterestGroup(val, InterestGroupFocus.Labor);
             }
         }
     }

@@ -325,6 +325,52 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Gets or sets the sovereign interest group founded in this country, or null if none exists.
+    /// In this slice, a country can have at most one interest group.
+    /// </summary>
+    public InterestGroup? InterestGroup { get; set; }
+
+    /// <summary>
+    /// Gets the list of active interest groups in this sovereign country (up to one in this slice).
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<InterestGroup> InterestGroups => InterestGroup != null ? [InterestGroup] : [];
+
+    /// <summary>
+    /// Founds a sovereign interest group for this country.
+    /// In this slice, a country can have at most one interest group. A second founding is rejected and returns null.
+    /// Names must be trimmed and non-empty. Empty or whitespace-only names are rejected and return null.
+    /// Grounded strictly in deterministic simulation rules; never calls DateTime.Now.
+    /// </summary>
+    public InterestGroup? FoundInterestGroup(string? name, InterestGroupFocus focus, double influence = InterestGroup.InitialInfluence)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        if (InterestGroup != null)
+        {
+            return null;
+        }
+
+        var trimmedName = name.Trim();
+        var group = new InterestGroup(trimmedName, Id, focus, influence);
+        InterestGroup = group;
+        return group;
+    }
+
+    /// <summary>
+    /// Attempts to found an interest group for this country, returning true on success.
+    /// </summary>
+    public bool TryFoundInterestGroup(string? name, InterestGroupFocus focus, out InterestGroup? group, double influence = InterestGroup.InitialInfluence)
+    {
+        group = FoundInterestGroup(name, focus, influence);
+        return group != null;
+    }
+
+
+    /// <summary>
     /// Gets or sets the national road development project record for this country.
     /// Backward-compatibility accessor backed authoritatively by <see cref="Projects"/>.
     /// </summary>
@@ -1078,7 +1124,8 @@ public sealed class Country
         NationalYieldSnapshot? latestYieldSnapshot = null,
         TreasuryConsequence? latestTreasuryConsequence = null,
         PoliticalParty? party = null,
-        PoliticalParty? oppositionParty = null)
+        PoliticalParty? oppositionParty = null,
+        InterestGroup? interestGroup = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -1103,7 +1150,8 @@ public sealed class Country
             LatestYieldSnapshot = latestYieldSnapshot,
             LatestTreasuryConsequence = latestTreasuryConsequence,
             Party = party,
-            OppositionParty = oppositionParty
+            OppositionParty = oppositionParty,
+            InterestGroup = interestGroup
         };
 
         if (profile != null)
