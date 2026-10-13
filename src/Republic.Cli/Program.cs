@@ -227,6 +227,14 @@ public static class Program
         {
             Console.WriteLine($" Interest Group: {countryForDashboard.InterestGroup}");
         }
+        if (countryForDashboard.Bill == null)
+        {
+            Console.WriteLine(" Bill: No bill");
+        }
+        else
+        {
+            Console.WriteLine($" Bill: {countryForDashboard.Bill}");
+        }
         Console.WriteLine("--------------------------------------------------------------");
 
         var emails = app.WorkspaceManager.Email.GetInbox();
@@ -1025,6 +1033,19 @@ public static class Program
             {
                 var val = arg.Substring("--interestgroup=".Length);
                 playerCountry.FoundInterestGroup(val, InterestGroupFocus.Labor);
+            }
+            else if (arg.Equals("--bill", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                playerCountry.ProposeBill(args[i + 1]);
+            }
+            else if (arg.StartsWith("--bill=", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = arg.Substring("--bill=".Length);
+                playerCountry.ProposeBill(val);
+            }
+            else if (arg.Equals("--vote-bill", StringComparison.OrdinalIgnoreCase))
+            {
+                playerCountry.VoteBill(app.TimeSystem.CurrentRepublicTime);
             }
         }
     }

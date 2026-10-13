@@ -369,6 +369,203 @@ public sealed class Country
         return group != null;
     }
 
+    private readonly List<CountryBill> _bills = new();
+
+    /// <summary>
+    /// Gets or sets the primary or most recent legislative bill proposed in this country, or null if none exists.
+    /// </summary>
+    public CountryBill? Bill
+    {
+        get => _bills.LastOrDefault();
+        set
+        {
+            if (value == null)
+            {
+                _bills.Clear();
+            }
+            else
+            {
+                var idx = _bills.FindIndex(b => b.Title.Equals(value.Title, StringComparison.OrdinalIgnoreCase));
+                if (idx >= 0)
+                {
+                    _bills[idx] = value;
+                }
+                else
+                {
+                    _bills.Add(value);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Alias for <see cref="Bill"/>.
+    /// </summary>
+    [JsonIgnore]
+    public CountryBill? CountryBill
+    {
+        get => Bill;
+        set => Bill = value;
+    }
+
+    /// <summary>
+    /// Gets the bill currently pending a legislative vote in this country, or null if none is pending.
+    /// In this slice, a country can have at most one pending bill.
+    /// </summary>
+    [JsonIgnore]
+    public CountryBill? PendingBill => _bills.FirstOrDefault(b => b.Status == CountryBillStatus.Pending);
+
+    /// <summary>
+    /// Gets the list of legislative bills proposed in this sovereign country.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<CountryBill> Bills => _bills;
+
+    /// <summary>
+    /// Proposes a new legislative bill for this country.
+    /// In this slice, a country can have at most one pending bill. A second pending bill is rejected and returns null.
+    /// Titles must be trimmed and non-empty. Empty or whitespace-only titles are rejected and return null.
+    /// Grounded strictly in deterministic simulation rules; never calls DateTime.Now.
+    /// </summary>
+    public CountryBill? ProposeBill(string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return null;
+        }
+
+        if (PendingBill != null)
+        {
+            return null;
+        }
+
+        var trimmedTitle = title.Trim();
+        var bill = new CountryBill(trimmedTitle, Id, CountryBillStatus.Pending, null);
+        _bills.Add(bill);
+        return bill;
+    }
+
+    /// <summary>
+    /// Attempts to propose a new legislative bill for this country, returning true on success.
+    /// </summary>
+    public bool TryProposeBill(string? title, out CountryBill? bill)
+    {
+        bill = ProposeBill(title);
+        return bill != null;
+    }
+
+    /// <summary>
+    /// Conducts a legislative vote on the specified bill at the authoritative Republic simulation clock boundary.
+    /// A vote requires an active ruling party. Without one, the vote is rejected and the bill remains Pending.
+    /// If the ruling party exists, the bill passes. Voting the same bill twice does nothing and does not alter the boundary.
+    /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
+    /// </summary>
+    public CountryBill? VoteBill(CountryBill bill, RepublicTime votedBoundary)
+    {
+        if (bill == null)
+        {
+            return null;
+        }
+
+        // Country isolation: cannot vote on another country's bill
+        if (!string.Equals(bill.CountryId, Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // Voting the same bill twice does nothing; preserves existing status and voted boundary
+        if (bill.Status != CountryBillStatus.Pending)
+        {
+            return bill;
+        }
+
+        // Vote requires a ruling party. Without one, the vote is rejected and the bill stays Pending.
+        if (RulingParty == null)
+        {
+            return bill;
+        }
+
+        // If the ruling party exists, the bill passes
+        var passedBill = bill with
+        {
+            Status = CountryBillStatus.Passed,
+            VotedBoundary = votedBoundary
+        };
+
+        var index = _bills.FindIndex(b => b.Title.Equals(bill.Title, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+        {
+            _bills[index] = passedBill;
+        }
+        else
+        {
+            _bills.Add(passedBill);
+        }
+
+        return passedBill;
+    }
+
+    /// <summary>
+    /// Conducts a legislative vote on the currently pending bill (or latest bill) at the authoritative Republic clock boundary.
+    /// </summary>
+    public CountryBill? VoteBill(RepublicTime votedBoundary)
+    {
+        var targetBill = PendingBill ?? Bill;
+        if (targetBill == null)
+        {
+            return null;
+        }
+
+        return VoteBill(targetBill, votedBoundary);
+    }
+
+    /// <summary>
+    /// Conducts a legislative vote on the currently pending bill using an authoritative Republic clock.
+    /// </summary>
+    public CountryBill? VoteBill(IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return VoteBill(clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Conducts a legislative vote on the specified bill using an authoritative Republic clock.
+    /// </summary>
+    public CountryBill? VoteBill(CountryBill bill, IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return VoteBill(bill, clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Conducts a legislative vote on the bill identified by title at the authoritative clock boundary.
+    /// </summary>
+    public CountryBill? VoteBill(string title, RepublicTime votedBoundary)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return null;
+        }
+
+        var bill = _bills.FirstOrDefault(b => b.Title.Equals(title.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (bill == null)
+        {
+            return null;
+        }
+
+        return VoteBill(bill, votedBoundary);
+    }
+
+    /// <summary>
+    /// Conducts a legislative vote on the bill identified by title using an authoritative Republic clock.
+    /// </summary>
+    public CountryBill? VoteBill(string title, IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return VoteBill(title, clock.CurrentTime);
+    }
+
+
 
     /// <summary>
     /// Gets or sets the national road development project record for this country.
@@ -1125,7 +1322,8 @@ public sealed class Country
         TreasuryConsequence? latestTreasuryConsequence = null,
         PoliticalParty? party = null,
         PoliticalParty? oppositionParty = null,
-        InterestGroup? interestGroup = null)
+        InterestGroup? interestGroup = null,
+        CountryBill? bill = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -1151,7 +1349,8 @@ public sealed class Country
             LatestTreasuryConsequence = latestTreasuryConsequence,
             Party = party,
             OppositionParty = oppositionParty,
-            InterestGroup = interestGroup
+            InterestGroup = interestGroup,
+            Bill = bill
         };
 
         if (profile != null)
