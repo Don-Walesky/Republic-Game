@@ -49,6 +49,14 @@ public sealed class ResourceService : IResourceService
         }
     }
 
+    public IReadOnlyList<ResourceNode> GetNodesForCountry(string countryId)
+    {
+        lock (_lock)
+        {
+            return _nodes.Where(n => n.IsAssociatedWith(countryId)).ToList().AsReadOnly();
+        }
+    }
+
     public IReadOnlyList<ResourceNode> GetAllNodes()
     {
         lock (_lock)

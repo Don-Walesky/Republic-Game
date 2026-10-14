@@ -58,14 +58,14 @@ public sealed record BilateralTradeTerms
             throw new ArgumentException("Seller and buyer cannot be the same sovereign country. Internal self-trade is prohibited.", nameof(buyerCountryId));
         }
 
-        if (quantity <= 0.0)
+        if (!double.IsFinite(quantity) || quantity <= 0.0)
         {
-            throw new ArgumentOutOfRangeException(nameof(quantity), "Traded quantity must be strictly greater than zero.");
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Traded quantity must be a finite number strictly greater than zero.");
         }
 
-        if (price <= 0.0)
+        if (!double.IsFinite(price) || price <= 0.0)
         {
-            throw new ArgumentOutOfRangeException(nameof(price), "Agreed trade price must be strictly greater than zero.");
+            throw new ArgumentOutOfRangeException(nameof(price), "Agreed trade price must be a finite number strictly greater than zero.");
         }
 
         SellerCountryId = sellerCountryId.Trim();

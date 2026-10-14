@@ -84,9 +84,9 @@ public sealed class RepuTreasury
         get => _balance;
         init
         {
-            if (value < 0.0)
+            if (!double.IsFinite(value) || value < 0.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), "Treasury balance cannot be initialized to a negative amount.");
+                throw new ArgumentOutOfRangeException(nameof(value), "Treasury balance must be a finite non-negative amount.");
             }
             _balance = value;
         }
@@ -107,9 +107,9 @@ public sealed class RepuTreasury
     /// <param name="countryId">The owning country identifier.</param>
     public RepuTreasury(double initialBalance, string countryId = "")
     {
-        if (initialBalance < 0.0)
+        if (!double.IsFinite(initialBalance) || initialBalance < 0.0)
         {
-            throw new ArgumentOutOfRangeException(nameof(initialBalance), "Initial treasury balance cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(initialBalance), "Initial treasury balance must be a finite non-negative amount.");
         }
         _balance = initialBalance;
         CountryId = countryId;
@@ -121,9 +121,9 @@ public sealed class RepuTreasury
     /// <param name="amount">The non-negative revenue amount to deposit.</param>
     public void Deposit(double amount)
     {
-        if (amount < 0.0)
+        if (!double.IsFinite(amount) || amount < 0.0)
         {
-            throw new ArgumentOutOfRangeException(nameof(amount), "Deposit amount cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(amount), "Deposit amount must be a finite non-negative amount.");
         }
 
         if (amount == 0.0)
@@ -141,9 +141,9 @@ public sealed class RepuTreasury
     /// <param name="amount">The non-negative amount to spend.</param>
     public void Withdraw(double amount)
     {
-        if (amount < 0.0)
+        if (!double.IsFinite(amount) || amount < 0.0)
         {
-            throw new ArgumentOutOfRangeException(nameof(amount), "Withdrawal amount cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(amount), "Withdrawal amount must be a finite non-negative amount.");
         }
 
         if (amount > _balance)
@@ -163,7 +163,7 @@ public sealed class RepuTreasury
     /// <returns>True if the transaction succeeded; otherwise, false.</returns>
     public bool TryWithdraw(double amount)
     {
-        if (amount < 0.0 || amount > _balance)
+        if (!double.IsFinite(amount) || amount < 0.0 || amount > _balance)
         {
             return false;
         }

@@ -145,7 +145,7 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
             inventory.Add(profile.PrimaryResource, 1_000.0);
         }
 
-        return Country.Found(
+        var country = Country.Found(
             name: profile.OfficialName,
             foundingTime: foundingTime,
             id: countryId,
@@ -154,5 +154,23 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
             treasury: new RepuTreasury(startingTreasury, countryId),
             profile: profile,
             inventory: inventory);
+
+        if (!string.IsNullOrWhiteSpace(profile.PrimaryResource) && profile.PrimaryResource != CountryProfile.DefaultUnspecified)
+        {
+            var primaryNode = new ResourceNode
+            {
+                Id = $"node-{countryId}-primary",
+                Name = $"{profile.OfficialName} {profile.PrimaryResource} Reserve",
+                ResourceType = profile.PrimaryResource,
+                Abundance = 25000.0,
+                ExtractionRate = ResourceNode.DefaultProductionRate,
+                IsRenewable = false,
+                CountryId = countryId,
+                IsActive = true
+            };
+            country.AssociateResourceNode(primaryNode);
+        }
+
+        return country;
     }
 }

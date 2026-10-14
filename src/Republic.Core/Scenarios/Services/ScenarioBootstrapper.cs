@@ -126,6 +126,19 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
         playerCountry.Inventory.Add("Iron", 2000.0);
         playerCountry.Inventory.Add("Petroleum", 1000.0);
 
+        var playerIronNode = new ResourceNode
+        {
+            Id = "node-player-iron",
+            Name = "Arcadia Iron Basin",
+            ResourceType = "Iron",
+            Abundance = 50000.0,
+            ExtractionRate = ResourceNode.DefaultProductionRate,
+            CountryId = playerCountry.Id,
+            IsActive = true
+        };
+        _worldManager.Resources.RegisterNode(playerIronNode);
+        playerCountry.AssociateResourceNode(playerIronNode);
+
         // Register neighbors
         var neighborIndex = 0;
         var neighborResourceTypes = new[] { "Timber", "Copper", "Bauxite", "Natural Gas", "Gold" };
@@ -141,12 +154,26 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
             var resB = neighborResourceTypes[(neighborIndex + 1) % neighborResourceTypes.Length];
             neighborCountry.Inventory.Add(resA, 2500.0);
             neighborCountry.Inventory.Add(resB, 1500.0);
+
+            var neighborNode = new ResourceNode
+            {
+                Id = $"node-neighbor-{neighborIndex}",
+                Name = $"{neighbor} {resA} Reserves",
+                ResourceType = resA,
+                Abundance = 30000.0,
+                ExtractionRate = ResourceNode.DefaultProductionRate,
+                CountryId = neighborCountry.Id,
+                IsActive = true
+            };
+            _worldManager.Resources.RegisterNode(neighborNode);
+            neighborCountry.AssociateResourceNode(neighborNode);
+
             neighborIndex++;
 
             _worldManager.Countries.RegisterCountry(neighborCountry);
         }
 
-        // Register resource nodes
+        // Register additional resource nodes from preset
         foreach (var node in preset.PrimaryResourceNodes)
         {
             _worldManager.Resources.RegisterNode(new ResourceNode

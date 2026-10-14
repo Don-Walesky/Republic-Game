@@ -45,7 +45,7 @@ public sealed class ResourceInventory
 
         foreach (var (resourceType, quantity) in initialStockpiles)
         {
-            if (!string.IsNullOrWhiteSpace(resourceType) && quantity > 0.0)
+            if (!string.IsNullOrWhiteSpace(resourceType) && double.IsFinite(quantity) && quantity > 0.0)
             {
                 _stockpiles[resourceType.Trim()] = quantity;
             }
@@ -74,7 +74,7 @@ public sealed class ResourceInventory
     /// </summary>
     public bool HasSufficient(string resourceType, double quantity)
     {
-        if (string.IsNullOrWhiteSpace(resourceType) || quantity < 0.0)
+        if (string.IsNullOrWhiteSpace(resourceType) || !double.IsFinite(quantity) || quantity < 0.0)
         {
             return false;
         }
@@ -94,9 +94,9 @@ public sealed class ResourceInventory
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(resourceType);
 
-        if (quantity < 0.0)
+        if (!double.IsFinite(quantity) || quantity < 0.0)
         {
-            throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to add cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to add must be a finite non-negative number.");
         }
 
         if (quantity == 0.0)
@@ -120,9 +120,9 @@ public sealed class ResourceInventory
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(resourceType);
 
-        if (quantity < 0.0)
+        if (!double.IsFinite(quantity) || quantity < 0.0)
         {
-            throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to remove cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to remove must be a finite non-negative number.");
         }
 
         if (quantity == 0.0)
@@ -150,7 +150,7 @@ public sealed class ResourceInventory
     /// </summary>
     public bool TryRemove(string resourceType, double quantity)
     {
-        if (string.IsNullOrWhiteSpace(resourceType) || quantity < 0.0)
+        if (string.IsNullOrWhiteSpace(resourceType) || !double.IsFinite(quantity) || quantity < 0.0)
         {
             return false;
         }

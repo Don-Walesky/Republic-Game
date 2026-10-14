@@ -122,6 +122,76 @@ public sealed class Country
     public void AddResource(string resourceType, double quantity) => Inventory.Add(resourceType, quantity);
 
     /// <summary>
+    /// Gets the list of domestic resource nodes associated with this sovereign country.
+    /// Each sovereign country owns an independent, isolated list.
+    /// </summary>
+    public List<ResourceNode> ResourceNodes { get; init; } = new();
+
+    /// <summary>
+    /// Associates a domestic resource node with this sovereign country.
+    /// Ensures the node's country ownership points to this country.
+    /// </summary>
+    public void AssociateResourceNode(ResourceNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        if (string.IsNullOrWhiteSpace(node.CountryId))
+        {
+            node.CountryId = Id;
+        }
+        if (!ResourceNodes.Any(n => n.Id == node.Id))
+        {
+            ResourceNodes.Add(node);
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the authoritative Republic simulation timestamp of the most recently credited
+    /// six-hour domestic resource production cycle boundary for this sovereign country.
+    /// Null if no production cycle has been credited yet.
+    /// </summary>
+    public RepublicTime? LastResourceProductionBoundary { get; set; }
+
+    private readonly HashSet<string> _appliedProductionBoundaries = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Determines whether the specified cycle boundary has already had domestic production credited.
+    /// </summary>
+    public bool HasAppliedProductionBoundary(string boundaryId)
+    {
+        if (string.IsNullOrWhiteSpace(boundaryId))
+        {
+            return false;
+        }
+
+        lock (_appliedProductionBoundaries)
+        {
+            return _appliedProductionBoundaries.Contains(boundaryId);
+        }
+    }
+
+    /// <summary>
+    /// Records that the specified cycle boundary has had domestic production credited.
+    /// </summary>
+    public bool RecordProductionBoundaryApplied(string boundaryId)
+    {
+        if (string.IsNullOrWhiteSpace(boundaryId))
+        {
+            return false;
+        }
+
+        lock (_appliedProductionBoundaries)
+        {
+            return _appliedProductionBoundaries.Add(boundaryId);
+        }
+    }
+
+    /// <summary>
+    /// Executes domestic resource production from the specified associated resource node for an authoritative six-hour cycle boundary.
+    /// </summary>
+    public ResourceProductionResult ProduceResource(ResourceNode node, RepublicTime boundary) =>
+        new Republic.Core.World.Services.ResourceProductionService().Produce(this, node, boundary);
+
+    /// <summary>
     /// Gets or sets the authoritative Republic simulation timestamp of the most recently credited
     /// six-hour National Yield cycle boundary for this sovereign country.
     /// Null if no cycle boundary has been credited yet.
@@ -2214,7 +2284,8 @@ public sealed class Country
         DiplomaticRelation? relation = null,
         DiplomaticAgreement? agreement = null,
         IEnumerable<DiplomaticAgreement>? agreements = null,
-        ResourceInventory? inventory = null)
+        ResourceInventory? inventory = null,
+        IEnumerable<ResourceNode>? resourceNodes = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -2274,6 +2345,14 @@ public sealed class Country
         if (profile != null)
         {
             country.Profile = profile;
+        }
+
+        if (resourceNodes != null)
+        {
+            foreach (var node in resourceNodes)
+            {
+                country.AssociateResourceNode(node);
+            }
         }
 
         if (roadProject != null)

@@ -183,6 +183,13 @@ public static class Program
         }
 
         var countryForDashboard = playerCountry ?? Country.Found("Republic of Arcadia", currentRepuTime);
+        var activeNodesDesc = countryForDashboard.ResourceNodes.Count > 0
+            ? string.Join(", ", countryForDashboard.ResourceNodes.Select(n => $"{n.ResourceType} ({(n.IsActive ? "Active" : "Inactive")})"))
+            : "None";
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($" Stockpiles: {countryForDashboard.Inventory.FormattedStockpiles} | Domestic Nodes: {activeNodesDesc}");
+        Console.ResetColor();
+
         var dashboard = countryForDashboard.GetDashboard(currentRepuTime);
 
         Console.ForegroundColor = ConsoleColor.White;
@@ -496,13 +503,38 @@ public static class Program
     private static async Task AdvanceTimeAsync(RepublicApplication app)
     {
         Console.WriteLine("Advancing time by 10 simulation frames...");
-        await app.Engine.RunAsync(10, TimeSpan.FromSeconds(0.1));
         var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+        var beforeStockpiles = playerCountry?.Inventory.FormattedStockpiles ?? "None";
+
+        await app.Engine.RunAsync(10, TimeSpan.FromSeconds(0.1));
+
         if (playerCountry != null)
         {
             var cycleService = new NationalYieldCycleService();
             cycleService.ExecuteDueCycles(playerCountry, app.TimeSystem.CurrentRepublicTime);
+
+            var prodService = new Republic.Core.World.Services.ResourceProductionService();
+            var prodResults = prodService.ProduceDueCycles(playerCountry, app.TimeSystem.CurrentRepublicTime);
+
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("=== DOMESTIC RESOURCE PRODUCTION REPORT ===");
+            Console.WriteLine($" Stockpiles Before: {beforeStockpiles}");
+            if (prodResults.Count > 0)
+            {
+                foreach (var r in prodResults)
+                {
+                    Console.WriteLine($"  - [Cycle {r.Boundary}]: {r.Message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("  No production cycles due or no active domestic nodes.");
+            }
+            Console.WriteLine($" Stockpiles After:  {playerCountry.Inventory.FormattedStockpiles}");
+            Console.ResetColor();
         }
+
         Console.WriteLine($"Advanced to Tick {app.TimeSystem.CurrentTick}. Press Enter to continue...");
         Console.ReadLine();
     }
