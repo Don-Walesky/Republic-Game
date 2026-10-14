@@ -10,6 +10,7 @@ using Republic.Core.World;
 using Republic.Core.World.Models;
 using Republic.Core.World.Rules;
 using Republic.Core.Economy.Treasury;
+using Republic.Core.Time;
 using Republic.Core.Workspace.Models;
 using Republic.Core.Workspace.Services;
 
@@ -23,6 +24,7 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
     private readonly ICabinetService _cabinetService;
     private readonly ILegislatureService _legislatureService;
     private readonly ILogger? _logger;
+    private readonly IRepublicClock _clock;
 
     private readonly List<ScenarioPreset> _presets = new()
     {
@@ -82,13 +84,15 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
         ICabinetService cabinetService,
         ILegislatureService legislatureService,
         ILogger? logger = null,
-        IEnumerable<ScenarioPreset>? customPresets = null)
+        IEnumerable<ScenarioPreset>? customPresets = null,
+        IRepublicClock? clock = null)
     {
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
         _workspaceManager = workspaceManager ?? throw new ArgumentNullException(nameof(workspaceManager));
         _cabinetService = cabinetService ?? throw new ArgumentNullException(nameof(cabinetService));
         _legislatureService = legislatureService ?? throw new ArgumentNullException(nameof(legislatureService));
         _logger = logger;
+        _clock = clock ?? new RepublicClock(new RepublicClockConfiguration());
         if (customPresets != null)
         {
             _presets.AddRange(customPresets);

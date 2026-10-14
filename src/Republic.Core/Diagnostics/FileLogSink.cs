@@ -6,7 +6,7 @@ namespace Republic.Core.Diagnostics;
 public sealed class FileLogSink : ILogSink
 {
     private readonly string _path;
-    private readonly object _syncRoot = new();
+    private static readonly object _syncRoot = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FileLogSink"/> class.

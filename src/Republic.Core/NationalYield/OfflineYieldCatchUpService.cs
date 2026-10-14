@@ -72,6 +72,9 @@ public sealed class OfflineYieldCatchUpService : IOfflineYieldCatchUpService
         // 9. Complete active National Road Program if return time has reached or passed its finish boundary
         var roadCompleted = country.CheckRoadProjectCompletion(returnTime);
 
+        // 10. Complete any active capital development projects whose finish boundary has been reached
+        var projectsCompletedCount = country.CheckProjectsCompletion(returnTime);
+
         return new OfflineYieldBriefing
         {
             CountryId = country.Id,
@@ -82,7 +85,8 @@ public sealed class OfflineYieldCatchUpService : IOfflineYieldCatchUpService
             RemainingBoundaries = remainingBoundaries,
             NextDueBoundary = nextDue,
             ActiveFoundingBuffs = activeBuffs,
-            RoadProgramCompleted = roadCompleted
+            RoadProgramCompleted = roadCompleted,
+            ProjectsCompletedCount = projectsCompletedCount
         };
     }
 
