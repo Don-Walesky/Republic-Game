@@ -131,7 +131,14 @@ public sealed class RepuTreasury
             return;
         }
 
-        _balance += amount;
+        var updated = _balance + amount;
+        if (!double.IsFinite(updated) || updated < 0.0)
+        {
+            throw new OverflowException(
+                $"Depositing {amount} REPU to existing balance of {_balance} causes numerical overflow.");
+        }
+
+        _balance = updated;
     }
 
     /// <summary>

@@ -108,7 +108,13 @@ public sealed class ResourceInventory
         lock (_lock)
         {
             var current = _stockpiles.TryGetValue(key, out var q) ? q : 0.0;
-            _stockpiles[key] = current + quantity;
+            var updated = current + quantity;
+            if (!double.IsFinite(updated) || updated < 0.0)
+            {
+                throw new OverflowException(
+                    $"Adding {quantity} units of '{key}' to existing stockpile of {current} causes numerical overflow.");
+            }
+            _stockpiles[key] = updated;
         }
     }
 

@@ -807,4 +807,137 @@ public sealed class DomesticResourceProductionTests
         Assert.True(result.Success);
         Assert.Equal(50.0, arcadia.Inventory.GetQuantity("Clay"));
     }
+
+    [Fact]
+    public void ProduceDueCycles_DepletedNode_DoesNotRepeatedlyRetryHistoricalBoundaries()
+    {
+        var launchTime = CreateBoundaryTime(day: 0, hour: 0);
+        var time1 = CreateBoundaryTime(day: 0, hour: 18); // 3 due boundaries: 06:00, 12:00, 18:00
+        var time2 = CreateBoundaryTime(day: 1, hour: 0);  // 1 more due boundary: Day 1 00:00
+        var (arcadia, _, _) = SetupTestCountries(launchTime);
+
+        var exhaustedNode = new ResourceNode
+        {
+            Id = "node-exhausted-coal",
+            ResourceType = "Coal",
+            Abundance = 0.0, // Permanently depleted non-renewable reserve
+            ExtractionRate = 50.0,
+            IsRenewable = false,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+        arcadia.AssociateResourceNode(exhaustedNode);
+
+        var service = new ResourceProductionService();
+
+        // 1. Initial catch-up processes all 3 due boundaries as depleted failures
+        var firstRunResults = service.ProduceDueCycles(arcadia, exhaustedNode, time1);
+        Assert.Equal(3, firstRunResults.Count);
+        Assert.All(firstRunResults, r =>
+        {
+            Assert.False(r.Success);
+            Assert.Equal(0.0, r.QuantityProduced);
+            Assert.Contains("depleted", r.Message, StringComparison.OrdinalIgnoreCase);
+        });
+        Assert.Equal(time1, exhaustedNode.LastProductionBoundary);
+        Assert.Equal(0.0, arcadia.Inventory.GetQuantity("Coal"));
+        Assert.Equal(0.0, exhaustedNode.Abundance);
+
+        // 2. Repeated catch-up call at the same time must not retry any past cycles
+        var repeatedRunResults = service.ProduceDueCycles(arcadia, exhaustedNode, time1);
+        Assert.Empty(repeatedRunResults);
+        Assert.Equal(0.0, arcadia.Inventory.GetQuantity("Coal"));
+        Assert.Equal(0.0, exhaustedNode.Abundance);
+
+        // 3. Advancing by 1 more cycle evaluates ONLY the single new cycle, NOT the previous 3
+        var nextCycleResults = service.ProduceDueCycles(arcadia, exhaustedNode, time2);
+        Assert.Single(nextCycleResults);
+        Assert.False(nextCycleResults[0].Success);
+        Assert.Equal(time2, nextCycleResults[0].Boundary);
+        Assert.Contains("depleted", nextCycleResults[0].Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(time2, exhaustedNode.LastProductionBoundary);
+        Assert.Equal(0.0, arcadia.Inventory.GetQuantity("Coal"));
+        Assert.Equal(0.0, exhaustedNode.Abundance);
+    }
+
+    [Fact]
+    public void ResourceInventory_NumericOverflow_ThrowsOverflowExceptionWithoutCorruptingState()
+    {
+        var inventory = new ResourceInventory();
+        inventory.Add("Iron", double.MaxValue);
+
+        // Adding double.MaxValue to existing double.MaxValue overflows to PositiveInfinity
+        Assert.Throws<OverflowException>(() => inventory.Add("Iron", double.MaxValue));
+
+        // Existing stockpile must remain exactly double.MaxValue
+        Assert.Equal(double.MaxValue, inventory.GetQuantity("Iron"));
+    }
+
+    [Fact]
+    public void RepuTreasury_NumericOverflow_ThrowsOverflowExceptionWithoutCorruptingState()
+    {
+        var treasury = new RepuTreasury(double.MaxValue, "country-test");
+
+        // Depositing double.MaxValue to existing double.MaxValue overflows to PositiveInfinity
+        Assert.Throws<OverflowException>(() => treasury.Deposit(double.MaxValue));
+
+        // Existing balance must remain exactly double.MaxValue
+        Assert.Equal(double.MaxValue, treasury.Balance);
+    }
+
+    [Fact]
+    public void Produce_PotentialStockpileOverflow_ReturnsFailureWithoutModifyingAbundanceOrInventory()
+    {
+        var time = CreateBoundaryTime(day: 1, hour: 6);
+        var (arcadia, _, _) = SetupTestCountries(time);
+
+        // Pre-fill inventory with MaxValue
+        arcadia.Inventory.Add("Iron", double.MaxValue);
+
+        var ironNode = new ResourceNode
+        {
+            Id = "node-arcadia-iron-overflow",
+            ResourceType = "Iron",
+            Abundance = double.MaxValue,
+            ExtractionRate = double.MaxValue,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+        arcadia.AssociateResourceNode(ironNode);
+
+        var service = new ResourceProductionService();
+        var result = service.Produce(arcadia, ironNode, time);
+
+        Assert.False(result.Success);
+        Assert.Equal(0.0, result.QuantityProduced);
+        Assert.Contains("overflow", result.Message, StringComparison.OrdinalIgnoreCase);
+
+        // Abundance must remain completely unmodified
+        Assert.Equal(double.MaxValue, ironNode.Abundance);
+        Assert.Null(ironNode.LastProductionBoundary);
+        Assert.Equal(double.MaxValue, arcadia.Inventory.GetQuantity("Iron"));
+    }
+
+    [Fact]
+    public void Produce_InvalidCountryOrNodeIds_ReturnsFailureSafely()
+    {
+        var time = CreateBoundaryTime(day: 1, hour: 6);
+        var (arcadia, _, _) = SetupTestCountries(time);
+
+        var service = new ResourceProductionService();
+
+        // 1. Invalid country ID
+        var invalidCountry = new Country { Id = "   " };
+        var node = new ResourceNode { Id = "node-valid", CountryId = "country-test", IsActive = true };
+        var countryIdResult = service.Produce(invalidCountry, node, time);
+        Assert.False(countryIdResult.Success);
+        Assert.Contains("invalid", countryIdResult.Message, StringComparison.OrdinalIgnoreCase);
+
+        // 2. Invalid node ID
+        var invalidNode = new ResourceNode { Id = "   ", CountryId = arcadia.Id, IsActive = true };
+        arcadia.ResourceNodes.Add(invalidNode);
+        var nodeIdResult = service.Produce(arcadia, invalidNode, time);
+        Assert.False(nodeIdResult.Success);
+        Assert.Contains("invalid", nodeIdResult.Message, StringComparison.OrdinalIgnoreCase);
+    }
 }

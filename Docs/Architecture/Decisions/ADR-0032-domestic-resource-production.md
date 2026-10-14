@@ -65,21 +65,34 @@ To establish sustainable national economies without introducing premature extrac
      - Automatically executes due domestic production cycles when time advances.
      - Prints a clear before-and-after stockpile comparison and cycle extraction log.
 
-7. **Phase 9.1 Reliability Enhancements (Multi-Node Tracking & Strict Ownership)**:
+7. **Phase 9.1 Reliability Enhancements & Edge Case Hardening**:
    - **Per-Node Cycle Tracking**:
-     - Added `LastProductionBoundary` to [`ResourceNode`](../../../src/Republic.Core/World/Models/ResourceNode.cs). Each node independently tracks its most recently credited six-hour boundary, decoupling node extraction from the shared country-level boundary.
+     - Added `LastProductionBoundary` to [`ResourceNode`](../../../src/Republic.Core/World/Models/ResourceNode.cs). Each node independently tracks its most recently credited or processed six-hour boundary, decoupling node extraction from the shared country-level boundary.
      - `ProduceDueCycles` evaluates due cycle boundaries independently per node starting from `node.LastProductionBoundary ?? (country.IsFounded ? country.FoundingTime : null)`.
      - Depleted or inactive nodes process without blocking or skipping other eligible domestic nodes.
      - Repeated catch-up calls safely yield zero duplicate extractions.
+   - **Depleted Node Processing vs. Resource Crediting**:
+     - Explicitly distinguishes between *processing a cycle boundary* and *crediting physical goods*:
+       - When an active, eligible non-renewable node has zero abundance (`node.Abundance <= 0.0`), extraction yields 0 goods (`Failure`).
+       - However, the boundary is recorded as processed on the node (`node.LastProductionBoundary = boundary`).
+       - This ensures subsequent offline catch-up evaluations do not repeatedly re-query and retry ancient exhausted boundaries forever.
+       - A depleted node records no goods credited in `country._appliedProductionBoundaries`, maintaining accurate semantics for duplicate checks.
    - **Strict Resource Ownership Enforcement**:
      - Updated `Country.AssociateResourceNode(ResourceNode node)` to return `bool` and explicitly reject nodes already owned by another sovereign country (`node.CountryId != country.Id`), preserving legitimate unassigned-node association (`string.IsNullOrWhiteSpace(node.CountryId)`).
      - Hardened `ResourceProductionService.Produce` and `ProduceDueCycles` to explicitly reject mismatched node ownership regardless of list membership.
      - Failed ownership checks leave country stockpiles, foreign stockpiles, and node abundance 100% unaltered.
+   - **Numerical Overflow Protection**:
+     - Hardened [`ResourceInventory.Add`](../../../src/Republic.Core/World/ResourceInventory.cs) and [`RepuTreasury.Deposit`](../../../src/Republic.Core/Economy/Treasury/RepuTreasury.cs) to check `double.IsFinite(updated)` and throw `OverflowException` if addition would exceed maximum floating-point representation.
+     - Pre-checked potential inventory overflow in `ResourceProductionService.Produce` before mutating `node.Abundance`, guaranteeing operations fail atomically without partial updates.
+   - **Persistence Assumptions & Scope**:
+     - Per-node production boundaries and applied boundary history are maintained in-memory within the active domain session.
+     - Because full country entity serialization to disk is not yet implemented in `WorldManager.Snapshot()`, in-memory state does not survive process termination. This boundary and duplicate-protection architecture is designed for full compatibility with future disk serialization.
 
 ## Consequences
 - Provides a sustainable, domestic economic loop allowing sovereign nations to replenish stockpiles and engage in sustained trade.
-- Eliminates potential corruption from non-finite numerical inputs (`NaN`, `Infinity`) across economic systems.
+- Eliminates potential corruption from non-finite numerical inputs (`NaN`, `Infinity`) and numerical overflow across economic systems.
 - Ensures all eligible domestic resource nodes produce at every due six-hour boundary without cycle starvation or cross-node interference.
+- Eliminates redundant historical retries for permanently depleted resource nodes while maintaining mathematical conservation of reserves.
 - Enforces inviolable sovereign resource node ownership, guaranteeing that foreign nations cannot associate or extract each other's resources.
 - Reuses the authoritative Republic simulation clock and six-hour cycle schedule without creating redundant timers or separate production loops.
 - Maintains strict testability and full backward-compatibility across all Phase 0-8 subsystems.

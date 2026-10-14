@@ -104,8 +104,7 @@ public sealed class ResourceProductionService : IResourceProductionService
 
         // Deterministic boundary key for duplicate execution protection
         var boundaryKey = $"prod-{country.Id}-{node.Id}-{boundary.DayNumber}-{boundary.Hour}";
-        if (country.HasAppliedProductionBoundary(boundaryKey) ||
-            (node.LastProductionBoundary.HasValue && node.LastProductionBoundary.Value >= boundary))
+        if (country.HasAppliedProductionBoundary(boundaryKey))
         {
             return ResourceProductionResult.Failure(
                 country.Id,
@@ -114,6 +113,18 @@ public sealed class ResourceProductionService : IResourceProductionService
                 boundary,
                 $"Domestic resource production from node '{node.Id}' has already been credited for boundary {boundary}.",
                 alreadyProduced: true);
+        }
+
+        // Check if node is completely depleted before extraction
+        if (!node.IsRenewable && node.Abundance <= 0.0)
+        {
+            node.LastProductionBoundary = boundary;
+            return ResourceProductionResult.Failure(
+                country.Id,
+                node.Id,
+                node.ResourceType,
+                boundary,
+                $"Resource node '{node.Id}' abundance is completely depleted.");
         }
 
         // Determine extraction rate
@@ -129,18 +140,7 @@ public sealed class ResourceProductionService : IResourceProductionService
         }
         else
         {
-            if (node.Abundance <= 0.0)
-            {
-                return ResourceProductionResult.Failure(
-                    country.Id,
-                    node.Id,
-                    node.ResourceType,
-                    boundary,
-                    $"Resource node '{node.Id}' abundance is completely depleted.");
-            }
-
             quantityToExtract = Math.Min(rate, node.Abundance);
-            node.Abundance -= quantityToExtract;
         }
 
         if (quantityToExtract <= 0.0)
@@ -151,6 +151,25 @@ public sealed class ResourceProductionService : IResourceProductionService
                 node.ResourceType,
                 boundary,
                 $"No goods could be extracted from node '{node.Id}'.");
+        }
+
+        // Check for numerical overflow before mutating abundance or inventory
+        var currentQuantity = country.Inventory.GetQuantity(node.ResourceType);
+        var potentialTotal = currentQuantity + quantityToExtract;
+        if (!double.IsFinite(potentialTotal))
+        {
+            return ResourceProductionResult.Failure(
+                country.Id,
+                node.Id,
+                node.ResourceType,
+                boundary,
+                $"Adding {quantityToExtract:N0} units of {node.ResourceType} causes numerical overflow of stockpile.");
+        }
+
+        // Deduct abundance for non-renewable nodes
+        if (!node.IsRenewable)
+        {
+            node.Abundance -= quantityToExtract;
         }
 
         // Deposit physical goods into sovereign inventory
