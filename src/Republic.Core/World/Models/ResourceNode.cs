@@ -1,6 +1,7 @@
 namespace Republic.Core.World.Models;
 
 using System;
+using Republic.Core.Time;
 
 /// <summary>
 /// Domain model representing a natural or strategic resource node associated with a sovereign country or region.
@@ -42,6 +43,13 @@ public sealed class ResourceNode
     /// Defaults to true. Inactive nodes produce 0 goods.
     /// </summary>
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the authoritative Republic simulation timestamp of the most recently credited
+    /// six-hour domestic resource production cycle boundary for this specific node.
+    /// Null if no production cycle has been credited yet.
+    /// </summary>
+    public RepublicTime? LastProductionBoundary { get; set; }
 
     /// <summary>
     /// Gets or sets the remaining physical resource reserve abundance.

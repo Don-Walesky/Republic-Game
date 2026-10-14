@@ -65,8 +65,21 @@ To establish sustainable national economies without introducing premature extrac
      - Automatically executes due domestic production cycles when time advances.
      - Prints a clear before-and-after stockpile comparison and cycle extraction log.
 
+7. **Phase 9.1 Reliability Enhancements (Multi-Node Tracking & Strict Ownership)**:
+   - **Per-Node Cycle Tracking**:
+     - Added `LastProductionBoundary` to [`ResourceNode`](../../../src/Republic.Core/World/Models/ResourceNode.cs). Each node independently tracks its most recently credited six-hour boundary, decoupling node extraction from the shared country-level boundary.
+     - `ProduceDueCycles` evaluates due cycle boundaries independently per node starting from `node.LastProductionBoundary ?? (country.IsFounded ? country.FoundingTime : null)`.
+     - Depleted or inactive nodes process without blocking or skipping other eligible domestic nodes.
+     - Repeated catch-up calls safely yield zero duplicate extractions.
+   - **Strict Resource Ownership Enforcement**:
+     - Updated `Country.AssociateResourceNode(ResourceNode node)` to return `bool` and explicitly reject nodes already owned by another sovereign country (`node.CountryId != country.Id`), preserving legitimate unassigned-node association (`string.IsNullOrWhiteSpace(node.CountryId)`).
+     - Hardened `ResourceProductionService.Produce` and `ProduceDueCycles` to explicitly reject mismatched node ownership regardless of list membership.
+     - Failed ownership checks leave country stockpiles, foreign stockpiles, and node abundance 100% unaltered.
+
 ## Consequences
 - Provides a sustainable, domestic economic loop allowing sovereign nations to replenish stockpiles and engage in sustained trade.
 - Eliminates potential corruption from non-finite numerical inputs (`NaN`, `Infinity`) across economic systems.
+- Ensures all eligible domestic resource nodes produce at every due six-hour boundary without cycle starvation or cross-node interference.
+- Enforces inviolable sovereign resource node ownership, guaranteeing that foreign nations cannot associate or extract each other's resources.
 - Reuses the authoritative Republic simulation clock and six-hour cycle schedule without creating redundant timers or separate production loops.
 - Maintains strict testability and full backward-compatibility across all Phase 0-8 subsystems.

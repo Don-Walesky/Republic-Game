@@ -129,19 +129,39 @@ public sealed class Country
 
     /// <summary>
     /// Associates a domestic resource node with this sovereign country.
-    /// Ensures the node's country ownership points to this country.
+    /// Preserves legitimate unassigned node association by assigning ownership to this country.
+    /// Explicitly rejects nodes already owned by another country or having invalid IDs.
     /// </summary>
-    public void AssociateResourceNode(ResourceNode node)
+    /// <param name="node">The resource node to associate.</param>
+    /// <returns><c>true</c> if association succeeded; <c>false</c> if rejected due to mismatched ownership or invalid IDs.</returns>
+    public bool AssociateResourceNode(ResourceNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
+
+        if (string.IsNullOrWhiteSpace(Id) || string.IsNullOrWhiteSpace(node.Id))
+        {
+            return false;
+        }
+
+        // A country must not associate a resource node owned by another country
+        if (!string.IsNullOrWhiteSpace(node.CountryId) &&
+            !string.Equals(node.CountryId.Trim(), Id.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // Preserve legitimate unassigned-node association
         if (string.IsNullOrWhiteSpace(node.CountryId))
         {
-            node.CountryId = Id;
+            node.CountryId = Id.Trim();
         }
-        if (!ResourceNodes.Any(n => n.Id == node.Id))
+
+        if (!ResourceNodes.Any(n => string.Equals(n.Id?.Trim(), node.Id.Trim(), StringComparison.OrdinalIgnoreCase)))
         {
             ResourceNodes.Add(node);
         }
+
+        return true;
     }
 
     /// <summary>

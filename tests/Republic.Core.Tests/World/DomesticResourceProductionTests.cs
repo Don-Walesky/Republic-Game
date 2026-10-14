@@ -470,4 +470,341 @@ public sealed class DomesticResourceProductionTests
         Assert.Throws<ArgumentOutOfRangeException>(() => node.ExtractionRate = double.PositiveInfinity);
         Assert.Throws<ArgumentOutOfRangeException>(() => node.ExtractionRate = 0.0);
     }
+
+    // --- Phase 9.1 Regression Tests: Multi-Node Reliability & Strict Ownership Enforcement ---
+
+    [Fact]
+    public void ProduceDueCycles_MultipleNodesOwnedBySameCountry_AllProduceDuringSameCycle()
+    {
+        var launchTime = CreateBoundaryTime(day: 0, hour: 0);
+        var cycleTime = CreateBoundaryTime(day: 0, hour: 6);
+        var (arcadia, _, _) = SetupTestCountries(launchTime);
+
+        var ironNode = new ResourceNode
+        {
+            Id = "node-arcadia-iron-1",
+            ResourceType = "Iron",
+            Abundance = 5000.0,
+            ExtractionRate = 50.0,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+        var timberNode = new ResourceNode
+        {
+            Id = "node-arcadia-timber-1",
+            ResourceType = "Timber",
+            Abundance = 3000.0,
+            ExtractionRate = 75.0,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+        arcadia.AssociateResourceNode(ironNode);
+        arcadia.AssociateResourceNode(timberNode);
+
+        var service = new ResourceProductionService();
+        var results = service.ProduceDueCycles(arcadia, cycleTime);
+
+        Assert.Equal(2, results.Count);
+        Assert.All(results, r => Assert.True(r.Success));
+        Assert.Equal(50.0, arcadia.Inventory.GetQuantity("Iron"));
+        Assert.Equal(75.0, arcadia.Inventory.GetQuantity("Timber"));
+        Assert.Equal(cycleTime, ironNode.LastProductionBoundary);
+        Assert.Equal(cycleTime, timberNode.LastProductionBoundary);
+        Assert.Equal(4950.0, ironNode.Abundance);
+        Assert.Equal(2925.0, timberNode.Abundance);
+    }
+
+    [Fact]
+    public void ProduceDueCycles_RepeatedCatchUpCalls_DoNotDuplicateProductionForAnyNode()
+    {
+        var launchTime = CreateBoundaryTime(day: 0, hour: 0);
+        var currentTime = CreateBoundaryTime(day: 0, hour: 18); // 3 due boundaries: 06:00, 12:00, 18:00
+        var (arcadia, _, _) = SetupTestCountries(launchTime);
+
+        var ironNode = new ResourceNode
+        {
+            Id = "node-arcadia-iron",
+            ResourceType = "Iron",
+            Abundance = 10000.0,
+            ExtractionRate = 50.0,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+        var timberNode = new ResourceNode
+        {
+            Id = "node-arcadia-timber",
+            ResourceType = "Timber",
+            Abundance = 10000.0,
+            ExtractionRate = 60.0,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+        arcadia.AssociateResourceNode(ironNode);
+        arcadia.AssociateResourceNode(timberNode);
+
+        var service = new ResourceProductionService();
+
+        // First catch-up run: both nodes catch up 3 cycles
+        var firstResults = service.ProduceDueCycles(arcadia, currentTime);
+        Assert.Equal(6, firstResults.Count); // 3 cycles * 2 nodes
+        Assert.All(firstResults, r => Assert.True(r.Success));
+        Assert.Equal(150.0, arcadia.Inventory.GetQuantity("Iron"));
+        Assert.Equal(180.0, arcadia.Inventory.GetQuantity("Timber"));
+        Assert.Equal(9850.0, ironNode.Abundance);
+        Assert.Equal(9820.0, timberNode.Abundance);
+
+        // Immediate repeated catch-up run: no new production
+        var secondResults = service.ProduceDueCycles(arcadia, currentTime);
+        Assert.Empty(secondResults);
+        Assert.Equal(150.0, arcadia.Inventory.GetQuantity("Iron"));
+        Assert.Equal(180.0, arcadia.Inventory.GetQuantity("Timber"));
+        Assert.Equal(9850.0, ironNode.Abundance);
+        Assert.Equal(9820.0, timberNode.Abundance);
+
+        // Individual node repeated calls also yield no production
+        var individualIron = service.ProduceDueCycles(arcadia, ironNode, currentTime);
+        Assert.Empty(individualIron);
+        var individualTimber = service.ProduceDueCycles(arcadia, timberNode, currentTime);
+        Assert.Empty(individualTimber);
+
+        Assert.Equal(150.0, arcadia.Inventory.GetQuantity("Iron"));
+        Assert.Equal(180.0, arcadia.Inventory.GetQuantity("Timber"));
+    }
+
+    [Fact]
+    public void ProduceDueCycles_MultipleMissedCycles_CaughtUpCorrectlyAcrossAllEligibleNodes()
+    {
+        var launchTime = CreateBoundaryTime(day: 0, hour: 0);
+        var currentTime = CreateBoundaryTime(day: 1, hour: 0); // 4 due boundaries: 06:00, 12:00, 18:00, Day 1 00:00
+        var (arcadia, _, _) = SetupTestCountries(launchTime);
+
+        var ironNode = new ResourceNode
+        {
+            Id = "node-arcadia-iron",
+            ResourceType = "Iron",
+            Abundance = 1000.0,
+            ExtractionRate = 50.0,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+        var timberNode = new ResourceNode
+        {
+            Id = "node-arcadia-timber",
+            ResourceType = "Timber",
+            Abundance = 2000.0,
+            ExtractionRate = 100.0,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+        var inactiveBauxiteNode = new ResourceNode
+        {
+            Id = "node-arcadia-bauxite",
+            ResourceType = "Bauxite",
+            Abundance = 1000.0,
+            ExtractionRate = 25.0,
+            CountryId = arcadia.Id,
+            IsActive = false // Inactive node must not produce or block other nodes
+        };
+
+        arcadia.AssociateResourceNode(ironNode);
+        arcadia.AssociateResourceNode(timberNode);
+        arcadia.AssociateResourceNode(inactiveBauxiteNode);
+
+        var service = new ResourceProductionService();
+        var results = service.ProduceDueCycles(arcadia, currentTime);
+
+        // 4 boundaries * 2 active nodes = 8 results
+        Assert.Equal(8, results.Count);
+        Assert.All(results, r => Assert.True(r.Success));
+
+        Assert.Equal(200.0, arcadia.Inventory.GetQuantity("Iron")); // 4 * 50
+        Assert.Equal(400.0, arcadia.Inventory.GetQuantity("Timber")); // 4 * 100
+        Assert.Equal(0.0, arcadia.Inventory.GetQuantity("Bauxite")); // Inactive node produced 0
+
+        Assert.Equal(800.0, ironNode.Abundance);
+        Assert.Equal(1600.0, timberNode.Abundance);
+        Assert.Equal(1000.0, inactiveBauxiteNode.Abundance);
+
+        Assert.Equal(currentTime, ironNode.LastProductionBoundary);
+        Assert.Equal(currentTime, timberNode.LastProductionBoundary);
+        Assert.Null(inactiveBauxiteNode.LastProductionBoundary);
+    }
+
+    [Fact]
+    public void AssociateAndProduce_ForeignOwnedNode_IsStrictlyRejected()
+    {
+        var launchTime = CreateBoundaryTime(day: 1, hour: 0);
+        var boundaryTime = CreateBoundaryTime(day: 1, hour: 6);
+        var (arcadia, norse, _) = SetupTestCountries(launchTime);
+
+        var norseNode = new ResourceNode
+        {
+            Id = "node-norse-gold",
+            ResourceType = "Gold",
+            Abundance = 1000.0,
+            ExtractionRate = 25.0,
+            CountryId = norse.Id,
+            IsActive = true
+        };
+        var norseAssociated = norse.AssociateResourceNode(norseNode);
+        Assert.True(norseAssociated);
+
+        // 1. Arcadia cannot associate Norse's node
+        var arcadiaAssociated = arcadia.AssociateResourceNode(norseNode);
+        Assert.False(arcadiaAssociated);
+        Assert.DoesNotContain(norseNode, arcadia.ResourceNodes);
+        Assert.Equal(norse.Id, norseNode.CountryId); // Ownership unchanged
+
+        // 2. Arcadia cannot extract Norse's node even if passed to Produce
+        var service = new ResourceProductionService();
+        var produceResult = service.Produce(arcadia, norseNode, boundaryTime);
+        Assert.False(produceResult.Success);
+        Assert.Contains("owned by country", produceResult.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("not associated", produceResult.Message, StringComparison.OrdinalIgnoreCase);
+
+        // 3. Arcadia cannot extract Norse's node via ProduceDueCycles
+        var dueResults = service.ProduceDueCycles(arcadia, norseNode, boundaryTime);
+        Assert.Single(dueResults);
+        Assert.False(dueResults[0].Success);
+        Assert.Contains("owned by country", dueResults[0].Message, StringComparison.OrdinalIgnoreCase);
+
+        // 4. Manual insertion into ResourceNodes list must still be rejected by Produce and ProduceDueCycles
+        arcadia.ResourceNodes.Add(norseNode);
+        var manualProduceResult = service.Produce(arcadia, norseNode, boundaryTime);
+        Assert.False(manualProduceResult.Success);
+        Assert.Contains("owned by country", manualProduceResult.Message, StringComparison.OrdinalIgnoreCase);
+
+        var countryDueResults = service.ProduceDueCycles(arcadia, boundaryTime);
+        Assert.Empty(countryDueResults); // Excluded from country's due cycle execution
+    }
+
+    [Fact]
+    public void Produce_FailedOwnershipCheck_LeavesBothCountriesAndNodeCompletelyUnchanged()
+    {
+        var boundaryTime = CreateBoundaryTime(day: 1, hour: 6);
+        var (arcadia, norse, _) = SetupTestCountries(boundaryTime);
+
+        // Seed initial stockpiles
+        arcadia.Inventory.Add("Gold", 50.0);
+        norse.Inventory.Add("Gold", 200.0);
+
+        var initialArcadiaGold = arcadia.Inventory.GetQuantity("Gold");
+        var initialNorseGold = norse.Inventory.GetQuantity("Gold");
+
+        var norseGoldNode = new ResourceNode
+        {
+            Id = "node-norse-gold-mine",
+            ResourceType = "Gold",
+            Abundance = 5000.0,
+            ExtractionRate = 100.0,
+            CountryId = norse.Id,
+            IsActive = true
+        };
+        norse.AssociateResourceNode(norseGoldNode);
+
+        var service = new ResourceProductionService();
+
+        // Arcadia attempts unauthorized extraction
+        var failedResult = service.Produce(arcadia, norseGoldNode, boundaryTime);
+        Assert.False(failedResult.Success);
+        Assert.Equal(0.0, failedResult.QuantityProduced);
+
+        // Arcadia's stockpile must be unchanged
+        Assert.Equal(initialArcadiaGold, arcadia.Inventory.GetQuantity("Gold"));
+
+        // Norse's stockpile must be unchanged
+        Assert.Equal(initialNorseGold, norse.Inventory.GetQuantity("Gold"));
+
+        // Node's abundance, ownership, and boundary must be unchanged
+        Assert.Equal(5000.0, norseGoldNode.Abundance);
+        Assert.Equal(norse.Id, norseGoldNode.CountryId);
+        Assert.Null(norseGoldNode.LastProductionBoundary);
+    }
+
+    [Fact]
+    public void ProduceDueCycles_DepletedOrInactiveNode_DoesNotPreventOtherEligibleNodesFromProducing()
+    {
+        var launchTime = CreateBoundaryTime(day: 0, hour: 0);
+        var currentTime = CreateBoundaryTime(day: 0, hour: 12); // 2 boundaries: 06:00, 12:00
+        var (arcadia, _, _) = SetupTestCountries(launchTime);
+
+        // Node 1: Depleted petroleum (abundance 0)
+        var depletedPetroleum = new ResourceNode
+        {
+            Id = "node-arcadia-depleted-oil",
+            ResourceType = "Petroleum",
+            Abundance = 0.0,
+            ExtractionRate = 50.0,
+            CountryId = arcadia.Id,
+            IsActive = true,
+            IsRenewable = false
+        };
+
+        // Node 2: Inactive copper node
+        var inactiveCopper = new ResourceNode
+        {
+            Id = "node-arcadia-inactive-copper",
+            ResourceType = "Copper",
+            Abundance = 1000.0,
+            ExtractionRate = 40.0,
+            CountryId = arcadia.Id,
+            IsActive = false
+        };
+
+        // Node 3: Active, healthy Iron node
+        var healthyIron = new ResourceNode
+        {
+            Id = "node-arcadia-healthy-iron",
+            ResourceType = "Iron",
+            Abundance = 2000.0,
+            ExtractionRate = 50.0,
+            CountryId = arcadia.Id,
+            IsActive = true
+        };
+
+        arcadia.AssociateResourceNode(depletedPetroleum);
+        arcadia.AssociateResourceNode(inactiveCopper);
+        arcadia.AssociateResourceNode(healthyIron);
+
+        var service = new ResourceProductionService();
+        var results = service.ProduceDueCycles(arcadia, currentTime);
+
+        // Healthy iron node must produce both cycles
+        Assert.Equal(100.0, arcadia.Inventory.GetQuantity("Iron"));
+        Assert.Equal(1900.0, healthyIron.Abundance);
+        Assert.Equal(currentTime, healthyIron.LastProductionBoundary);
+
+        // Depleted petroleum and inactive copper must not have produced goods
+        Assert.Equal(0.0, arcadia.Inventory.GetQuantity("Petroleum"));
+        Assert.Equal(0.0, arcadia.Inventory.GetQuantity("Copper"));
+        Assert.Equal(0.0, depletedPetroleum.Abundance);
+        Assert.Equal(1000.0, inactiveCopper.Abundance);
+    }
+
+    [Fact]
+    public void AssociateResourceNode_UnassignedNode_SuccessfullyClaimsAndExtracts()
+    {
+        var boundaryTime = CreateBoundaryTime(day: 1, hour: 6);
+        var (arcadia, _, _) = SetupTestCountries(boundaryTime);
+
+        var neutralNode = new ResourceNode
+        {
+            Id = "node-neutral-clay",
+            ResourceType = "Clay",
+            Abundance = 1000.0,
+            ExtractionRate = 50.0,
+            CountryId = string.Empty, // Unassigned
+            IsActive = true
+        };
+
+        var associated = arcadia.AssociateResourceNode(neutralNode);
+        Assert.True(associated);
+        Assert.Equal(arcadia.Id, neutralNode.CountryId);
+        Assert.Contains(neutralNode, arcadia.ResourceNodes);
+
+        var service = new ResourceProductionService();
+        var result = service.Produce(arcadia, neutralNode, boundaryTime);
+        Assert.True(result.Success);
+        Assert.Equal(50.0, arcadia.Inventory.GetQuantity("Clay"));
+    }
 }
