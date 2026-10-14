@@ -14,18 +14,19 @@ public enum DiplomaticAgreementType
 }
 
 /// <summary>
-/// Lifecycle status of a bilateral diplomatic agreement.
+/// Lifecycle status of a bilateral diplomatic agreement or trade transaction.
 /// </summary>
 public enum DiplomaticAgreementStatus
 {
     Pending,
     Accepted,
+    Completed,
     Rejected,
     Terminated
 }
 
 /// <summary>
-/// Domain model representing a bilateral diplomatic agreement (such as a trade agreement or alliance)
+/// Domain model representing a bilateral diplomatic agreement (such as a trade agreement, trade deal, or alliance)
 /// between two sovereign nations. Anchored strictly to Republic simulation clock boundaries.
 /// </summary>
 public sealed record DiplomaticAgreement
@@ -51,7 +52,7 @@ public sealed record DiplomaticAgreement
     public DiplomaticAgreementType AgreementType { get; init; }
 
     /// <summary>
-    /// Gets the current lifecycle status (Pending, Accepted, Rejected, Terminated).
+    /// Gets the current lifecycle status (Pending, Accepted, Completed, Rejected, Terminated).
     /// </summary>
     public DiplomaticAgreementStatus Status { get; init; }
 
@@ -61,10 +62,15 @@ public sealed record DiplomaticAgreement
     public RepublicTime ProposedBoundary { get; init; }
 
     /// <summary>
-    /// Gets the authoritative Republic simulation clock boundary when the agreement was decided (accepted or rejected),
+    /// Gets the authoritative Republic simulation clock boundary when the agreement was decided (accepted, completed, or rejected),
     /// or null if still pending.
     /// </summary>
     public RepublicTime? DecidedBoundary { get; init; }
+
+    /// <summary>
+    /// Gets the explicit economic terms associated with this bilateral agreement (if this agreement represents a trade deal transaction).
+    /// </summary>
+    public BilateralTradeTerms? Terms { get; init; }
 
     /// <summary>
     /// Indicates whether this agreement is currently pending a diplomatic decision.
@@ -73,10 +79,16 @@ public sealed record DiplomaticAgreement
     public bool IsPending => Status == DiplomaticAgreementStatus.Pending;
 
     /// <summary>
-    /// Indicates whether this agreement has been accepted and is active.
+    /// Indicates whether this agreement has been accepted or completed.
     /// </summary>
     [JsonIgnore]
-    public bool IsAccepted => Status == DiplomaticAgreementStatus.Accepted;
+    public bool IsAccepted => Status == DiplomaticAgreementStatus.Accepted || Status == DiplomaticAgreementStatus.Completed;
+
+    /// <summary>
+    /// Indicates whether this agreement represents a completed trade transaction.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsCompleted => Status == DiplomaticAgreementStatus.Completed;
 
     /// <summary>
     /// Indicates whether this agreement was rejected.
@@ -85,10 +97,10 @@ public sealed record DiplomaticAgreement
     public bool IsRejected => Status == DiplomaticAgreementStatus.Rejected;
 
     /// <summary>
-    /// Indicates whether this agreement is currently active (i.e. accepted).
+    /// Indicates whether this agreement is currently active (accepted or completed).
     /// </summary>
     [JsonIgnore]
-    public bool IsActive => Status == DiplomaticAgreementStatus.Accepted;
+    public bool IsActive => Status == DiplomaticAgreementStatus.Accepted || Status == DiplomaticAgreementStatus.Completed;
 
     /// <summary>
     /// Indicates whether this agreement is a bilateral trade agreement.
@@ -103,6 +115,12 @@ public sealed record DiplomaticAgreement
     public bool IsAlliance => AgreementType == DiplomaticAgreementType.Alliance;
 
     /// <summary>
+    /// Indicates whether this agreement carries explicit economic trade terms.
+    /// </summary>
+    [JsonIgnore]
+    public bool HasTerms => Terms != null;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="DiplomaticAgreement"/> record.
     /// </summary>
     public DiplomaticAgreement(
@@ -112,7 +130,8 @@ public sealed record DiplomaticAgreement
         DiplomaticAgreementStatus status,
         RepublicTime proposedBoundary,
         RepublicTime? decidedBoundary = null,
-        string? id = null)
+        string? id = null,
+        BilateralTradeTerms? terms = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceCountryId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetCountryId);
@@ -124,6 +143,7 @@ public sealed record DiplomaticAgreement
         Status = status;
         ProposedBoundary = proposedBoundary;
         DecidedBoundary = decidedBoundary;
+        Terms = terms;
     }
 
     /// <summary>
@@ -179,11 +199,33 @@ public sealed record DiplomaticAgreement
     }
 
     /// <summary>
+    /// Deconstructs the diplomatic agreement into its components including economic terms.
+    /// </summary>
+    public void Deconstruct(
+        out string sourceCountryId,
+        out string targetCountryId,
+        out DiplomaticAgreementType agreementType,
+        out DiplomaticAgreementStatus status,
+        out RepublicTime proposedBoundary,
+        out RepublicTime? decidedBoundary,
+        out BilateralTradeTerms? terms)
+    {
+        sourceCountryId = SourceCountryId;
+        targetCountryId = TargetCountryId;
+        agreementType = AgreementType;
+        status = Status;
+        proposedBoundary = ProposedBoundary;
+        decidedBoundary = DecidedBoundary;
+        terms = Terms;
+    }
+
+    /// <summary>
     /// Formats the bilateral agreement for inspection and logging.
     /// </summary>
     public override string ToString()
     {
+        var termsText = Terms != null ? $" [Terms: {Terms}]" : "";
         var decidedText = DecidedBoundary.HasValue ? $", decided at {DecidedBoundary.Value}" : "";
-        return $"{AgreementType} Agreement: {SourceCountryId} <-> {TargetCountryId} [{Status}] (proposed at {ProposedBoundary}{decidedText})";
+        return $"{AgreementType} Agreement: {SourceCountryId} <-> {TargetCountryId} [{Status}]{termsText} (proposed at {ProposedBoundary}{decidedText})";
     }
 }

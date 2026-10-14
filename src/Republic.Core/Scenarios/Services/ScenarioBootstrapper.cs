@@ -123,14 +123,27 @@ public sealed class ScenarioBootstrapper : IScenarioBootstrapper
             }
         });
 
+        playerCountry.Inventory.Add("Iron", 2000.0);
+        playerCountry.Inventory.Add("Petroleum", 1000.0);
+
         // Register neighbors
+        var neighborIndex = 0;
+        var neighborResourceTypes = new[] { "Timber", "Copper", "Bauxite", "Natural Gas", "Gold" };
         foreach (var neighbor in preset.NeighboringCountries)
         {
-            _worldManager.Countries.RegisterCountry(new Country
+            var neighborCountry = new Country
             {
                 Name = neighbor,
-                BaselineStability = 70.0
-            });
+                BaselineStability = 70.0,
+                Treasury = new RepuTreasury(preset.StartingTreasury * 0.5)
+            };
+            var resA = neighborResourceTypes[neighborIndex % neighborResourceTypes.Length];
+            var resB = neighborResourceTypes[(neighborIndex + 1) % neighborResourceTypes.Length];
+            neighborCountry.Inventory.Add(resA, 2500.0);
+            neighborCountry.Inventory.Add(resB, 1500.0);
+            neighborIndex++;
+
+            _worldManager.Countries.RegisterCountry(neighborCountry);
         }
 
         // Register resource nodes

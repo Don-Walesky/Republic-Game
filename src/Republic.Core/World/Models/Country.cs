@@ -106,6 +106,22 @@ public sealed class Country
     public RepuTreasury Treasury { get; init; } = new();
 
     /// <summary>
+    /// Gets the authoritative sovereign physical goods inventory holding accumulated resource stockpiles.
+    /// Each sovereign country owns an independent, isolated instance.
+    /// </summary>
+    public ResourceInventory Inventory { get; init; } = new();
+
+    /// <summary>
+    /// Retrieves the available quantity of the specified resource type from this country's physical inventory.
+    /// </summary>
+    public double GetResourceQuantity(string resourceType) => Inventory.GetQuantity(resourceType);
+
+    /// <summary>
+    /// Adds physical goods to this country's resource stockpile.
+    /// </summary>
+    public void AddResource(string resourceType, double quantity) => Inventory.Add(resourceType, quantity);
+
+    /// <summary>
     /// Gets or sets the authoritative Republic simulation timestamp of the most recently credited
     /// six-hour National Yield cycle boundary for this sovereign country.
     /// Null if no cycle boundary has been credited yet.
@@ -1137,6 +1153,98 @@ public sealed class Country
         ProposeAgreement(targetCountry, DiplomaticAgreementType.Trade, clock);
 
     /// <summary>
+    /// Proposes a bilateral trade deal transaction with explicit economic terms to a target country.
+    /// Requires an existing diplomatic relation. Terms must specify valid resource, positive quantity, and positive price.
+    /// Prevents duplicate pending trade proposals with the same target.
+    /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
+    /// </summary>
+    public DiplomaticAgreement? ProposeTradeDeal(
+        string targetCountryId,
+        BilateralTradeTerms terms,
+        RepublicTime boundary,
+        Country? targetCountry = null)
+    {
+        ArgumentNullException.ThrowIfNull(terms);
+
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return null;
+        }
+
+        var trimmedTargetId = targetCountryId.Trim();
+
+        // Self-trade prohibited
+        if (string.Equals(trimmedTargetId, Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // Must involve both countries
+        if (!terms.Involves(Id) || !terms.Involves(trimmedTargetId))
+        {
+            return null;
+        }
+
+        // Must have an existing diplomatic relation
+        var relation = GetRelation(trimmedTargetId);
+        if (relation == null)
+        {
+            return null;
+        }
+
+        // Prevent duplicate pending trade proposals with the same target
+        if (_agreements.Any(a => a.AgreementType == DiplomaticAgreementType.Trade && a.Involves(trimmedTargetId) && a.IsPending))
+        {
+            return null;
+        }
+
+        var agreement = new DiplomaticAgreement(
+            Id,
+            trimmedTargetId,
+            DiplomaticAgreementType.Trade,
+            DiplomaticAgreementStatus.Pending,
+            boundary,
+            terms: terms);
+
+        _agreements.Add(agreement);
+
+        if (targetCountry != null && !targetCountry._agreements.Any(a => a.Id == agreement.Id))
+        {
+            targetCountry._agreements.Add(agreement);
+        }
+
+        return agreement;
+    }
+
+    /// <summary>
+    /// Proposes a bilateral trade deal transaction with explicit economic terms to the target country.
+    /// </summary>
+    public DiplomaticAgreement? ProposeTradeDeal(
+        Country targetCountry,
+        BilateralTradeTerms terms,
+        RepublicTime boundary)
+    {
+        if (targetCountry == null)
+        {
+            return null;
+        }
+
+        return ProposeTradeDeal(targetCountry.Id, terms, boundary, targetCountry);
+    }
+
+    /// <summary>
+    /// Proposes a bilateral trade deal transaction with explicit economic terms using an authoritative Republic clock.
+    /// </summary>
+    public DiplomaticAgreement? ProposeTradeDeal(
+        Country targetCountry,
+        BilateralTradeTerms terms,
+        IRepublicClock clock)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return ProposeTradeDeal(targetCountry, terms, clock.CurrentTime);
+    }
+
+    /// <summary>
     /// Proposes a bilateral alliance to the target country.
     /// </summary>
     public DiplomaticAgreement? ProposeAlliance(Country targetCountry, RepublicTime boundary) =>
@@ -1150,6 +1258,8 @@ public sealed class Country
 
     /// <summary>
     /// Responds to a pending bilateral agreement proposal by accepting or rejecting it.
+    /// When accepting a trade deal with explicit economic terms, validates buyer funds and seller goods,
+    /// and executes the atomic transfer of REPU and resources between both nations.
     /// Updates the stored agreement state on both countries if provided.
     /// Grounded strictly in Republic simulation clock boundaries; never calls DateTime.Now.
     /// </summary>
@@ -1172,15 +1282,108 @@ public sealed class Country
 
         var agreement = _agreements[index];
 
-        // Safe and idempotent: if already decided, return current record
+        // Safe and idempotent: if already decided, return current record without duplicate processing
         if (agreement.Status != DiplomaticAgreementStatus.Pending)
         {
             return agreement;
         }
 
+        if (!accept)
+        {
+            var rejected = agreement with
+            {
+                Status = DiplomaticAgreementStatus.Rejected,
+                DecidedBoundary = boundary
+            };
+
+            _agreements[index] = rejected;
+
+            if (otherCountry != null)
+            {
+                var otherIndex = otherCountry._agreements.FindIndex(a => string.Equals(a.Id, rejected.Id, StringComparison.OrdinalIgnoreCase));
+                if (otherIndex >= 0)
+                {
+                    otherCountry._agreements[otherIndex] = rejected;
+                }
+                else
+                {
+                    otherCountry._agreements.Add(rejected);
+                }
+            }
+
+            return rejected;
+        }
+
+        // Acceptance of trade deal with explicit economic terms:
+        if (agreement.Terms != null)
+        {
+            if (otherCountry == null)
+            {
+                return null;
+            }
+
+            var terms = agreement.Terms;
+
+            Country? buyer = string.Equals(Id, terms.BuyerCountryId, StringComparison.OrdinalIgnoreCase)
+                ? this
+                : (string.Equals(otherCountry.Id, terms.BuyerCountryId, StringComparison.OrdinalIgnoreCase) ? otherCountry : null);
+
+            Country? seller = string.Equals(Id, terms.SellerCountryId, StringComparison.OrdinalIgnoreCase)
+                ? this
+                : (string.Equals(otherCountry.Id, terms.SellerCountryId, StringComparison.OrdinalIgnoreCase) ? otherCountry : null);
+
+            if (buyer == null || seller == null)
+            {
+                return null;
+            }
+
+            // Must have sufficient funds and goods
+            if (buyer.Treasury.Balance < terms.Price || !seller.Inventory.HasSufficient(terms.ResourceType, terms.Quantity))
+            {
+                return null;
+            }
+
+            // Atomic transfer execution
+            if (!buyer.Treasury.TryWithdraw(terms.Price))
+            {
+                return null;
+            }
+
+            if (!seller.Inventory.TryRemove(terms.ResourceType, terms.Quantity))
+            {
+                // Rollback payment if goods removal failed
+                buyer.Treasury.Deposit(terms.Price);
+                return null;
+            }
+
+            seller.Treasury.Deposit(terms.Price);
+            buyer.Inventory.Add(terms.ResourceType, terms.Quantity);
+
+            var completed = agreement with
+            {
+                Status = DiplomaticAgreementStatus.Completed,
+                DecidedBoundary = boundary
+            };
+
+            _agreements[index] = completed;
+
+            var otherIndex = otherCountry._agreements.FindIndex(a => string.Equals(a.Id, completed.Id, StringComparison.OrdinalIgnoreCase));
+            if (otherIndex >= 0)
+            {
+                otherCountry._agreements[otherIndex] = completed;
+            }
+            else
+            {
+                otherCountry._agreements.Add(completed);
+            }
+
+            return completed;
+        }
+
+        // Framework agreement (without explicit trade terms)
         var decided = agreement with
         {
-            Status = accept ? DiplomaticAgreementStatus.Accepted : DiplomaticAgreementStatus.Rejected,
+            Status = DiplomaticAgreementStatus.Accepted,
             DecidedBoundary = boundary
         };
 
@@ -2010,7 +2213,8 @@ public sealed class Country
         CountryElection? election = null,
         DiplomaticRelation? relation = null,
         DiplomaticAgreement? agreement = null,
-        IEnumerable<DiplomaticAgreement>? agreements = null)
+        IEnumerable<DiplomaticAgreement>? agreements = null,
+        ResourceInventory? inventory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -2026,6 +2230,7 @@ public sealed class Country
             FoundingStatus = CountryFoundingStatus.NewlyFounded,
             Yield = yield?.Clone() ?? new NationalYield(),
             Treasury = treasury?.Clone() ?? new RepuTreasury(0.0, countryId),
+            Inventory = inventory?.Clone() ?? new ResourceInventory(),
             LastCreditedBoundary = lastCreditedBoundary,
             FoundingBuffs = foundingBuffs,
             StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs(),

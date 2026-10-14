@@ -1068,6 +1068,8 @@ public static class Program
         printLine("==============================================================");
         printLine($" Capital: {selectedCountry.CapitalCity} | Government: {selectedCountry.GovernmentType}");
         printLine($" Baseline Stability: {selectedCountry.BaselineStability:0.#}% | GDP: R{selectedCountry.GrossDomesticProduct:N0}");
+        printLine($" Treasury: {selectedCountry.Treasury.FormattedBalance} | Physical Stockpiles: {selectedCountry.Inventory.FormattedStockpiles}");
+        printLine($" Player Treasury: {playerCountry.Treasury.FormattedBalance} | Player Stockpiles: {playerCountry.Inventory.FormattedStockpiles}");
 
         var currentRelation = playerCountry.GetRelation(selectedCountry.Id);
         if (currentRelation != null)
@@ -1083,7 +1085,10 @@ public static class Program
         }
 
         var tradeAgreement = playerCountry.GetAgreementWith(selectedCountry.Id, DiplomaticAgreementType.Trade);
-        printLine($" Trade Agreement: {(tradeAgreement != null ? $"{tradeAgreement.Status} (proposed at {tradeAgreement.ProposedBoundary}{(tradeAgreement.DecidedBoundary.HasValue ? $", decided at {tradeAgreement.DecidedBoundary.Value}" : "")})" : "None")}");
+        var tradeDetails = tradeAgreement != null
+            ? $"{tradeAgreement.Status}{(tradeAgreement.Terms != null ? $" [Terms: {tradeAgreement.Terms}]" : "")} (proposed at {tradeAgreement.ProposedBoundary}{(tradeAgreement.DecidedBoundary.HasValue ? $", decided at {tradeAgreement.DecidedBoundary.Value}" : "")})"
+            : "None";
+        printLine($" Trade Agreement: {tradeDetails}");
 
         var alliance = playerCountry.GetAgreementWith(selectedCountry.Id, DiplomaticAgreementType.Alliance);
         printLine($" Bilateral Alliance: {(alliance != null ? $"{alliance.Status} (proposed at {alliance.ProposedBoundary}{(alliance.DecidedBoundary.HasValue ? $", decided at {alliance.DecidedBoundary.Value}" : "")})" : "None")}");
@@ -1102,9 +1107,9 @@ public static class Program
             printLine($" [2] Formally Recognize Diplomatic Relation with {selectedCountry.Name}");
         }
 
-        if (currentRelation != null && (tradeAgreement == null || tradeAgreement.IsRejected))
+        if (currentRelation != null && (tradeAgreement == null || tradeAgreement.IsRejected || tradeAgreement.IsCompleted))
         {
-            printLine($" [3] Propose Bilateral Trade Agreement to {selectedCountry.Name}");
+            printLine($" [3] Propose Bilateral Trade Deal to {selectedCountry.Name}");
         }
 
         if (currentRelation != null && currentRelation.IsRecognized && (alliance == null || alliance.IsRejected))
@@ -1139,8 +1144,57 @@ public static class Program
         }
         else if (actionChoice == "3")
         {
-            var outcome = BilateralDiplomacyHandler.ProposeAgreement(playerCountry, selectedCountry.Id, DiplomaticAgreementType.Trade, allCountries, currentTime);
-            printLine(outcome.IsSuccess ? $"\n[PROPOSAL SUBMITTED]: {outcome.Message}" : $"\n[PROPOSAL REJECTED]: {outcome.Message}");
+            printLine("\n--- PROPOSE BILATERAL TRADE DEAL ---");
+            printLine($"Player Reserves: {playerCountry.Treasury.FormattedBalance} | Stockpiles: {playerCountry.Inventory.FormattedStockpiles}");
+            printLine($"{selectedCountry.Name} Reserves: {selectedCountry.Treasury.FormattedBalance} | Stockpiles: {selectedCountry.Inventory.FormattedStockpiles}");
+            printLine("Select Trade Direction:");
+            printLine($" [1] Export: {playerCountry.Name} sells goods to {selectedCountry.Name} for REPU");
+            printLine($" [2] Import: {playerCountry.Name} buys goods from {selectedCountry.Name} with REPU");
+            printLine(" [0] Cancel");
+            print("Direction (1=Export, 2=Import, 0=Cancel) > ");
+            var dirInput = read()?.Trim();
+            if (dirInput != "1" && dirInput != "2")
+            {
+                printLine("Trade proposal cancelled.");
+                return;
+            }
+
+            var playerIsSeller = dirInput == "1";
+            var seller = playerIsSeller ? playerCountry : selectedCountry;
+            var buyer = playerIsSeller ? selectedCountry : playerCountry;
+
+            print("Resource Commodity Type (e.g. Iron, Timber, Petroleum, Copper, Bauxite) > ");
+            var resInput = read()?.Trim();
+            if (string.IsNullOrWhiteSpace(resInput))
+            {
+                printLine("Resource type cannot be empty. Proposal cancelled.");
+                return;
+            }
+
+            print("Unit Quantity to Trade > ");
+            if (!double.TryParse(read()?.Trim(), out var qty) || qty <= 0.0)
+            {
+                printLine("Quantity must be a positive number. Proposal cancelled.");
+                return;
+            }
+
+            print("Total Agreed Price in REPU > ");
+            if (!double.TryParse(read()?.Trim(), out var price) || price <= 0.0)
+            {
+                printLine("Price must be a positive number. Proposal cancelled.");
+                return;
+            }
+
+            try
+            {
+                var terms = new BilateralTradeTerms(seller.Id, buyer.Id, resInput, qty, price);
+                var outcome = BilateralDiplomacyHandler.ProposeTradeDeal(playerCountry, selectedCountry.Id, terms, allCountries, currentTime);
+                printLine(outcome.IsSuccess ? $"\n[TRADE PROPOSAL SUBMITTED]: {outcome.Message}" : $"\n[PROPOSAL REJECTED]: {outcome.Message}");
+            }
+            catch (Exception ex)
+            {
+                printLine($"\n[PROPOSAL REJECTED]: {ex.Message}");
+            }
         }
         else if (actionChoice == "4")
         {
@@ -1149,8 +1203,22 @@ public static class Program
         }
         else if (actionChoice == "5" && pendingWithTarget != null)
         {
-            printLine($"\nPending {pendingWithTarget.AgreementType} proposal with {selectedCountry.Name}:");
-            printLine(" [1] Accept Proposal");
+            if (pendingWithTarget.Terms != null)
+            {
+                printLine($"\nPending Bilateral Trade Deal with {selectedCountry.Name}:");
+                printLine($"  Commodity: {pendingWithTarget.Terms.Quantity:N0} units of {pendingWithTarget.Terms.ResourceType}");
+                printLine($"  Agreed Price: {pendingWithTarget.Terms.FormattedPrice}");
+                var s = allCountries.FirstOrDefault(c => c.Id == pendingWithTarget.Terms.SellerCountryId);
+                var b = allCountries.FirstOrDefault(c => c.Id == pendingWithTarget.Terms.BuyerCountryId);
+                printLine($"  Seller (delivering goods): {s?.Name ?? pendingWithTarget.Terms.SellerCountryId} (Has: {s?.Inventory.GetQuantity(pendingWithTarget.Terms.ResourceType):N0} units)");
+                printLine($"  Buyer (paying REPU): {b?.Name ?? pendingWithTarget.Terms.BuyerCountryId} (Has: {b?.Treasury.FormattedBalance})");
+            }
+            else
+            {
+                printLine($"\nPending {pendingWithTarget.AgreementType} proposal with {selectedCountry.Name}:");
+            }
+
+            printLine(" [1] Accept Proposal (Execute Trade/Agreement)");
             printLine(" [2] Reject Proposal");
             printLine(" [0] Cancel");
             print("Decision (1=Accept, 2=Reject, 0=Cancel) > ");
@@ -1158,12 +1226,17 @@ public static class Program
             if (decInput == "1")
             {
                 var outcome = BilateralDiplomacyHandler.RespondToAgreement(playerCountry, pendingWithTarget.Id, accept: true, allCountries, currentTime);
-                printLine(outcome.IsSuccess ? $"\n[AGREEMENT ACCEPTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+                printLine(outcome.IsSuccess ? $"\n[SUCCESS]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+                if (outcome.IsSuccess && pendingWithTarget.Terms != null)
+                {
+                    printLine($"  {playerCountry.Name} New Position -> Treasury: {playerCountry.Treasury.FormattedBalance} | Inventory: {playerCountry.Inventory.FormattedStockpiles}");
+                    printLine($"  {selectedCountry.Name} New Position -> Treasury: {selectedCountry.Treasury.FormattedBalance} | Inventory: {selectedCountry.Inventory.FormattedStockpiles}");
+                }
             }
             else if (decInput == "2")
             {
                 var outcome = BilateralDiplomacyHandler.RespondToAgreement(playerCountry, pendingWithTarget.Id, accept: false, allCountries, currentTime);
-                printLine(outcome.IsSuccess ? $"\n[AGREEMENT REJECTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+                printLine(outcome.IsSuccess ? $"\n[PROPOSAL REJECTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
             }
             else
             {
@@ -1206,7 +1279,8 @@ public static class Program
             var direction = string.Equals(p.SourceCountryId, playerCountry.Id, StringComparison.OrdinalIgnoreCase)
                 ? $"Proposed by {playerCountry.Name} to {otherName}"
                 : $"Proposed by {otherName} to {playerCountry.Name}";
-            printLine($" [{i + 1}] {p.AgreementType} Agreement | {direction} | Boundary: {p.ProposedBoundary}");
+            var termsInfo = p.Terms != null ? $" | Terms: {p.Terms}" : "";
+            printLine($" [{i + 1}] {p.AgreementType} Agreement | {direction}{termsInfo} | Boundary: {p.ProposedBoundary}");
         }
         printLine(" [0] Cancel / Return");
         print($"Select Proposal to Resolve (1-{pending.Count}, 0 to cancel) > ");
@@ -1219,8 +1293,22 @@ public static class Program
         }
 
         var selected = pending[idx - 1];
-        printLine($"Selected: {selected.AgreementType} Agreement (ID: {selected.Id})");
-        printLine(" [1] Accept Proposal");
+        if (selected.Terms != null)
+        {
+            printLine($"\nSelected: Bilateral Trade Deal (ID: {selected.Id})");
+            printLine($"  Commodity: {selected.Terms.Quantity:N0} units of {selected.Terms.ResourceType}");
+            printLine($"  Agreed Price: {selected.Terms.FormattedPrice}");
+            var seller = allCountries.FirstOrDefault(c => c.Id == selected.Terms.SellerCountryId);
+            var buyer = allCountries.FirstOrDefault(c => c.Id == selected.Terms.BuyerCountryId);
+            printLine($"  Seller (delivering goods): {seller?.Name ?? selected.Terms.SellerCountryId} (Available: {seller?.Inventory.GetQuantity(selected.Terms.ResourceType):N0} units)");
+            printLine($"  Buyer (paying REPU): {buyer?.Name ?? selected.Terms.BuyerCountryId} (Available: {buyer?.Treasury.FormattedBalance})");
+        }
+        else
+        {
+            printLine($"\nSelected: {selected.AgreementType} Agreement (ID: {selected.Id})");
+        }
+
+        printLine(" [1] Accept Proposal (Execute Trade/Agreement)");
         printLine(" [2] Reject Proposal");
         printLine(" [0] Cancel");
         print("Decision (1=Accept, 2=Reject, 0=Cancel) > ");
@@ -1229,12 +1317,23 @@ public static class Program
         if (decInput == "1")
         {
             var outcome = BilateralDiplomacyHandler.RespondToAgreement(playerCountry, selected.Id, accept: true, allCountries, currentTime);
-            printLine(outcome.IsSuccess ? $"\n[AGREEMENT ACCEPTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+            printLine(outcome.IsSuccess ? $"\n[SUCCESS]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+            if (outcome.IsSuccess && selected.Terms != null)
+            {
+                var s = allCountries.FirstOrDefault(c => c.Id == selected.Terms.SellerCountryId);
+                var b = allCountries.FirstOrDefault(c => c.Id == selected.Terms.BuyerCountryId);
+                if (s != null && b != null)
+                {
+                    printLine("\n--- UPDATED ECONOMIC POSITIONS ---");
+                    printLine($"  {s.Name} (Seller) -> Treasury: {s.Treasury.FormattedBalance} | {selected.Terms.ResourceType}: {s.Inventory.GetQuantity(selected.Terms.ResourceType):N0} units");
+                    printLine($"  {b.Name} (Buyer)  -> Treasury: {b.Treasury.FormattedBalance} | {selected.Terms.ResourceType}: {b.Inventory.GetQuantity(selected.Terms.ResourceType):N0} units");
+                }
+            }
         }
         else if (decInput == "2")
         {
             var outcome = BilateralDiplomacyHandler.RespondToAgreement(playerCountry, selected.Id, accept: false, allCountries, currentTime);
-            printLine(outcome.IsSuccess ? $"\n[AGREEMENT REJECTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
+            printLine(outcome.IsSuccess ? $"\n[PROPOSAL REJECTED]: {outcome.Message}" : $"\n[REJECTION]: {outcome.Message}");
         }
         else
         {

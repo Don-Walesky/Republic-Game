@@ -139,6 +139,12 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
         var profile = CreateProfile(seed, foundingTime);
         var countryId = id ?? $"country-{seed:x8}";
 
+        var inventory = new ResourceInventory();
+        if (!string.IsNullOrWhiteSpace(profile.PrimaryResource) && profile.PrimaryResource != CountryProfile.DefaultUnspecified)
+        {
+            inventory.Add(profile.PrimaryResource, 1_000.0);
+        }
+
         return Country.Found(
             name: profile.OfficialName,
             foundingTime: foundingTime,
@@ -146,6 +152,7 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
             capitalCity: profile.Capital,
             governmentType: profile.GovernmentForm.ToString(),
             treasury: new RepuTreasury(startingTreasury, countryId),
-            profile: profile);
+            profile: profile,
+            inventory: inventory);
     }
 }

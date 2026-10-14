@@ -20,7 +20,9 @@ public enum DiplomaticActionResult
     RelationNotFound,
     PrerequisitesNotMet,
     AgreementNotFound,
-    AlreadyDecided
+    AlreadyDecided,
+    InsufficientFunds,
+    InsufficientGoods
 }
 
 /// <summary>
@@ -314,8 +316,87 @@ public static class BilateralDiplomacyHandler
     }
 
     /// <summary>
-    /// Executes a deterministic decision (Accept or Reject) on a pending bilateral diplomatic agreement.
-    /// Updates the stored agreement state on both countries and records the decision boundary.
+    /// Proposes a bilateral trade deal transaction with explicit economic terms from the player country to a target country.
+    /// Requires an open relation, validates explicit terms, prevents duplicate pending deals, and records simulation time.
+    /// </summary>
+    public static DiplomaticInteractionOutcome ProposeTradeDeal(
+        Country playerCountry,
+        string? targetCountryId,
+        BilateralTradeTerms terms,
+        IEnumerable<Country> worldCountries,
+        RepublicTime currentTime)
+    {
+        ArgumentNullException.ThrowIfNull(playerCountry);
+        ArgumentNullException.ThrowIfNull(terms);
+        ArgumentNullException.ThrowIfNull(worldCountries);
+
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.InvalidInput,
+                "Target country identifier cannot be null or empty.");
+        }
+
+        var trimmedTargetId = targetCountryId.Trim();
+
+        if (string.Equals(trimmedTargetId, playerCountry.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.SelfRelationProhibited,
+                $"Cannot execute trade deals with your own nation ('{playerCountry.Name}').");
+        }
+
+        var targetCountry = worldCountries.FirstOrDefault(c => string.Equals(c.Id, trimmedTargetId, StringComparison.OrdinalIgnoreCase));
+        if (targetCountry == null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.TargetNotFound,
+                $"Target country with ID '{trimmedTargetId}' does not exist in the world registry.");
+        }
+
+        var relation = playerCountry.GetRelation(trimmedTargetId);
+        if (relation == null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.RelationNotFound,
+                $"Cannot propose trade deal to '{targetCountry.Name}': No diplomatic relation exists. Open a relation first.");
+        }
+
+        if (!terms.Involves(playerCountry.Id) || !terms.Involves(trimmedTargetId))
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.InvalidInput,
+                "Trade deal terms must specifically involve the player country and the target country.");
+        }
+
+        var existingPending = playerCountry.Agreements
+            .FirstOrDefault(a => a.AgreementType == DiplomaticAgreementType.Trade && a.Involves(trimmedTargetId) && a.IsPending);
+        if (existingPending != null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.AlreadyExists,
+                $"A pending trade proposal already exists between '{playerCountry.Name}' and '{targetCountry.Name}'. Resolve it first before proposing another deal.",
+                Agreement: existingPending);
+        }
+
+        var deal = playerCountry.ProposeTradeDeal(targetCountry, terms, currentTime);
+        if (deal != null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.Success,
+                $"Successfully proposed bilateral trade deal to '{targetCountry.Name}': {terms}.",
+                Agreement: deal);
+        }
+
+        return new DiplomaticInteractionOutcome(
+            DiplomaticActionResult.InvalidInput,
+            $"Bilateral trade deal proposal to '{targetCountry.Name}' was rejected by domain policy.");
+    }
+
+    /// <summary>
+    /// Executes a deterministic decision (Accept or Reject) on a pending bilateral diplomatic agreement or trade deal.
+    /// When accepting a trade deal with explicit economic terms, validates buyer funds and seller goods,
+    /// executes the atomic transfer of REPU and commodities, updates state on both countries, and records the decision boundary.
     /// </summary>
     public static DiplomaticInteractionOutcome RespondToAgreement(
         Country respondingCountry,
@@ -356,10 +437,68 @@ public static class BilateralDiplomacyHandler
             : agreement.SourceCountryId;
 
         var otherCountry = worldCountries.FirstOrDefault(c => string.Equals(c.Id, otherCountryId, StringComparison.OrdinalIgnoreCase));
+        if (otherCountry == null)
+        {
+            return new DiplomaticInteractionOutcome(
+                DiplomaticActionResult.TargetNotFound,
+                $"Partner country with ID '{otherCountryId}' does not exist in the world registry.");
+        }
+
+        // Validation for trade deals with explicit terms when accepting
+        if (agreement.Terms != null && accept)
+        {
+            var terms = agreement.Terms;
+            var buyer = string.Equals(respondingCountry.Id, terms.BuyerCountryId, StringComparison.OrdinalIgnoreCase)
+                ? respondingCountry
+                : (string.Equals(otherCountry.Id, terms.BuyerCountryId, StringComparison.OrdinalIgnoreCase) ? otherCountry : null);
+
+            var seller = string.Equals(respondingCountry.Id, terms.SellerCountryId, StringComparison.OrdinalIgnoreCase)
+                ? respondingCountry
+                : (string.Equals(otherCountry.Id, terms.SellerCountryId, StringComparison.OrdinalIgnoreCase) ? otherCountry : null);
+
+            if (buyer == null || seller == null)
+            {
+                return new DiplomaticInteractionOutcome(
+                    DiplomaticActionResult.InvalidInput,
+                    "Trade deal terms reference countries that do not match the agreement parties.");
+            }
+
+            if (buyer.Treasury.Balance < terms.Price)
+            {
+                return new DiplomaticInteractionOutcome(
+                    DiplomaticActionResult.InsufficientFunds,
+                    $"Trade deal execution rejected: Buyer '{buyer.Name}' has insufficient REPU. Required: {terms.FormattedPrice}, Available: {buyer.Treasury.FormattedBalance}.",
+                    Agreement: agreement);
+            }
+
+            if (!seller.Inventory.HasSufficient(terms.ResourceType, terms.Quantity))
+            {
+                return new DiplomaticInteractionOutcome(
+                    DiplomaticActionResult.InsufficientGoods,
+                    $"Trade deal execution rejected: Seller '{seller.Name}' has insufficient {terms.ResourceType}. Required: {terms.Quantity:N0} units, Available: {seller.Inventory.GetQuantity(terms.ResourceType):N0} units.",
+                    Agreement: agreement);
+            }
+        }
 
         var decided = respondingCountry.RespondToAgreement(agreement.Id, accept, currentTime, otherCountry);
         if (decided != null)
         {
+            if (decided.Terms != null && accept)
+            {
+                return new DiplomaticInteractionOutcome(
+                    DiplomaticActionResult.Success,
+                    $"Bilateral trade deal successfully executed at {currentTime}: Transferred {decided.Terms.Quantity:N0} units of {decided.Terms.ResourceType} for {decided.Terms.FormattedPrice}.",
+                    Agreement: decided);
+            }
+
+            if (decided.Terms != null && !accept)
+            {
+                return new DiplomaticInteractionOutcome(
+                    DiplomaticActionResult.Success,
+                    $"Bilateral trade deal proposal was rejected at {currentTime}. No funds or goods were transferred.",
+                    Agreement: decided);
+            }
+
             var actionText = accept ? "accepted" : "rejected";
             return new DiplomaticInteractionOutcome(
                 DiplomaticActionResult.Success,
