@@ -22,6 +22,7 @@ public sealed class BudgetService : IBudgetService
     private readonly IWorkspaceManager? _workspaceManager;
     private readonly IEventBus _eventBus;
     private readonly ILogger? _logger;
+    private readonly IRepublicClock? _clock;
     private readonly object _lock = new();
     private int _quarterCounter;
 
@@ -29,12 +30,14 @@ public sealed class BudgetService : IBudgetService
         IWorldManager worldManager,
         IEventBus eventBus,
         IWorkspaceManager? workspaceManager = null,
-        ILogger? logger = null)
+        ILogger? logger = null,
+        IRepublicClock? clock = null)
     {
         _worldManager = worldManager ?? throw new ArgumentNullException(nameof(worldManager));
         _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         _workspaceManager = workspaceManager;
         _logger = logger;
+        _clock = clock ?? _worldManager.Countries?.Clock;
     }
 
     public TaxPolicy GetTaxPolicy()
@@ -77,7 +80,8 @@ public sealed class BudgetService : IBudgetService
         }
 
         _logger?.LogInfo($"Tax Policy Updated: Income ({_taxPolicy.IncomeTaxRate * 100:0}%), Corp ({_taxPolicy.CorporateTaxRate * 100:0}%)");
-        await _eventBus.PublishAsync(new TaxPolicyUpdatedEvent(_taxPolicy, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+        var timestamp = _clock?.CurrentTime.WatTimestamp ?? DateTimeOffset.UtcNow;
+        await _eventBus.PublishAsync(new TaxPolicyUpdatedEvent(_taxPolicy, timestamp), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task UpdateMinistryBudgetAsync(MinistryBudget budget, CancellationToken cancellationToken = default)
@@ -94,16 +98,17 @@ public sealed class BudgetService : IBudgetService
         }
 
         _logger?.LogInfo($"Ministry Budget Updated: Total Quarterly Expenditure (${_ministryBudget.TotalQuarterlyExpenditures:N0})");
-        await _eventBus.PublishAsync(new MinistryBudgetUpdatedEvent(_ministryBudget, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+        var timestamp = _clock?.CurrentTime.WatTimestamp ?? DateTimeOffset.UtcNow;
+        await _eventBus.PublishAsync(new MinistryBudgetUpdatedEvent(_ministryBudget, timestamp), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<FiscalQuarterReport> ProcessQuarterlyReportAsync(ulong currentTick, CancellationToken cancellationToken = default)
     {
         var playerCountry = _worldManager.Countries.GetCountry("player-country") ?? _worldManager.Countries.GetAllCountries().FirstOrDefault();
+        var simulationTime = _clock?.CurrentTime ?? _worldManager.Countries.Clock.CurrentTime;
         if (playerCountry != null)
         {
-            var fallbackTime = RepublicTime.FromDayAndTime(0, TimeOnly.MinValue, DateTimeOffset.UtcNow);
-            return await ProcessQuarterlyReportAsync(playerCountry, fallbackTime, cancellationToken).ConfigureAwait(false);
+            return await ProcessQuarterlyReportAsync(playerCountry, simulationTime, cancellationToken).ConfigureAwait(false);
         }
 
         TaxPolicy policy;
@@ -147,11 +152,12 @@ public sealed class BudgetService : IBudgetService
             TariffRevenue = tariffRev,
             TotalTaxRevenue = totalTaxRevenue,
             TotalExpenditures = totalExpenditures,
-            UpdatedTreasuryBalance = updatedTreasury
+            UpdatedTreasuryBalance = updatedTreasury,
+            Timestamp = simulationTime
         };
 
         _logger?.LogInfo($"Q{_quarterCounter} Fiscal Report: Rev (${totalTaxRevenue:N0}) - Exp (${totalExpenditures:N0}) = Net (${netSurplusDeficit:N0})");
-        await _eventBus.PublishAsync(new QuarterlyFiscalReportGeneratedEvent(report, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+        await _eventBus.PublishAsync(new QuarterlyFiscalReportGeneratedEvent(report, simulationTime.WatTimestamp), cancellationToken).ConfigureAwait(false);
 
         _workspaceManager?.Email.ReceiveEmail(new EmailMessage
         {
@@ -166,6 +172,38 @@ public sealed class BudgetService : IBudgetService
     }
 
     public async Task<FiscalQuarterReport> ProcessQuarterlyReportAsync(
+        Country country,
+        RepublicTime simulationTime,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        var reports = await ProcessDueQuartersAsync(country, simulationTime, cancellationToken).ConfigureAwait(false);
+        if (reports.Count > 0)
+        {
+            return reports[^1];
+        }
+
+        if (country.LatestFiscalReport != null)
+        {
+            return country.LatestFiscalReport;
+        }
+
+        return new FiscalQuarterReport
+        {
+            CountryId = country.Id,
+            QuarterIndex = FiscalSchedule.GetQuarterIndex(simulationTime),
+            IncomeTaxRevenue = 0.0,
+            CorporateTaxRevenue = 0.0,
+            TariffRevenue = 0.0,
+            TotalTaxRevenue = 0.0,
+            TotalExpenditures = 0.0,
+            UpdatedTreasuryBalance = country.Treasury.Balance,
+            Timestamp = simulationTime
+        };
+    }
+
+    public async Task<IReadOnlyList<FiscalQuarterReport>> ProcessDueQuartersAsync(
         Country country,
         RepublicTime simulationTime,
         CancellationToken cancellationToken = default)
@@ -196,16 +234,10 @@ public sealed class BudgetService : IBudgetService
             throw new ArgumentException("Ministry expenditures must be finite and non-negative.", nameof(country));
         }
 
-        int targetQuarter;
-        lock (_lock)
+        var dueQuarters = FiscalSchedule.GetDueQuarters(country, simulationTime);
+        if (dueQuarters.Count == 0)
         {
-            targetQuarter = country.LastProcessedFiscalQuarter + 1;
-        }
-
-        var transactionKey = $"fiscal-quarter-{country.Id}-Q{targetQuarter}";
-        if (country.Treasury.HasAppliedSnapshot(transactionKey) && country.LatestFiscalReport != null)
-        {
-            return country.LatestFiscalReport;
+            return Array.Empty<FiscalQuarterReport>();
         }
 
         var gdp = country.GrossDomesticProduct;
@@ -216,43 +248,55 @@ public sealed class BudgetService : IBudgetService
         var totalTaxRevenue = incomeTaxRev + corpTaxRev + tariffRev;
         var totalExpenditures = budget.TotalQuarterlyExpenditures;
 
-        var evaluatedReport = new FiscalQuarterReport
-        {
-            CountryId = country.Id,
-            QuarterIndex = targetQuarter,
-            IncomeTaxRevenue = incomeTaxRev,
-            CorporateTaxRevenue = corpTaxRev,
-            TariffRevenue = tariffRev,
-            TotalTaxRevenue = totalTaxRevenue,
-            TotalExpenditures = totalExpenditures,
-            UpdatedTreasuryBalance = country.Treasury.Balance,
-            Timestamp = simulationTime
-        };
+        var currentQuarter = FiscalSchedule.GetQuarterIndex(simulationTime);
+        var reports = new List<FiscalQuarterReport>(dueQuarters.Count);
 
-        var finalReport = country.ApplyFiscalQuarter(evaluatedReport);
-
-        // Keep world manager economic indicators synchronized if this is the player country
-        var playerCountry = _worldManager.Countries.GetCountry("player-country") ?? _worldManager.Countries.GetAllCountries().FirstOrDefault();
-        if (playerCountry != null && playerCountry.Id == country.Id)
+        foreach (var quarterIndex in dueQuarters)
         {
-            var ind = _worldManager.Economic.GetIndicators();
-            ind.TreasuryBalance = country.Treasury.Balance;
-            ind.GrossDomesticProduct = country.GrossDomesticProduct;
+            var quarterTime = (quarterIndex == currentQuarter)
+                ? simulationTime
+                : FiscalSchedule.GetQuarterStartTime(quarterIndex, simulationTime.LaunchEpochWat);
+
+            var evaluatedReport = new FiscalQuarterReport
+            {
+                CountryId = country.Id,
+                QuarterIndex = quarterIndex,
+                IncomeTaxRevenue = incomeTaxRev,
+                CorporateTaxRevenue = corpTaxRev,
+                TariffRevenue = tariffRev,
+                TotalTaxRevenue = totalTaxRevenue,
+                TotalExpenditures = totalExpenditures,
+                UpdatedTreasuryBalance = country.Treasury.Balance,
+                Timestamp = quarterTime
+            };
+
+            var finalReport = country.ApplyFiscalQuarter(evaluatedReport);
+
+            // Keep world manager economic indicators synchronized if this is the player country
+            var playerCountry = _worldManager.Countries.GetCountry("player-country") ?? _worldManager.Countries.GetAllCountries().FirstOrDefault();
+            if (playerCountry != null && playerCountry.Id == country.Id)
+            {
+                var ind = _worldManager.Economic.GetIndicators();
+                ind.TreasuryBalance = country.Treasury.Balance;
+                ind.GrossDomesticProduct = country.GrossDomesticProduct;
+            }
+
+            _logger?.LogInfo($"Q{finalReport.QuarterIndex} Fiscal Report for {country.Name}: Rev ({finalReport.FormattedTotalTaxRevenue}) - Exp ({finalReport.FormattedTotalExpenditures}) = Net ({finalReport.FormattedNetSurplusOrDeficit}). Treasury: {country.Treasury.FormattedBalance}");
+            await _eventBus.PublishAsync(new QuarterlyFiscalReportGeneratedEvent(finalReport, quarterTime.WatTimestamp), cancellationToken).ConfigureAwait(false);
+
+            _workspaceManager?.Email.ReceiveEmail(new EmailMessage
+            {
+                Sender = "Ministry of Finance",
+                Subject = $"FISCAL REPORT: Q{finalReport.QuarterIndex} Financial Summary - {country.Name}",
+                Body = $"Quarter {finalReport.QuarterIndex} report generated for {country.Name}. Revenue: {finalReport.FormattedTotalTaxRevenue}, Expenditure: {finalReport.FormattedTotalExpenditures}. Net: {finalReport.FormattedNetSurplusOrDeficit}. Treasury Balance: {country.Treasury.FormattedBalance}.",
+                Folder = "Inbox",
+                ActionRequired = false
+            });
+
+            reports.Add(finalReport);
         }
 
-        _logger?.LogInfo($"Q{finalReport.QuarterIndex} Fiscal Report for {country.Name}: Rev ({finalReport.FormattedTotalTaxRevenue}) - Exp ({finalReport.FormattedTotalExpenditures}) = Net ({finalReport.FormattedNetSurplusOrDeficit}). Treasury: {country.Treasury.FormattedBalance}");
-        await _eventBus.PublishAsync(new QuarterlyFiscalReportGeneratedEvent(finalReport, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
-
-        _workspaceManager?.Email.ReceiveEmail(new EmailMessage
-        {
-            Sender = "Ministry of Finance",
-            Subject = $"FISCAL REPORT: Q{finalReport.QuarterIndex} Financial Summary - {country.Name}",
-            Body = $"Quarter {finalReport.QuarterIndex} report generated for {country.Name}. Revenue: {finalReport.FormattedTotalTaxRevenue}, Expenditure: {finalReport.FormattedTotalExpenditures}. Net: {finalReport.FormattedNetSurplusOrDeficit}. Treasury Balance: {country.Treasury.FormattedBalance}.",
-            Folder = "Inbox",
-            ActionRequired = false
-        });
-
-        return finalReport;
+        return reports.AsReadOnly();
     }
 }
 

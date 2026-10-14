@@ -15,5 +15,6 @@ public interface IBudgetService
     Task UpdateMinistryBudgetAsync(MinistryBudget budget, CancellationToken cancellationToken = default);
     Task<FiscalQuarterReport> ProcessQuarterlyReportAsync(ulong currentTick, CancellationToken cancellationToken = default);
     Task<FiscalQuarterReport> ProcessQuarterlyReportAsync(Country country, RepublicTime simulationTime, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<FiscalQuarterReport>> ProcessDueQuartersAsync(Country country, RepublicTime simulationTime, CancellationToken cancellationToken = default);
 }
 

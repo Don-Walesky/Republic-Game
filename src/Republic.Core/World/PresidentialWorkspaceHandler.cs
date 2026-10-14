@@ -53,7 +53,8 @@ public sealed record TimeAdvancementSummary(
     int YieldCyclesProcessed,
     int ResourceCyclesProcessed,
     int ProjectsCompletedCount,
-    IReadOnlyList<DevelopmentProject> CompletedProjects);
+    IReadOnlyList<DevelopmentProject> CompletedProjects,
+    int FiscalQuartersProcessed = 0);
 
 /// <summary>
 /// Domain handler coordinating executive workspace actions and simulation time advancement.
@@ -196,14 +197,15 @@ public static class PresidentialWorkspaceHandler
 
     /// <summary>
     /// Advances authoritative Republic simulation time by the specified duration, processing all due yield cycles,
-    /// domestic resource production cycles, and capital development project completions across all registered countries.
+    /// domestic resource production cycles, capital development project completions, and fiscal quarters across all registered countries.
     /// </summary>
     public static TimeAdvancementSummary AdvanceTime(
         IWorldManager worldManager,
         ITimeSystem timeSystem,
         TimeSpan duration,
         INationalYieldCycleService? yieldService = null,
-        IResourceProductionService? resourceService = null)
+        IResourceProductionService? resourceService = null,
+        IBudgetService? budgetService = null)
     {
         ArgumentNullException.ThrowIfNull(worldManager);
         ArgumentNullException.ThrowIfNull(timeSystem);
@@ -224,6 +226,7 @@ public static class PresidentialWorkspaceHandler
 
         var yieldCyclesTotal = 0;
         var resourceCyclesTotal = 0;
+        var fiscalQuartersTotal = 0;
         var completedProjects = new List<DevelopmentProject>();
 
         foreach (var country in worldManager.Countries.GetAllCountries())
@@ -244,6 +247,13 @@ public static class PresidentialWorkspaceHandler
                     completedProjects.Add(proj);
                 }
             }
+
+            // 4. Process due simulation-time fiscal cycles
+            if (budgetService != null)
+            {
+                var fiscalReports = budgetService.ProcessDueQuartersAsync(country, newTime).GetAwaiter().GetResult();
+                fiscalQuartersTotal += fiscalReports.Count;
+            }
         }
 
         return new TimeAdvancementSummary(
@@ -253,6 +263,80 @@ public static class PresidentialWorkspaceHandler
             yieldCyclesTotal,
             resourceCyclesTotal,
             completedProjects.Count,
-            completedProjects.AsReadOnly());
+            completedProjects.AsReadOnly(),
+            fiscalQuartersTotal);
+    }
+
+    /// <summary>
+    /// Asynchronously advances authoritative Republic simulation time by the specified duration, processing all due yield cycles,
+    /// domestic resource production cycles, capital development project completions, and fiscal quarters across all registered countries.
+    /// </summary>
+    public static async Task<TimeAdvancementSummary> AdvanceTimeAsync(
+        IWorldManager worldManager,
+        ITimeSystem timeSystem,
+        TimeSpan duration,
+        INationalYieldCycleService? yieldService = null,
+        IResourceProductionService? resourceService = null,
+        IBudgetService? budgetService = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(worldManager);
+        ArgumentNullException.ThrowIfNull(timeSystem);
+
+        var oldTime = timeSystem.CurrentRepublicTime;
+
+        if (duration > TimeSpan.Zero)
+        {
+            if (timeSystem.Clock is IControlledRepublicClock controlledClock)
+            {
+                controlledClock.Advance(duration);
+            }
+        }
+
+        var newTime = timeSystem.CurrentRepublicTime;
+        var activeYieldService = yieldService ?? new NationalYieldCycleService();
+        var activeResourceService = resourceService ?? new ResourceProductionService();
+
+        var yieldCyclesTotal = 0;
+        var resourceCyclesTotal = 0;
+        var fiscalQuartersTotal = 0;
+        var completedProjects = new List<DevelopmentProject>();
+
+        foreach (var country in worldManager.Countries.GetAllCountries())
+        {
+            // 1. Process due six-hour National Yield cycles
+            var yieldSnapshots = activeYieldService.ExecuteDueCycles(country, newTime);
+            yieldCyclesTotal += yieldSnapshots.Count;
+
+            // 2. Process due domestic resource production cycles
+            var resourceResults = activeResourceService.ProduceDueCycles(country, newTime);
+            resourceCyclesTotal += resourceResults.Count(r => r.Success);
+
+            // 3. Process completed development projects
+            foreach (var proj in country.Projects.Where(p => p.IsActive).ToList())
+            {
+                if (proj.CanComplete(newTime) && country.CompleteProject(proj, newTime))
+                {
+                    completedProjects.Add(proj);
+                }
+            }
+
+            // 4. Process due simulation-time fiscal cycles
+            if (budgetService != null)
+            {
+                var fiscalReports = await budgetService.ProcessDueQuartersAsync(country, newTime, cancellationToken).ConfigureAwait(false);
+                fiscalQuartersTotal += fiscalReports.Count;
+            }
+        }
+
+        return new TimeAdvancementSummary(
+            oldTime,
+            newTime,
+            duration,
+            yieldCyclesTotal,
+            resourceCyclesTotal,
+            completedProjects.Count,
+            completedProjects.AsReadOnly(),
+            fiscalQuartersTotal);
     }
 }

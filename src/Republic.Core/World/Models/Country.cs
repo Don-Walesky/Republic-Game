@@ -2403,7 +2403,7 @@ public sealed class Country
         var transactionKey = $"fiscal-quarter-{Id}-Q{report.QuarterIndex}";
 
         // Deduplication guard: if transaction was already applied, do not duplicate financial transaction
-        if (Treasury.HasAppliedSnapshot(transactionKey) || (LastProcessedFiscalQuarter >= report.QuarterIndex && LatestFiscalReport != null))
+        if (Treasury.HasAppliedSnapshot(transactionKey) || LastProcessedFiscalQuarter >= report.QuarterIndex)
         {
             return LatestFiscalReport ?? report;
         }

@@ -217,7 +217,12 @@ public sealed class FiscalTaxationTreasuryTests
         Assert.Equal(balanceAfterFirst, country.Treasury.Balance);
         Assert.Same(report1, reportReapplied);
 
-        // 4. Act: Attempting to re-process with same quarter state
+        // 4. Act: Attempting to re-process with same quarter state via service
+        var report2 = await _budgetService.ProcessQuarterlyReportAsync(country, _clock.CurrentTime);
+        Assert.Equal(balanceAfterFirst, country.Treasury.Balance);
+        Assert.Equal(1, country.LastProcessedFiscalQuarter);
+        Assert.Same(report1, report2);
+
         var transactionKey = $"fiscal-quarter-{country.Id}-Q1";
         Assert.True(country.Treasury.HasAppliedSnapshot(transactionKey));
         Assert.Equal(1, country.LastProcessedFiscalQuarter);
