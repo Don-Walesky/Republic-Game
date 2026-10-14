@@ -1,6 +1,7 @@
 namespace Republic.Core.World.Models;
 
 using System.Globalization;
+using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
 using Republic.Core.Time;
@@ -41,6 +42,26 @@ public sealed record NationalDashboard
     /// Gets the formatted approval percentage string (e.g. "68.5%").
     /// </summary>
     public string Approval { get; init; }
+
+    /// <summary>
+    /// Gets the sovereign national taxation policy.
+    /// </summary>
+    public TaxPolicy TaxPolicy { get; init; }
+
+    /// <summary>
+    /// Gets the formatted taxation overview line (e.g. "Income: 25% | Corporate: 20%").
+    /// </summary>
+    public string Taxation { get; init; }
+
+    /// <summary>
+    /// Gets the latest citizen welfare and public approval feedback record, or null if none.
+    /// </summary>
+    public CitizenFeedbackRecord? LatestCitizenFeedback { get; init; }
+
+    /// <summary>
+    /// Gets the summary description of public approval sentiment from the latest citizen feedback.
+    /// </summary>
+    public string CitizenSentiment { get; init; }
 
     /// <summary>
     /// Gets the economy overview line containing the treasury balance and GDP already on the country.
@@ -180,6 +201,12 @@ public sealed record NationalDashboard
 
         Science = NotEstablishedText;
         Military = NotEstablishedText;
+
+        // 7. Taxation & Citizen Sentiment
+        TaxPolicy = country.TaxPolicy;
+        Taxation = $"Income: {FormatTaxRate(country.TaxPolicy.IncomeTaxRate)} | Corporate: {FormatTaxRate(country.TaxPolicy.CorporateTaxRate)}";
+        LatestCitizenFeedback = country.LatestCitizenFeedback;
+        CitizenSentiment = country.LatestCitizenFeedback?.Description ?? "Neutral (Standard baseline taxation in effect)";
     }
 
     /// <summary>
@@ -195,6 +222,7 @@ public sealed record NationalDashboard
     {
         $"Approval: {Approval}",
         $"Economy: {Economy}",
+        $"Taxation: {Taxation}",
         $"Stability: {Stability}",
         $"Treasury: {Treasury}",
         $"Yield: {Yield}",
@@ -203,6 +231,14 @@ public sealed record NationalDashboard
         $"Science: {Science}",
         $"Military: {Military}"
     };
+
+    private static string FormatTaxRate(double rate)
+    {
+        var percent = rate * 100.0;
+        return (percent % 1 == 0)
+            ? $"{percent:0}%"
+            : $"{percent:0.#}%";
+    }
 
     private static string FormatPercentage(double value)
     {

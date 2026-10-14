@@ -3,6 +3,7 @@ namespace Republic.Core.World;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
@@ -20,7 +21,8 @@ public enum ExecutiveActionResult
     InsufficientFunds,
     AlreadyActive,
     InvalidCountry,
-    PrerequisitesNotMet
+    PrerequisitesNotMet,
+    InvalidInput
 }
 
 /// <summary>
@@ -29,7 +31,8 @@ public enum ExecutiveActionResult
 public sealed record ExecutiveActionOutcome(
     ExecutiveActionResult Result,
     string Message,
-    DevelopmentProject? Project = null)
+    DevelopmentProject? Project = null,
+    CitizenFeedbackRecord? CitizenFeedback = null)
 {
     /// <summary>
     /// Indicates whether the executive action was successfully executed.
@@ -101,6 +104,54 @@ public static class PresidentialWorkspaceHandler
             ExecutiveActionResult.Success,
             $"National Power Plant construction commenced. Deducted {RepuTreasury.Format(project.Cost)} from sovereign treasury. Scheduled completion: {project.FinishBoundary}.",
             project);
+    }
+
+    /// <summary>
+    /// Adjusts the national taxation policy for the specified sovereign country.
+    /// Validates inputs, requires explicit presidential confirmation, and evaluates citizen welfare and approval consequences.
+    /// </summary>
+    public static ExecutiveActionOutcome AdjustTaxPolicy(
+        Country country,
+        TaxPolicy newPolicy,
+        RepublicTime simulationTime,
+        bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidCountry,
+                "Cannot adjust taxation policy: invalid or missing sovereign country.");
+        }
+
+        if (newPolicy == null || !double.IsFinite(newPolicy.IncomeTaxRate) || !double.IsFinite(newPolicy.CorporateTaxRate) || !double.IsFinite(newPolicy.ImportTariffRate))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidInput,
+                "Taxation policy rejected: rates must be finite, valid numbers.");
+        }
+
+        if (newPolicy.IncomeTaxRate < 0.0 || newPolicy.IncomeTaxRate > 0.70 ||
+            newPolicy.CorporateTaxRate < 0.0 || newPolicy.CorporateTaxRate > 0.60 ||
+            newPolicy.ImportTariffRate < 0.0 || newPolicy.ImportTariffRate > 0.50)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidInput,
+                "Taxation policy rejected: rates exceed constitutional bounds (Income: 0-70%, Corporate: 0-60%, Tariff: 0-50%).");
+        }
+
+        if (!confirmed)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.Cancelled,
+                "Taxation policy adjustment cancelled by executive order. Existing tax rates and citizen approval preserved unchanged.");
+        }
+
+        var feedback = country.ApplyTaxPolicy(newPolicy, simulationTime);
+
+        return new ExecutiveActionOutcome(
+            ExecutiveActionResult.Success,
+            feedback.Description,
+            CitizenFeedback: feedback);
     }
 
     /// <summary>

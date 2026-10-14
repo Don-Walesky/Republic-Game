@@ -2,6 +2,7 @@ namespace Republic.Core.World.Models;
 
 using System.Text.Json.Serialization;
 using Republic.Core.Cabinet.Models;
+using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
@@ -70,6 +71,18 @@ public sealed class Country
         get => HappinessRating;
         set => HappinessRating = value;
     }
+
+    /// <summary>
+    /// Gets or sets the authoritative national taxation policy for this sovereign country.
+    /// Defaults to the standard national baseline (Income: 25%, Corporate: 20%, Tariff: 5%).
+    /// </summary>
+    public TaxPolicy TaxPolicy { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the latest citizen welfare and public approval feedback record resulting from domestic policy actions.
+    /// Null if no domestic policy adjustment has been enacted yet.
+    /// </summary>
+    public CitizenFeedbackRecord? LatestCitizenFeedback { get; set; }
 
     /// <summary>
     /// Gets or sets the sovereign gross domestic product (GDP) in REPU.
@@ -2247,6 +2260,109 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Applies a new national taxation policy, evaluating its direct citizen welfare and public approval consequences
+    /// according to established Republic domain rules.
+    /// </summary>
+    /// <param name="newPolicy">The new taxation policy to enact.</param>
+    /// <param name="enactedTime">The authoritative Republic simulation timestamp at which the decision is enacted.</param>
+    /// <returns>A domain feedback record detailing the citizen reaction, approval delta, and stability impact.</returns>
+    public CitizenFeedbackRecord ApplyTaxPolicy(TaxPolicy newPolicy, RepublicTime enactedTime)
+    {
+        ArgumentNullException.ThrowIfNull(newPolicy);
+
+        var prevIncome = TaxPolicy.IncomeTaxRate;
+        var prevCorp = TaxPolicy.CorporateTaxRate;
+        var prevTariff = TaxPolicy.ImportTariffRate;
+
+        // Clamp rates within constitutional boundaries (0.0 to 0.70 for income, 0.0 to 0.60 for corporate, 0.0 to 0.50 for tariff)
+        var clampedIncome = double.IsFinite(newPolicy.IncomeTaxRate) ? Math.Clamp(newPolicy.IncomeTaxRate, 0.0, 0.70) : prevIncome;
+        var clampedCorp = double.IsFinite(newPolicy.CorporateTaxRate) ? Math.Clamp(newPolicy.CorporateTaxRate, 0.0, 0.60) : prevCorp;
+        var clampedTariff = double.IsFinite(newPolicy.ImportTariffRate) ? Math.Clamp(newPolicy.ImportTariffRate, 0.0, 0.50) : prevTariff;
+
+        TaxPolicy.IncomeTaxRate = clampedIncome;
+        TaxPolicy.CorporateTaxRate = clampedCorp;
+        TaxPolicy.ImportTariffRate = clampedTariff;
+
+        var incomeDelta = clampedIncome - prevIncome;
+        var prevApproval = HappinessRating;
+        var prevStability = BaselineStability;
+
+        // Feedback rule:
+        // Income tax directly affects citizen household disposable income and welfare:
+        // Each +1% (+0.01) increase in income tax rate produces a -0.5 point drop in public approval.
+        // Each -1% (-0.01) decrease in income tax rate produces a +0.5 point increase in public approval.
+        // Clamped between 0.0% and 100.0%.
+        var rawApprovalDelta = (incomeDelta == 0.0) ? 0.0 : -incomeDelta * 50.0;
+        var targetApproval = Math.Clamp(prevApproval + rawApprovalDelta, 0.0, 100.0);
+        var actualApprovalDelta = Math.Round(targetApproval - prevApproval, 2);
+
+        HappinessRating = targetApproval;
+
+        // Extreme taxation threshold (> 50% income tax rate):
+        // If income tax rate exceeds 50% (0.50), high societal stress inflicts a -2.0% stability penalty.
+        // If reduced back to <= 50% from > 50%, the penalty is restored (+2.0% stability).
+        var stabilityDelta = 0.0;
+        if (prevIncome <= 0.50 && clampedIncome > 0.50)
+        {
+            stabilityDelta = -2.0;
+        }
+        else if (prevIncome > 0.50 && clampedIncome <= 0.50)
+        {
+            stabilityDelta = 2.0;
+        }
+
+        if (stabilityDelta != 0.0)
+        {
+            BaselineStability = Math.Clamp(BaselineStability + stabilityDelta, 0.0, 100.0);
+        }
+
+        var description = BuildCitizenFeedbackDescription(clampedIncome, prevIncome, actualApprovalDelta, stabilityDelta);
+
+        var feedback = new CitizenFeedbackRecord
+        {
+            PreviousIncomeTaxRate = prevIncome,
+            NewIncomeTaxRate = clampedIncome,
+            PreviousCorporateTaxRate = prevCorp,
+            NewCorporateTaxRate = clampedCorp,
+            ApprovalDelta = actualApprovalDelta,
+            PreviousApproval = prevApproval,
+            CurrentApproval = HappinessRating,
+            StabilityDelta = stabilityDelta,
+            PreviousStability = prevStability,
+            CurrentStability = BaselineStability,
+            EnactedTime = enactedTime,
+            Description = description
+        };
+
+        LatestCitizenFeedback = feedback;
+        return feedback;
+    }
+
+    private static string BuildCitizenFeedbackDescription(double newIncome, double prevIncome, double approvalDelta, double stabilityDelta)
+    {
+        if (newIncome > prevIncome)
+        {
+            var text = $"Tax hike enacted ({prevIncome * 100:0.#}% -> {newIncome * 100:0.#}%). Household disposable income reduced; public approval dropped by {Math.Abs(approvalDelta):0.#}%.";
+            if (stabilityDelta < 0)
+            {
+                text += $" Societal friction from extreme tax (>50%) reduced national stability by {Math.Abs(stabilityDelta):0.#}%.";
+            }
+            return text;
+        }
+        else if (newIncome < prevIncome)
+        {
+            var text = $"Tax relief enacted ({prevIncome * 100:0.#}% -> {newIncome * 100:0.#}%). Household disposable income expanded; public approval rose by {approvalDelta:0.#}%.";
+            if (stabilityDelta > 0)
+            {
+                text += $" Easing extreme taxation restored national stability by {stabilityDelta:0.#}%.";
+            }
+            return text;
+        }
+
+        return $"Tax policy maintained at {newIncome * 100:0.#}%. Citizen sentiment remains steady.";
+    }
+
+    /// <summary>
     /// Evaluates and returns the read-only national dashboard for this sovereign country at the specified simulation time.
     /// Induces zero mutation or side-effects on country or simulation state.
     /// </summary>
@@ -2305,7 +2421,9 @@ public sealed class Country
         DiplomaticAgreement? agreement = null,
         IEnumerable<DiplomaticAgreement>? agreements = null,
         ResourceInventory? inventory = null,
-        IEnumerable<ResourceNode>? resourceNodes = null)
+        IEnumerable<ResourceNode>? resourceNodes = null,
+        TaxPolicy? taxPolicy = null,
+        CitizenFeedbackRecord? latestCitizenFeedback = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -2330,6 +2448,10 @@ public sealed class Country
             HappinessRating = happinessRating,
             LatestYieldSnapshot = latestYieldSnapshot,
             LatestTreasuryConsequence = latestTreasuryConsequence,
+            TaxPolicy = taxPolicy != null
+                ? new TaxPolicy { IncomeTaxRate = taxPolicy.IncomeTaxRate, CorporateTaxRate = taxPolicy.CorporateTaxRate, ImportTariffRate = taxPolicy.ImportTariffRate }
+                : new TaxPolicy(),
+            LatestCitizenFeedback = latestCitizenFeedback,
             Party = party,
             OppositionParty = oppositionParty,
             InterestGroup = interestGroup,

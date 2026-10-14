@@ -165,7 +165,7 @@ public static class Program
         if (playerCountry != null)
         {
             playerCountry.GrossDomesticProduct = econ.GrossDomesticProduct;
-            playerCountry.HappinessRating = demo.HappinessRating;
+            demo.HappinessRating = playerCountry.HappinessRating;
         }
 
         var countryForDashboard = playerCountry ?? Country.Found("Republic of Arcadia", currentRepuTime);
@@ -208,6 +208,7 @@ public static class Program
         Console.WriteLine($" Energy Capacity: {countryForDashboard.Yield.EnergyCapacity:F1} | Infrastructure Capacity: {countryForDashboard.Yield.InfrastructureCapacity:F1}");
         Console.WriteLine($" Human Capital: {countryForDashboard.Yield.HumanCapital:F1} | Science & Research: {countryForDashboard.Yield.ScienceCapacity:F1}");
         Console.WriteLine($" State Capacity Score: {countryForDashboard.StateCapacityScore:P0} | Public Approval: {dashboard.Approval} | Stability: {dashboard.Stability}");
+        Console.WriteLine($" Taxation: {dashboard.Taxation} | Citizen Sentiment: {dashboard.CitizenSentiment}");
         Console.WriteLine("--------------------------------------------------------------");
 
         // 4. Capital Development Projects
@@ -448,19 +449,135 @@ public static class Program
         Console.ReadLine();
     }
 
-    private static async Task ManageBudgetAsync(RepublicApplication app)
+    public static async Task ManageBudgetAsync(
+        RepublicApplication app,
+        Func<string?>? readLine = null,
+        Action<string>? write = null,
+        Action<string>? writeLine = null)
     {
-        Console.WriteLine("=== TAXATION & BUDGET POLICY ===");
-        var currentTax = app.BudgetService.GetTaxPolicy();
-        Console.WriteLine($" Current Income Tax: {currentTax.IncomeTaxRate * 100:0}% | Corp Tax: {currentTax.CorporateTaxRate * 100:0}%");
+        var read = readLine ?? Console.ReadLine;
+        var print = write ?? Console.Write;
+        var printLine = writeLine ?? Console.WriteLine;
 
-        Console.Write("Enter new Income Tax Rate % (e.g. 28) > ");
-        var input = Console.ReadLine()?.Trim();
-        if (double.TryParse(input, out var rate))
+        printLine("==============================================================");
+        printLine("           TAXATION POLICY & CITIZEN WELFARE DESK             ");
+        printLine("==============================================================");
+
+        var playerCountry = app.WorldManager.Countries.GetCountry("player-country") ?? app.WorldManager.Countries.GetAllCountries().FirstOrDefault();
+        var currentTime = app.TimeSystem.CurrentRepublicTime;
+
+        if (playerCountry == null)
         {
-            await app.BudgetService.UpdateTaxPolicyAsync(new TaxPolicy { IncomeTaxRate = rate / 100.0, CorporateTaxRate = currentTax.CorporateTaxRate });
-            Console.WriteLine("Tax policy updated!");
+            printLine("No sovereign player country available.");
+            printLine("\nPress Enter to return to main menu...");
+            read();
+            return;
         }
+
+        var currentTax = playerCountry.TaxPolicy;
+        var incomeRate = currentTax.IncomeTaxRate;
+        var corpRate = currentTax.CorporateTaxRate;
+
+        printLine($" Sovereign Nation: {playerCountry.Name} | Simulation Time: Day {currentTime.DayNumber}, {currentTime.Time:HH:mm} WAT");
+        printLine($" Sovereign Treasury: {playerCountry.Treasury.FormattedBalance} | GDP: R{playerCountry.GrossDomesticProduct:N0}");
+        printLine($" Current Public Approval: {playerCountry.HappinessRating:0.#}% | Baseline Stability: {playerCountry.BaselineStability:0.#}%");
+        printLine("--------------------------------------------------------------");
+        printLine($" Current Policy: Personal Income Tax: {incomeRate * 100:0.#}% | Corporate Tax: {corpRate * 100:0.#}%");
+        printLine(" Standard Baseline: Personal Income Tax: 25% | Corporate Tax: 20%");
+        printLine("--------------------------------------------------------------");
+        printLine(" Citizen Welfare & Public Approval Feedback Rules:");
+        printLine("  * Tax Hike (> current): Reduces household disposable income; approval decreases by 0.5% per +1% tax increase.");
+        printLine("  * Tax Relief (< current): Expands household disposable income; approval increases by 0.5% per -1% tax cut.");
+        printLine("  * Extreme Taxation (> 50%): Induces societal friction and reduces national stability by 2.0%.");
+        printLine("  * Constitutional Limits: Personal Income Tax must be between 0% and 70%.");
+        printLine("--------------------------------------------------------------");
+
+        if (playerCountry.LatestCitizenFeedback != null)
+        {
+            printLine($" Latest Citizen Feedback: {playerCountry.LatestCitizenFeedback.Description}");
+            printLine("--------------------------------------------------------------");
+        }
+
+        print(" Enter new Personal Income Tax Rate % (0 - 70) [or 'C' to Cancel] > ");
+        var input = read()?.Trim();
+        if (string.IsNullOrWhiteSpace(input) || input.Equals("C", StringComparison.OrdinalIgnoreCase))
+        {
+            printLine("\nTax policy review closed. No changes enacted.");
+            printLine("\nPress Enter to return to main menu...");
+            read();
+            return;
+        }
+
+        if (!double.TryParse(input, out var enteredPercent) || !double.IsFinite(enteredPercent) || enteredPercent < 0.0 || enteredPercent > 70.0)
+        {
+            printLine("\n[INVALID INPUT]: Tax rate must be a valid percentage between 0% and 70%. Zero changes enacted.");
+            printLine("\nPress Enter to return to main menu...");
+            read();
+            return;
+        }
+
+        var newIncomeRate = Math.Round(enteredPercent / 100.0, 4);
+        var deltaRate = newIncomeRate - incomeRate;
+        var estimatedApprovalDelta = -deltaRate * 50.0;
+        var estimatedNewApproval = Math.Clamp(playerCountry.HappinessRating + estimatedApprovalDelta, 0.0, 100.0);
+
+        printLine();
+        printLine(" POLICY IMPACT PROJECTION:");
+        printLine($"  - Proposed Income Tax: {enteredPercent:0.#}% (Change: {(deltaRate >= 0 ? "+" : "")}{deltaRate * 100:0.#}%)");
+        printLine($"  - Projected Public Approval: {estimatedNewApproval:0.#}% (Delta: {(estimatedApprovalDelta >= 0 ? "+" : "")}{estimatedApprovalDelta:0.#}%)");
+        if (incomeRate <= 0.50 && newIncomeRate > 0.50)
+        {
+            printLine("  - WARNING: Income tax exceeds 50% threshold. Societal stress will reduce national stability by -2.0%!");
+        }
+        else if (incomeRate > 0.50 && newIncomeRate <= 0.50)
+        {
+            printLine("  - BENEFIT: Easing rate to 50% or below will restore +2.0% national stability!");
+        }
+
+        print("\n Do you confirm enacting this executive taxation policy? [Y/N] > ");
+        var confirm = read()?.Trim();
+        var isConfirmed = string.Equals(confirm, "Y", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(confirm, "YES", StringComparison.OrdinalIgnoreCase);
+
+        var newPolicy = new TaxPolicy
+        {
+            IncomeTaxRate = newIncomeRate,
+            CorporateTaxRate = corpRate,
+            ImportTariffRate = currentTax.ImportTariffRate
+        };
+
+        var outcome = PresidentialWorkspaceHandler.AdjustTaxPolicy(playerCountry, newPolicy, currentTime, isConfirmed);
+
+        if (outcome.IsSuccess)
+        {
+            await app.BudgetService.UpdateTaxPolicyAsync(newPolicy);
+            var demo = app.WorldManager.Demographics.GetDemographics();
+            demo.HappinessRating = playerCountry.HappinessRating;
+
+            printLine();
+            printLine("==============================================================");
+            printLine("            EXECUTIVE TAXATION ENACTMENT REPORT               ");
+            printLine("==============================================================");
+            printLine($" [POLICY ENACTED]: Personal Income Tax set to {newIncomeRate * 100:0.#}%.");
+            printLine($" Citizen Reaction: {outcome.Message}");
+            printLine(" Updated Sovereign State:");
+            printLine($"  * Public Approval Rating: {playerCountry.HappinessRating:0.#}% (Previous: {outcome.CitizenFeedback?.PreviousApproval:0.#}%)");
+            printLine($"  * Baseline Stability:     {playerCountry.BaselineStability:0.#}% (Previous: {outcome.CitizenFeedback?.PreviousStability:0.#}%)");
+            printLine("==============================================================");
+        }
+        else if (outcome.Result == ExecutiveActionResult.Cancelled)
+        {
+            printLine();
+            printLine($" [ACTION CANCELLED]: {outcome.Message}");
+        }
+        else
+        {
+            printLine();
+            printLine($" [ACTION REJECTED]: {outcome.Message}");
+        }
+
+        printLine("\nPress Enter to continue...");
+        read();
     }
 
     private static async Task LaunchIntelAsync(RepublicApplication app)
