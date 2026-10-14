@@ -3,7 +3,9 @@ namespace Republic.Core.World;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Republic.Core.Economy.Budget.Models;
+using Republic.Core.Economy.Budget.Services;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.NationalYield;
@@ -32,7 +34,8 @@ public sealed record ExecutiveActionOutcome(
     ExecutiveActionResult Result,
     string Message,
     DevelopmentProject? Project = null,
-    CitizenFeedbackRecord? CitizenFeedback = null)
+    CitizenFeedbackRecord? CitizenFeedback = null,
+    FiscalQuarterReport? FiscalReport = null)
 {
     /// <summary>
     /// Indicates whether the executive action was successfully executed.
@@ -152,6 +155,43 @@ public static class PresidentialWorkspaceHandler
             ExecutiveActionResult.Success,
             feedback.Description,
             CitizenFeedback: feedback);
+    }
+
+    /// <summary>
+    /// Processes a quarterly fiscal settlement for the specified sovereign country, calculating applicable tax revenues,
+    /// deducting ministry expenditures, depositing surplus or deducting deficit from the sovereign treasury exactly once,
+    /// and generating a domain fiscal quarter report.
+    /// </summary>
+    public static async Task<ExecutiveActionOutcome> ProcessFiscalQuarterAsync(
+        Country country,
+        IBudgetService budgetService,
+        RepublicTime simulationTime,
+        CancellationToken cancellationToken = default)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidCountry,
+                "Cannot process fiscal quarter: invalid or missing sovereign country.");
+        }
+
+        if (budgetService == null)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidInput,
+                "Cannot process fiscal quarter: missing budget service.");
+        }
+
+        var report = await budgetService.ProcessQuarterlyReportAsync(country, simulationTime, cancellationToken).ConfigureAwait(false);
+
+        var summary = $"Fiscal Quarter {report.QuarterIndex} settlement processed. " +
+                      $"Revenue: {report.FormattedTotalTaxRevenue}, Expenditure: {report.FormattedTotalExpenditures}, " +
+                      $"Net: {report.FormattedNetSurplusOrDeficit}. Sovereign Treasury: {country.Treasury.FormattedBalance}.";
+
+        return new ExecutiveActionOutcome(
+            ExecutiveActionResult.Success,
+            summary,
+            FiscalReport: report);
     }
 
     /// <summary>

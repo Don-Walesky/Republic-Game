@@ -64,6 +64,16 @@ public sealed record NationalDashboard
     public string CitizenSentiment { get; init; }
 
     /// <summary>
+    /// Gets the latest quarterly fiscal report summarizing revenue, expenditure, and treasury outcomes, or null if none.
+    /// </summary>
+    public FiscalQuarterReport? LatestFiscalReport { get; init; }
+
+    /// <summary>
+    /// Gets the formatted quarterly fiscal summary line (e.g. "Q1 | Rev: R25.9B | Exp: R2.1B | Net: R23.8B").
+    /// </summary>
+    public string Fiscal { get; init; }
+
+    /// <summary>
     /// Gets the economy overview line containing the treasury balance and GDP already on the country.
     /// </summary>
     public string Economy { get; init; }
@@ -207,6 +217,12 @@ public sealed record NationalDashboard
         Taxation = $"Income: {FormatTaxRate(country.TaxPolicy.IncomeTaxRate)} | Corporate: {FormatTaxRate(country.TaxPolicy.CorporateTaxRate)}";
         LatestCitizenFeedback = country.LatestCitizenFeedback;
         CitizenSentiment = country.LatestCitizenFeedback?.Description ?? "Neutral (Standard baseline taxation in effect)";
+
+        // 8. Quarterly Fiscal Report
+        LatestFiscalReport = country.LatestFiscalReport;
+        Fiscal = LatestFiscalReport != null
+            ? $"Q{LatestFiscalReport.QuarterIndex} | Rev: {LatestFiscalReport.FormattedTotalTaxRevenue} | Exp: {LatestFiscalReport.FormattedTotalExpenditures} | Net: {LatestFiscalReport.FormattedNetSurplusOrDeficit}"
+            : NotEstablishedText;
     }
 
     /// <summary>
@@ -223,6 +239,7 @@ public sealed record NationalDashboard
         $"Approval: {Approval}",
         $"Economy: {Economy}",
         $"Taxation: {Taxation}",
+        $"Fiscal: {Fiscal}",
         $"Stability: {Stability}",
         $"Treasury: {Treasury}",
         $"Yield: {Yield}",

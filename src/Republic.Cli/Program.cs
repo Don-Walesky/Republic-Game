@@ -209,6 +209,7 @@ public static class Program
         Console.WriteLine($" Human Capital: {countryForDashboard.Yield.HumanCapital:F1} | Science & Research: {countryForDashboard.Yield.ScienceCapacity:F1}");
         Console.WriteLine($" State Capacity Score: {countryForDashboard.StateCapacityScore:P0} | Public Approval: {dashboard.Approval} | Stability: {dashboard.Stability}");
         Console.WriteLine($" Taxation: {dashboard.Taxation} | Citizen Sentiment: {dashboard.CitizenSentiment}");
+        Console.WriteLine($" Fiscal Quarter Status: {dashboard.Fiscal}");
         Console.WriteLine("--------------------------------------------------------------");
 
         // 4. Capital Development Projects
@@ -521,10 +522,19 @@ public static class Program
         var estimatedApprovalDelta = -deltaRate * 50.0;
         var estimatedNewApproval = Math.Clamp(playerCountry.HappinessRating + estimatedApprovalDelta, 0.0, 100.0);
 
+        var gdp = playerCountry.GrossDomesticProduct;
+        var estIncomeTax = gdp * 0.15 * newIncomeRate;
+        var estCorpTax = gdp * 0.10 * corpRate;
+        var estTariff = Math.Max(0.0, playerCountry.TradeBalance) * currentTax.ImportTariffRate;
+        var estTotalTax = estIncomeTax + estCorpTax + estTariff;
+        var quarterlyExp = playerCountry.MinistryBudget.TotalQuarterlyExpenditures;
+        var estNetOutcome = estTotalTax - quarterlyExp;
+
         printLine();
         printLine(" POLICY IMPACT PROJECTION:");
         printLine($"  - Proposed Income Tax: {enteredPercent:0.#}% (Change: {(deltaRate >= 0 ? "+" : "")}{deltaRate * 100:0.#}%)");
         printLine($"  - Projected Public Approval: {estimatedNewApproval:0.#}% (Delta: {(estimatedApprovalDelta >= 0 ? "+" : "")}{estimatedApprovalDelta:0.#}%)");
+        printLine($"  - Projected Quarterly Tax Revenue: {RepuTreasury.Format(estTotalTax)} (Net: {(estNetOutcome >= 0 ? "+" : "")}{RepuTreasury.Format(estNetOutcome)})");
         if (incomeRate <= 0.50 && newIncomeRate > 0.50)
         {
             printLine("  - WARNING: Income tax exceeds 50% threshold. Societal stress will reduce national stability by -2.0%!");

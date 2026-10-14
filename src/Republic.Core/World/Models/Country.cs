@@ -79,10 +79,33 @@ public sealed class Country
     public TaxPolicy TaxPolicy { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets the authoritative ministry budget defining expenditure allocations across government sectors.
+    /// Defaults to the standard national baseline (Defense: 500M, Health: 400M, Education: 350M, Infra: 600M, Science: 250M).
+    /// </summary>
+    public MinistryBudget MinistryBudget { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the sovereign trade balance in REPU.
+    /// Defaults to the standard national baseline (2,100,000,000.0).
+    /// </summary>
+    public double TradeBalance { get; set; } = 2_100_000_000.0;
+
+    /// <summary>
     /// Gets or sets the latest citizen welfare and public approval feedback record resulting from domestic policy actions.
     /// Null if no domestic policy adjustment has been enacted yet.
     /// </summary>
     public CitizenFeedbackRecord? LatestCitizenFeedback { get; set; }
+
+    /// <summary>
+    /// Gets or sets the latest quarterly fiscal report summarizing revenue, expenditure, and treasury outcomes.
+    /// Null if no quarterly fiscal report has been executed yet.
+    /// </summary>
+    public FiscalQuarterReport? LatestFiscalReport { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last fiscal quarter index processed and applied to this country's treasury.
+    /// </summary>
+    public int LastProcessedFiscalQuarter { get; set; }
 
     /// <summary>
     /// Gets or sets the sovereign gross domestic product (GDP) in REPU.
@@ -2363,6 +2386,77 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Applies an evaluated fiscal quarter report to the sovereign treasury, safely depositing surplus or deducting deficit.
+    /// Enforces duplicate prevention: if the quarter has already been applied, returns existing state without modifying treasury.
+    /// </summary>
+    /// <param name="report">The evaluated fiscal quarter report.</param>
+    /// <returns>The confirmed fiscal quarter report reflecting the updated sovereign treasury balance.</returns>
+    public FiscalQuarterReport ApplyFiscalQuarter(FiscalQuarterReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        if (!double.IsFinite(report.TotalTaxRevenue) || !double.IsFinite(report.TotalExpenditures))
+        {
+            throw new ArgumentException("Fiscal quarter financial values must be finite numbers.", nameof(report));
+        }
+
+        var transactionKey = $"fiscal-quarter-{Id}-Q{report.QuarterIndex}";
+
+        // Deduplication guard: if transaction was already applied, do not duplicate financial transaction
+        if (Treasury.HasAppliedSnapshot(transactionKey) || (LastProcessedFiscalQuarter >= report.QuarterIndex && LatestFiscalReport != null))
+        {
+            return LatestFiscalReport ?? report;
+        }
+
+        var net = report.NetSurplusOrDeficit;
+        if (!double.IsFinite(net))
+        {
+            throw new ArgumentException("Net surplus or deficit must be a finite number.", nameof(report));
+        }
+
+        if (net > 0.0)
+        {
+            Treasury.Deposit(net);
+        }
+        else if (net < 0.0)
+        {
+            var deficit = Math.Abs(net);
+            if (deficit <= Treasury.Balance)
+            {
+                Treasury.Withdraw(deficit);
+            }
+            else
+            {
+                // Safely consume all available liquid funds without causing negative overdraft
+                var available = Treasury.Balance;
+                if (available > 0.0)
+                {
+                    Treasury.Withdraw(available);
+                }
+            }
+        }
+
+        Treasury.RecordSnapshotApplied(transactionKey);
+        LastProcessedFiscalQuarter = report.QuarterIndex;
+
+        var finalReport = new FiscalQuarterReport
+        {
+            CountryId = Id,
+            QuarterIndex = report.QuarterIndex,
+            IncomeTaxRevenue = report.IncomeTaxRevenue,
+            CorporateTaxRevenue = report.CorporateTaxRevenue,
+            TariffRevenue = report.TariffRevenue,
+            TotalTaxRevenue = report.TotalTaxRevenue,
+            TotalExpenditures = report.TotalExpenditures,
+            UpdatedTreasuryBalance = Treasury.Balance,
+            Timestamp = report.Timestamp
+        };
+
+        LatestFiscalReport = finalReport;
+        return finalReport;
+    }
+
+    /// <summary>
     /// Evaluates and returns the read-only national dashboard for this sovereign country at the specified simulation time.
     /// Induces zero mutation or side-effects on country or simulation state.
     /// </summary>
@@ -2423,7 +2517,11 @@ public sealed class Country
         ResourceInventory? inventory = null,
         IEnumerable<ResourceNode>? resourceNodes = null,
         TaxPolicy? taxPolicy = null,
-        CitizenFeedbackRecord? latestCitizenFeedback = null)
+        CitizenFeedbackRecord? latestCitizenFeedback = null,
+        MinistryBudget? ministryBudget = null,
+        double tradeBalance = 2_100_000_000.0,
+        FiscalQuarterReport? latestFiscalReport = null,
+        int lastProcessedFiscalQuarter = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -2451,7 +2549,20 @@ public sealed class Country
             TaxPolicy = taxPolicy != null
                 ? new TaxPolicy { IncomeTaxRate = taxPolicy.IncomeTaxRate, CorporateTaxRate = taxPolicy.CorporateTaxRate, ImportTariffRate = taxPolicy.ImportTariffRate }
                 : new TaxPolicy(),
+            MinistryBudget = ministryBudget != null
+                ? new MinistryBudget
+                {
+                    DefenseAllocation = ministryBudget.DefenseAllocation,
+                    HealthcareAllocation = ministryBudget.HealthcareAllocation,
+                    EducationAllocation = ministryBudget.EducationAllocation,
+                    InfrastructureAllocation = ministryBudget.InfrastructureAllocation,
+                    ScienceAllocation = ministryBudget.ScienceAllocation
+                }
+                : new MinistryBudget(),
+            TradeBalance = tradeBalance,
             LatestCitizenFeedback = latestCitizenFeedback,
+            LatestFiscalReport = latestFiscalReport,
+            LastProcessedFiscalQuarter = lastProcessedFiscalQuarter,
             Party = party,
             OppositionParty = oppositionParty,
             InterestGroup = interestGroup,

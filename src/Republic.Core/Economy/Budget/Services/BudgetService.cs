@@ -3,8 +3,11 @@ namespace Republic.Core.Economy.Budget.Services;
 using Republic.Core.Diagnostics;
 using Republic.Core.Economy.Budget.Events;
 using Republic.Core.Economy.Budget.Models;
+using Republic.Core.Economy.Treasury;
 using Republic.Core.Events;
+using Republic.Core.Time;
 using Republic.Core.World;
+using Republic.Core.World.Models;
 using Republic.Core.Workspace.Models;
 using Republic.Core.Workspace.Services;
 
@@ -96,6 +99,13 @@ public sealed class BudgetService : IBudgetService
 
     public async Task<FiscalQuarterReport> ProcessQuarterlyReportAsync(ulong currentTick, CancellationToken cancellationToken = default)
     {
+        var playerCountry = _worldManager.Countries.GetCountry("player-country") ?? _worldManager.Countries.GetAllCountries().FirstOrDefault();
+        if (playerCountry != null)
+        {
+            var fallbackTime = RepublicTime.FromDayAndTime(0, TimeOnly.MinValue, DateTimeOffset.UtcNow);
+            return await ProcessQuarterlyReportAsync(playerCountry, fallbackTime, cancellationToken).ConfigureAwait(false);
+        }
+
         TaxPolicy policy;
         MinistryBudget budget;
         lock (_lock)
@@ -132,6 +142,9 @@ public sealed class BudgetService : IBudgetService
         var report = new FiscalQuarterReport
         {
             QuarterIndex = _quarterCounter,
+            IncomeTaxRevenue = incomeTaxRev,
+            CorporateTaxRevenue = corpTaxRev,
+            TariffRevenue = tariffRev,
             TotalTaxRevenue = totalTaxRevenue,
             TotalExpenditures = totalExpenditures,
             UpdatedTreasuryBalance = updatedTreasury
@@ -151,4 +164,95 @@ public sealed class BudgetService : IBudgetService
 
         return report;
     }
+
+    public async Task<FiscalQuarterReport> ProcessQuarterlyReportAsync(
+        Country country,
+        RepublicTime simulationTime,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        if (!double.IsFinite(country.GrossDomesticProduct) || country.GrossDomesticProduct <= 0.0)
+        {
+            throw new ArgumentException("Country GDP must be a positive finite amount.", nameof(country));
+        }
+
+        var policy = country.TaxPolicy ?? GetTaxPolicy();
+        if (!double.IsFinite(policy.IncomeTaxRate) || !double.IsFinite(policy.CorporateTaxRate) || !double.IsFinite(policy.ImportTariffRate))
+        {
+            throw new ArgumentException("Tax policy rates must be finite numbers.", nameof(country));
+        }
+
+        if (policy.IncomeTaxRate < 0.0 || policy.IncomeTaxRate > 0.70 ||
+            policy.CorporateTaxRate < 0.0 || policy.CorporateTaxRate > 0.60 ||
+            policy.ImportTariffRate < 0.0 || policy.ImportTariffRate > 0.50)
+        {
+            throw new ArgumentException("Tax policy rates exceed constitutional limits.", nameof(country));
+        }
+
+        var budget = country.MinistryBudget ?? GetMinistryBudget();
+        if (!double.IsFinite(budget.TotalQuarterlyExpenditures) || budget.TotalQuarterlyExpenditures < 0.0)
+        {
+            throw new ArgumentException("Ministry expenditures must be finite and non-negative.", nameof(country));
+        }
+
+        int targetQuarter;
+        lock (_lock)
+        {
+            targetQuarter = country.LastProcessedFiscalQuarter + 1;
+        }
+
+        var transactionKey = $"fiscal-quarter-{country.Id}-Q{targetQuarter}";
+        if (country.Treasury.HasAppliedSnapshot(transactionKey) && country.LatestFiscalReport != null)
+        {
+            return country.LatestFiscalReport;
+        }
+
+        var gdp = country.GrossDomesticProduct;
+        var incomeTaxRev = gdp * 0.15 * policy.IncomeTaxRate;
+        var corpTaxRev = gdp * 0.10 * policy.CorporateTaxRate;
+        var tradeBalance = double.IsFinite(country.TradeBalance) ? country.TradeBalance : 0.0;
+        var tariffRev = Math.Max(0.0, tradeBalance) * policy.ImportTariffRate;
+        var totalTaxRevenue = incomeTaxRev + corpTaxRev + tariffRev;
+        var totalExpenditures = budget.TotalQuarterlyExpenditures;
+
+        var evaluatedReport = new FiscalQuarterReport
+        {
+            CountryId = country.Id,
+            QuarterIndex = targetQuarter,
+            IncomeTaxRevenue = incomeTaxRev,
+            CorporateTaxRevenue = corpTaxRev,
+            TariffRevenue = tariffRev,
+            TotalTaxRevenue = totalTaxRevenue,
+            TotalExpenditures = totalExpenditures,
+            UpdatedTreasuryBalance = country.Treasury.Balance,
+            Timestamp = simulationTime
+        };
+
+        var finalReport = country.ApplyFiscalQuarter(evaluatedReport);
+
+        // Keep world manager economic indicators synchronized if this is the player country
+        var playerCountry = _worldManager.Countries.GetCountry("player-country") ?? _worldManager.Countries.GetAllCountries().FirstOrDefault();
+        if (playerCountry != null && playerCountry.Id == country.Id)
+        {
+            var ind = _worldManager.Economic.GetIndicators();
+            ind.TreasuryBalance = country.Treasury.Balance;
+            ind.GrossDomesticProduct = country.GrossDomesticProduct;
+        }
+
+        _logger?.LogInfo($"Q{finalReport.QuarterIndex} Fiscal Report for {country.Name}: Rev ({finalReport.FormattedTotalTaxRevenue}) - Exp ({finalReport.FormattedTotalExpenditures}) = Net ({finalReport.FormattedNetSurplusOrDeficit}). Treasury: {country.Treasury.FormattedBalance}");
+        await _eventBus.PublishAsync(new QuarterlyFiscalReportGeneratedEvent(finalReport, DateTimeOffset.UtcNow), cancellationToken).ConfigureAwait(false);
+
+        _workspaceManager?.Email.ReceiveEmail(new EmailMessage
+        {
+            Sender = "Ministry of Finance",
+            Subject = $"FISCAL REPORT: Q{finalReport.QuarterIndex} Financial Summary - {country.Name}",
+            Body = $"Quarter {finalReport.QuarterIndex} report generated for {country.Name}. Revenue: {finalReport.FormattedTotalTaxRevenue}, Expenditure: {finalReport.FormattedTotalExpenditures}. Net: {finalReport.FormattedNetSurplusOrDeficit}. Treasury Balance: {country.Treasury.FormattedBalance}.",
+            Folder = "Inbox",
+            ActionRequired = false
+        });
+
+        return finalReport;
+    }
 }
+
