@@ -56,6 +56,8 @@ public static class PresidentialDeskBridge
         PropertyNameCaseInsensitive = true
     };
 
+    private static readonly object RequestProcessingLock = new();
+
     /// <summary>
     /// Serializes a <see cref="PresidentialDeskSnapshot"/> to an indented JSON string.
     /// </summary>
@@ -371,8 +373,7 @@ public static class PresidentialDeskBridge
         string? saveFilePath = null)
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
-
-
+        string? snapshotCountryId = null;
 
         // 2. Resolve the authoritative save file path
         string targetSavePath;
@@ -389,114 +390,123 @@ public static class PresidentialDeskBridge
             // targetStatePath is a JSON file (could be a SaveEnvelope or a PresidentialDeskSnapshot)
             if (!File.Exists(targetStatePath))
             {
-                // Check if companion save exists
-                var companion = Path.ChangeExtension(targetStatePath, ".sav");
-                if (File.Exists(companion))
+                var missingResult = new PresidentialActionResult
                 {
-                    targetSavePath = companion;
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply presidential taxation decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, missingResult);
+                return missingResult;
+            }
+
+            // File exists. Check if it's corrupt JSON or what kind of JSON it is.
+            string rawJson;
+            try
+            {
+                rawJson = File.ReadAllText(targetStatePath);
+            }
+            catch (Exception ex)
+            {
+                var ioResult = new PresidentialActionResult
+                {
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply presidential taxation decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, ioResult);
+                return ioResult;
+            }
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                var emptyResult = new PresidentialActionResult
+                {
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply presidential taxation decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, emptyResult);
+                return emptyResult;
+            }
+
+            // Test if rawJson is valid JSON
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (JsonException)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply presidential taxation decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+
+            using (doc)
+            {
+                // Check if the JSON is directly a SaveEnvelope (has "formatVersion" and "state" with "world")
+                if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+                {
+                    targetSavePath = targetStatePath;
                 }
                 else
                 {
-                    var missingResult = new PresidentialActionResult
+                    // It is a dashboard snapshot (PresidentialDeskSnapshot)
+                    // Check if it has save_file_path property
+                    string? snapshotSavePath = null;
+                    if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
                     {
-                        Success = false,
-                        Result = "StateMissingOrCorrupt",
-                        Message = $"Cannot apply presidential taxation decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
-                    };
-                    TryWriteResultFile(targetStatePath, missingResult);
-                    return missingResult;
-                }
-            }
-            else
-            {
-                // File exists. Check if it's corrupt JSON or what kind of JSON it is.
-                string rawJson;
-                try
-                {
-                    rawJson = File.ReadAllText(targetStatePath);
-                }
-                catch (Exception ex)
-                {
-                    var ioResult = new PresidentialActionResult
-                    {
-                        Success = false,
-                        Result = "StateMissingOrCorrupt",
-                        Message = $"Cannot apply presidential taxation decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
-                    };
-                    TryWriteResultFile(targetStatePath, ioResult);
-                    return ioResult;
-                }
-
-                if (string.IsNullOrWhiteSpace(rawJson))
-                {
-                    var emptyResult = new PresidentialActionResult
-                    {
-                        Success = false,
-                        Result = "StateMissingOrCorrupt",
-                        Message = $"Cannot apply presidential taxation decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
-                    };
-                    TryWriteResultFile(targetStatePath, emptyResult);
-                    return emptyResult;
-                }
-
-                // Test if rawJson is valid JSON
-                JsonDocument doc;
-                try
-                {
-                    doc = JsonDocument.Parse(rawJson);
-                }
-                catch (JsonException)
-                {
-                    var corruptResult = new PresidentialActionResult
-                    {
-                        Success = false,
-                        Result = "StateMissingOrCorrupt",
-                        Message = $"Cannot apply presidential taxation decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
-                    };
-                    TryWriteResultFile(targetStatePath, corruptResult);
-                    return corruptResult;
-                }
-
-                using (doc)
-                {
-                    // Check if the JSON is directly a SaveEnvelope (has "formatVersion" and "state" with "world")
-                    if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
-                    {
-                        targetSavePath = targetStatePath;
+                        snapshotSavePath = savePathEl.GetString();
                     }
-                    else
-                    {
-                        // It is a dashboard snapshot (PresidentialDeskSnapshot)
-                        // Check if it has save_file_path property
-                        string? snapshotSavePath = null;
-                        if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
-                        {
-                            snapshotSavePath = savePathEl.GetString();
-                        }
 
-                        if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                    if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                    {
+                        snapshotCountryId = cIdEl.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(snapshotSavePath))
+                    {
+                        if (File.Exists(snapshotSavePath))
                         {
                             targetSavePath = snapshotSavePath;
                         }
                         else
                         {
-                            var companion = Path.ChangeExtension(targetStatePath, ".sav");
-                            if (File.Exists(companion))
+                            // Authoritative save file referenced by dashboard snapshot does not exist
+                            var missingReferencedSave = new PresidentialActionResult
                             {
-                                targetSavePath = companion;
-                            }
-                            else
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot apply presidential taxation decision: Authoritative persistent simulation save file '{snapshotSavePath}' referenced by dashboard snapshot '{targetStatePath}' does not exist. Dashboard snapshots cannot substitute for complete saved games. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, missingReferencedSave);
+                            return missingReferencedSave;
+                        }
+                    }
+                    else
+                    {
+                        var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                        if (File.Exists(companion))
+                        {
+                            targetSavePath = companion;
+                        }
+                        else
+                        {
+                            // Dashboard snapshot exists, but the authoritative saved game does NOT exist!
+                            var noSaveResult = new PresidentialActionResult
                             {
-                                // Dashboard snapshot exists, but the authoritative saved game does NOT exist!
-                                var noSaveResult = new PresidentialActionResult
-                                {
-                                    Success = false,
-                                    Result = "StateMissingOrCorrupt",
-                                    Message = $"Cannot apply presidential taxation decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. Dashboard snapshots cannot substitute for complete saved games. No changes enacted."
-                                };
-                                TryWriteResultFile(targetStatePath, noSaveResult);
-                                return noSaveResult;
-                            }
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot apply presidential taxation decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. Dashboard snapshots cannot substitute for complete saved games. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, noSaveResult);
+                            return noSaveResult;
                         }
                     }
                 }
@@ -547,7 +557,8 @@ public static class PresidentialDeskBridge
             return noCountryResult;
         }
 
-        var country = envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+        var country = (!string.IsNullOrWhiteSpace(snapshotCountryId) ? envelope.State.World.Countries.FirstOrDefault(c => c.Id == snapshotCountryId) : null)
+                      ?? envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
                       ?? envelope.State.World.Countries.FirstOrDefault()!;
 
         // 4. Derive Republic simulation time
@@ -851,11 +862,15 @@ public static class PresidentialDeskBridge
                 return persistFail;
             }
         }
-        else if (!string.IsNullOrWhiteSpace(saveFilePath))
+        else
         {
+            var effectiveSavePath = !string.IsNullOrWhiteSpace(saveFilePath)
+                ? saveFilePath
+                : Path.ChangeExtension(targetPath, ".sav");
+
             try
             {
-                SaveAuthoritativeState(country, simulationTime, simulationTick + 1, saveFilePath);
+                SaveAuthoritativeState(country, simulationTime, simulationTick + 1, effectiveSavePath);
             }
             catch (Exception ex)
             {
@@ -961,95 +976,101 @@ public static class PresidentialDeskBridge
         string? saveFilePath = null,
         string? requestFilePath = null)
     {
-        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
-        var targetRequestPath = requestFilePath ?? ResolveDefaultRequestFilePath(targetStatePath);
+        lock (RequestProcessingLock)
+        {
+            var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+            var targetRequestPath = requestFilePath ?? ResolveDefaultRequestFilePath(targetStatePath);
 
-        if (!File.Exists(targetRequestPath))
-        {
-            return null;
-        }
+            if (!File.Exists(targetRequestPath))
+            {
+                return null;
+            }
 
-        string rawJson;
-        try
-        {
-            rawJson = File.ReadAllText(targetRequestPath);
-        }
-        catch (IOException)
-        {
-            // Transient file lock while client finishes writing; wait briefly and retry
-            System.Threading.Thread.Sleep(50);
+            string rawJson;
             try
             {
                 rawJson = File.ReadAllText(targetRequestPath);
+            }
+            catch (IOException)
+            {
+                // Transient file lock while client finishes writing; wait briefly and retry
+                System.Threading.Thread.Sleep(50);
+                try
+                {
+                    rawJson = File.ReadAllText(targetRequestPath);
+                }
+                catch
+                {
+                    return null;
+                }
             }
             catch
             {
                 return null;
             }
-        }
-        catch
-        {
-            return null;
-        }
 
-        if (string.IsNullOrWhiteSpace(rawJson))
-        {
-            return null;
-        }
-
-        double proposedRate = 0.25;
-        bool confirmed = true;
-
-        try
-        {
-            using var doc = JsonDocument.Parse(rawJson);
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("proposed_rate", out var propRateEl) ||
-                root.TryGetProperty("proposed_rate_percent", out propRateEl) ||
-                root.TryGetProperty("rate", out propRateEl) ||
-                root.TryGetProperty("income_tax_rate", out propRateEl))
+            if (string.IsNullOrWhiteSpace(rawJson))
             {
-                if (propRateEl.ValueKind == JsonValueKind.Number && propRateEl.TryGetDouble(out var rateVal))
-                {
-                    proposedRate = rateVal > 1.0 ? rateVal / 100.0 : rateVal;
-                }
-                else if (propRateEl.ValueKind == JsonValueKind.String &&
-                         double.TryParse(propRateEl.GetString(), System.Globalization.CultureInfo.InvariantCulture, out var strRate))
-                {
-                    proposedRate = strRate > 1.0 ? strRate / 100.0 : strRate;
-                }
+                return null;
             }
 
-            if (root.TryGetProperty("confirmed", out var confEl) ||
-                root.TryGetProperty("is_confirmed", out confEl))
+            double proposedRate = 0.25;
+            bool confirmed = true;
+
+            try
             {
-                if (confEl.ValueKind == JsonValueKind.True || confEl.ValueKind == JsonValueKind.False)
+                using var doc = JsonDocument.Parse(rawJson);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("proposed_rate", out var propRateEl) ||
+                    root.TryGetProperty("proposed_rate_percent", out propRateEl) ||
+                    root.TryGetProperty("rate", out propRateEl) ||
+                    root.TryGetProperty("income_tax_rate", out propRateEl))
                 {
-                    confirmed = confEl.GetBoolean();
+                    if (propRateEl.ValueKind == JsonValueKind.Number && propRateEl.TryGetDouble(out var rateVal))
+                    {
+                        proposedRate = rateVal > 1.0 ? rateVal / 100.0 : rateVal;
+                    }
+                    else if (propRateEl.ValueKind == JsonValueKind.String &&
+                             double.TryParse(propRateEl.GetString(), System.Globalization.CultureInfo.InvariantCulture, out var strRate))
+                    {
+                        proposedRate = strRate > 1.0 ? strRate / 100.0 : strRate;
+                    }
+                }
+
+                if (root.TryGetProperty("confirmed", out var confEl) ||
+                    root.TryGetProperty("is_confirmed", out confEl))
+                {
+                    if (confEl.ValueKind == JsonValueKind.True || confEl.ValueKind == JsonValueKind.False)
+                    {
+                        confirmed = confEl.GetBoolean();
+                    }
                 }
             }
-        }
-        catch (JsonException)
-        {
-            // Corrupt request JSON
-            var corruptResult = new PresidentialActionResult
+            catch (JsonException)
             {
-                Success = false,
-                Result = "InvalidInput",
-                Message = "Decision request file contained corrupt or invalid JSON."
-            };
-            TryDeleteFile(targetRequestPath);
-            return corruptResult;
+                // Corrupt request JSON
+                var corruptResult = new PresidentialActionResult
+                {
+                    Success = false,
+                    Result = "InvalidInput",
+                    Message = "Decision request file contained corrupt or invalid JSON."
+                };
+                TryDeleteFile(targetRequestPath);
+                return corruptResult;
+            }
+
+            try
+            {
+                // Apply decision using existing ApplyTaxDecision logic
+                return ApplyTaxDecision(proposedRate, confirmed: confirmed, stateFilePath: targetStatePath, saveFilePath: saveFilePath);
+            }
+            finally
+            {
+                // Ensure request file is always deleted once processed so it cannot be executed twice
+                TryDeleteFile(targetRequestPath);
+            }
         }
-
-        // Apply decision using existing ApplyTaxDecision logic
-        var result = ApplyTaxDecision(proposedRate, confirmed: confirmed, stateFilePath: targetStatePath, saveFilePath: saveFilePath);
-
-        // Delete the request file once processed
-        TryDeleteFile(targetRequestPath);
-
-        return result;
     }
 
     /// <summary>

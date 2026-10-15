@@ -59,11 +59,14 @@ func _init() -> void:
 	# Test 12: Clear status message when request file written but no state arrives within timeout
 	all_passed = test_request_timeout_warning(desk) and all_passed
 
+	# Test 13: Second load retains identical country identity and state across reloads
+	all_passed = test_second_load_retains_identical_state(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 12 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 13 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -699,4 +702,71 @@ func test_request_timeout_warning(desk: Control) -> bool:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
 	print("  [OK]: Clear status warning displayed when request is not serviced within timeout.")
 	return true
+
+
+func test_second_load_retains_identical_state(desk: Control) -> bool:
+	print("\n--- Test 13: Second Load Retains Identical Country Identity and State ---")
+	var temp_path := "res://temp_second_load_state.json"
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"country_id": "player-country",
+		"treasury": "R 18,500,000,000",
+		"treasury_balance": 18500000000,
+		"approval": "74.5%",
+		"approval_rating": 74.5,
+		"stability": "86%",
+		"stability_rating": 86.0,
+		"simulation_day": 5,
+		"simulation_time": "Day 5, 12:00 WAT",
+		"ruling_party": "Democratic Union",
+		"election": "Day 4 (Democratic Union victory)",
+		"income_tax_rate": 0.28,
+		"income_tax_rate_formatted": "28%",
+		"status_message": "Connected to live Republic simulation state"
+	}
+
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	# First load
+	var first_success: bool = desk.load_state_from_file(temp_path)
+	if not first_success:
+		printerr("[FAIL]: First load failed.")
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+		return false
+
+	var first_country: String = str(desk.country_label.text)
+	var first_treasury: String = str(desk.treasury_label.text)
+	var first_approval: String = str(desk.approval_label.text)
+	var first_stability: String = str(desk.stability_label.text)
+	var first_tax: String = str(desk.tax_rate_label.text)
+
+	# Second load
+	var second_success: bool = desk.load_state_from_file(temp_path)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+
+	if not second_success:
+		printerr("[FAIL]: Second load failed.")
+		return false
+
+	if desk.country_label.text != first_country:
+		printerr("[FAIL]: Country label mismatch on second load.")
+		return false
+	if desk.treasury_label.text != first_treasury:
+		printerr("[FAIL]: Treasury label mismatch on second load.")
+		return false
+	if desk.approval_label.text != first_approval:
+		printerr("[FAIL]: Approval label mismatch on second load.")
+		return false
+	if desk.stability_label.text != first_stability:
+		printerr("[FAIL]: Stability label mismatch on second load.")
+		return false
+	if desk.tax_rate_label.text != first_tax:
+		printerr("[FAIL]: Tax rate label mismatch on second load.")
+		return false
+
+	print("  [OK]: Second load preserved exact country identity and state across reloads.")
+	return true
+
 
