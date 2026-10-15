@@ -736,7 +736,8 @@ public static class PresidentialDeskBridge
         double proposedIncomeTaxRate,
         bool confirmed = true,
         string? stateFilePath = null,
-        string? saveFilePath = null)
+        string? saveFilePath = null,
+        string? requestId = null)
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         string? snapshotCountryId = null;
@@ -758,6 +759,7 @@ public static class PresidentialDeskBridge
             {
                 var missingResult = new PresidentialActionResult
                 {
+                    RequestId = requestId ?? string.Empty,
                     Success = false,
                     Result = "StateMissingOrCorrupt",
                     Message = $"Cannot apply presidential taxation decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
@@ -776,6 +778,7 @@ public static class PresidentialDeskBridge
             {
                 var ioResult = new PresidentialActionResult
                 {
+                    RequestId = requestId ?? string.Empty,
                     Success = false,
                     Result = "StateMissingOrCorrupt",
                     Message = $"Cannot apply presidential taxation decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
@@ -788,6 +791,7 @@ public static class PresidentialDeskBridge
             {
                 var emptyResult = new PresidentialActionResult
                 {
+                    RequestId = requestId ?? string.Empty,
                     Success = false,
                     Result = "StateMissingOrCorrupt",
                     Message = $"Cannot apply presidential taxation decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
@@ -806,6 +810,7 @@ public static class PresidentialDeskBridge
             {
                 var corruptResult = new PresidentialActionResult
                 {
+                    RequestId = requestId ?? string.Empty,
                     Success = false,
                     Result = "StateMissingOrCorrupt",
                     Message = $"Cannot apply presidential taxation decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
@@ -851,6 +856,7 @@ public static class PresidentialDeskBridge
                             // Authoritative save file referenced by dashboard snapshot does not exist
                             var missingReferencedSave = new PresidentialActionResult
                             {
+                                RequestId = requestId ?? string.Empty,
                                 Success = false,
                                 Result = "StateMissingOrCorrupt",
                                 Message = $"Cannot apply presidential taxation decision: Authoritative persistent simulation save file '{snapshotSavePath}' referenced by dashboard snapshot '{targetStatePath}' does not exist. Dashboard snapshots cannot substitute for complete saved games. No changes enacted."
@@ -871,6 +877,7 @@ public static class PresidentialDeskBridge
                             // Dashboard snapshot exists, but the authoritative saved game does NOT exist!
                             var noSaveResult = new PresidentialActionResult
                             {
+                                RequestId = requestId ?? string.Empty,
                                 Success = false,
                                 Result = "StateMissingOrCorrupt",
                                 Message = $"Cannot apply presidential taxation decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. Dashboard snapshots cannot substitute for complete saved games. No changes enacted."
@@ -888,6 +895,7 @@ public static class PresidentialDeskBridge
         {
             var missingSaveResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "StateMissingOrCorrupt",
                 Message = $"Cannot apply presidential taxation decision: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
@@ -907,6 +915,7 @@ public static class PresidentialDeskBridge
         {
             var corruptSaveResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "StateMissingOrCorrupt",
                 Message = $"Cannot apply presidential taxation decision: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
@@ -919,6 +928,7 @@ public static class PresidentialDeskBridge
         {
             var noCountryResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "StateMissingOrCorrupt",
                 Message = $"Cannot apply presidential taxation decision: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
@@ -938,6 +948,7 @@ public static class PresidentialDeskBridge
             {
                 var notFoundResult = new PresidentialActionResult
                 {
+                    RequestId = requestId ?? string.Empty,
                     Success = false,
                     Result = "StateMissingOrCorrupt",
                     Message = $"Cannot apply presidential taxation decision: Sovereign country '{snapshotCountryId}' referenced by snapshot does not exist in authoritative save '{targetSavePath}'. No changes enacted."
@@ -967,6 +978,7 @@ public static class PresidentialDeskBridge
         {
             var invalidResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "InvalidInput",
                 Message = "Taxation policy rejected: rates must be finite, valid numbers.",
@@ -985,6 +997,7 @@ public static class PresidentialDeskBridge
         {
             var boundsResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "InvalidInput",
                 Message = "Taxation policy rejected: rates exceed constitutional bounds (Income: 0-70%).",
@@ -1004,6 +1017,7 @@ public static class PresidentialDeskBridge
         {
             var cancelResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "Cancelled",
                 Message = "Taxation policy adjustment cancelled by executive order. Existing tax rates and citizen approval preserved unchanged.",
@@ -1044,6 +1058,7 @@ public static class PresidentialDeskBridge
         {
             var failResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = outcome.Result.ToString(),
                 Message = outcome.Message,
@@ -1077,6 +1092,7 @@ public static class PresidentialDeskBridge
 
             var persistFailResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "PersistenceFailure",
                 Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Changes not enacted.",
@@ -1106,6 +1122,7 @@ public static class PresidentialDeskBridge
 
         var successResult = new PresidentialActionResult
         {
+            RequestId = requestId ?? string.Empty,
             Success = true,
             Result = "Success",
             Message = outcome.Message,
@@ -1135,7 +1152,8 @@ public static class PresidentialDeskBridge
         string? stateFilePath = null,
         string? saveFilePath = null,
         ISaveGameManager? saveGameManager = null,
-        string? saveSlot = null)
+        string? saveSlot = null,
+        string? requestId = null)
     {
         ArgumentNullException.ThrowIfNull(country);
         ArgumentNullException.ThrowIfNull(simulationTime);
@@ -1147,6 +1165,7 @@ public static class PresidentialDeskBridge
         {
             var invalidResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "InvalidInput",
                 Message = "Taxation policy rejected: rates must be finite, valid numbers."
@@ -1159,6 +1178,7 @@ public static class PresidentialDeskBridge
         {
             var boundsResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "InvalidInput",
                 Message = "Taxation policy rejected: rates exceed constitutional bounds (Income: 0-70%)."
@@ -1175,6 +1195,7 @@ public static class PresidentialDeskBridge
         {
             var cancelResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "Cancelled",
                 Message = "Taxation policy adjustment cancelled by executive order. Existing tax rates and citizen approval preserved unchanged.",
@@ -1210,6 +1231,7 @@ public static class PresidentialDeskBridge
         {
             var failResult = new PresidentialActionResult
             {
+                RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = outcome.Result.ToString(),
                 Message = outcome.Message,
@@ -1239,6 +1261,7 @@ public static class PresidentialDeskBridge
 
                 var persistFail = new PresidentialActionResult
                 {
+                    RequestId = requestId ?? string.Empty,
                     Success = false,
                     Result = "PersistenceFailure",
                     Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Changes not enacted.",
@@ -1271,6 +1294,7 @@ public static class PresidentialDeskBridge
 
                 var persistFail = new PresidentialActionResult
                 {
+                    RequestId = requestId ?? string.Empty,
                     Success = false,
                     Result = "PersistenceFailure",
                     Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Changes not enacted.",
@@ -1291,6 +1315,7 @@ public static class PresidentialDeskBridge
 
         var successResult = new PresidentialActionResult
         {
+            RequestId = requestId ?? string.Empty,
             Success = true,
             Result = outcome.Result.ToString(),
             Message = outcome.Message,
@@ -1412,6 +1437,7 @@ public static class PresidentialDeskBridge
                 }
             }
 
+            string? requestId = null;
             double proposedRate;
             bool confirmed;
 
@@ -1424,10 +1450,16 @@ public static class PresidentialDeskBridge
                 {
                     var invalidObjectResult = CreateInvalidInputResult(
                         targetStatePath,
-                        "Decision request must be a JSON object.");
+                        "Decision request must be a JSON object.",
+                        requestId);
                     TryWriteResultFile(targetStatePath, invalidObjectResult);
                     TryDeleteFile(targetRequestPath);
                     return invalidObjectResult;
+                }
+
+                if (root.TryGetProperty("request_id", out var reqIdEl) && reqIdEl.ValueKind == JsonValueKind.String)
+                {
+                    requestId = reqIdEl.GetString();
                 }
 
                 // 1. Validate rate field presence and format
@@ -1442,7 +1474,8 @@ public static class PresidentialDeskBridge
                 {
                     var missingRateResult = CreateInvalidInputResult(
                         targetStatePath,
-                        "Decision request is missing the required proposed tax rate field (e.g. 'proposed_income_tax_rate').");
+                        "Decision request is missing the required proposed tax rate field (e.g. 'proposed_income_tax_rate').",
+                        requestId);
                     TryWriteResultFile(targetStatePath, missingRateResult);
                     TryDeleteFile(targetRequestPath);
                     return missingRateResult;
@@ -1454,7 +1487,8 @@ public static class PresidentialDeskBridge
                     {
                         var nonFiniteResult = CreateInvalidInputResult(
                             targetStatePath,
-                            "Taxation policy rejected: rates must be finite, valid numbers.");
+                            "Taxation policy rejected: rates must be finite, valid numbers.",
+                            requestId);
                         TryWriteResultFile(targetStatePath, nonFiniteResult);
                         TryDeleteFile(targetRequestPath);
                         return nonFiniteResult;
@@ -1480,7 +1514,8 @@ public static class PresidentialDeskBridge
                     {
                         var emptyStrResult = CreateInvalidInputResult(
                             targetStatePath,
-                            "Taxation policy rejected: proposed tax rate string is empty.");
+                            "Taxation policy rejected: proposed tax rate string is empty.",
+                            requestId);
                         TryWriteResultFile(targetStatePath, emptyStrResult);
                         TryDeleteFile(targetRequestPath);
                         return emptyStrResult;
@@ -1494,7 +1529,8 @@ public static class PresidentialDeskBridge
                     {
                         var nonFiniteStrResult = CreateInvalidInputResult(
                             targetStatePath,
-                            "Taxation policy rejected: rates must be finite, valid numbers.");
+                            "Taxation policy rejected: rates must be finite, valid numbers.",
+                            requestId);
                         TryWriteResultFile(targetStatePath, nonFiniteStrResult);
                         TryDeleteFile(targetRequestPath);
                         return nonFiniteStrResult;
@@ -1508,7 +1544,8 @@ public static class PresidentialDeskBridge
                     {
                         var parseFailResult = CreateInvalidInputResult(
                             targetStatePath,
-                            $"Taxation policy rejected: '{strVal}' is not a valid numeric tax rate.");
+                            $"Taxation policy rejected: '{strVal}' is not a valid numeric tax rate.",
+                            requestId);
                         TryWriteResultFile(targetStatePath, parseFailResult);
                         TryDeleteFile(targetRequestPath);
                         return parseFailResult;
@@ -1532,7 +1569,8 @@ public static class PresidentialDeskBridge
                     // Invalid type (e.g. boolean, array, object, null)
                     var invalidTypeResult = CreateInvalidInputResult(
                         targetStatePath,
-                        $"Taxation policy rejected: tax rate field has invalid JSON type '{propRateEl.ValueKind}'.");
+                        $"Taxation policy rejected: tax rate field has invalid JSON type '{propRateEl.ValueKind}'.",
+                        requestId);
                     TryWriteResultFile(targetStatePath, invalidTypeResult);
                     TryDeleteFile(targetRequestPath);
                     return invalidTypeResult;
@@ -1543,7 +1581,8 @@ public static class PresidentialDeskBridge
                 {
                     var rangeResult = CreateInvalidInputResult(
                         targetStatePath,
-                        "Taxation policy rejected: rates exceed constitutional bounds (Income: 0-70%).");
+                        "Taxation policy rejected: rates exceed constitutional bounds (Income: 0-70%).",
+                        requestId);
                     TryWriteResultFile(targetStatePath, rangeResult);
                     TryDeleteFile(targetRequestPath);
                     return rangeResult;
@@ -1558,7 +1597,8 @@ public static class PresidentialDeskBridge
                 {
                     var missingConfResult = CreateInvalidInputResult(
                         targetStatePath,
-                        "Decision request is missing the required confirmation field ('confirmed' or 'is_confirmed').");
+                        "Decision request is missing the required confirmation field ('confirmed' or 'is_confirmed').",
+                        requestId);
                     TryWriteResultFile(targetStatePath, missingConfResult);
                     TryDeleteFile(targetRequestPath);
                     return missingConfResult;
@@ -1568,7 +1608,8 @@ public static class PresidentialDeskBridge
                 {
                     var nonBoolConfResult = CreateInvalidInputResult(
                         targetStatePath,
-                        $"Decision request confirmation field must be a valid Boolean (true/false), but found '{confEl.ValueKind}'.");
+                        $"Decision request confirmation field must be a valid Boolean (true/false), but found '{confEl.ValueKind}'.",
+                        requestId);
                     TryWriteResultFile(targetStatePath, nonBoolConfResult);
                     TryDeleteFile(targetRequestPath);
                     return nonBoolConfResult;
@@ -1581,7 +1622,8 @@ public static class PresidentialDeskBridge
                 // Corrupt request JSON
                 var corruptResult = CreateInvalidInputResult(
                     targetStatePath,
-                    "Decision request file contained corrupt or invalid JSON.");
+                    "Decision request file contained corrupt or invalid JSON.",
+                    requestId);
                 TryWriteResultFile(targetStatePath, corruptResult);
                 TryDeleteFile(targetRequestPath);
                 return corruptResult;
@@ -1590,7 +1632,7 @@ public static class PresidentialDeskBridge
             try
             {
                 // Apply decision using existing ApplyTaxDecision logic
-                return ApplyTaxDecision(proposedRate, confirmed: confirmed, stateFilePath: targetStatePath, saveFilePath: saveFilePath);
+                return ApplyTaxDecision(proposedRate, confirmed: confirmed, stateFilePath: targetStatePath, saveFilePath: saveFilePath, requestId: requestId);
             }
             finally
             {
@@ -1600,7 +1642,7 @@ public static class PresidentialDeskBridge
         }
     }
 
-    private static PresidentialActionResult CreateInvalidInputResult(string targetStatePath, string message)
+    private static PresidentialActionResult CreateInvalidInputResult(string targetStatePath, string message, string? requestId = null)
     {
         double currentRate = 0.0;
         double currentApproval = 0.0;
@@ -1620,6 +1662,7 @@ public static class PresidentialDeskBridge
 
         return new PresidentialActionResult
         {
+            RequestId = requestId ?? string.Empty,
             Success = false,
             Result = "InvalidInput",
             Message = message,
@@ -1706,6 +1749,9 @@ public static class PresidentialDeskBridge
 /// </summary>
 public sealed record PresidentialActionResult
 {
+    [JsonPropertyName("request_id")]
+    public string RequestId { get; init; } = string.Empty;
+
     [JsonPropertyName("success")]
     public bool Success { get; init; }
 

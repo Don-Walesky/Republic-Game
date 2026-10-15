@@ -48,6 +48,7 @@ var _latest_state: Dictionary = {}
 var _user_is_adjusting: bool = false
 var _pending_request_path: String = ""
 var _is_waiting_for_decision: bool = false
+var _active_request_id: String = ""
 var _request_wait_timer: float = 0.0
 
 
@@ -89,13 +90,14 @@ func _init_controls() -> void:
 	if decision_result_label == null:
 		decision_result_label = _get_required_node("VBoxContainer/DecisionResultLabel") as Label
 
-	# Ensure SpinBox and buttons remain completely usable even if state file is temporarily missing
-	if proposed_rate_spinbox:
-		proposed_rate_spinbox.editable = true
-	if confirm_button:
-		confirm_button.disabled = false
-	if cancel_button:
-		cancel_button.disabled = false
+	# Ensure SpinBox and buttons remain completely usable even if state file is temporarily missing (unless waiting for decision)
+	if not _is_waiting_for_decision:
+		if proposed_rate_spinbox:
+			proposed_rate_spinbox.editable = true
+		if confirm_button:
+			confirm_button.disabled = false
+		if cancel_button:
+			cancel_button.disabled = false
 
 
 ## Connects interactive control signals
@@ -109,11 +111,7 @@ func _wire_signals() -> void:
 
 
 func _process(delta: float) -> void:
-	_poll_timer += delta
-	if _poll_timer >= poll_interval:
-		_poll_timer = 0.0
-		_check_for_live_updates()
-
+	# 1. Process pending decision results first to avoid race conditions with state polling
 	if _is_waiting_for_decision:
 		_request_wait_timer += delta
 
@@ -126,10 +124,14 @@ func _process(delta: float) -> void:
 				file.close()
 				var parsed: Variant = JSON.parse_string(text)
 				if parsed is Dictionary and not parsed.is_empty():
-					_handle_decision_result(parsed)
+					var res_req_id: String = str(parsed.get("request_id", ""))
+					# Accept result if matching active request, or if request_id wasn't specified (backward compat)
+					if _active_request_id.is_empty() or res_req_id.is_empty() or res_req_id == _active_request_id:
+						_handle_decision_result(parsed)
 
 		if _is_waiting_for_decision and _request_wait_timer >= REQUEST_TIMEOUT_SECONDS:
 			_is_waiting_for_decision = false
+			_active_request_id = ""
 			if confirm_button:
 				confirm_button.disabled = false
 			if cancel_button:
@@ -140,6 +142,12 @@ func _process(delta: float) -> void:
 				if status_label:
 					var warn_text := "Status: Warning - Decision request written, but no updated simulation state arrived within %.0fs. Is Republic simulation running?" % REQUEST_TIMEOUT_SECONDS
 					status_label.text = _format_status_text(warn_text, "Timed out")
+
+	# 2. Check for live state updates
+	_poll_timer += delta
+	if _poll_timer >= poll_interval:
+		_poll_timer = 0.0
+		_check_for_live_updates()
 
 
 
@@ -215,14 +223,18 @@ func load_state_from_file(path: String) -> bool:
 ## Updates interface labels with live simulation state values
 func apply_state(data: Dictionary) -> void:
 	_init_controls()
-	_is_waiting_for_decision = false
-	_request_wait_timer = 0.0
-	if confirm_button:
-		confirm_button.disabled = false
-	if cancel_button:
-		cancel_button.disabled = false
-	if proposed_rate_spinbox:
-		proposed_rate_spinbox.editable = true
+	var was_waiting := _is_waiting_for_decision
+
+	# Only reset waiting state and re-enable controls if we are NOT actively waiting for a decision result
+	if not was_waiting:
+		_is_waiting_for_decision = false
+		_request_wait_timer = 0.0
+		if confirm_button:
+			confirm_button.disabled = false
+		if cancel_button:
+			cancel_button.disabled = false
+		if proposed_rate_spinbox:
+			proposed_rate_spinbox.editable = true
 
 	var country_name: String = str(data.get("country_name", data.get("CountryName", "[Unknown]")))
 	var treasury: String = str(data.get("treasury", data.get("Treasury", "[Unknown]")))
@@ -264,15 +276,17 @@ func apply_state(data: Dictionary) -> void:
 		proposed_rate_spinbox.set_value_no_signal(current_rate_pct)
 		_update_expected_consequence_display(current_rate_pct)
 
-	var latest_result: String = str(data.get("latest_decision_result", data.get("LatestDecisionResult", "")))
-	if not latest_result.is_empty() and decision_result_label:
-		decision_result_label.text = "Decision Result: " + latest_result
-	else:
-		var result_data := _read_result_file()
-		if not result_data.is_empty() and decision_result_label:
-			var res_msg := str(result_data.get("message", ""))
-			if not res_msg.is_empty():
-				decision_result_label.text = "Decision Result: " + res_msg
+	# Only update decision result label if not actively waiting for a decision outcome
+	if not was_waiting:
+		var latest_result: String = str(data.get("latest_decision_result", data.get("LatestDecisionResult", "")))
+		if not latest_result.is_empty() and decision_result_label:
+			decision_result_label.text = "Decision Result: " + latest_result
+		else:
+			var result_data := _read_result_file()
+			if not result_data.is_empty() and decision_result_label:
+				var res_msg := str(result_data.get("message", ""))
+				if not res_msg.is_empty():
+					decision_result_label.text = "Decision Result: " + res_msg
 
 
 ## Formats the status label text to clearly display connection state, state file presence,
@@ -534,9 +548,12 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
 
 	# 4. Write presidential_desk_request.json next to state file
+	var req_id := "req_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id if confirmed else ""
 	var proposed_rate_decimal: float = proposed_rate_percent / 100.0
 	var timestamp_str := Time.get_datetime_string_from_system()
 	var request_dict := {
+		"request_id": req_id,
 		"proposed_income_tax_rate": proposed_rate_decimal,
 		"proposed_rate": proposed_rate_decimal,
 		"proposed_rate_percent": proposed_rate_percent,
@@ -548,6 +565,7 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
 	if req_file == null:
 		var err_msg := "Failed to create decision request file: " + request_path
+		_active_request_id = ""
 		if confirm_button:
 			confirm_button.disabled = false
 		if cancel_button:
@@ -570,6 +588,7 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	# 5. UI feedback for confirmed vs cancelled
 	if not confirmed:
 		_is_waiting_for_decision = false
+		_active_request_id = ""
 		if confirm_button:
 			confirm_button.disabled = false
 		if cancel_button:
@@ -614,6 +633,7 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 ## Handles incoming structured action results from Republic simulation
 func _handle_decision_result(result_dict: Dictionary) -> void:
 	_is_waiting_for_decision = false
+	_active_request_id = ""
 	_request_wait_timer = 0.0
 	if confirm_button:
 		confirm_button.disabled = false
@@ -621,6 +641,11 @@ func _handle_decision_result(result_dict: Dictionary) -> void:
 		cancel_button.disabled = false
 	if proposed_rate_spinbox:
 		proposed_rate_spinbox.editable = true
+
+	# Clean up result file so each result is handled only once and not mistaken for future decisions
+	var res_path := _resolve_result_path(_active_state_path)
+	if FileAccess.file_exists(res_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(res_path))
 
 	var is_success: bool = bool(result_dict.get("success", false))
 	var result_type: String = str(result_dict.get("result", ""))

@@ -74,11 +74,17 @@ func _init() -> void:
 	# Test 17: Honest reporting when decision persists but state refresh fails
 	all_passed = test_honest_reporting_when_state_refresh_fails(desk) and all_passed
 
+	# Test 18: Race condition regression - state refreshes before decision result file arrives
+	all_passed = test_race_condition_state_refreshes_before_result(desk) and all_passed
+
+	# Test 19: Stale / mismatched request ID results are rejected and cannot satisfy active decision
+	all_passed = test_stale_mismatched_request_id_rejected(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 17 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 19 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -439,7 +445,7 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 		printerr("[FAIL]: Request file confirmed flag mismatch. Expected true.")
 		return false
 
-	# Simulate simulation processing: update state file, delete request
+	# Simulate simulation processing: update state file, write result file, delete request
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
 
 	initial_state["income_tax_rate"] = 0.30
@@ -452,7 +458,21 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 	f_up.store_string(JSON.stringify(initial_state))
 	f_up.close()
 
-	desk.load_state_from_file(temp_path)
+	var temp_res_path := "res://presidential_desk_result.json"
+	var result_data := {
+		"request_id": desk._active_request_id,
+		"success": true,
+		"result": "Success",
+		"message": "Tax hike enacted: Personal Income Tax increased to 30.0% (-2.5% citizen approval).",
+		"income_tax_rate": 0.30,
+		"approval_rating": 67.5,
+		"stability_rating": 80.0
+	}
+	var f_res := FileAccess.open(temp_res_path, FileAccess.WRITE)
+	f_res.store_string(JSON.stringify(result_data))
+	f_res.close()
+
+	desk._process(0.1)
 
 	# Verify UI labels refreshed from authoritative game state
 	if desk.tax_rate_label.text != "Income Tax Rate: 30%":
@@ -471,6 +491,7 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_sav_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
 
 	print("  [OK]: Confirmed decision successfully modified authoritative country state and refreshed Godot UI.")
 	return true
@@ -826,10 +847,20 @@ func test_repeated_clicks_and_button_disabling(desk: Control) -> bool:
 		printerr("[FAIL]: Repeated decision click should be rejected with result='Pending'!")
 		return false
 
-	# Simulate completion: call apply_state to re-enable
+	# Verify that an intermediate state refresh does NOT prematurely re-enable controls or clear waiting state
 	desk.apply_state(initial_state)
+	if not desk._is_waiting_for_decision or not desk.confirm_button.disabled or not desk.cancel_button.disabled or desk.proposed_rate_spinbox.editable:
+		printerr("[FAIL]: State refresh should NOT clear waiting state or re-enable controls before decision result arrives!")
+		return false
+
+	# Simulate completion via decision result
+	desk._handle_decision_result({
+		"success": true,
+		"result": "Success",
+		"message": "Enacted."
+	})
 	if desk.confirm_button.disabled or desk.cancel_button.disabled or not desk.proposed_rate_spinbox.editable:
-		printerr("[FAIL]: Interactive controls were not re-enabled after state refresh!")
+		printerr("[FAIL]: Interactive controls were not re-enabled after decision result completed!")
 		return false
 
 	# Clean up
@@ -989,6 +1020,189 @@ func test_honest_reporting_when_state_refresh_fails(desk: Control) -> bool:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
 	print("  [OK]: Distinction honestly reported when decision persists but display refresh fails.")
 	return true
+
+
+func test_race_condition_state_refreshes_before_result(desk: Control) -> bool:
+	print("\n--- Test 18: Race Condition: State Refreshes Before Result Arrives ---")
+	var temp_path := "res://temp_race_state.json"
+	var temp_req_path := "res://presidential_desk_request.json"
+	var temp_res_path := "res://presidential_desk_result.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"income_tax_rate": 0.25,
+		"income_tax_rate_formatted": "25%",
+		"approval": "70%",
+		"approval_rating": 70.0,
+		"stability": "80%",
+		"stability_rating": 80.0
+	}
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	desk.load_state_from_file(temp_path)
+	if desk.tax_rate_label.text != "Income Tax Rate: 25%":
+		printerr("[FAIL]: Expected initial tax rate 25%, got: " + desk.tax_rate_label.text)
+		return false
+
+	# Act: Submit decision (30% tax)
+	var outcome: Dictionary = desk.execute_tax_decision(30.0, true)
+	if not outcome.get("success", false):
+		printerr("[FAIL]: execute_tax_decision failed: " + JSON.stringify(outcome))
+		return false
+
+	var active_req_id: String = desk._active_request_id
+	if active_req_id.is_empty():
+		printerr("[FAIL]: Expected _active_request_id to be populated upon submitting decision!")
+		return false
+
+	# Verify desk is waiting and controls are disabled
+	if not desk._is_waiting_for_decision:
+		printerr("[FAIL]: Expected desk to be waiting for decision!")
+		return false
+	if not desk.confirm_button.disabled or not desk.cancel_button.disabled or desk.proposed_rate_spinbox.editable:
+		printerr("[FAIL]: Decision controls should be disabled while awaiting result!")
+		return false
+
+	# SIMULATE RACE: State file refreshes on disk BEFORE result file arrives!
+	# For example, background simulation loop wrote updated state file
+	initial_state["income_tax_rate"] = 0.30
+	initial_state["income_tax_rate_formatted"] = "30%"
+	initial_state["approval"] = "67.5%"
+	initial_state["approval_rating"] = 67.5
+	var f2 := FileAccess.open(temp_path, FileAccess.WRITE)
+	f2.store_string(JSON.stringify(initial_state))
+	f2.close()
+
+	# Process frame (which reads state update)
+	desk._process(0.1)
+
+	# CRITICAL ASSERTION: The state update must NOT reset _is_waiting_for_decision
+	# or re-enable the controls prematurely before the result file is processed!
+	if not desk._is_waiting_for_decision:
+		printerr("[FAIL]: Race condition regression! State refresh prematurely cleared _is_waiting_for_decision!")
+		return false
+	if not desk.confirm_button.disabled or not desk.cancel_button.disabled or desk.proposed_rate_spinbox.editable:
+		printerr("[FAIL]: Race condition regression! Controls re-enabled prematurely on state refresh while awaiting result!")
+		return false
+	if desk._active_request_id != active_req_id:
+		printerr("[FAIL]: State refresh cleared or corrupted _active_request_id!")
+		return false
+
+	# Now simulation writes the result file
+	var result_data := {
+		"request_id": active_req_id,
+		"success": true,
+		"result": "Success",
+		"message": "Enacted in authoritative save.",
+		"income_tax_rate": 0.30
+	}
+	var f_res := FileAccess.open(temp_res_path, FileAccess.WRITE)
+	f_res.store_string(JSON.stringify(result_data))
+	f_res.close()
+
+	# Next frame processes the result file
+	desk._process(0.1)
+
+	# Now waiting must be false, controls re-enabled, and result displayed
+	if desk._is_waiting_for_decision:
+		printerr("[FAIL]: Expected _is_waiting_for_decision to be false after result file processed!")
+		return false
+	if desk.confirm_button.disabled or desk.cancel_button.disabled or not desk.proposed_rate_spinbox.editable:
+		printerr("[FAIL]: Controls should be re-enabled after decision completed!")
+		return false
+	if not desk.decision_result_label.text.contains("Successfully applied"):
+		printerr("[FAIL]: Result label should show success! Got: " + desk.decision_result_label.text)
+		return false
+	if desk.tax_rate_label.text != "Income Tax Rate: 30%":
+		printerr("[FAIL]: Tax rate label should be 30%! Got: " + desk.tax_rate_label.text)
+		return false
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+	print("  [OK]: Race condition resolved: state file refresh does not discard pending decision result.")
+	return true
+
+
+func test_stale_mismatched_request_id_rejected(desk: Control) -> bool:
+	print("\n--- Test 19: Stale / Mismatched Request ID Result Rejected ---")
+	var temp_path := "res://temp_mismatch_state.json"
+	var temp_req_path := "res://presidential_desk_request.json"
+	var temp_res_path := "res://presidential_desk_result.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"income_tax_rate": 0.25,
+		"income_tax_rate_formatted": "25%",
+		"approval": "70%",
+		"approval_rating": 70.0
+	}
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	desk.load_state_from_file(temp_path)
+
+	# Submit decision
+	desk.execute_tax_decision(28.0, true)
+	var active_id: String = desk._active_request_id
+
+	# Write a stale result file from a PREVIOUS decision with a different request_id
+	var stale_result := {
+		"request_id": "req_old_stale_12345",
+		"success": true,
+		"result": "Success",
+		"message": "Old result from previous session",
+		"income_tax_rate": 0.22
+	}
+	var f_stale := FileAccess.open(temp_res_path, FileAccess.WRITE)
+	f_stale.store_string(JSON.stringify(stale_result))
+	f_stale.close()
+
+	# Process frame
+	desk._process(0.1)
+
+	# Assert stale result was rejected/ignored
+	if not desk._is_waiting_for_decision:
+		printerr("[FAIL]: Stale result prematurely cleared _is_waiting_for_decision!")
+		return false
+	if desk.decision_result_label.text.contains("Old result"):
+		printerr("[FAIL]: Stale result message was applied to UI!")
+		return false
+
+	# Now write matching result
+	var matching_result := {
+		"request_id": active_id,
+		"success": true,
+		"result": "Success",
+		"message": "Enacted correctly for active request",
+		"income_tax_rate": 0.28
+	}
+	var f_match := FileAccess.open(temp_res_path, FileAccess.WRITE)
+	f_match.store_string(JSON.stringify(matching_result))
+	f_match.close()
+
+	desk._process(0.1)
+
+	if desk._is_waiting_for_decision:
+		printerr("[FAIL]: Matching result failed to be processed!")
+		return false
+	if not desk.decision_result_label.text.contains("Successfully applied"):
+		printerr("[FAIL]: Result label did not reflect matching result success!")
+		return false
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+	print("  [OK]: Mismatched request ID results are rejected without satisfying active decision.")
+	return true
+
 
 
 
