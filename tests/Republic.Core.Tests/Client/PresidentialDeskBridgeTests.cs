@@ -234,4 +234,233 @@ public sealed class PresidentialDeskBridgeTests
         Assert.Contains($"Day {election.Boundary.DayNumber}", snapshot.Election);
         Assert.Equal(country.RulingParty!.Name, snapshot.RulingParty);
     }
+
+    [Fact]
+    public void Snapshot_IncludesTaxationPolicyAndFormattedRates()
+    {
+        // Arrange
+        var time = CreateTime(2);
+        var country = Country.Found("Republic of Arcadia", time, "arcadia");
+        country.TaxPolicy.IncomeTaxRate = 0.30;
+        country.TaxPolicy.CorporateTaxRate = 0.22;
+        country.TaxPolicy.ImportTariffRate = 0.08;
+
+        // Act
+        var snapshot = PresidentialDeskSnapshot.Create(country, time);
+
+        // Assert
+        Assert.Equal(0.30, snapshot.IncomeTaxRate);
+        Assert.Equal("30%", snapshot.IncomeTaxRateFormatted);
+        Assert.Equal(0.22, snapshot.CorporateTaxRate);
+        Assert.Equal(0.08, snapshot.ImportTariffRate);
+        Assert.Equal("arcadia", snapshot.CountryId);
+    }
+
+    [Fact]
+    public void ApplyTaxDecision_WithValidConfirmedHike_UpdatesCountryAndExportsState()
+    {
+        // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"republic_tax_hike_{Guid.NewGuid():N}.json");
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.HappinessRating = 70.0;
+            country.BaselineStability = 80.0;
+            country.TaxPolicy.IncomeTaxRate = 0.25;
+
+            // Export baseline state
+            PresidentialDeskBridge.ExportState(country, time, 10, tempFile);
+
+            // Act: Apply tax hike from 25% to 30% (+5% tax -> -2.5% approval)
+            var actionResult = PresidentialDeskBridge.ApplyTaxDecision(0.30, confirmed: true, tempFile);
+
+            // Assert
+            Assert.True(actionResult.Success);
+            Assert.Equal("Success", actionResult.Result);
+            Assert.Equal(0.30, actionResult.IncomeTaxRate);
+            Assert.Equal(0.25, actionResult.PreviousIncomeTaxRate);
+            Assert.Equal(67.5, actionResult.ApprovalRating);
+            Assert.Equal(70.0, actionResult.PreviousApprovalRating);
+            Assert.Contains("Tax hike enacted", actionResult.Message);
+
+            // Verify persisted state on disk
+            var reloaded = PresidentialDeskBridge.LoadState(tempFile);
+            Assert.NotNull(reloaded);
+            Assert.Equal(0.30, reloaded.IncomeTaxRate);
+            Assert.Equal("30%", reloaded.IncomeTaxRateFormatted);
+            Assert.Equal(67.5, reloaded.ApprovalRating);
+            Assert.Equal("67.5%", reloaded.Approval);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void ApplyTaxDecision_WithValidConfirmedCut_IncreasesApproval()
+    {
+        // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"republic_tax_cut_{Guid.NewGuid():N}.json");
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.HappinessRating = 60.0;
+            country.TaxPolicy.IncomeTaxRate = 0.25;
+
+            PresidentialDeskBridge.ExportState(country, time, 5, tempFile);
+
+            // Act: Apply tax cut from 25% to 20% (-5% tax -> +2.5% approval)
+            var actionResult = PresidentialDeskBridge.ApplyTaxDecision(0.20, confirmed: true, tempFile);
+
+            // Assert
+            Assert.True(actionResult.Success);
+            Assert.Equal(0.20, actionResult.IncomeTaxRate);
+            Assert.Equal(62.5, actionResult.ApprovalRating);
+            Assert.Equal(60.0, actionResult.PreviousApprovalRating);
+            Assert.Contains("Tax relief enacted", actionResult.Message);
+
+            var reloaded = PresidentialDeskBridge.LoadState(tempFile);
+            Assert.NotNull(reloaded);
+            Assert.Equal(0.20, reloaded.IncomeTaxRate);
+            Assert.Equal(62.5, reloaded.ApprovalRating);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void ApplyTaxDecision_WithExtremeRateOver50Percent_InflictsStabilityPenalty()
+    {
+        // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"republic_extreme_tax_{Guid.NewGuid():N}.json");
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.HappinessRating = 70.0;
+            country.BaselineStability = 85.0;
+            country.TaxPolicy.IncomeTaxRate = 0.25;
+
+            PresidentialDeskBridge.ExportState(country, time, 1, tempFile);
+
+            // Act: Enact 55% tax rate (> 50% threshold)
+            var actionResult = PresidentialDeskBridge.ApplyTaxDecision(0.55, confirmed: true, tempFile);
+
+            // Assert
+            Assert.True(actionResult.Success);
+            Assert.Equal(0.55, actionResult.IncomeTaxRate);
+            Assert.Equal(83.0, actionResult.StabilityRating); // -2.0% stability penalty
+            Assert.Equal(85.0, actionResult.PreviousStabilityRating);
+            Assert.Contains("stability", actionResult.Message, StringComparison.OrdinalIgnoreCase);
+
+            var reloaded = PresidentialDeskBridge.LoadState(tempFile);
+            Assert.NotNull(reloaded);
+            Assert.Equal(83.0, reloaded.StabilityRating);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void ApplyTaxDecision_WhenCancelled_LeavesStateAndDiskCompletelyUnchanged()
+    {
+        // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"republic_tax_cancel_{Guid.NewGuid():N}.json");
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.HappinessRating = 72.0;
+            country.BaselineStability = 80.0;
+            country.TaxPolicy.IncomeTaxRate = 0.25;
+
+            PresidentialDeskBridge.ExportState(country, time, 1, tempFile);
+
+            // Act: Propose 40% tax rate, but cancel
+            var actionResult = PresidentialDeskBridge.ApplyTaxDecision(0.40, confirmed: false, tempFile);
+
+            // Assert
+            Assert.False(actionResult.Success);
+            Assert.Equal("Cancelled", actionResult.Result);
+            Assert.Equal(0.25, actionResult.IncomeTaxRate);
+            Assert.Equal(72.0, actionResult.ApprovalRating);
+            Assert.Contains("cancelled by executive order", actionResult.Message);
+
+            // Verify disk state was preserved
+            var reloaded = PresidentialDeskBridge.LoadState(tempFile);
+            Assert.NotNull(reloaded);
+            Assert.Equal(0.25, reloaded.IncomeTaxRate);
+            Assert.Equal(72.0, reloaded.ApprovalRating);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void ApplyTaxDecision_WithInvalidRate_RejectsConstitutionalViolation()
+    {
+        // Arrange
+        var tempFile = Path.Combine(Path.GetTempPath(), $"republic_invalid_tax_{Guid.NewGuid():N}.json");
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.HappinessRating = 70.0;
+            country.TaxPolicy.IncomeTaxRate = 0.25;
+
+            PresidentialDeskBridge.ExportState(country, time, 1, tempFile);
+
+            // Act: Propose 85% rate (> 70% constitutional maximum)
+            var actionResult = PresidentialDeskBridge.ApplyTaxDecision(0.85, confirmed: true, tempFile);
+
+            // Assert
+            Assert.False(actionResult.Success);
+            Assert.Equal("InvalidInput", actionResult.Result);
+            Assert.Equal(0.25, actionResult.IncomeTaxRate);
+            Assert.Equal(70.0, actionResult.ApprovalRating);
+            Assert.Contains("constitutional bounds", actionResult.Message);
+
+            // Verify state preserved
+            var reloaded = PresidentialDeskBridge.LoadState(tempFile);
+            Assert.NotNull(reloaded);
+            Assert.Equal(0.25, reloaded.IncomeTaxRate);
+            Assert.Equal(70.0, reloaded.ApprovalRating);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void EstimateTaxImpact_CalculatesPhase11PreviewAndWarningsAccurately()
+    {
+        // 1. No change
+        var noChange = PresidentialDeskBridge.EstimateTaxImpact(0.25, 0.25);
+        Assert.Contains("No change", noChange);
+
+        // 2. Hike +5% -> -2.5% approval
+        var hike = PresidentialDeskBridge.EstimateTaxImpact(0.25, 0.30);
+        Assert.Contains("-2.5%", hike);
+        Assert.Contains("Tax hike", hike);
+
+        // 3. Cut -5% -> +2.5% approval
+        var cut = PresidentialDeskBridge.EstimateTaxImpact(0.25, 0.20);
+        Assert.Contains("+2.5%", cut);
+        Assert.Contains("Tax cut", cut);
+
+        // 4. Over 50% boundary warning
+        var extreme = PresidentialDeskBridge.EstimateTaxImpact(0.25, 0.55);
+        Assert.Contains("-2.0%", extreme);
+        Assert.Contains("Stability penalty", extreme);
+    }
 }

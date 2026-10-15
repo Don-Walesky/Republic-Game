@@ -1,6 +1,6 @@
 # Republic - Godot Client
 
-This folder contains the Godot 4 client for Republic, connected directly to the authoritative `Republic.Core` simulation state.
+This folder contains the Godot 4 client for Republic, connected directly to the authoritative `Republic.Core` simulation state and providing interactive presidential decision capabilities.
 
 ## Requirements
 
@@ -19,9 +19,21 @@ The Presidential Desk interface reads authoritative state exported from `Republi
   - **Simulation Time**: Authoritative simulation time in West Africa Time (e.g. `Day 0, 00:00 WAT`).
   - **Ruling party**: Active ruling party name or `None`.
   - **Election**: Most recent democratic national election result or `No election`.
+  - **Income Tax Rate**: Current personal income tax rate percentage (e.g. `25%`).
   - **Status**: Live state connection telemetry and sync health.
 - **Auto-Refresh**: The scene automatically detects modification timestamps on the state file every 0.5s and reloads instantly when simulation time advances or tax policies change.
 - **Safe Fallback**: If the state file is missing or contains invalid JSON, the interface displays `[No State Loaded]` with a visible status message; it never silently falls back to hardcoded sample values.
+
+## Interactive Presidential Decision: Taxation Policy (Phase 15)
+
+The presidential desk provides interactive governance controls allowing the player to enact tax policy reforms:
+1. **View Current Rate**: Displays the current personal income tax rate from live simulation state.
+2. **Select Proposed Rate**: A `ProposedRateSpinBox` control bounded by constitutional limits (`0%` to `70%`).
+3. **Dynamic Feedback Preview**: Automatically previews the expected public approval delta (`-0.5%` per `+1%` tax hike, `+0.5%` per `-1%` tax cut) and any stability warnings (such as the `-2.0%` penalty for exceeding `50%` income tax).
+4. **Confirm or Cancel**:
+   - **Confirm Decision**: Submits the decision through `Republic.Core.World.PresidentialWorkspaceHandler.AdjustTaxPolicy`. The country state updates, citizen approval changes, and the dashboard reloads with the genuine result.
+   - **Cancel Decision**: Explicitly cancels the proposal. Existing tax rates, public approval, and country state are preserved 100% unchanged, and the selector resets back to the current rate.
+5. **Decision Result**: Displays the verified outcome message returned by `Republic.Core`.
 
 ## Exporting Live State from Republic.Core
 
@@ -48,7 +60,7 @@ dotnet run --project src/Republic.Cli
 
 ## Running Automated Headless Checks
 
-To run the automated test suite verifying missing state safety, corrupt JSON handling, live state loading, and dynamic state updates:
+To run the automated test suite verifying missing state safety, corrupt JSON handling, live state loading, dynamic state updates, taxation decision controls, Phase 11 consequence calculations, confirmed decision execution, cancellation preservation, and constitutional bounds rejection:
 ```bash
 godot --headless -s test_presidential_desk.gd
 ```

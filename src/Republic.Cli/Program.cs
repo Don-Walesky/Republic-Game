@@ -58,6 +58,34 @@ public static class Program
             }
         }
 
+        // Handle CLI presidential taxation decision request if specified
+        if (args != null && (args.Any(a => a.StartsWith("--apply-tax=") || a.StartsWith("--tax-rate=")) || args.Contains("--cancel-tax")))
+        {
+            var rateArg = args.FirstOrDefault(a => a.StartsWith("--apply-tax=") || a.StartsWith("--tax-rate="));
+            var isConfirmed = !args.Contains("--cancel-tax") && !args.Contains("--confirmed=false");
+
+            double rate = 0.25;
+            if (rateArg != null)
+            {
+                var valStr = rateArg.Split('=', 2)[1].Trim();
+                if (double.TryParse(valStr, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                {
+                    rate = parsed > 1.0 ? parsed / 100.0 : parsed;
+                }
+            }
+
+            string? customStatePath = null;
+            var stateFileArg = args.FirstOrDefault(a => a.StartsWith("--state-file="));
+            if (stateFileArg != null)
+            {
+                customStatePath = stateFileArg.Split('=', 2)[1].Trim();
+            }
+
+            var result = PresidentialDeskBridge.ApplyTaxDecision(rate, confirmed: isConfirmed, stateFilePath: customStatePath);
+            Console.WriteLine($"[TAX DECISION]: Result={result.Result}, Success={result.Success}, TaxRate={result.IncomeTaxRate * 100:0.#}%, Approval={result.ApprovalRating:0.#}%, Message=\"{result.Message}\"");
+            return;
+        }
+
         // Handle CLI export request if specified
         if (args != null && (args.Contains("--export-godot") || args.Contains("--export-state")))
         {

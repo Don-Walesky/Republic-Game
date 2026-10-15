@@ -12,6 +12,12 @@
   "ruling_party": "None",
   "election": "No election",
   "status_message": "Connected to live Republic simulation state",
-  "exported_at_utc": "2026-10-15T10:19:47.1145355\u002B00:00",
+  "exported_at_utc": "2026-10-15T13:12:00.2759440\u002B00:00",
+  "country_id": "player-country",
+  "income_tax_rate": 0.25,
+  "income_tax_rate_formatted": "25%",
+  "corporate_tax_rate": 0.2,
+  "import_tariff_rate": 0.05,
+  "latest_decision_result": "",
   "simulation_tick": 0
 }

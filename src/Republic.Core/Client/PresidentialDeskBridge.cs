@@ -3,7 +3,11 @@ namespace Republic.Core.Client;
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Republic.Core.Economy.Budget.Models;
+using Republic.Core.Economy.Treasury;
 using Republic.Core.Time;
+using Republic.Core.World;
 using Republic.Core.World.Models;
 
 /// <summary>
@@ -186,4 +190,206 @@ public static class PresidentialDeskBridge
             return null;
         }
     }
+
+    /// <summary>
+    /// Applies an interactive presidential taxation decision using the authoritative Republic simulation rules,
+    /// persists the resulting state if confirmed and valid, and exports a structured action result.
+    /// </summary>
+    public static PresidentialActionResult ApplyTaxDecision(
+        double proposedIncomeTaxRate,
+        bool confirmed = true,
+        string? stateFilePath = null)
+    {
+        var targetPath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var snapshot = LoadState(targetPath);
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var defaultTime = new RepublicTime(launchEpoch, launchEpoch);
+
+        Country country;
+        RepublicTime simTime;
+        ulong tick = 0;
+
+        if (snapshot != null)
+        {
+            var countryId = !string.IsNullOrWhiteSpace(snapshot.CountryId) ? snapshot.CountryId : "player-country";
+            var countryName = !string.IsNullOrWhiteSpace(snapshot.CountryName) && snapshot.CountryName != "[No State Loaded]"
+                ? snapshot.CountryName
+                : "Republic of Arcadia";
+
+            var day = Math.Max(0, snapshot.SimulationDay);
+            var timestamp = launchEpoch.AddDays(day);
+            simTime = new RepublicTime(timestamp, launchEpoch);
+
+            var treasury = new RepuTreasury(Math.Max(0.0, snapshot.TreasuryBalance), countryId);
+            country = Country.Found(countryName, simTime, countryId, treasury: treasury);
+
+            country.HappinessRating = Math.Clamp(snapshot.ApprovalRating, 0.0, 100.0);
+            country.BaselineStability = Math.Clamp(snapshot.StabilityRating, 0.0, 100.0);
+
+            var existingIncome = snapshot.IncomeTaxRate > 0.0 ? snapshot.IncomeTaxRate : 0.25;
+            var existingCorp = snapshot.CorporateTaxRate > 0.0 ? snapshot.CorporateTaxRate : 0.20;
+            var existingTariff = snapshot.ImportTariffRate > 0.0 ? snapshot.ImportTariffRate : 0.10;
+
+            country.TaxPolicy.IncomeTaxRate = existingIncome;
+            country.TaxPolicy.CorporateTaxRate = existingCorp;
+            country.TaxPolicy.ImportTariffRate = existingTariff;
+
+            if (!string.IsNullOrWhiteSpace(snapshot.RulingParty) && snapshot.RulingParty != "None" && snapshot.RulingParty != "[No State Loaded]")
+            {
+                country.FoundParty(snapshot.RulingParty, simTime);
+            }
+
+            tick = snapshot.SimulationTick;
+        }
+        else
+        {
+            simTime = defaultTime;
+            country = Country.Found("Republic of Arcadia", simTime, "player-country");
+        }
+
+        return ApplyTaxDecision(country, simTime, proposedIncomeTaxRate, confirmed, tick, targetPath);
+    }
+
+    /// <summary>
+    /// Applies a presidential taxation policy decision directly to the provided country instance,
+    /// evaluating constitutional bounds, input validity, and Phase 11 citizen approval rules.
+    /// </summary>
+    public static PresidentialActionResult ApplyTaxDecision(
+        Country country,
+        RepublicTime simulationTime,
+        double proposedIncomeTaxRate,
+        bool confirmed = true,
+        ulong simulationTick = 0,
+        string? stateFilePath = null)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+        ArgumentNullException.ThrowIfNull(simulationTime);
+
+        var prevRate = country.TaxPolicy.IncomeTaxRate;
+        var prevApproval = country.HappinessRating;
+        var prevStability = country.BaselineStability;
+
+        var proposedPolicy = new TaxPolicy
+        {
+            IncomeTaxRate = proposedIncomeTaxRate,
+            CorporateTaxRate = country.TaxPolicy.CorporateTaxRate,
+            ImportTariffRate = country.TaxPolicy.ImportTariffRate
+        };
+
+        var outcome = PresidentialWorkspaceHandler.AdjustTaxPolicy(country, proposedPolicy, simulationTime, confirmed);
+
+        PresidentialActionResult actionResult;
+        var targetPath = stateFilePath ?? ResolveDefaultStateFilePath();
+
+        if (outcome.IsSuccess)
+        {
+            var nextTick = simulationTick + 1;
+            ExportState(country, simulationTime, nextTick, targetPath);
+
+            actionResult = new PresidentialActionResult
+            {
+                Success = true,
+                Result = outcome.Result.ToString(),
+                Message = outcome.Message,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                PreviousIncomeTaxRate = prevRate,
+                ApprovalRating = country.HappinessRating,
+                PreviousApprovalRating = prevApproval,
+                StabilityRating = country.BaselineStability,
+                PreviousStabilityRating = prevStability
+            };
+        }
+        else
+        {
+            actionResult = new PresidentialActionResult
+            {
+                Success = false,
+                Result = outcome.Result.ToString(),
+                Message = outcome.Message,
+                IncomeTaxRate = prevRate,
+                PreviousIncomeTaxRate = prevRate,
+                ApprovalRating = prevApproval,
+                PreviousApprovalRating = prevApproval,
+                StabilityRating = prevStability,
+                PreviousStabilityRating = prevStability
+            };
+        }
+
+        try
+        {
+            var dir = Path.GetDirectoryName(targetPath);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                var resultPath = Path.Combine(dir, "presidential_desk_result.json");
+                var resultJson = JsonSerializer.Serialize(actionResult, SerializerOptions);
+                File.WriteAllText(resultPath, resultJson);
+            }
+        }
+        catch { /* best-effort write */ }
+
+        return actionResult;
+    }
+
+    /// <summary>
+    /// Calculates the expected citizen approval consequence according to Phase 11 rules
+    /// (-0.5% approval per +1% tax increase, +0.5% approval per -1% tax decrease, and stability warnings).
+    /// </summary>
+    public static string EstimateTaxImpact(double currentRate, double proposedRate)
+    {
+        var deltaRate = proposedRate - currentRate;
+        var approvalDelta = -deltaRate * 50.0;
+        var stabilityWarning = string.Empty;
+
+        if (currentRate <= 0.50 && proposedRate > 0.50)
+        {
+            stabilityWarning = " Warning: Stability penalty -2.0% (Rate exceeds 50% limit).";
+        }
+        else if (currentRate > 0.50 && proposedRate <= 0.50)
+        {
+            stabilityWarning = " Benefit: +2.0% stability restored (Rate eased to 50% or below).";
+        }
+
+        if (Math.Abs(deltaRate) < 0.0001)
+        {
+            return "No change in income tax rate. Public approval and stability will remain unchanged.";
+        }
+
+        var sign = approvalDelta > 0 ? "+" : string.Empty;
+        var dir = deltaRate > 0 ? "hike" : "cut";
+        return $"Tax {dir} of {(deltaRate >= 0 ? "+" : "")}{deltaRate * 100:0.#}%: Expected approval effect is {sign}{approvalDelta:0.#}%.{stabilityWarning}";
+    }
+}
+
+/// <summary>
+/// Result contract representing the outcome of an interactive presidential decision submitted from Godot or CLI.
+/// </summary>
+public sealed record PresidentialActionResult
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; init; }
+
+    [JsonPropertyName("result")]
+    public string Result { get; init; } = string.Empty;
+
+    [JsonPropertyName("message")]
+    public string Message { get; init; } = string.Empty;
+
+    [JsonPropertyName("income_tax_rate")]
+    public double IncomeTaxRate { get; init; }
+
+    [JsonPropertyName("previous_income_tax_rate")]
+    public double PreviousIncomeTaxRate { get; init; }
+
+    [JsonPropertyName("approval_rating")]
+    public double ApprovalRating { get; init; }
+
+    [JsonPropertyName("previous_approval_rating")]
+    public double PreviousApprovalRating { get; init; }
+
+    [JsonPropertyName("stability_rating")]
+    public double StabilityRating { get; init; }
+
+    [JsonPropertyName("previous_stability_rating")]
+    public double PreviousStabilityRating { get; init; }
 }

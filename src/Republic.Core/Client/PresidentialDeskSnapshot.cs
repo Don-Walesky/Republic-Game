@@ -97,6 +97,42 @@ public sealed record PresidentialDeskSnapshot
     public string ExportedAtUtc { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets the unique sovereign country identifier.
+    /// </summary>
+    [JsonPropertyName("country_id")]
+    public string CountryId { get; init; } = "player-country";
+
+    /// <summary>
+    /// Gets the personal income tax rate as a decimal (e.g. 0.25 for 25%).
+    /// </summary>
+    [JsonPropertyName("income_tax_rate")]
+    public double IncomeTaxRate { get; init; } = 0.25;
+
+    /// <summary>
+    /// Gets the formatted personal income tax rate percentage string (e.g. "25%").
+    /// </summary>
+    [JsonPropertyName("income_tax_rate_formatted")]
+    public string IncomeTaxRateFormatted { get; init; } = "25%";
+
+    /// <summary>
+    /// Gets the corporate tax rate as a decimal (e.g. 0.20 for 20%).
+    /// </summary>
+    [JsonPropertyName("corporate_tax_rate")]
+    public double CorporateTaxRate { get; init; } = 0.20;
+
+    /// <summary>
+    /// Gets the import tariff rate as a decimal (e.g. 0.10 for 10%).
+    /// </summary>
+    [JsonPropertyName("import_tariff_rate")]
+    public double ImportTariffRate { get; init; } = 0.10;
+
+    /// <summary>
+    /// Gets the explanatory outcome message or citizen feedback from the latest presidential decision.
+    /// </summary>
+    [JsonPropertyName("latest_decision_result")]
+    public string LatestDecisionResult { get; init; } = string.Empty;
+
+    /// <summary>
     /// Gets the simulation engine tick at which this state snapshot was exported.
     /// </summary>
     [JsonPropertyName("simulation_tick")]
@@ -137,15 +173,25 @@ public sealed record PresidentialDeskSnapshot
 
         var formattedTreasury = $"R {country.Treasury.Balance:N0}";
 
+        var taxPolicy = country.TaxPolicy ?? new Republic.Core.Economy.Budget.Models.TaxPolicy();
+        var formattedTaxRate = $"{taxPolicy.IncomeTaxRate * 100:0.#}%";
+        var decisionResult = country.LatestCitizenFeedback?.Description ?? string.Empty;
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
+            CountryId = country.Id,
             TreasuryBalance = country.Treasury.Balance,
             Treasury = formattedTreasury,
             ApprovalRating = dashboard.ApprovalRating,
             Approval = dashboard.Approval,
             StabilityRating = dashboard.BaselineStability,
             Stability = dashboard.Stability,
+            IncomeTaxRate = taxPolicy.IncomeTaxRate,
+            IncomeTaxRateFormatted = formattedTaxRate,
+            CorporateTaxRate = taxPolicy.CorporateTaxRate,
+            ImportTariffRate = taxPolicy.ImportTariffRate,
+            LatestDecisionResult = decisionResult,
             SimulationDay = simulationTime.DayNumber,
             SimulationTime = conciseTime,
             SimulationTimeDetailed = detailedTime,
