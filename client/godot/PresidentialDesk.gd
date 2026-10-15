@@ -470,11 +470,14 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 
 	# 4. Write presidential_desk_request.json next to state file
 	var proposed_rate_decimal: float = proposed_rate_percent / 100.0
+	var timestamp_str := Time.get_datetime_string_from_system()
 	var request_dict := {
+		"proposed_income_tax_rate": proposed_rate_decimal,
 		"proposed_rate": proposed_rate_decimal,
 		"proposed_rate_percent": proposed_rate_percent,
 		"confirmed": confirmed,
-		"requested_at": Time.get_datetime_string_from_system()
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
 	}
 
 	var req_file := FileAccess.open(request_path, FileAccess.WRITE)

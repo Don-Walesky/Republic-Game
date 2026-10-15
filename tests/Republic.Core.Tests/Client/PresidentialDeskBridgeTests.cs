@@ -808,11 +808,12 @@ public sealed class PresidentialDeskBridgeTests
 
             PresidentialDeskBridge.ExportState(country, time, 10, tempStateFile, tempSaveFile);
 
-            // Write request file proposing 32% income tax rate
+            // Write request file proposing 30% income tax rate
             var requestJson = """
             {
-                "proposed_rate": 0.32,
-                "confirmed": true
+                "proposed_income_tax_rate": 0.30,
+                "confirmed": true,
+                "timestamp": "2026-10-15T18:00:00Z"
             }
             """;
             File.WriteAllText(tempRequestFile, requestJson);
@@ -827,22 +828,28 @@ public sealed class PresidentialDeskBridgeTests
             // Assert
             Assert.NotNull(result);
             Assert.True(result.Success);
-            Assert.Equal(0.32, result.IncomeTaxRate);
-            Assert.Equal(66.5, result.ApprovalRating);
+            Assert.Equal(0.30, result.IncomeTaxRate);
+            Assert.Equal(67.5, result.ApprovalRating);
             Assert.False(File.Exists(tempRequestFile), "Request file must be deleted after processing.");
 
             // Verify state file was updated
             var reloaded = PresidentialDeskBridge.LoadState(tempStateFile);
             Assert.NotNull(reloaded);
-            Assert.Equal(0.32, reloaded.IncomeTaxRate);
-            Assert.Equal("32%", reloaded.IncomeTaxRateFormatted);
-            Assert.Equal(66.5, reloaded.ApprovalRating);
+            Assert.Equal(0.30, reloaded.IncomeTaxRate);
+            Assert.Equal("30%", reloaded.IncomeTaxRateFormatted);
+            Assert.Equal(67.5, reloaded.ApprovalRating);
+
+            // Verify result file was written
+            var expectedResultFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, "presidential_desk_result.json");
+            Assert.True(File.Exists(expectedResultFile), "Result file presidential_desk_result.json must be written.");
         }
         finally
         {
             if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
             if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
             if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+            var expectedResultFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, "presidential_desk_result.json");
+            if (File.Exists(expectedResultFile)) File.Delete(expectedResultFile);
         }
     }
 

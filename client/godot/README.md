@@ -37,12 +37,12 @@ The presidential desk provides interactive governance controls allowing the play
    - When the player confirms or cancels a decision, Godot writes a small JSON request file (`presidential_desk_request.json`) next to the state file:
      ```json
      {
-       "proposed_rate": 0.30,
-       "proposed_rate_percent": 30.0,
-       "confirmed": true
+       "proposed_income_tax_rate": 0.30,
+       "confirmed": true,
+       "timestamp": "2026-10-15T18:00:00"
      }
      ```
-   - **Simulation Processing**: When the request file appears, `PresidentialDeskBridge` (or the CLI request watcher) applies the decision using authoritative `ApplyTaxDecision` simulation rules, updates the persistent `.sav` save file and exported `presidential_desk_state.json`, and deletes `presidential_desk_request.json`.
+   - **Simulation Processing**: When the request file appears, `PresidentialDeskBridge` (or the CLI request watcher) applies the decision using authoritative `ApplyTaxDecision` simulation rules, updates the persistent `.sav` save file, writes `presidential_desk_state.json` and `presidential_desk_result.json`, and deletes `presidential_desk_request.json`.
    - **Cancellation**: If cancelled, the request is written with `"confirmed": false`. Existing tax rates, public approval, and simulation state are preserved 100% unchanged, and the selector resets back to the live rate.
    - **Timeout Warning**: If a request file is written but no updated state arrives within 4 seconds (e.g. if the simulation backend is stopped), a clear warning status message is displayed on the Godot presidential desk.
    - **Live Auto-Refresh**: The desk continues polling `presidential_desk_state.json` every 0.5s, reloading seamlessly once the backend processes the decision.

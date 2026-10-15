@@ -1022,7 +1022,8 @@ public static class PresidentialDeskBridge
                 using var doc = JsonDocument.Parse(rawJson);
                 var root = doc.RootElement;
 
-                if (root.TryGetProperty("proposed_rate", out var propRateEl) ||
+                if (root.TryGetProperty("proposed_income_tax_rate", out var propRateEl) ||
+                    root.TryGetProperty("proposed_rate", out propRateEl) ||
                     root.TryGetProperty("proposed_rate_percent", out propRateEl) ||
                     root.TryGetProperty("rate", out propRateEl) ||
                     root.TryGetProperty("income_tax_rate", out propRateEl))
