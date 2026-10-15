@@ -152,6 +152,12 @@ public static class Program
         using var requestWatcher = PresidentialDeskBridge.CreateRequestWatcher(
             onDecisionProcessed: result =>
             {
+                if (result.Success && playerCountry != null)
+                {
+                    playerCountry.TaxPolicy.IncomeTaxRate = result.IncomeTaxRate;
+                    playerCountry.HappinessRating = result.ApprovalRating;
+                    playerCountry.BaselineStability = result.StabilityRating;
+                }
                 Console.ForegroundColor = ConsoleColor.Magenta;
                 Console.WriteLine($"\n[PRESIDENTIAL DESK]: Processed remote decision: Tax={result.IncomeTaxRate * 100:0.#}%, Approval={result.ApprovalRating:0.#}% ({result.Message})");
                 Console.ResetColor();
@@ -160,7 +166,13 @@ public static class Program
         var running = true;
         while (running)
         {
-            PresidentialDeskBridge.ProcessPendingDecisionRequest();
+            var pendingResult = PresidentialDeskBridge.ProcessPendingDecisionRequest();
+            if (pendingResult != null && pendingResult.Success && playerCountry != null)
+            {
+                playerCountry.TaxPolicy.IncomeTaxRate = pendingResult.IncomeTaxRate;
+                playerCountry.HappinessRating = pendingResult.ApprovalRating;
+                playerCountry.BaselineStability = pendingResult.StabilityRating;
+            }
             RenderDashboard(app, startupBriefing);
             startupBriefing = null;
 

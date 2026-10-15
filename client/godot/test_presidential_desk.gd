@@ -62,11 +62,23 @@ func _init() -> void:
 	# Test 13: Second load retains identical country identity and state across reloads
 	all_passed = test_second_load_retains_identical_state(desk) and all_passed
 
+	# Test 14: Repeated click prevention and button disabling while processing
+	all_passed = test_repeated_clicks_and_button_disabling(desk) and all_passed
+
+	# Test 15: Awaiting confirmation status feedback
+	all_passed = test_awaiting_confirmation_feedback(desk) and all_passed
+
+	# Test 16: Immediate decision result processing via result file
+	all_passed = test_immediate_result_processing_from_result_file(desk) and all_passed
+
+	# Test 17: Honest reporting when decision persists but state refresh fails
+	all_passed = test_honest_reporting_when_state_refresh_fails(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 13 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 17 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -768,5 +780,215 @@ func test_second_load_retains_identical_state(desk: Control) -> bool:
 
 	print("  [OK]: Second load preserved exact country identity and state across reloads.")
 	return true
+
+
+func test_repeated_clicks_and_button_disabling(desk: Control) -> bool:
+	print("\n--- Test 14: Repeated Clicks Prevention and Button Disabling ---")
+	var temp_path := "res://temp_repeat_test_state.json"
+	var temp_sav_path := "res://temp_repeat_test_state.sav"
+	var temp_req_path := "res://presidential_desk_request.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"country_id": "player-country",
+		"treasury": "R 15,000,000,000",
+		"approval": "70%",
+		"approval_rating": 70.0,
+		"stability": "80%",
+		"stability_rating": 80.0,
+		"income_tax_rate": 0.25,
+		"income_tax_rate_formatted": "25%",
+		"simulation_time": "Day 0, 00:00 WAT",
+		"simulation_tick": 0
+	}
+
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	desk.load_state_from_file(temp_path)
+
+	# First submit
+	var first_call: Dictionary = desk.execute_tax_decision(30.0, true)
+	if not first_call.get("success", false):
+		printerr("[FAIL]: First decision submit should succeed.")
+		return false
+
+	# Verify buttons are disabled while waiting
+	if not desk.confirm_button.disabled or not desk.cancel_button.disabled or desk.proposed_rate_spinbox.editable:
+		printerr("[FAIL]: Interactive controls were not disabled during pending decision!")
+		return false
+
+	# Attempt second click while waiting
+	var second_call: Dictionary = desk.execute_tax_decision(35.0, true)
+	if second_call.get("success", true) or second_call.get("result", "") != "Pending":
+		printerr("[FAIL]: Repeated decision click should be rejected with result='Pending'!")
+		return false
+
+	# Simulate completion: call apply_state to re-enable
+	desk.apply_state(initial_state)
+	if desk.confirm_button.disabled or desk.cancel_button.disabled or not desk.proposed_rate_spinbox.editable:
+		printerr("[FAIL]: Interactive controls were not re-enabled after state refresh!")
+		return false
+
+	# Clean up
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_sav_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	print("  [OK]: Controls disabled during pending request and repeated clicks prevented.")
+	return true
+
+
+func test_awaiting_confirmation_feedback(desk: Control) -> bool:
+	print("\n--- Test 15: Awaiting Confirmation Status Feedback ---")
+	var temp_path := "res://temp_confirm_feedback_state.json"
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"income_tax_rate": 0.25,
+		"income_tax_rate_formatted": "25%"
+	}
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	desk.load_state_from_file(temp_path)
+
+	# Change proposed rate to 35%
+	desk._on_proposed_rate_changed(35.0)
+	if not desk.decision_result_label.text.contains("Awaiting player confirmation") or not desk.decision_result_label.text.contains("35.0%"):
+		printerr("[FAIL]: Expected awaiting confirmation status text, got: " + desk.decision_result_label.text)
+		return false
+
+	# Change proposed rate back to current rate 25%
+	desk._on_proposed_rate_changed(25.0)
+	if not desk.decision_result_label.text.contains("No rate change proposed"):
+		printerr("[FAIL]: Expected no change status text, got: " + desk.decision_result_label.text)
+		return false
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+	print("  [OK]: Interactive preview and awaiting confirmation status correctly displayed.")
+	return true
+
+
+func test_immediate_result_processing_from_result_file(desk: Control) -> bool:
+	print("\n--- Test 16: Immediate Decision Result Processing via Result File ---")
+	var temp_path := "res://temp_immediate_test_state.json"
+	var temp_req_path := "res://presidential_desk_request.json"
+	var temp_res_path := "res://presidential_desk_result.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"country_id": "player-country",
+		"income_tax_rate": 0.25,
+		"income_tax_rate_formatted": "25%",
+		"approval": "70%",
+		"stability": "80%"
+	}
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	desk.load_state_from_file(temp_path)
+
+	desk.execute_tax_decision(30.0, true)
+	if not desk._is_waiting_for_decision:
+		printerr("[FAIL]: Expected waiting for decision to be true.")
+		return false
+
+	# Update state file to reflect 30%
+	initial_state["income_tax_rate"] = 0.30
+	initial_state["income_tax_rate_formatted"] = "30%"
+	var f_up := FileAccess.open(temp_path, FileAccess.WRITE)
+	f_up.store_string(JSON.stringify(initial_state))
+	f_up.close()
+
+	# Create presidential_desk_result.json
+	var result_data := {
+		"success": true,
+		"result": "Success",
+		"message": "Personal income tax rate adjusted to 30.0%.",
+		"income_tax_rate": 0.30,
+		"approval_rating": 67.5,
+		"stability_rating": 80.0
+	}
+	var f_res := FileAccess.open(temp_res_path, FileAccess.WRITE)
+	f_res.store_string(JSON.stringify(result_data))
+	f_res.close()
+
+	# Process delta 0.1s (far below 4s timeout)
+	desk._process(0.1)
+
+	# Verify it immediately detected the result and updated
+	if desk._is_waiting_for_decision:
+		printerr("[FAIL]: Expected _is_waiting_for_decision to be false after result file arrival!")
+		return false
+
+	if desk.confirm_button.disabled:
+		printerr("[FAIL]: Confirm button should be re-enabled after decision completed!")
+		return false
+
+	if not desk.decision_result_label.text.contains("Successfully applied"):
+		printerr("[FAIL]: Decision result label did not report success! Got: " + desk.decision_result_label.text)
+		return false
+
+	if desk.tax_rate_label.text != "Income Tax Rate: 30%":
+		printerr("[FAIL]: Display tax rate label did not refresh! Got: " + desk.tax_rate_label.text)
+		return false
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+	print("  [OK]: Result file immediately processed without waiting for request timeout.")
+	return true
+
+
+func test_honest_reporting_when_state_refresh_fails(desk: Control) -> bool:
+	print("\n--- Test 17: Honest Reporting When Decision Persists but State Refresh Fails ---")
+	var temp_path := "res://temp_fail_refresh_state.json"
+	var temp_req_path := "res://presidential_desk_request.json"
+	var temp_res_path := "res://presidential_desk_result.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"income_tax_rate": 0.25
+	}
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	desk.load_state_from_file(temp_path)
+	desk.execute_tax_decision(30.0, true)
+
+	# Remove state file so reload fails
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+
+	# Write result file with success
+	var result_data := {
+		"success": true,
+		"result": "Success",
+		"message": "Enacted in authoritative save.",
+		"income_tax_rate": 0.30
+	}
+	var f_res := FileAccess.open(temp_res_path, FileAccess.WRITE)
+	f_res.store_string(JSON.stringify(result_data))
+	f_res.close()
+
+	desk._process(0.1)
+
+	# Verify honest reporting
+	if not desk.decision_result_label.text.contains("Authoritative decision saved, but refreshing the display state file failed"):
+		printerr("[FAIL]: Expected honest reporting of refresh failure, got: " + desk.decision_result_label.text)
+		return false
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+	print("  [OK]: Distinction honestly reported when decision persists but display refresh fails.")
+	return true
+
 
 

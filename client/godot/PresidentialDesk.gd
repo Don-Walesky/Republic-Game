@@ -116,8 +116,26 @@ func _process(delta: float) -> void:
 
 	if _is_waiting_for_decision:
 		_request_wait_timer += delta
-		if _request_wait_timer >= REQUEST_TIMEOUT_SECONDS:
+
+		# Check if Republic simulation has produced presidential_desk_result.json
+		var res_path := _resolve_result_path(_active_state_path)
+		if FileAccess.file_exists(res_path):
+			var file := FileAccess.open(res_path, FileAccess.READ)
+			if file:
+				var text := file.get_as_text()
+				file.close()
+				var parsed: Variant = JSON.parse_string(text)
+				if parsed is Dictionary and not parsed.is_empty():
+					_handle_decision_result(parsed)
+
+		if _is_waiting_for_decision and _request_wait_timer >= REQUEST_TIMEOUT_SECONDS:
 			_is_waiting_for_decision = false
+			if confirm_button:
+				confirm_button.disabled = false
+			if cancel_button:
+				cancel_button.disabled = false
+			if proposed_rate_spinbox:
+				proposed_rate_spinbox.editable = true
 			if not _pending_request_path.is_empty() and FileAccess.file_exists(_pending_request_path):
 				if status_label:
 					var warn_text := "Status: Warning - Decision request written, but no updated simulation state arrived within %.0fs. Is Republic simulation running?" % REQUEST_TIMEOUT_SECONDS
@@ -166,6 +184,12 @@ func load_state_from_file(path: String) -> bool:
 		display_missing_state("State file not found: " + path)
 		return false
 
+	if status_label:
+		if _is_connected:
+			status_label.text = _format_status_text("Status: Refreshing simulation state...", "None")
+		else:
+			status_label.text = _format_status_text("Status: Loading simulation state...", "None")
+
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
 		display_error("Failed to open simulation state file: " + path)
@@ -193,6 +217,13 @@ func apply_state(data: Dictionary) -> void:
 	_init_controls()
 	_is_waiting_for_decision = false
 	_request_wait_timer = 0.0
+	if confirm_button:
+		confirm_button.disabled = false
+	if cancel_button:
+		cancel_button.disabled = false
+	if proposed_rate_spinbox:
+		proposed_rate_spinbox.editable = true
+
 	var country_name: String = str(data.get("country_name", data.get("CountryName", "[Unknown]")))
 	var treasury: String = str(data.get("treasury", data.get("Treasury", "[Unknown]")))
 	var approval: String = str(data.get("approval", data.get("Approval", "[Unknown]")))
@@ -203,7 +234,7 @@ func apply_state(data: Dictionary) -> void:
 	var status_msg: String = str(data.get("status_message", data.get("StatusMessage", "Connected to live Republic simulation state")))
 
 	var tax_rate_fmt: String = str(data.get("income_tax_rate_formatted", data.get("IncomeTaxRateFormatted", "")))
-	var raw_tax_rate: float = float(data.get("income_tax_rate", data.get("IncomeTaxRate", 0.25)))
+	var raw_tax_rate: float = float(data.get("income_tax_rate", data.get("IncomeTaxRate", 0.0)))
 	if tax_rate_fmt.is_empty():
 		tax_rate_fmt = str(round(raw_tax_rate * 1000.0) / 10.0) + "%"
 
@@ -381,12 +412,27 @@ func _on_proposed_rate_changed(new_value: float) -> void:
 	_user_is_adjusting = true
 	_update_expected_consequence_display(new_value)
 
+	if _is_connected and not _latest_state.is_empty():
+		var current_rate_pct: float = float(_latest_state.get("income_tax_rate", 0.0)) * 100.0
+		if abs(new_value - current_rate_pct) >= 0.001:
+			if decision_result_label:
+				decision_result_label.text = "Decision Status: Awaiting player confirmation (Proposed: %.1f%%, Current: %.1f%%). Press 'Confirm Decision' to submit." % [new_value, current_rate_pct]
+		else:
+			if decision_result_label:
+				decision_result_label.text = "Decision Status: No rate change proposed (Current: %.1f%%)." % current_rate_pct
+	else:
+		if decision_result_label:
+			decision_result_label.text = "Decision Status: No simulation state loaded."
+
 
 ## Updates expected consequence label preview using authoritative Phase 11 feedback rules
 func _update_expected_consequence_display(proposed_rate_pct: float) -> void:
 	if expected_consequence_label == null:
 		return
-	var current_rate_pct: float = float(_latest_state.get("income_tax_rate", 0.25)) * 100.0
+	if not _is_connected or _latest_state.is_empty():
+		expected_consequence_label.text = "Expected Approval Effect: [No State Loaded]"
+		return
+	var current_rate_pct: float = float(_latest_state.get("income_tax_rate", 0.0)) * 100.0
 	expected_consequence_label.text = calculate_expected_consequence(current_rate_pct, proposed_rate_pct)
 
 
@@ -417,13 +463,13 @@ func calculate_expected_consequence(current_rate_pct: float, proposed_rate_pct: 
 
 ## Handler for confirm decision button
 func _on_confirm_button_pressed() -> void:
-	var rate_val := proposed_rate_spinbox.value if proposed_rate_spinbox else 25.0
+	var rate_val := proposed_rate_spinbox.value if proposed_rate_spinbox else 0.0
 	execute_tax_decision(rate_val, true)
 
 
 ## Handler for cancel decision button
 func _on_cancel_button_pressed() -> void:
-	var rate_val := proposed_rate_spinbox.value if proposed_rate_spinbox else 25.0
+	var rate_val := proposed_rate_spinbox.value if proposed_rate_spinbox else 0.0
 	execute_tax_decision(rate_val, false)
 
 
@@ -431,16 +477,21 @@ func _on_cancel_button_pressed() -> void:
 func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dictionary:
 	_user_is_adjusting = false
 
+	# Prevent repeated clicks while decision is being processed
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
 	# 1. Reject if no valid simulation state is connected
 	if not _is_connected or _latest_state.is_empty():
 		var no_state_msg := "Cannot submit decision: No Republic simulation state loaded."
 		if not confirmed:
 			no_state_msg = "Decision cancelled: No Republic simulation state loaded."
-			if proposed_rate_spinbox:
-				proposed_rate_spinbox.set_value_no_signal(25.0)
-				_update_expected_consequence_display(25.0)
 		if decision_result_label:
-			decision_result_label.text = "Decision Result: " + no_state_msg
+			decision_result_label.text = "Decision Result: Missing or Corrupted Save - " + no_state_msg
 		if proposed_rate_spinbox:
 			proposed_rate_spinbox.editable = true
 		if confirm_button:
@@ -464,9 +515,23 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 			"message": invalid_msg
 		}
 
+	# Disable buttons during active processing to prevent duplicate submissions
+	if confirmed:
+		if confirm_button:
+			confirm_button.disabled = true
+		if cancel_button:
+			cancel_button.disabled = true
+		if proposed_rate_spinbox:
+			proposed_rate_spinbox.editable = false
+
 	# 3. Resolve paths
 	var state_path := _resolve_state_path()
 	var request_path := _resolve_request_path(state_path)
+
+	# Clean up any stale result file so we only read fresh results
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
 
 	# 4. Write presidential_desk_request.json next to state file
 	var proposed_rate_decimal: float = proposed_rate_percent / 100.0
@@ -483,6 +548,12 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
 	if req_file == null:
 		var err_msg := "Failed to create decision request file: " + request_path
+		if confirm_button:
+			confirm_button.disabled = false
+		if cancel_button:
+			cancel_button.disabled = false
+		if proposed_rate_spinbox:
+			proposed_rate_spinbox.editable = true
 		if status_label:
 			status_label.text = _format_status_text("Status: Error - " + err_msg, "Failed")
 		if decision_result_label:
@@ -496,27 +567,36 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	req_file.store_string(JSON.stringify(request_dict, "\t"))
 	req_file.close()
 
-	_pending_request_path = request_path
-	_is_waiting_for_decision = true
-	_request_wait_timer = 0.0
-
 	# 5. UI feedback for confirmed vs cancelled
 	if not confirmed:
+		_is_waiting_for_decision = false
+		if confirm_button:
+			confirm_button.disabled = false
+		if cancel_button:
+			cancel_button.disabled = false
+		if proposed_rate_spinbox:
+			proposed_rate_spinbox.editable = true
+
 		var cancel_msg: String = "Decision cancelled: Existing tax rates and citizen approval preserved unchanged."
 		if decision_result_label:
 			decision_result_label.text = "Decision Result: " + cancel_msg
 		if status_label:
-			status_label.text = _format_status_text("Status: Cancellation request written to " + DEFAULT_REQUEST_FILENAME, "None")
+			status_label.text = _format_status_text("Status: Cancellation request written to " + DEFAULT_REQUEST_FILENAME, "Cancelled")
 		# Reset spinbox back to current live rate
-		var current_rate: float = float(_latest_state.get("income_tax_rate", 0.25)) * 100.0
-		if proposed_rate_spinbox:
-			proposed_rate_spinbox.set_value_no_signal(current_rate)
-			_update_expected_consequence_display(current_rate)
+		if _is_connected and not _latest_state.is_empty():
+			var current_rate: float = float(_latest_state.get("income_tax_rate", 0.0)) * 100.0
+			if proposed_rate_spinbox:
+				proposed_rate_spinbox.set_value_no_signal(current_rate)
+				_update_expected_consequence_display(current_rate)
 		return {
 			"success": false,
 			"result": "Cancelled",
 			"message": cancel_msg
 		}
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
 
 	var submit_msg := "Proposed %.1f%% tax submitted. Awaiting simulation..." % proposed_rate_percent
 	if decision_result_label:
@@ -524,12 +604,75 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	if status_label:
 		status_label.text = _format_status_text("Status: Decision request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
 
-
 	return {
 		"success": true,
 		"result": "Pending",
 		"message": submit_msg
 	}
+
+
+## Handles incoming structured action results from Republic simulation
+func _handle_decision_result(result_dict: Dictionary) -> void:
+	_is_waiting_for_decision = false
+	_request_wait_timer = 0.0
+	if confirm_button:
+		confirm_button.disabled = false
+	if cancel_button:
+		cancel_button.disabled = false
+	if proposed_rate_spinbox:
+		proposed_rate_spinbox.editable = true
+
+	var is_success: bool = bool(result_dict.get("success", false))
+	var result_type: String = str(result_dict.get("result", ""))
+	var message: String = str(result_dict.get("message", ""))
+
+	if is_success:
+		# Reload state file to reflect authoritative saved changes
+		var reload_success := false
+		var path_to_load := _active_state_path
+		if path_to_load.is_empty():
+			path_to_load = _resolve_state_path()
+
+		if not path_to_load.is_empty() and FileAccess.file_exists(path_to_load):
+			reload_success = load_state_from_file(path_to_load)
+
+		if reload_success:
+			if decision_result_label:
+				decision_result_label.text = "Decision Result: Successfully applied - " + message
+			if status_label:
+				status_label.text = _format_status_text("Status: Decision enacted and persisted successfully", "Completed")
+		else:
+			# Authoritative save succeeded, but refreshing the display failed
+			if decision_result_label:
+				decision_result_label.text = "Decision Result: Authoritative decision saved, but refreshing the display state file failed."
+			if status_label:
+				status_label.text = _format_status_text("Status: Warning - Decision saved, but display refresh failed", "RefreshFailed")
+	else:
+		# Handle specific failure outcomes honestly
+		var formatted_result := ""
+		match result_type:
+			"Cancelled":
+				formatted_result = "Decision Result: Cancelled - " + message
+			"InvalidInput":
+				formatted_result = "Decision Result: Invalid Input - " + message
+			"StateMissingOrCorrupt":
+				formatted_result = "Decision Result: Missing or Corrupted Save - " + message
+			"PersistenceFailure":
+				formatted_result = "Decision Result: Persistence Failure - " + message
+			_:
+				formatted_result = "Decision Result: Rejected - " + message
+
+		if decision_result_label:
+			decision_result_label.text = formatted_result
+		if status_label:
+			status_label.text = _format_status_text("Status: " + message, result_type)
+
+		# Reset SpinBox to current live rate on cancellation or failure
+		if _is_connected and not _latest_state.is_empty():
+			var live_rate: float = float(_latest_state.get("income_tax_rate", 0.0)) * 100.0
+			if proposed_rate_spinbox:
+				proposed_rate_spinbox.set_value_no_signal(live_rate)
+				_update_expected_consequence_display(live_rate)
 
 
 ## Resolves the request file path adjacent to the active simulation state file
@@ -546,12 +689,25 @@ func _resolve_request_path(state_path: String = "") -> String:
 	return "res://" + DEFAULT_REQUEST_FILENAME
 
 
+## Resolves the result file path adjacent to the active simulation state file
+func _resolve_result_path(state_path: String = "") -> String:
+	var base_path := state_path
+	if base_path.is_empty():
+		base_path = _resolve_state_path()
+
+	if not base_path.is_empty():
+		var dir := base_path.get_base_dir()
+		if not dir.is_empty():
+			return dir + "/presidential_desk_result.json"
+
+	return "res://presidential_desk_result.json"
+
+
 ## Reads structured action result from presidential_desk_result.json
 func _read_result_file() -> Dictionary:
 	var result_candidates: Array[String] = []
 	if not _active_state_path.is_empty():
-		var dir := _active_state_path.get_base_dir()
-		result_candidates.append(dir + "/presidential_desk_result.json")
+		result_candidates.append(_resolve_result_path(_active_state_path))
 	result_candidates.append("res://presidential_desk_result.json")
 	result_candidates.append("user://presidential_desk_result.json")
 
@@ -561,6 +717,6 @@ func _read_result_file() -> Dictionary:
 			if file:
 				var parsed: Variant = JSON.parse_string(file.get_as_text())
 				file.close()
-				if parsed is Dictionary:
+				if parsed is Dictionary and not parsed.is_empty():
 					return parsed
 	return {}

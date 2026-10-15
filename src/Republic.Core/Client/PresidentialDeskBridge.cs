@@ -174,13 +174,31 @@ public static class PresidentialDeskBridge
     public static string ResolveDefaultRequestFilePath(string? stateFilePath = null)
     {
         var targetState = stateFilePath ?? ResolveDefaultStateFilePath();
-        var dir = Path.GetDirectoryName(targetState);
+        var fullTargetState = Path.GetFullPath(targetState);
+        var dir = Path.GetDirectoryName(fullTargetState);
         if (!string.IsNullOrEmpty(dir))
         {
             return Path.Combine(dir, DefaultRequestFileName);
         }
 
         return Path.GetFullPath(Path.Combine("client", "godot", DefaultRequestFileName));
+    }
+
+    /// <summary>
+    /// Resolves the default destination path for the structured presidential action result JSON file.
+    /// Places it adjacent to the resolved state file.
+    /// </summary>
+    public static string ResolveDefaultResultFilePath(string? stateFilePath = null)
+    {
+        var targetState = stateFilePath ?? ResolveDefaultStateFilePath();
+        var fullTargetState = Path.GetFullPath(targetState);
+        var dir = Path.GetDirectoryName(fullTargetState);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            return Path.Combine(dir, DefaultResultFileName);
+        }
+
+        return Path.GetFullPath(Path.Combine("client", "godot", DefaultResultFileName));
     }
 
     /// <summary>
@@ -1321,18 +1339,9 @@ public static class PresidentialDeskBridge
     {
         try
         {
-            var dir = Path.GetDirectoryName(stateOrSavePath);
-            if (string.IsNullOrEmpty(dir))
-            {
-                dir = Path.GetDirectoryName(ResolveDefaultStateFilePath());
-            }
-
-            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-            {
-                var resultPath = Path.Combine(dir, DefaultResultFileName);
-                var resultJson = JsonSerializer.Serialize(result, SerializerOptions);
-                AtomicFileWriter.WriteAllTextSafely(resultPath, resultJson);
-            }
+            var resultPath = ResolveDefaultResultFilePath(stateOrSavePath);
+            var resultJson = JsonSerializer.Serialize(result, SerializerOptions);
+            AtomicFileWriter.WriteAllTextSafely(resultPath, resultJson);
         }
         catch { /* best-effort write */ }
     }

@@ -1900,5 +1900,296 @@ public sealed class PresidentialDeskBridgeTests
             if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
         }
     }
+
+    [Fact]
+    public void ExecuteDecisionLoop_MultiCountryWorld_ValidTaxChange_SurvivesReload_AndRefreshesDashboard()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"multi_country_loop_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = PresidentialDeskBridge.ResolveDefaultRequestFilePath(tempStateFile);
+        var tempResultFile = PresidentialDeskBridge.ResolveDefaultResultFilePath(tempStateFile);
+
+        try
+        {
+            var time = CreateTime(1);
+            var arcadia = Country.Found("Republic of Arcadia", time, "player-country");
+            arcadia.TaxPolicy.IncomeTaxRate = 0.25;
+            arcadia.HappinessRating = 70.0;
+            arcadia.BaselineStability = 80.0;
+
+            var valoria = Country.Found("Commonwealth of Valoria", time, "neighbor-country");
+            valoria.TaxPolicy.IncomeTaxRate = 0.20;
+            valoria.HappinessRating = 75.0;
+            valoria.BaselineStability = 85.0;
+
+            var world = new WorldState
+            {
+                WorldId = Guid.NewGuid(),
+                Name = "Greater Republic World",
+                CreatedAt = time.UtcTimestamp,
+                CurrentTick = 10,
+                Countries = new List<Country> { arcadia, valoria }
+            };
+
+            PresidentialDeskBridge.SaveAuthoritativeState(world, time, 10, tempSaveFile);
+            PresidentialDeskBridge.ExportState(world, arcadia, time, 10, tempStateFile, tempSaveFile);
+
+            var requestJson = """
+            {
+                "proposed_income_tax_rate": 0.30,
+                "confirmed": true
+            }
+            """;
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act: Process the decision request
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert: Decision result contract
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.Equal(0.30, result.IncomeTaxRate);
+            Assert.Equal(0.25, result.PreviousIncomeTaxRate);
+            Assert.Equal(67.5, result.ApprovalRating);
+            Assert.Equal(70.0, result.PreviousApprovalRating);
+            Assert.Equal(80.0, result.StabilityRating);
+            Assert.False(File.Exists(tempRequestFile));
+            Assert.True(File.Exists(tempResultFile));
+
+            // Assert: Authoritative saved game survives reload and preserves untouched neighbor
+            var reloadedEnvelope = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.NotNull(reloadedEnvelope?.State?.World?.Countries);
+            Assert.Equal(2, reloadedEnvelope.State.World.Countries.Count);
+
+            var reloadedArcadia = reloadedEnvelope.State.World.Countries.First(c => c.Id == "player-country");
+            Assert.Equal(0.30, reloadedArcadia.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(67.5, reloadedArcadia.HappinessRating);
+            Assert.Equal(80.0, reloadedArcadia.BaselineStability);
+
+            var reloadedValoria = reloadedEnvelope.State.World.Countries.First(c => c.Id == "neighbor-country");
+            Assert.Equal(0.20, reloadedValoria.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(75.0, reloadedValoria.HappinessRating);
+            Assert.Equal(85.0, reloadedValoria.BaselineStability);
+
+            // Assert: Dashboard state snapshot accurately refreshed
+            var reloadedSnapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(reloadedSnapshot);
+            Assert.Equal("Republic of Arcadia", reloadedSnapshot.CountryName);
+            Assert.Equal(0.30, reloadedSnapshot.IncomeTaxRate);
+            Assert.Equal("30%", reloadedSnapshot.IncomeTaxRateFormatted);
+            Assert.Equal(67.5, reloadedSnapshot.ApprovalRating);
+            Assert.Equal("67.5%", reloadedSnapshot.Approval);
+            Assert.Equal(80.0, reloadedSnapshot.StabilityRating);
+            Assert.Contains("Tax hike enacted", reloadedSnapshot.LatestDecisionResult);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+            if (File.Exists(tempResultFile)) File.Delete(tempResultFile);
+        }
+    }
+
+    [Fact]
+    public void ExecuteDecisionLoop_MultiCountryWorld_CancelledDecision_PreservesWorldAndTaxPolicyUnchanged()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"multi_cancel_loop_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = PresidentialDeskBridge.ResolveDefaultRequestFilePath(tempStateFile);
+        var tempResultFile = PresidentialDeskBridge.ResolveDefaultResultFilePath(tempStateFile);
+
+        try
+        {
+            var time = CreateTime(1);
+            var arcadia = Country.Found("Republic of Arcadia", time, "player-country");
+            arcadia.TaxPolicy.IncomeTaxRate = 0.25;
+            arcadia.HappinessRating = 70.0;
+            arcadia.BaselineStability = 80.0;
+
+            var valoria = Country.Found("Commonwealth of Valoria", time, "neighbor-country");
+            valoria.TaxPolicy.IncomeTaxRate = 0.20;
+            valoria.HappinessRating = 75.0;
+            valoria.BaselineStability = 85.0;
+
+            var world = new WorldState
+            {
+                WorldId = Guid.NewGuid(),
+                Name = "Greater Republic World",
+                CreatedAt = time.UtcTimestamp,
+                CurrentTick = 10,
+                Countries = new List<Country> { arcadia, valoria }
+            };
+
+            PresidentialDeskBridge.SaveAuthoritativeState(world, time, 10, tempSaveFile);
+            PresidentialDeskBridge.ExportState(world, arcadia, time, 10, tempStateFile, tempSaveFile);
+
+            var cancelRequestJson = """
+            {
+                "proposed_income_tax_rate": 0.40,
+                "confirmed": false
+            }
+            """;
+            File.WriteAllText(tempRequestFile, cancelRequestJson);
+
+            // Act
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert: Cancelled outcome
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("Cancelled", result.Result);
+            Assert.Equal(0.25, result.IncomeTaxRate);
+            Assert.Equal(70.0, result.ApprovalRating);
+            Assert.False(File.Exists(tempRequestFile));
+
+            // Assert: Authoritative save file preserved without mutation
+            var reloadedEnvelope = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.NotNull(reloadedEnvelope?.State?.World?.Countries);
+
+            var reloadedArcadia = reloadedEnvelope.State.World.Countries.First(c => c.Id == "player-country");
+            Assert.Equal(0.25, reloadedArcadia.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(70.0, reloadedArcadia.HappinessRating);
+
+            var reloadedValoria = reloadedEnvelope.State.World.Countries.First(c => c.Id == "neighbor-country");
+            Assert.Equal(0.20, reloadedValoria.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(75.0, reloadedValoria.HappinessRating);
+
+            // Assert: Snapshot tax rate unchanged
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.Equal(0.25, snapshot.IncomeTaxRate);
+            Assert.Equal("25%", snapshot.IncomeTaxRateFormatted);
+            Assert.Equal(70.0, snapshot.ApprovalRating);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+            if (File.Exists(tempResultFile)) File.Delete(tempResultFile);
+        }
+    }
+
+    [Fact]
+    public void ExecuteDecisionLoop_ExtremeTaxationThreshold_TriggersStabilityPenaltyAndPreservesAcrossReload()
+    {
+        // Arrange: 25% tax -> 55% tax (>50% extreme threshold triggers -2.0% stability penalty)
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"extreme_tax_loop_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = PresidentialDeskBridge.ResolveDefaultRequestFilePath(tempStateFile);
+
+        try
+        {
+            var time = CreateTime(1);
+            var arcadia = Country.Found("Republic of Arcadia", time, "player-country");
+            arcadia.TaxPolicy.IncomeTaxRate = 0.25;
+            arcadia.HappinessRating = 70.0;
+            arcadia.BaselineStability = 80.0;
+
+            PresidentialDeskBridge.SaveAuthoritativeState(arcadia, time, 1, tempSaveFile);
+            PresidentialDeskBridge.ExportState(arcadia, time, 1, tempStateFile, tempSaveFile);
+
+            var requestJson = """
+            {
+                "proposed_income_tax_rate": 0.55,
+                "confirmed": true
+            }
+            """;
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert: +30% tax hike -> -15% approval, and stability penalty of -2.0%
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(0.55, result.IncomeTaxRate);
+            Assert.Equal(55.0, result.ApprovalRating);
+            Assert.Equal(78.0, result.StabilityRating);
+
+            // Assert: Reload confirms stability penalty persisted
+            var reloaded = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            var reloadedCountry = reloaded?.State?.World?.Countries?.First();
+            Assert.NotNull(reloadedCountry);
+            Assert.Equal(0.55, reloadedCountry.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(55.0, reloadedCountry.HappinessRating);
+            Assert.Equal(78.0, reloadedCountry.BaselineStability);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
+
+    [Fact]
+    public void ExecuteDecisionLoop_EasingFromExtremeTaxation_RestoresStabilityBonusAcrossReload()
+    {
+        // Arrange: 55% tax, 78% stability -> 45% tax (easing to <= 50% restores +2.0% stability)
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"easing_tax_loop_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = PresidentialDeskBridge.ResolveDefaultRequestFilePath(tempStateFile);
+
+        try
+        {
+            var time = CreateTime(1);
+            var arcadia = Country.Found("Republic of Arcadia", time, "player-country");
+            arcadia.TaxPolicy.IncomeTaxRate = 0.55;
+            arcadia.HappinessRating = 55.0;
+            arcadia.BaselineStability = 78.0;
+
+            PresidentialDeskBridge.SaveAuthoritativeState(arcadia, time, 1, tempSaveFile);
+            PresidentialDeskBridge.ExportState(arcadia, time, 1, tempStateFile, tempSaveFile);
+
+            var requestJson = """
+            {
+                "proposed_income_tax_rate": 0.45,
+                "confirmed": true
+            }
+            """;
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert: -10% tax relief -> +5% approval (to 60%), +2.0% stability bonus (to 80%)
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(0.45, result.IncomeTaxRate);
+            Assert.Equal(60.0, result.ApprovalRating);
+            Assert.Equal(80.0, result.StabilityRating);
+
+            // Assert: Reload confirms stability bonus persisted
+            var reloaded = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            var reloadedCountry = reloaded?.State?.World?.Countries?.First();
+            Assert.NotNull(reloadedCountry);
+            Assert.Equal(0.45, reloadedCountry.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(60.0, reloadedCountry.HappinessRating);
+            Assert.Equal(80.0, reloadedCountry.BaselineStability);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
 }
 
