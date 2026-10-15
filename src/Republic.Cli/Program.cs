@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Republic.App;
+using Republic.Core.Client;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Cabinet.Models;
 using Republic.Core.Cabinet.Services;
@@ -55,6 +56,23 @@ public static class Program
             {
                 startupBriefing = catchUpService.CatchUp(playerCountry, app.TimeSystem.CurrentRepublicTime);
             }
+        }
+
+        // Handle CLI export request if specified
+        if (args != null && (args.Contains("--export-godot") || args.Contains("--export-state")))
+        {
+            var exportCountry = playerCountry ?? Country.Found("Republic of Arcadia", app.TimeSystem.CurrentRepublicTime);
+            if (PresidentialDeskBridge.TryExportState(exportCountry, app.TimeSystem.CurrentRepublicTime, out var outPath, app.TimeSystem.CurrentTick))
+            {
+                Console.WriteLine($"[GODOT BRIDGE]: Exported live simulation state to: {outPath}");
+            }
+            return;
+        }
+
+        // Export initial live state for the Godot presidential desk
+        if (playerCountry != null)
+        {
+            PresidentialDeskBridge.TryExportState(playerCountry, app.TimeSystem.CurrentRepublicTime, app.TimeSystem.CurrentTick);
         }
 
         var running = true;
@@ -171,6 +189,9 @@ public static class Program
         var countryForDashboard = playerCountry ?? Country.Found("Republic of Arcadia", currentRepuTime);
         var profile = countryForDashboard.Profile ?? CountryProfile.CreateArcadia(currentRepuTime);
         var dashboard = countryForDashboard.GetDashboard(currentRepuTime);
+
+        // Keep Godot presidential desk in sync with authoritative dashboard state
+        PresidentialDeskBridge.TryExportState(countryForDashboard, currentRepuTime, tick);
 
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("==============================================================");
@@ -530,7 +551,7 @@ public static class Program
         var quarterlyExp = playerCountry.MinistryBudget.TotalQuarterlyExpenditures;
         var estNetOutcome = estTotalTax - quarterlyExp;
 
-        printLine();
+        printLine("");
         printLine(" POLICY IMPACT PROJECTION:");
         printLine($"  - Proposed Income Tax: {enteredPercent:0.#}% (Change: {(deltaRate >= 0 ? "+" : "")}{deltaRate * 100:0.#}%)");
         printLine($"  - Projected Public Approval: {estimatedNewApproval:0.#}% (Delta: {(estimatedApprovalDelta >= 0 ? "+" : "")}{estimatedApprovalDelta:0.#}%)");
@@ -564,7 +585,10 @@ public static class Program
             var demo = app.WorldManager.Demographics.GetDemographics();
             demo.HappinessRating = playerCountry.HappinessRating;
 
-            printLine();
+            // Sync updated approval, stability, and tax policy to Godot desk
+            PresidentialDeskBridge.TryExportState(playerCountry, currentTime, app.TimeSystem.CurrentTick);
+
+            printLine("");
             printLine("==============================================================");
             printLine("            EXECUTIVE TAXATION ENACTMENT REPORT               ");
             printLine("==============================================================");
@@ -577,12 +601,12 @@ public static class Program
         }
         else if (outcome.Result == ExecutiveActionResult.Cancelled)
         {
-            printLine();
+            printLine("");
             printLine($" [ACTION CANCELLED]: {outcome.Message}");
         }
         else
         {
-            printLine();
+            printLine("");
             printLine($" [ACTION REJECTED]: {outcome.Message}");
         }
 
@@ -715,7 +739,7 @@ public static class Program
             var afterTreasury = playerCountry.Treasury.Balance;
             var revenueDeposited = Math.Max(0.0, afterTreasury - beforeTreasury);
 
-            printLine();
+            printLine("");
             printLine("==============================================================");
             printLine("              SIMULATION ADVANCEMENT REPORT                   ");
             printLine("==============================================================");
@@ -752,6 +776,9 @@ public static class Program
                 printLine($" - Capital Development: {p.Name} is at {p.GetProgress(newTime):P1} construction progress (Expected Completion: Day {p.FinishBoundary.DayNumber}, {p.FinishBoundary.Time:HH:mm} WAT).");
             }
             printLine("==============================================================");
+
+            // Sync updated simulation time, yield, and treasury balance to Godot desk
+            PresidentialDeskBridge.TryExportState(playerCountry, newTime, app.TimeSystem.CurrentTick);
         }
 
         printLine("\nPress Enter to continue...");

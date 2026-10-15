@@ -15,25 +15,37 @@ script = ExtResource("1_desk")
 layout_mode = 0
 offset_left = 40.0
 offset_top = 40.0
-offset_right = 400.0
-offset_bottom = 200.0
+offset_right = 650.0
+offset_bottom = 320.0
 
 [node name="CountryLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-text = "Country: Republic of Walesky"
+text = "Country: [No State Loaded]"
 
 [node name="TreasuryLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-text = "Treasury: R 1,250,000,000"
+text = "Treasury: [No State Loaded]"
 
 [node name="ApprovalLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-text = "Approval: 62"
+text = "Approval: [No State Loaded]"
+
+[node name="StabilityLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Stability: [No State Loaded]"
+
+[node name="SimulationTimeLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Simulation Time: [No State Loaded]"
 
 [node name="RulingPartyLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-text = "Ruling party: Civic Union"
+text = "Ruling party: [No State Loaded]"
 
 [node name="ElectionLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-text = "Election: No election"
+text = "Election: [No State Loaded]"
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Status: Waiting for Republic simulation state..."

@@ -1,0 +1,17 @@
+{
+  "country_name": "Republic of Arcadia",
+  "treasury_balance": 15000000000,
+  "treasury": "R 15,000,000,000",
+  "approval_rating": 68.5,
+  "approval": "68.5%",
+  "stability_rating": 85,
+  "stability": "85%",
+  "simulation_day": 0,
+  "simulation_time": "Day 0, 00:00 WAT",
+  "simulation_time_detailed": "Day 0, 10 February 2027 00:00 WAT",
+  "ruling_party": "None",
+  "election": "No election",
+  "status_message": "Connected to live Republic simulation state",
+  "exported_at_utc": "2026-10-15T10:19:47.1145355\u002B00:00",
+  "simulation_tick": 0
+}

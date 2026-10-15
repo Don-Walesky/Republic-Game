@@ -1,0 +1,159 @@
+namespace Republic.Core.Client;
+
+using System;
+using System.Text.Json.Serialization;
+using Republic.Core.Economy.Treasury;
+using Republic.Core.Time;
+using Republic.Core.World.Models;
+
+/// <summary>
+/// Serializable data contract representing the live Republic simulation state displayed in the Godot presidential desk.
+/// Encapsulates national identity, treasury balance, public approval, stability, simulation clock, and political status.
+/// </summary>
+public sealed record PresidentialDeskSnapshot
+{
+    /// <summary>
+    /// Gets the official name of the sovereign nation.
+    /// </summary>
+    [JsonPropertyName("country_name")]
+    public string CountryName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the numerical sovereign treasury balance in REPU.
+    /// </summary>
+    [JsonPropertyName("treasury_balance")]
+    public double TreasuryBalance { get; init; }
+
+    /// <summary>
+    /// Gets the formatted sovereign treasury string in standard REPU notation.
+    /// </summary>
+    [JsonPropertyName("treasury")]
+    public string Treasury { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the sovereign public approval rating percentage (0.0 to 100.0).
+    /// </summary>
+    [JsonPropertyName("approval_rating")]
+    public double ApprovalRating { get; init; }
+
+    /// <summary>
+    /// Gets the formatted public approval percentage string (e.g. "78%").
+    /// </summary>
+    [JsonPropertyName("approval")]
+    public string Approval { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the sovereign baseline stability rating percentage (0.0 to 100.0).
+    /// </summary>
+    [JsonPropertyName("stability_rating")]
+    public double StabilityRating { get; init; }
+
+    /// <summary>
+    /// Gets the formatted stability percentage string (e.g. "85%").
+    /// </summary>
+    [JsonPropertyName("stability")]
+    public string Stability { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the authoritative Republic simulation day number.
+    /// </summary>
+    [JsonPropertyName("simulation_day")]
+    public long SimulationDay { get; init; }
+
+    /// <summary>
+    /// Gets the concise simulation time string (e.g. "Day 1, 00:00 WAT").
+    /// </summary>
+    [JsonPropertyName("simulation_time")]
+    public string SimulationTime { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the detailed simulation timestamp string (e.g. "Day 1, 1 January 2030 00:00 WAT").
+    /// </summary>
+    [JsonPropertyName("simulation_time_detailed")]
+    public string SimulationTimeDetailed { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the name of the sovereign ruling political party, or "None" if unestablished.
+    /// </summary>
+    [JsonPropertyName("ruling_party")]
+    public string RulingParty { get; init; } = "None";
+
+    /// <summary>
+    /// Gets the status or description of the most recent national democratic election.
+    /// </summary>
+    [JsonPropertyName("election")]
+    public string Election { get; init; } = "No election";
+
+    /// <summary>
+    /// Gets the live connection status message.
+    /// </summary>
+    [JsonPropertyName("status_message")]
+    public string StatusMessage { get; init; } = "Connected to live Republic simulation state";
+
+    /// <summary>
+    /// Gets the UTC timestamp at which this state snapshot was exported.
+    /// </summary>
+    [JsonPropertyName("exported_at_utc")]
+    public string ExportedAtUtc { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the simulation engine tick at which this state snapshot was exported.
+    /// </summary>
+    [JsonPropertyName("simulation_tick")]
+    public ulong SimulationTick { get; init; }
+
+    /// <summary>
+    /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
+    /// Reuses existing core models and services without duplicating domain rules.
+    /// </summary>
+    public static PresidentialDeskSnapshot Create(
+        Country country,
+        RepublicTime simulationTime,
+        ulong simulationTick = 0)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        var dashboard = country.GetDashboard(simulationTime);
+
+        var rulingPartyName = country.RulingParty?.Name;
+        if (string.IsNullOrWhiteSpace(rulingPartyName))
+        {
+            rulingPartyName = "None";
+        }
+
+        string electionText;
+        if (country.LastElection != null)
+        {
+            var election = country.LastElection;
+            electionText = $"Day {election.Boundary.DayNumber} ({election.WinnerPartyName} victory, {election.WinnerSupport:0.#}% vs {election.LoserSupport:0.#}%)";
+        }
+        else
+        {
+            electionText = "No election";
+        }
+
+        var conciseTime = $"Day {simulationTime.DayNumber}, {simulationTime.Time:HH:mm} WAT";
+        var detailedTime = $"Day {simulationTime.DayNumber}, {simulationTime.Date:d MMMM yyyy} {simulationTime.Time:HH:mm} WAT";
+
+        var formattedTreasury = $"R {country.Treasury.Balance:N0}";
+
+        return new PresidentialDeskSnapshot
+        {
+            CountryName = country.Name,
+            TreasuryBalance = country.Treasury.Balance,
+            Treasury = formattedTreasury,
+            ApprovalRating = dashboard.ApprovalRating,
+            Approval = dashboard.Approval,
+            StabilityRating = dashboard.BaselineStability,
+            Stability = dashboard.Stability,
+            SimulationDay = simulationTime.DayNumber,
+            SimulationTime = conciseTime,
+            SimulationTimeDetailed = detailedTime,
+            RulingParty = rulingPartyName,
+            Election = electionText,
+            StatusMessage = "Connected to live Republic simulation state",
+            ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
+            SimulationTick = simulationTick
+        };
+    }
+}
