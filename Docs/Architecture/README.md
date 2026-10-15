@@ -39,8 +39,8 @@ Republic is built around a **headless, deterministic .NET 8.0 simulation core** 
 ### Host Namespace (`src/Republic.App` & `src/Republic.Cli`)
 - Dependency injection container, application host bootstrapper, and interactive CLI verification shell.
 
-### Presentation Layer Boundary (`unity/`)
-- Reserved for future presentation shells (Executive Desk, 3D office, interactive map).
+### Presentation Layer Boundary (`client/godot/`)
+- Active presentation layer is Godot 4 located in `client/godot/` (the legacy Unity client has been retired).
 - The simulation core runs entirely headless and independently of any presentation engine.
 
 ---

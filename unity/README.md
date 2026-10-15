@@ -1,9 +1,5 @@
-# Unity Shell Boundary
+# Unity Shell Boundary (Retired)
 
-This folder reserves the future Unity shell layout without coupling Wave 0 to Unity runtime code.
+> **Note**: The legacy Unity client has been retired. The active visual presentation client is Godot 4 located in `client/godot/`.
 
-- `unity/Assets`
-- `unity/Packages`
-- `unity/ProjectSettings`
-
-The deterministic simulation core lives in `src/` and can later be adapted into this shell.
+Presenter bridge interfaces remain under `unity/Scripts/Republic.Unity.Bridge/` for backwards compatibility with headless core simulation presenters.

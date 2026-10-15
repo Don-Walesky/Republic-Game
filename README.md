@@ -4,6 +4,8 @@
 
 In Republic, every player governs their own procedurally generated country in a shared, living geopolitical world.
 
+> **Visual Client Note**: The active visual client is Godot 4 located in `client/godot/`. The legacy Unity client (`Assets/`) has been retired.
+
 ---
 
 ## The Sovereign Objective
@@ -135,5 +137,5 @@ dotnet test Republic.sln
 * `src/Republic.App` — Application bootstrapper host and dependency injection container.
 * `src/Republic.Cli` — Terminal dashboard, directive menus, and console game loop.
 * `tests/Republic.Core.Tests` — Unit and integration test suites (160+ passing tests).
-* `unity/` — Presentation shell boundary for executive desk visualization.
+* `client/godot/` — Godot 4 executive presidential desk visual client (active presentation layer; replaces retired Unity client).
 * `Docs/` — Canonical product, design, and technical specifications.
