@@ -139,13 +139,20 @@ public sealed record PresidentialDeskSnapshot
     public ulong SimulationTick { get; init; }
 
     /// <summary>
+    /// Gets the path to the authoritative persistent save file from which this snapshot was projected.
+    /// </summary>
+    [JsonPropertyName("save_file_path")]
+    public string SaveFilePath { get; init; } = string.Empty;
+
+    /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
     /// Reuses existing core models and services without duplicating domain rules.
     /// </summary>
     public static PresidentialDeskSnapshot Create(
         Country country,
         RepublicTime simulationTime,
-        ulong simulationTick = 0)
+        ulong simulationTick = 0,
+        string? saveFilePath = null)
     {
         ArgumentNullException.ThrowIfNull(country);
 
@@ -199,7 +206,8 @@ public sealed record PresidentialDeskSnapshot
             Election = electionText,
             StatusMessage = "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
-            SimulationTick = simulationTick
+            SimulationTick = simulationTick,
+            SaveFilePath = saveFilePath ?? string.Empty
         };
     }
 }

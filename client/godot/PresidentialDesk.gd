@@ -375,6 +375,9 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 		exec_args.append("--apply-tax=" + str(proposed_rate_percent))
 		if not state_path.is_empty():
 			exec_args.append("--state-file=" + ProjectSettings.globalize_path(state_path))
+		var save_file_val: String = str(_latest_state.get("save_file_path", ""))
+		if not save_file_val.is_empty() and FileAccess.file_exists(save_file_val):
+			exec_args.append("--save-file=" + ProjectSettings.globalize_path(save_file_val))
 		var exit_code := OS.execute("dotnet", exec_args, output)
 		if exit_code != 0:
 			var err_str := "Command execution failed with code " + str(exit_code)
@@ -390,20 +393,29 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 
 	# 6. Display the actual result returned by Republic.Core
 	var outcome_message: String = ""
+	var is_success: bool = true
 	if not result_data.is_empty():
 		outcome_message = str(result_data.get("message", ""))
+		is_success = bool(result_data.get("success", false))
 	elif _latest_state.has("latest_decision_result"):
 		outcome_message = str(_latest_state.get("latest_decision_result", ""))
 
 	if outcome_message.is_empty():
 		outcome_message = "Taxation decision processed. Authoritative state updated."
 
+	if not is_success:
+		# Reset spinbox back to authoritative rate if rejected or failed
+		var current_rate: float = float(_latest_state.get("income_tax_rate", 0.25)) * 100.0
+		if proposed_rate_spinbox:
+			proposed_rate_spinbox.set_value_no_signal(current_rate)
+			_update_expected_consequence_display(current_rate)
+
 	if decision_result_label:
 		decision_result_label.text = "Decision Result: " + outcome_message
 
 	return result_data if not result_data.is_empty() else {
-		"success": true,
-		"result": "Success",
+		"success": is_success,
+		"result": "Success" if is_success else "Rejected",
 		"message": outcome_message
 	}
 

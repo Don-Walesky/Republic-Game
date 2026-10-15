@@ -486,6 +486,7 @@ logs/
 saves/
 TestResults/
 coverage/
+*presidential_desk_result.json
 
 # Unity shell placeholders
 unity/[Ll]ibrary/

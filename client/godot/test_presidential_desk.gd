@@ -50,11 +50,17 @@ func _init() -> void:
 	# Test 9: Constitutional limits and input validation reject invalid rates
 	all_passed = test_invalid_decision_validation(desk) and all_passed
 
+	# Test 10: Missing state or save file rejects decision without creating default country
+	all_passed = test_missing_state_file_decision_rejection(desk) and all_passed
+
+	# Test 11: Corrupted state or save file rejects decision without overwriting original file
+	all_passed = test_corrupt_state_file_decision_rejection(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 9 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!       ")
+		print(" [PASS]: ALL 11 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!      ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -281,6 +287,47 @@ func test_expected_consequence_calculations(desk: Control) -> bool:
 func test_confirmed_decision_execution(desk: Control) -> bool:
 	print("\n--- Test 7: Confirmed Presidential Decision Execution & UI Refresh ---")
 	var temp_path := "res://temp_decision_test_state.json"
+	var temp_sav_path := "res://temp_decision_test_state.sav"
+
+	var sav_data := {
+		"formatVersion": 1,
+		"savedAt": "2027-02-10T00:00:00+01:00",
+		"state": {
+			"saveName": "test-session",
+			"currentTick": 0,
+			"saveTimestamp": "2027-02-10T00:00:00+01:00",
+			"world": {
+				"worldId": "11111111-1111-1111-1111-111111111111",
+				"name": "Republic Sandbox",
+				"createdAt": "2027-02-10T00:00:00+01:00",
+				"currentTick": 0,
+				"countries": [
+					{
+						"id": "player-country",
+						"name": "Republic of Arcadia",
+						"foundingDate": "2027-02-10T00:00:00+01:00",
+						"happinessRating": 70.0,
+						"baselineStability": 80.0,
+						"taxPolicy": {
+							"incomeTaxRate": 0.25,
+							"corporateTaxRate": 0.20,
+							"importTariffRate": 0.05
+						},
+						"treasury": {
+							"countryId": "player-country",
+							"balance": 15000000000.0,
+							"transactions": []
+						}
+					}
+				]
+			}
+		}
+	}
+
+	var f_sav := FileAccess.open(temp_sav_path, FileAccess.WRITE)
+	f_sav.store_string(JSON.stringify(sav_data))
+	f_sav.close()
+
 	var initial_state := {
 		"country_name": "Republic of Arcadia",
 		"country_id": "player-country",
@@ -298,6 +345,7 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 		"income_tax_rate_formatted": "25%",
 		"corporate_tax_rate": 0.20,
 		"import_tariff_rate": 0.05,
+		"save_file_path": ProjectSettings.globalize_path(temp_sav_path),
 		"simulation_tick": 0
 	}
 
@@ -331,6 +379,33 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 		printerr("[FAIL]: DecisionResultLabel missing reaction summary: " + desk.decision_result_label.text)
 		return false
 
+	# Verify persisted authoritative state file on disk updated
+	var sav_check := FileAccess.open(temp_sav_path, FileAccess.READ)
+	if sav_check == null:
+		printerr("[FAIL]: Authoritative save file was deleted or missing after decision!")
+		return false
+	var sav_parsed: Variant = JSON.parse_string(sav_check.get_as_text())
+	sav_check.close()
+	if sav_parsed == null or not (sav_parsed is Dictionary):
+		printerr("[FAIL]: Authoritative save file is corrupted after decision!")
+		return false
+
+	var countries: Array = sav_parsed.get("state", {}).get("world", {}).get("countries", [])
+	if countries.is_empty():
+		printerr("[FAIL]: Authoritative save file has empty countries array!")
+		return false
+
+	var country_data: Dictionary = countries[0]
+	var persisted_rate: float = float(country_data.get("taxPolicy", {}).get("incomeTaxRate", 0.0))
+	if abs(persisted_rate - 0.30) > 0.001:
+		printerr("[FAIL]: Persisted tax rate mismatch in .sav file! Got: %f" % persisted_rate)
+		return false
+
+	var persisted_approval: float = float(country_data.get("happinessRating", 0.0))
+	if abs(persisted_approval - 67.5) > 0.001:
+		printerr("[FAIL]: Persisted approval mismatch in .sav file! Got: %f" % persisted_approval)
+		return false
+
 	# Verify reopening / reloading does not revert to old or demo values
 	desk.load_state_from_file(temp_path)
 	if desk.tax_rate_label.text != "Income Tax Rate: 30%" or desk.approval_label.text != "Approval: 67.5%":
@@ -339,6 +414,7 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 
 	# Clean up
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_sav_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("res://presidential_desk_result.json"))
 
 	print("  [OK]: Confirmed decision successfully modified authoritative country state and refreshed Godot UI.")
@@ -452,3 +528,72 @@ func test_invalid_decision_validation(desk: Control) -> bool:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
 	print("  [OK]: Unconstitutional tax rate rejected cleanly; zero state changes enacted.")
 	return true
+
+
+func test_missing_state_file_decision_rejection(desk: Control) -> bool:
+	print("\n--- Test 10: Missing State File Decision Rejection ---")
+	var non_existent_path := "res://non_existent_decision_test_state.json"
+	var non_existent_sav := "res://non_existent_decision_test_state.sav"
+
+	# Ensure files do not exist
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(non_existent_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(non_existent_sav))
+
+	# Attempt to load and execute decision against missing state
+	desk.load_state_from_file(non_existent_path)
+	var outcome: Dictionary = desk.execute_tax_decision(35.0, true)
+
+	if outcome.get("success", false):
+		printerr("[FAIL]: Missing state file must reject decision execution with success=false.")
+		return false
+
+	if outcome.get("result", "") != "StateMissingOrCorrupt":
+		printerr("[FAIL]: Expected result 'StateMissingOrCorrupt', got: " + str(outcome.get("result", "")))
+		return false
+
+	# Verify no new files were created and no sample country was founded
+	if FileAccess.file_exists(non_existent_path) or FileAccess.file_exists(non_existent_sav):
+		printerr("[FAIL]: Missing state file caused new files to be illegally created!")
+		return false
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("res://presidential_desk_result.json"))
+	print("  [OK]: Missing state file correctly rejected without creating default sample country.")
+	return true
+
+
+func test_corrupt_state_file_decision_rejection(desk: Control) -> bool:
+	print("\n--- Test 11: Corrupt State File Decision Rejection ---")
+	var corrupt_path := "res://temp_corrupt_decision_state.json"
+	var original_corrupt_text := "{ invalid: corrupted: content !!!"
+
+	var f := FileAccess.open(corrupt_path, FileAccess.WRITE)
+	f.store_string(original_corrupt_text)
+	f.close()
+
+	desk.load_state_from_file(corrupt_path)
+	var outcome: Dictionary = desk.execute_tax_decision(35.0, true)
+
+	if outcome.get("success", false):
+		printerr("[FAIL]: Corrupt state file must reject decision execution.")
+		return false
+
+	if outcome.get("result", "") != "StateMissingOrCorrupt":
+		printerr("[FAIL]: Expected result 'StateMissingOrCorrupt', got: " + str(outcome.get("result", "")))
+		return false
+
+	# Verify corrupt file was not overwritten
+	var check_file := FileAccess.open(corrupt_path, FileAccess.READ)
+	var current_content := check_file.get_as_text() if check_file else ""
+	if check_file:
+		check_file.close()
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(corrupt_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("res://presidential_desk_result.json"))
+
+	if current_content != original_corrupt_text:
+		printerr("[FAIL]: Corrupted file was overwritten or modified during failed decision!")
+		return false
+
+	print("  [OK]: Corrupt state file rejected cleanly without overwriting the original file.")
+	return true
+

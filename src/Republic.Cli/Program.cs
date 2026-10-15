@@ -72,6 +72,10 @@ public static class Program
                 {
                     rate = parsed > 1.0 ? parsed / 100.0 : parsed;
                 }
+                else
+                {
+                    rate = double.NaN;
+                }
             }
 
             string? customStatePath = null;
@@ -81,7 +85,14 @@ public static class Program
                 customStatePath = stateFileArg.Split('=', 2)[1].Trim();
             }
 
-            var result = PresidentialDeskBridge.ApplyTaxDecision(rate, confirmed: isConfirmed, stateFilePath: customStatePath);
+            string? customSavePath = null;
+            var saveFileArg = args.FirstOrDefault(a => a.StartsWith("--save-file="));
+            if (saveFileArg != null)
+            {
+                customSavePath = saveFileArg.Split('=', 2)[1].Trim();
+            }
+
+            var result = PresidentialDeskBridge.ApplyTaxDecision(rate, confirmed: isConfirmed, stateFilePath: customStatePath, saveFilePath: customSavePath);
             Console.WriteLine($"[TAX DECISION]: Result={result.Result}, Success={result.Success}, TaxRate={result.IncomeTaxRate * 100:0.#}%, Approval={result.ApprovalRating:0.#}%, Message=\"{result.Message}\"");
             return;
         }
