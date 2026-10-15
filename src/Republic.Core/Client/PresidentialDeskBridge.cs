@@ -186,6 +186,8 @@ public static class PresidentialDeskBridge
     /// <summary>
     /// Saves the authoritative state of a sovereign country to disk using the repository's established SaveEnvelope persistence format.
     /// Preserves full country identity, founding moment, treasury, tax policy, approval, stability, inventory, and projects.
+    /// If the target save file already exists, preserves all unrelated countries, world identity, entities, workspace, narrative, and tasks.
+    /// Rejects corrupted or invalid existing save files with <see cref="InvalidDataException"/> without overwriting.
     /// </summary>
     public static string SaveAuthoritativeState(
         Country country,
@@ -204,32 +206,175 @@ public static class PresidentialDeskBridge
             Directory.CreateDirectory(directory);
         }
 
-        var world = new WorldState
+        SaveEnvelope<FullGameState>? existingEnvelope = null;
+        if (File.Exists(path))
         {
-            WorldId = Guid.NewGuid(),
-            Name = "Republic Sandbox",
-            CreatedAt = simulationTime.UtcTimestamp,
-            CurrentTick = simulationTick,
-            Countries = new List<Country> { country }
-        };
+            var rawText = File.ReadAllText(path);
+            if (string.IsNullOrWhiteSpace(rawText))
+            {
+                throw new InvalidDataException(
+                    $"Cannot update authoritative save at '{path}': Existing save file is empty. Overwriting with incomplete state is prohibited.");
+            }
 
-        var fullState = new FullGameState
+            var serializer = new JsonStateSerializer();
+            try
+            {
+                existingEnvelope = serializer.Deserialize<FullGameState>(rawText);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidDataException(
+                    $"Cannot update authoritative save at '{path}': Existing save file is corrupted or contains invalid data ({ex.Message}). Overwriting with incomplete state is prohibited.", ex);
+            }
+
+            if (existingEnvelope?.State?.World == null)
+            {
+                throw new InvalidDataException(
+                    $"Cannot update authoritative save at '{path}': Existing save file does not contain a valid world state. Overwriting with incomplete state is prohibited.");
+            }
+        }
+
+        SaveEnvelope<FullGameState> envelope;
+        if (existingEnvelope?.State != null)
         {
-            SaveName = saveName,
-            CurrentTick = simulationTick,
-            SaveTimestamp = simulationTime.UtcTimestamp,
-            World = world
-        };
+            envelope = existingEnvelope;
+            var fullState = envelope.State;
+            var world = fullState.World;
 
-        var envelope = new SaveEnvelope<FullGameState>
+            world.CurrentTick = simulationTick;
+            world.Countries ??= new List<Country>();
+
+            var existingIndex = world.Countries.FindIndex(c =>
+                (!string.IsNullOrWhiteSpace(country.Id) && string.Equals(c.Id, country.Id, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(country.Name) && string.Equals(c.Name, country.Name, StringComparison.OrdinalIgnoreCase)));
+
+            if (existingIndex >= 0)
+            {
+                world.Countries[existingIndex] = country;
+            }
+            else
+            {
+                world.Countries.Add(country);
+            }
+
+            fullState.CurrentTick = simulationTick;
+            fullState.SaveTimestamp = simulationTime.UtcTimestamp;
+            if (!string.IsNullOrWhiteSpace(saveName) && saveName != "session")
+            {
+                fullState.SaveName = saveName;
+            }
+            envelope.SavedAt = simulationTime.UtcTimestamp;
+        }
+        else
         {
-            FormatVersion = 1,
-            SavedAt = simulationTime.UtcTimestamp,
-            State = fullState
-        };
+            var world = new WorldState
+            {
+                WorldId = Guid.NewGuid(),
+                Name = "Republic Sandbox",
+                CreatedAt = simulationTime.UtcTimestamp,
+                CurrentTick = simulationTick,
+                Countries = new List<Country> { country }
+            };
 
-        var serializer = new JsonStateSerializer();
-        var payload = serializer.Serialize(envelope);
+            var fullState = new FullGameState
+            {
+                SaveName = saveName,
+                CurrentTick = simulationTick,
+                SaveTimestamp = simulationTime.UtcTimestamp,
+                World = world
+            };
+
+            envelope = new SaveEnvelope<FullGameState>
+            {
+                FormatVersion = 1,
+                SavedAt = simulationTime.UtcTimestamp,
+                State = fullState
+            };
+        }
+
+        var saveSerializer = new JsonStateSerializer();
+        var payload = saveSerializer.Serialize(envelope);
+        File.WriteAllText(path, payload);
+
+        return path;
+    }
+
+    /// <summary>
+    /// Saves the authoritative state of a complete game world to disk using the repository's established SaveEnvelope persistence format.
+    /// Preserves all sovereign countries, world identity, entities, and systemic states.
+    /// </summary>
+    public static string SaveAuthoritativeState(
+        WorldState world,
+        RepublicTime simulationTime,
+        ulong simulationTick = 0,
+        string? targetPath = null,
+        string saveName = "session")
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(simulationTime);
+
+        var path = targetPath ?? ResolveDefaultSaveFilePath();
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        SaveEnvelope<FullGameState>? existingEnvelope = null;
+        if (File.Exists(path))
+        {
+            var rawText = File.ReadAllText(path);
+            if (string.IsNullOrWhiteSpace(rawText))
+            {
+                throw new InvalidDataException(
+                    $"Cannot update authoritative save at '{path}': Existing save file is empty. Overwriting with incomplete state is prohibited.");
+            }
+
+            var serializer = new JsonStateSerializer();
+            try
+            {
+                existingEnvelope = serializer.Deserialize<FullGameState>(rawText);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidDataException(
+                    $"Cannot update authoritative save at '{path}': Existing save file is corrupted or contains invalid data ({ex.Message}). Overwriting with incomplete state is prohibited.", ex);
+            }
+        }
+
+        SaveEnvelope<FullGameState> envelope;
+        if (existingEnvelope?.State != null)
+        {
+            envelope = existingEnvelope;
+            envelope.State.World = world;
+            envelope.State.CurrentTick = simulationTick;
+            envelope.State.SaveTimestamp = simulationTime.UtcTimestamp;
+            if (!string.IsNullOrWhiteSpace(saveName) && saveName != "session")
+            {
+                envelope.State.SaveName = saveName;
+            }
+            envelope.SavedAt = simulationTime.UtcTimestamp;
+        }
+        else
+        {
+            var fullState = new FullGameState
+            {
+                SaveName = saveName,
+                CurrentTick = simulationTick,
+                SaveTimestamp = simulationTime.UtcTimestamp,
+                World = world
+            };
+
+            envelope = new SaveEnvelope<FullGameState>
+            {
+                FormatVersion = 1,
+                SavedAt = simulationTime.UtcTimestamp,
+                State = fullState
+            };
+        }
+
+        var saveSerializer = new JsonStateSerializer();
+        var payload = saveSerializer.Serialize(envelope);
         File.WriteAllText(path, payload);
 
         return path;
@@ -264,8 +409,9 @@ public static class PresidentialDeskBridge
     }
 
     /// <summary>
-    /// Exports the live simulation state for a sovereign country to a JSON state file,
-    /// also persisting the authoritative simulation state to a companion save file if needed.
+    /// Exports the live simulation state for a sovereign country to a JSON state file (display snapshot),
+    /// while preserving any existing complete game save at the companion save path.
+    /// Never overwrites a complete save with a reduced single-country representation.
     /// </summary>
     public static string ExportState(
         Country country,
@@ -287,6 +433,53 @@ public static class PresidentialDeskBridge
         try
         {
             SaveAuthoritativeState(country, simulationTime, simulationTick, companionSavePath);
+        }
+        catch (InvalidDataException)
+        {
+            // Never silently overwrite a corrupted save with incomplete state; rethrow
+            throw;
+        }
+        catch { /* best-effort companion save */ }
+
+        var snapshot = PresidentialDeskSnapshot.Create(country, simulationTime, simulationTick, companionSavePath);
+        var json = Serialize(snapshot);
+        File.WriteAllText(path, json);
+
+        return path;
+    }
+
+    /// <summary>
+    /// Exports the live simulation state for a sovereign country within a complete game world to a JSON state file,
+    /// also persisting the complete world state to the companion save file if needed.
+    /// Preserves all sovereign nations, world identity, entities, and systemic state.
+    /// </summary>
+    public static string ExportState(
+        WorldState world,
+        Country country,
+        RepublicTime simulationTime,
+        ulong simulationTick = 0,
+        string? targetPath = null,
+        string? saveFilePath = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(country);
+
+        var path = targetPath ?? ResolveDefaultStateFilePath();
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var companionSavePath = saveFilePath ?? Path.ChangeExtension(path, ".sav");
+
+        try
+        {
+            SaveAuthoritativeState(world, simulationTime, simulationTick, companionSavePath);
+        }
+        catch (InvalidDataException)
+        {
+            throw;
         }
         catch { /* best-effort companion save */ }
 
@@ -336,6 +529,49 @@ public static class PresidentialDeskBridge
         string? saveFilePath = null)
     {
         return TryExportState(country, simulationTime, out _, simulationTick, targetPath, saveFilePath);
+    }
+
+    /// <summary>
+    /// Attempts to export the live simulation state for a country within a complete world, catching any IO errors safely.
+    /// </summary>
+    public static bool TryExportState(
+        WorldState world,
+        Country country,
+        RepublicTime simulationTime,
+        out string? exportedPath,
+        ulong simulationTick = 0,
+        string? targetPath = null,
+        string? saveFilePath = null)
+    {
+        exportedPath = null;
+        if (world == null || country == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            exportedPath = ExportState(world, country, simulationTime, simulationTick, targetPath, saveFilePath);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to export the live simulation state for a country within a complete world, ignoring the output path.
+    /// </summary>
+    public static bool TryExportState(
+        WorldState world,
+        Country country,
+        RepublicTime simulationTime,
+        ulong simulationTick = 0,
+        string? targetPath = null,
+        string? saveFilePath = null)
+    {
+        return TryExportState(world, country, simulationTime, out _, simulationTick, targetPath, saveFilePath);
     }
 
     /// <summary>
@@ -469,6 +705,10 @@ public static class PresidentialDeskBridge
                     {
                         snapshotCountryId = cIdEl.GetString();
                     }
+                    if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                    {
+                        snapshotCountryId = cNameEl.GetString();
+                    }
 
                     if (!string.IsNullOrWhiteSpace(snapshotSavePath))
                     {
@@ -557,9 +797,30 @@ public static class PresidentialDeskBridge
             return noCountryResult;
         }
 
-        var country = (!string.IsNullOrWhiteSpace(snapshotCountryId) ? envelope.State.World.Countries.FirstOrDefault(c => c.Id == snapshotCountryId) : null)
-                      ?? envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+
+            if (country == null)
+            {
+                var notFoundResult = new PresidentialActionResult
+                {
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply presidential taxation decision: Sovereign country '{snapshotCountryId}' referenced by snapshot does not exist in authoritative save '{targetSavePath}'. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, notFoundResult);
+                return notFoundResult;
+            }
+        }
+        else
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c => string.Equals(c.Id, "player-country", StringComparison.OrdinalIgnoreCase))
                       ?? envelope.State.World.Countries.FirstOrDefault()!;
+        }
 
         // 4. Derive Republic simulation time
         var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));

@@ -3,6 +3,7 @@ namespace Republic.Core.World;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Domain model representing a sovereign nation's physical stockpile of economic resources and goods.
@@ -33,6 +34,26 @@ public sealed class ResourceInventory
     /// </summary>
     public ResourceInventory()
     {
+    }
+
+    /// <summary>
+    /// Initializes a new <see cref="ResourceInventory"/> instance seeded with existing resource stockpiles.
+    /// Supports deserialization from JSON persistence envelopes.
+    /// </summary>
+    /// <param name="stockpiles">Existing resource types and quantities.</param>
+    [JsonConstructor]
+    public ResourceInventory(IReadOnlyDictionary<string, double>? stockpiles)
+    {
+        if (stockpiles != null)
+        {
+            foreach (var (resourceType, quantity) in stockpiles)
+            {
+                if (!string.IsNullOrWhiteSpace(resourceType) && double.IsFinite(quantity) && quantity > 0.0)
+                {
+                    _stockpiles[resourceType.Trim()] = quantity;
+                }
+            }
+        }
     }
 
     /// <summary>

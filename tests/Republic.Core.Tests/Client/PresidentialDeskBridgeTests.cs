@@ -7,7 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Republic.Core.Client;
 using Republic.Core.Economy.Budget.Models;
+using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
+using Republic.Core.Persistence;
 using Republic.Core.Time;
 using Republic.Core.World;
 using Republic.Core.World.Models;
@@ -1039,4 +1041,433 @@ public sealed class PresidentialDeskBridgeTests
             if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
         }
     }
+
+    [Fact]
+    public void ExportState_DoesNotReduceNumberOfCountriesInAuthoritativeSave()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"multi_country_state_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+
+        try
+        {
+            var time = CreateTime(5);
+            var arcadia = Country.Found("Republic of Arcadia", time, "arcadia-id",
+                treasury: new RepuTreasury(10_000_000_000.0, "arcadia-id"));
+            var valoria = Country.Found("Republic of Valoria", time, "valoria-id",
+                treasury: new RepuTreasury(25_000_000_000.0, "valoria-id"));
+            var solaria = Country.Found("Republic of Solaria", time, "solaria-id",
+                treasury: new RepuTreasury(18_000_000_000.0, "solaria-id"));
+
+            var world = new WorldState
+            {
+                WorldId = Guid.NewGuid(),
+                Name = "Grand Continent",
+                CreatedAt = LaunchEpoch,
+                CurrentTick = 100,
+                Countries = new List<Country> { arcadia, valoria, solaria }
+            };
+
+            PresidentialDeskBridge.SaveAuthoritativeState(world, time, 100, tempSaveFile);
+
+            var initialEnvelope = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.NotNull(initialEnvelope?.State?.World?.Countries);
+            Assert.Equal(3, initialEnvelope.State.World.Countries.Count);
+
+            // Act: Export Arcadia's dashboard state to JSON
+            var exportedPath = PresidentialDeskBridge.ExportState(arcadia, time, 101, tempStateFile, tempSaveFile);
+
+            // Assert: Dashboard exported correctly
+            Assert.Equal(tempStateFile, exportedPath);
+            Assert.True(File.Exists(tempStateFile));
+
+            // Verify authoritative save STILL contains all 3 countries
+            var reloadedEnvelope = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.NotNull(reloadedEnvelope?.State?.World?.Countries);
+            Assert.Equal(3, reloadedEnvelope.State.World.Countries.Count);
+
+            var countryIds = reloadedEnvelope.State.World.Countries.Select(c => c.Id).ToList();
+            Assert.Contains("arcadia-id", countryIds);
+            Assert.Contains("valoria-id", countryIds);
+            Assert.Contains("solaria-id", countryIds);
+
+            var loadedArcadia = reloadedEnvelope.State.World.Countries.First(c => c.Id == "arcadia-id");
+            var loadedValoria = reloadedEnvelope.State.World.Countries.First(c => c.Id == "valoria-id");
+            var loadedSolaria = reloadedEnvelope.State.World.Countries.First(c => c.Id == "solaria-id");
+
+            Assert.Equal(10_000_000_000.0, loadedArcadia.Treasury.Balance);
+            Assert.Equal(25_000_000_000.0, loadedValoria.Treasury.Balance);
+            Assert.Equal(18_000_000_000.0, loadedSolaria.Treasury.Balance);
+            Assert.Equal("Grand Continent", reloadedEnvelope.State.World.Name);
+            Assert.Equal(world.WorldId, reloadedEnvelope.State.World.WorldId);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+        }
+    }
+
+    [Fact]
+    public void ExportState_WithWorldStateOverload_PreservesCompleteMultiCountryWorldAndIdentity()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"world_export_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+
+        try
+        {
+            var time = CreateTime(2);
+            var worldId = Guid.NewGuid();
+            var arcadia = Country.Found("Republic of Arcadia", time, "arcadia-id");
+            var valoria = Country.Found("Republic of Valoria", time, "valoria-id");
+
+            var world = new WorldState
+            {
+                WorldId = worldId,
+                Name = "Unified World",
+                CreatedAt = LaunchEpoch,
+                CurrentTick = 40,
+                Countries = new List<Country> { arcadia, valoria }
+            };
+
+            // Act
+            PresidentialDeskBridge.ExportState(world, arcadia, time, 40, tempStateFile, tempSaveFile);
+
+            // Assert
+            var envelope = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.NotNull(envelope?.State?.World?.Countries);
+            Assert.Equal(2, envelope.State.World.Countries.Count);
+            Assert.Equal(worldId, envelope.State.World.WorldId);
+            Assert.Equal("Unified World", envelope.State.World.Name);
+
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.Equal("Republic of Arcadia", snapshot.CountryName);
+            Assert.Equal(tempSaveFile, snapshot.SaveFilePath);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+        }
+    }
+
+    [Fact]
+    public void ApplyTaxDecision_PreservesUnrelatedCountriesAndTheirState()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"unrelated_country_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+
+        try
+        {
+            var time = CreateTime(3);
+            var arcadia = Country.Found("Republic of Arcadia", time, "arcadia-id",
+                treasury: new RepuTreasury(12_000_000_000.0, "arcadia-id"));
+            arcadia.HappinessRating = 70.0;
+            arcadia.BaselineStability = 80.0;
+            arcadia.TaxPolicy.IncomeTaxRate = 0.25;
+
+            var valoria = Country.Found("Republic of Valoria", time, "valoria-id",
+                capitalCity: "Valopolis",
+                territorySizeSqKm: 650_000.0,
+                governmentType: "Parliamentary Republic",
+                treasury: new RepuTreasury(55_000_000_000.0, "valoria-id"));
+            valoria.HappinessRating = 82.5;
+            valoria.BaselineStability = 91.0;
+            valoria.TaxPolicy.IncomeTaxRate = 0.18;
+            valoria.TaxPolicy.CorporateTaxRate = 0.22;
+            valoria.TaxPolicy.ImportTariffRate = 0.07;
+            valoria.AddResource("Food", 5000.0);
+            valoria.AddResource("Energy", 2000.0);
+
+            var solaria = Country.Found("Republic of Solaria", time, "solaria-id",
+                treasury: new RepuTreasury(33_000_000_000.0, "solaria-id"));
+            solaria.HappinessRating = 65.0;
+            solaria.BaselineStability = 77.0;
+            solaria.TaxPolicy.IncomeTaxRate = 0.30;
+
+            var world = new WorldState
+            {
+                WorldId = Guid.NewGuid(),
+                Name = "Continental Alliance",
+                CreatedAt = LaunchEpoch,
+                CurrentTick = 10,
+                Countries = new List<Country> { arcadia, valoria, solaria }
+            };
+
+            PresidentialDeskBridge.SaveAuthoritativeState(world, time, 10, tempSaveFile);
+            PresidentialDeskBridge.ExportState(arcadia, time, 10, tempStateFile, tempSaveFile);
+
+            // Act: Enact a tax hike on Arcadia from 25% to 35% (+10% tax -> -5% approval)
+            var actionResult = PresidentialDeskBridge.ApplyTaxDecision(0.35, confirmed: true, tempStateFile);
+
+            // Assert: Arcadia's decision was applied successfully
+            Assert.True(actionResult.Success);
+            Assert.Equal(0.35, actionResult.IncomeTaxRate);
+            Assert.Equal(65.0, actionResult.ApprovalRating);
+
+            // Reload authoritative state from disk
+            var reloadedEnvelope = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.NotNull(reloadedEnvelope?.State?.World?.Countries);
+            Assert.Equal(3, reloadedEnvelope.State.World.Countries.Count);
+
+            // 1. Verify Arcadia updated
+            var loadedArcadia = reloadedEnvelope.State.World.Countries.First(c => c.Id == "arcadia-id");
+            Assert.Equal(0.35, loadedArcadia.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(65.0, loadedArcadia.HappinessRating);
+
+            // 2. Verify Valoria remained strictly identical in every dimension
+            var loadedValoria = reloadedEnvelope.State.World.Countries.First(c => c.Id == "valoria-id");
+            Assert.Equal("valoria-id", loadedValoria.Id);
+            Assert.Equal("Republic of Valoria", loadedValoria.Name);
+            Assert.Equal("Valopolis", loadedValoria.CapitalCity);
+            Assert.Equal(650_000.0, loadedValoria.TerritorySizeSqKm);
+            Assert.Equal("Parliamentary Republic", loadedValoria.GovernmentType);
+            Assert.Equal(55_000_000_000.0, loadedValoria.Treasury.Balance);
+            Assert.Equal(0.18, loadedValoria.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(0.22, loadedValoria.TaxPolicy.CorporateTaxRate);
+            Assert.Equal(0.07, loadedValoria.TaxPolicy.ImportTariffRate);
+            Assert.Equal(82.5, loadedValoria.HappinessRating);
+            Assert.Equal(91.0, loadedValoria.BaselineStability);
+            Assert.Equal(5000.0, loadedValoria.GetResourceQuantity("Food"));
+            Assert.Equal(2000.0, loadedValoria.GetResourceQuantity("Energy"));
+
+            // 3. Verify Solaria remained strictly identical
+            var loadedSolaria = reloadedEnvelope.State.World.Countries.First(c => c.Id == "solaria-id");
+            Assert.Equal("solaria-id", loadedSolaria.Id);
+            Assert.Equal(33_000_000_000.0, loadedSolaria.Treasury.Balance);
+            Assert.Equal(0.30, loadedSolaria.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(65.0, loadedSolaria.HappinessRating);
+            Assert.Equal(77.0, loadedSolaria.BaselineStability);
+
+            // 4. Verify World identity preserved
+            Assert.Equal("Continental Alliance", reloadedEnvelope.State.World.Name);
+            Assert.Equal(world.WorldId, reloadedEnvelope.State.World.WorldId);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+        }
+    }
+
+    [Fact]
+    public void WorldIdentityAndSupportedStateData_SurvivesSaveAndReloadCycle()
+    {
+        // Arrange
+        var tempSaveFile = Path.Combine(Path.GetTempPath(), $"world_fidelity_{Guid.NewGuid():N}.sav");
+
+        try
+        {
+            var time = CreateTime(10, 8, 30);
+            var worldId = Guid.NewGuid();
+
+            var treasury = new RepuTreasury(42_500_000_000.0, "arcadia-fidelity");
+            var country = Country.Found(
+                name: "Republic of Arcadia",
+                foundingTime: time,
+                id: "arcadia-fidelity",
+                capitalCity: "Arcadia Heights",
+                territorySizeSqKm: 520_000.0,
+                governmentType: "Constitutional Democratic Republic",
+                treasury: treasury);
+
+            country.HappinessRating = 76.5;
+            country.BaselineStability = 88.0;
+            country.TaxPolicy.IncomeTaxRate = 0.28;
+            country.TaxPolicy.CorporateTaxRate = 0.21;
+            country.TaxPolicy.ImportTariffRate = 0.09;
+            country.AddResource("Food", 1200.0);
+            country.AddResource("Steel", 450.0);
+
+            var roadProject = new NationalRoadProject("arcadia-fidelity", time, cost: 750_000.0);
+            country.Projects.Add(roadProject);
+
+            var entityId = Guid.NewGuid();
+            var world = new WorldState
+            {
+                WorldId = worldId,
+                Name = "Fidelity Test World",
+                CreatedAt = LaunchEpoch,
+                CurrentTick = 500,
+                Entities = new List<WorldEntity>
+                {
+                    new(entityId, "Province", "Northern Province")
+                },
+                Countries = new List<Country> { country }
+            };
+
+            // Act: Save and reload
+            PresidentialDeskBridge.SaveAuthoritativeState(world, time, 500, tempSaveFile, saveName: "fidelity_test");
+            var loadedEnvelope = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+
+            // Assert
+            Assert.NotNull(loadedEnvelope?.State?.World);
+            var loadedWorld = loadedEnvelope.State.World;
+
+            // World Identity
+            Assert.Equal(worldId, loadedWorld.WorldId);
+            Assert.Equal("Fidelity Test World", loadedWorld.Name);
+            Assert.Equal(LaunchEpoch, loadedWorld.CreatedAt);
+            Assert.Equal(500UL, loadedWorld.CurrentTick);
+            Assert.Single(loadedWorld.Entities);
+            Assert.Equal("Northern Province", loadedWorld.Entities[0].Name);
+            Assert.Equal(entityId, loadedWorld.Entities[0].Id);
+
+            // Country Identity & Founding Data
+            Assert.Single(loadedWorld.Countries);
+            var loadedCountry = loadedWorld.Countries[0];
+            Assert.Equal("arcadia-fidelity", loadedCountry.Id);
+            Assert.Equal("Republic of Arcadia", loadedCountry.Name);
+            Assert.Equal("Arcadia Heights", loadedCountry.CapitalCity);
+            Assert.Equal(520_000.0, loadedCountry.TerritorySizeSqKm);
+            Assert.Equal("Constitutional Democratic Republic", loadedCountry.GovernmentType);
+            Assert.Equal(time, loadedCountry.FoundingTime);
+
+            // Treasury & Taxation
+            Assert.Equal(42_500_000_000.0, loadedCountry.Treasury.Balance);
+            Assert.Equal(0.28, loadedCountry.TaxPolicy.IncomeTaxRate);
+            Assert.Equal(0.21, loadedCountry.TaxPolicy.CorporateTaxRate);
+            Assert.Equal(0.09, loadedCountry.TaxPolicy.ImportTariffRate);
+
+            // Approval & Stability
+            Assert.Equal(76.5, loadedCountry.HappinessRating);
+            Assert.Equal(88.0, loadedCountry.BaselineStability);
+
+            // Resource Inventory
+            Assert.Equal(1200.0, loadedCountry.GetResourceQuantity("Food"));
+            Assert.Equal(450.0, loadedCountry.GetResourceQuantity("Steel"));
+
+            // Development Projects
+            Assert.Single(loadedCountry.Projects);
+            var loadedProject = loadedCountry.Projects[0];
+            Assert.IsType<NationalRoadProject>(loadedProject);
+            Assert.Equal("arcadia-fidelity", loadedProject.CountryId);
+            Assert.Equal(750_000.0, loadedProject.Cost);
+        }
+        finally
+        {
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+        }
+    }
+
+    [Fact]
+    public void SaveAuthoritativeState_WithCorruptSave_ThrowsInvalidDataException_WithoutOverwritingCorruptFile()
+    {
+        // Arrange
+        var tempSaveFile = Path.Combine(Path.GetTempPath(), $"corrupt_save_guard_{Guid.NewGuid():N}.sav");
+        const string CorruptContent = "{ \"formatVersion\": 1, \"state\": { corrupt: [ invalid json text ";
+
+        try
+        {
+            File.WriteAllText(tempSaveFile, CorruptContent);
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia-guard");
+
+            // Act & Assert: Saving country must reject with InvalidDataException
+            var ex1 = Assert.Throws<InvalidDataException>(() =>
+                PresidentialDeskBridge.SaveAuthoritativeState(country, time, 1, tempSaveFile));
+            Assert.Contains("corrupted or contains invalid data", ex1.Message);
+
+            // Verify file content is strictly unchanged
+            Assert.Equal(CorruptContent, File.ReadAllText(tempSaveFile));
+
+            // Act & Assert: Saving world must also reject with InvalidDataException
+            var world = new WorldState { Countries = new List<Country> { country } };
+            var ex2 = Assert.Throws<InvalidDataException>(() =>
+                PresidentialDeskBridge.SaveAuthoritativeState(world, time, 1, tempSaveFile));
+            Assert.Contains("corrupted or contains invalid data", ex2.Message);
+
+            // Verify file content is still strictly unchanged
+            Assert.Equal(CorruptContent, File.ReadAllText(tempSaveFile));
+        }
+        finally
+        {
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+        }
+    }
+
+    [Fact]
+    public void ExportState_WithCorruptCompanionSave_ThrowsInvalidDataException_WithoutOverwritingCorruptFile()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"corrupt_companion_{Guid.NewGuid():N}.json");
+        var companionSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        const string CorruptContent = "{ malformed: incomplete save data";
+
+        try
+        {
+            File.WriteAllText(companionSaveFile, CorruptContent);
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+
+            // Act & Assert: Exporting state must reject with InvalidDataException rather than overwriting
+            var ex = Assert.Throws<InvalidDataException>(() =>
+                PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, companionSaveFile));
+            Assert.Contains("corrupted or contains invalid data", ex.Message);
+
+            // Verify companion save file content was NOT overwritten
+            Assert.Equal(CorruptContent, File.ReadAllText(companionSaveFile));
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(companionSaveFile)) File.Delete(companionSaveFile);
+        }
+    }
+
+    [Fact]
+    public void ApplyTaxDecision_WithTargetCountryMissingFromSave_RejectsWithoutMutatingUnrelatedCountries()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"missing_target_country_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var valoria = Country.Found("Republic of Valoria", time, "valoria-only",
+                treasury: new RepuTreasury(50_000_000_000.0, "valoria-only"));
+            valoria.TaxPolicy.IncomeTaxRate = 0.20;
+
+            var world = new WorldState
+            {
+                WorldId = Guid.NewGuid(),
+                Name = "Valoria Domain",
+                Countries = new List<Country> { valoria }
+            };
+
+            PresidentialDeskBridge.SaveAuthoritativeState(world, time, 1, tempSaveFile);
+            var originalSaveBytes = File.ReadAllBytes(tempSaveFile);
+
+            // Snapshot explicitly targets "arcadia-foreign", which does not exist in the world save
+            var snapshot = new PresidentialDeskSnapshot
+            {
+                CountryName = "Republic of Arcadia",
+                CountryId = "arcadia-foreign",
+                IncomeTaxRate = 0.25,
+                SaveFilePath = tempSaveFile
+            };
+            File.WriteAllText(tempStateFile, PresidentialDeskBridge.Serialize(snapshot));
+
+            // Act: Apply tax decision targeting nonexistent country
+            var actionResult = PresidentialDeskBridge.ApplyTaxDecision(0.35, confirmed: true, stateFilePath: tempStateFile);
+
+            // Assert: Rejected with StateMissingOrCorrupt
+            Assert.False(actionResult.Success);
+            Assert.Equal("StateMissingOrCorrupt", actionResult.Result);
+            Assert.Contains("arcadia-foreign", actionResult.Message);
+
+            // Verify save file on disk is strictly unchanged
+            Assert.Equal(originalSaveBytes, File.ReadAllBytes(tempSaveFile));
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+        }
+    }
 }
+
