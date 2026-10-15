@@ -97,6 +97,41 @@ public static class Program
             return;
         }
 
+        // Handle background request watcher mode if specified
+        if (args != null && (args.Contains("--watch-requests") || args.Contains("--watch-godot")))
+        {
+            string? customStatePath = args.FirstOrDefault(a => a.StartsWith("--state-file="))?.Split('=', 2)[1].Trim();
+            string? customSavePath = args.FirstOrDefault(a => a.StartsWith("--save-file="))?.Split('=', 2)[1].Trim();
+
+            Console.WriteLine("[GODOT BRIDGE]: Watching for presidential decision requests (presidential_desk_request.json)...");
+            using var watcher = PresidentialDeskBridge.CreateRequestWatcher(customStatePath, customSavePath, result =>
+            {
+                Console.WriteLine($"[TAX DECISION]: Result={result.Result}, Success={result.Success}, TaxRate={result.IncomeTaxRate * 100:0.#}%, Approval={result.ApprovalRating:0.#}%, Message=\"{result.Message}\"");
+            });
+
+            Console.WriteLine("[GODOT BRIDGE]: Active. Press Enter or Ctrl+C to stop.");
+            Console.ReadLine();
+            return;
+        }
+
+        // Handle one-off request processing if specified
+        if (args != null && args.Contains("--process-request"))
+        {
+            string? customStatePath = args.FirstOrDefault(a => a.StartsWith("--state-file="))?.Split('=', 2)[1].Trim();
+            string? customSavePath = args.FirstOrDefault(a => a.StartsWith("--save-file="))?.Split('=', 2)[1].Trim();
+
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(customStatePath, customSavePath);
+            if (result != null)
+            {
+                Console.WriteLine($"[TAX DECISION]: Result={result.Result}, Success={result.Success}, TaxRate={result.IncomeTaxRate * 100:0.#}%, Approval={result.ApprovalRating:0.#}%, Message=\"{result.Message}\"");
+            }
+            else
+            {
+                Console.WriteLine("[GODOT BRIDGE]: No pending presidential decision request found.");
+            }
+            return;
+        }
+
         // Handle CLI export request if specified
         if (args != null && (args.Contains("--export-godot") || args.Contains("--export-state")))
         {
@@ -114,9 +149,18 @@ public static class Program
             PresidentialDeskBridge.TryExportState(playerCountry, app.TimeSystem.CurrentRepublicTime, app.TimeSystem.CurrentTick);
         }
 
+        using var requestWatcher = PresidentialDeskBridge.CreateRequestWatcher(
+            onDecisionProcessed: result =>
+            {
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.WriteLine($"\n[PRESIDENTIAL DESK]: Processed remote decision: Tax={result.IncomeTaxRate * 100:0.#}%, Approval={result.ApprovalRating:0.#}% ({result.Message})");
+                Console.ResetColor();
+            });
+
         var running = true;
         while (running)
         {
+            PresidentialDeskBridge.ProcessPendingDecisionRequest();
             RenderDashboard(app, startupBriefing);
             startupBriefing = null;
 

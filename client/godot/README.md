@@ -24,26 +24,42 @@ The Presidential Desk interface reads authoritative state exported from `Republi
 - **Auto-Refresh**: The scene automatically detects modification timestamps on the state file every 0.5s and reloads instantly when simulation time advances or tax policies change.
 - **Safe Fallback**: If the state file is missing or contains invalid JSON, the interface displays `[No State Loaded]` with a visible status message; it never silently falls back to hardcoded sample values.
 
-## Interactive Presidential Decision: Taxation Policy (Phase 15)
+## Interactive Presidential Decision: Taxation Policy
 
 The presidential desk provides interactive governance controls allowing the player to enact tax policy reforms:
 1. **View Current Rate**: Displays the current personal income tax rate from live simulation state.
 2. **Select Proposed Rate**: A `ProposedRateSpinBox` control bounded by constitutional limits (`0%` to `70%`).
 3. **Dynamic Feedback Preview**: Automatically previews the expected public approval delta (`-0.5%` per `+1%` tax hike, `+0.5%` per `-1%` tax cut) and any stability warnings (such as the `-2.0%` penalty for exceeding `50%` income tax).
-4. **Confirm or Cancel**:
-   - **Confirm Decision**: Submits the decision through `Republic.Core.World.PresidentialWorkspaceHandler.AdjustTaxPolicy`. The country state updates, citizen approval changes, and the dashboard reloads with the genuine result.
-   - **Cancel Decision**: Explicitly cancels the proposal. Existing tax rates, public approval, and country state are preserved 100% unchanged, and the selector resets back to the current rate.
-5. **Decision Result**: Displays the verified outcome message returned by `Republic.Core`.
+4. **File-Based Decision Flow (No dotnet spawn)**:
+   - Tax decisions do not spawn OS processes or require local .NET SDK paths at runtime, ensuring complete compatibility with HTML5 web exports, containerized runs, and cross-platform clients.
+   - When the player confirms or cancels a decision, Godot writes a small JSON request file (`presidential_desk_request.json`) next to the state file:
+     ```json
+     {
+       "proposed_rate": 0.30,
+       "proposed_rate_percent": 30.0,
+       "confirmed": true
+     }
+     ```
+   - **Simulation Processing**: When the request file appears, `PresidentialDeskBridge` (or the CLI request watcher) applies the decision using authoritative `ApplyTaxDecision` simulation rules, updates the persistent `.sav` save file and exported `presidential_desk_state.json`, and deletes `presidential_desk_request.json`.
+   - **Cancellation**: If cancelled, the request is written with `"confirmed": false`. Existing tax rates, public approval, and simulation state are preserved 100% unchanged, and the selector resets back to the live rate.
+   - **Timeout Warning**: If a request file is written but no updated state arrives within 4 seconds (e.g. if the simulation backend is stopped), a clear warning status message is displayed on the Godot presidential desk.
+   - **Live Auto-Refresh**: The desk continues polling `presidential_desk_state.json` every 0.5s, reloading seamlessly once the backend processes the decision.
 
-## Exporting Live State from Republic.Core
+## Running the Republic Simulation Backend
 
-You can generate or refresh the live simulation state snapshot at any time:
+You can run the simulation backend to service presidential desk requests:
 ```bash
-# Option 1: Standalone CLI export
-dotnet run --project src/Republic.Cli -- --export-godot
-
-# Option 2: Running the terminal executive desk automatically syncs state on startup, time advance, and policy enactments
+# Option 1: Interactive Executive Desktop (automatically watches & processes Godot requests in the background)
 dotnet run --project src/Republic.Cli
+
+# Option 2: Dedicated request watcher daemon
+dotnet run --project src/Republic.Cli -- --watch-requests
+
+# Option 3: Process a single pending request
+dotnet run --project src/Republic.Cli -- --process-request
+
+# Option 4: Standalone state export
+dotnet run --project src/Republic.Cli -- --export-godot
 ```
 
 ## Opening the Project in Godot
@@ -60,7 +76,7 @@ dotnet run --project src/Republic.Cli
 
 ## Running Automated Headless Checks
 
-To run the automated test suite verifying missing state safety, corrupt JSON handling, live state loading, dynamic state updates, taxation decision controls, Phase 11 consequence calculations, confirmed decision execution, cancellation preservation, and constitutional bounds rejection:
+To run the automated test suite verifying missing state safety, corrupt JSON handling, live state loading, dynamic state updates, taxation decision controls, Phase 11 consequence calculations, file-based request creation, cancellation preservation, timeout warnings, and constitutional bounds rejection:
 ```bash
 godot --headless -s test_presidential_desk.gd
 ```

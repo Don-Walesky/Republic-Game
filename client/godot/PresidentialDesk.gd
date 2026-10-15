@@ -27,12 +27,18 @@ const DEFAULT_STATE_PATHS: Array[String] = [
 ## Polling interval in seconds to detect file-based state changes
 @export var poll_interval: float = 0.5
 
+const DEFAULT_REQUEST_FILENAME: String = "presidential_desk_request.json"
+const REQUEST_TIMEOUT_SECONDS: float = 4.0
+
 var _active_state_path: String = ""
 var _last_modified_time: int = 0
 var _poll_timer: float = 0.0
 var _is_connected: bool = false
 var _latest_state: Dictionary = {}
 var _user_is_adjusting: bool = false
+var _pending_request_path: String = ""
+var _is_waiting_for_decision: bool = false
+var _request_wait_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -89,6 +95,14 @@ func _process(delta: float) -> void:
 	if _poll_timer >= poll_interval:
 		_poll_timer = 0.0
 		_check_for_live_updates()
+
+	if _is_waiting_for_decision:
+		_request_wait_timer += delta
+		if _request_wait_timer >= REQUEST_TIMEOUT_SECONDS:
+			_is_waiting_for_decision = false
+			if not _pending_request_path.is_empty() and FileAccess.file_exists(_pending_request_path):
+				if status_label:
+					status_label.text = "Status: Warning - Decision request written, but no updated simulation state arrived within %.0fs. Is Republic simulation running?" % REQUEST_TIMEOUT_SECONDS
 
 
 ## Manually triggers a reload of the simulation state file
@@ -157,6 +171,8 @@ func load_state_from_file(path: String) -> bool:
 ## Updates interface labels with live simulation state values
 func apply_state(data: Dictionary) -> void:
 	_init_controls()
+	_is_waiting_for_decision = false
+	_request_wait_timer = 0.0
 	var country_name: String = str(data.get("country_name", data.get("CountryName", "[Unknown]")))
 	var treasury: String = str(data.get("treasury", data.get("Treasury", "[Unknown]")))
 	var approval: String = str(data.get("approval", data.get("Approval", "[Unknown]")))
@@ -199,8 +215,13 @@ func apply_state(data: Dictionary) -> void:
 
 	var latest_result: String = str(data.get("latest_decision_result", data.get("LatestDecisionResult", "")))
 	if not latest_result.is_empty() and decision_result_label:
-		if decision_result_label.text == "Decision Result: No decision made" or decision_result_label.text == "Decision Result: [No State Loaded]":
-			decision_result_label.text = "Decision Result: " + latest_result
+		decision_result_label.text = "Decision Result: " + latest_result
+	else:
+		var result_data := _read_result_file()
+		if not result_data.is_empty() and decision_result_label:
+			var res_msg := str(result_data.get("message", ""))
+			if not res_msg.is_empty():
+				decision_result_label.text = "Decision Result: " + res_msg
 
 
 ## Visually displays a missing state notice without falling back to sample demonstration data
@@ -332,15 +353,72 @@ func _on_cancel_button_pressed() -> void:
 	execute_tax_decision(rate_val, false)
 
 
-## Submits a presidential taxation decision to the Republic simulation logic
+## Submits a presidential taxation decision via file-based request (presidential_desk_request.json)
 func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dictionary:
 	_user_is_adjusting = false
 
-	# 1. Explicit cancellation check
+	# 1. Reject if no valid simulation state is connected
+	if not _is_connected or _latest_state.is_empty():
+		var no_state_msg := "Cannot submit decision: No Republic simulation state loaded."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: " + no_state_msg
+		return {
+			"success": false,
+			"result": "StateMissingOrCorrupt",
+			"message": no_state_msg
+		}
+
+	# 2. Constitutional bounds validation (0% to 70%) for confirmed decisions
+	if confirmed and (proposed_rate_percent < 0.0 or proposed_rate_percent > 70.0):
+		var invalid_msg: String = "Taxation policy rejected: rates exceed constitutional bounds (Income: 0-70%)."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: " + invalid_msg
+		return {
+			"success": false,
+			"result": "InvalidInput",
+			"message": invalid_msg
+		}
+
+	# 3. Resolve paths
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+
+	# 4. Write presidential_desk_request.json next to state file
+	var proposed_rate_decimal: float = proposed_rate_percent / 100.0
+	var request_dict := {
+		"proposed_rate": proposed_rate_decimal,
+		"proposed_rate_percent": proposed_rate_percent,
+		"confirmed": confirmed,
+		"requested_at": Time.get_datetime_string_from_system()
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create decision request file: " + request_path
+		if status_label:
+			status_label.text = "Status: Error - " + err_msg
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: Error - " + err_msg
+		return {
+			"success": false,
+			"result": "Error",
+			"message": err_msg
+		}
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	# 5. UI feedback for confirmed vs cancelled
 	if not confirmed:
 		var cancel_msg: String = "Decision cancelled: Existing tax rates and citizen approval preserved unchanged."
 		if decision_result_label:
 			decision_result_label.text = "Decision Result: " + cancel_msg
+		if status_label:
+			status_label.text = "Status: Cancellation request written to " + DEFAULT_REQUEST_FILENAME
 		# Reset spinbox back to current live rate
 		var current_rate: float = float(_latest_state.get("income_tax_rate", 0.25)) * 100.0
 		if proposed_rate_spinbox:
@@ -352,86 +430,31 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 			"message": cancel_msg
 		}
 
-	# 2. Constitutional bounds validation (0% to 70%)
-	if proposed_rate_percent < 0.0 or proposed_rate_percent > 70.0:
-		var invalid_msg: String = "Taxation policy rejected: rates exceed constitutional bounds (Income: 0-70%)."
-		if decision_result_label:
-			decision_result_label.text = "Decision Result: " + invalid_msg
-		return {
-			"success": false,
-			"result": "InvalidInput",
-			"message": invalid_msg
-		}
-
-	# 3. Locate CLI dll to execute authoritative Republic.Core decision
-	var cli_dll := _resolve_cli_dll_path()
-	var state_path := _resolve_state_path()
-
-	var output: Array = []
-	var exec_args: Array[String] = []
-
-	if not cli_dll.is_empty() and FileAccess.file_exists(cli_dll):
-		exec_args.append(cli_dll)
-		exec_args.append("--apply-tax=" + str(proposed_rate_percent))
-		if not state_path.is_empty():
-			exec_args.append("--state-file=" + ProjectSettings.globalize_path(state_path))
-		var save_file_val: String = str(_latest_state.get("save_file_path", ""))
-		if not save_file_val.is_empty() and FileAccess.file_exists(save_file_val):
-			exec_args.append("--save-file=" + ProjectSettings.globalize_path(save_file_val))
-		var exit_code := OS.execute("dotnet", exec_args, output)
-		if exit_code != 0:
-			var err_str := "Command execution failed with code " + str(exit_code)
-			if decision_result_label:
-				decision_result_label.text = "Decision Result: " + err_str
-			return {"success": false, "result": "Error", "message": err_str}
-
-	# 4. Check for result file generated by Republic.Core (presidential_desk_result.json)
-	var result_data := _read_result_file()
-
-	# 5. Reload the authoritative state file from disk
-	refresh()
-
-	# 6. Display the actual result returned by Republic.Core
-	var outcome_message: String = ""
-	var is_success: bool = true
-	if not result_data.is_empty():
-		outcome_message = str(result_data.get("message", ""))
-		is_success = bool(result_data.get("success", false))
-	elif _latest_state.has("latest_decision_result"):
-		outcome_message = str(_latest_state.get("latest_decision_result", ""))
-
-	if outcome_message.is_empty():
-		outcome_message = "Taxation decision processed. Authoritative state updated."
-
-	if not is_success:
-		# Reset spinbox back to authoritative rate if rejected or failed
-		var current_rate: float = float(_latest_state.get("income_tax_rate", 0.25)) * 100.0
-		if proposed_rate_spinbox:
-			proposed_rate_spinbox.set_value_no_signal(current_rate)
-			_update_expected_consequence_display(current_rate)
-
+	var submit_msg := "Proposed %.1f%% tax submitted. Awaiting simulation..." % proposed_rate_percent
 	if decision_result_label:
-		decision_result_label.text = "Decision Result: " + outcome_message
+		decision_result_label.text = "Decision Result: " + submit_msg
+	if status_label:
+		status_label.text = "Status: Decision request written to " + DEFAULT_REQUEST_FILENAME
 
-	return result_data if not result_data.is_empty() else {
-		"success": is_success,
-		"result": "Success" if is_success else "Rejected",
-		"message": outcome_message
+	return {
+		"success": true,
+		"result": "Pending",
+		"message": submit_msg
 	}
 
 
-## Resolves the compiled Republic.Cli.dll binary path
-func _resolve_cli_dll_path() -> String:
-	var candidates: Array[String] = [
-		"res://../../src/Republic.Cli/bin/Debug/net8.0/Republic.Cli.dll",
-		"res://../../src/Republic.Cli/bin/Release/net8.0/Republic.Cli.dll",
-		"res://Republic.Cli.dll"
-	]
-	for c in candidates:
-		var global_p := ProjectSettings.globalize_path(c)
-		if FileAccess.file_exists(global_p):
-			return global_p
-	return ""
+## Resolves the request file path adjacent to the active simulation state file
+func _resolve_request_path(state_path: String = "") -> String:
+	var base_path := state_path
+	if base_path.is_empty():
+		base_path = _resolve_state_path()
+
+	if not base_path.is_empty():
+		var dir := base_path.get_base_dir()
+		if not dir.is_empty():
+			return dir + "/" + DEFAULT_REQUEST_FILENAME
+
+	return "res://" + DEFAULT_REQUEST_FILENAME
 
 
 ## Reads structured action result from presidential_desk_result.json

@@ -31,6 +31,16 @@ public static class PresidentialDeskBridge
     public const string DefaultSaveFileName = "presidential_desk_state.sav";
 
     /// <summary>
+    /// Default filename used for presidential desk decision request JSON files from the Godot client.
+    /// </summary>
+    public const string DefaultRequestFileName = "presidential_desk_request.json";
+
+    /// <summary>
+    /// Default filename used for structured presidential action result JSON files.
+    /// </summary>
+    public const string DefaultResultFileName = "presidential_desk_result.json";
+
+    /// <summary>
     /// Environment variable allowing custom override of the exported state file path.
     /// </summary>
     public const string StateFileEnvironmentVariable = "REPUBLIC_STATE_FILE";
@@ -153,6 +163,22 @@ public static class PresidentialDeskBridge
         }
 
         return companion;
+    }
+
+    /// <summary>
+    /// Resolves the default destination path for the presidential desk decision request JSON file.
+    /// Places it adjacent to the resolved state file.
+    /// </summary>
+    public static string ResolveDefaultRequestFilePath(string? stateFilePath = null)
+    {
+        var targetState = stateFilePath ?? ResolveDefaultStateFilePath();
+        var dir = Path.GetDirectoryName(targetState);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            return Path.Combine(dir, DefaultRequestFileName);
+        }
+
+        return Path.GetFullPath(Path.Combine("client", "godot", DefaultRequestFileName));
     }
 
     /// <summary>
@@ -587,6 +613,19 @@ public static class PresidentialDeskBridge
                 PreviousStabilityRating = prevStability
             };
             TryWriteResultFile(targetStatePath, cancelResult);
+
+            var exportCancelPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+                ? Path.ChangeExtension(targetStatePath, ".json")
+                : targetStatePath;
+
+            try
+            {
+                var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, cancelResult.Message);
+                var snapshotJson = Serialize(snapshot);
+                File.WriteAllText(exportCancelPath, snapshotJson);
+            }
+            catch { /* best-effort export */ }
+
             return cancelResult;
         }
 
@@ -745,6 +784,15 @@ public static class PresidentialDeskBridge
                 PreviousStabilityRating = prevStability
             };
             TryWriteResultFile(targetPath, cancelResult);
+
+            try
+            {
+                var snapshot = PresidentialDeskSnapshot.Create(country, simulationTime, simulationTick, saveFilePath, cancelResult.Message);
+                var snapshotJson = Serialize(snapshot);
+                File.WriteAllText(targetPath, snapshotJson);
+            }
+            catch { /* best-effort export */ }
+
             return cancelResult;
         }
 
@@ -893,12 +941,183 @@ public static class PresidentialDeskBridge
 
             if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
             {
-                var resultPath = Path.Combine(dir, "presidential_desk_result.json");
+                var resultPath = Path.Combine(dir, DefaultResultFileName);
                 var resultJson = JsonSerializer.Serialize(result, SerializerOptions);
                 File.WriteAllText(resultPath, resultJson);
             }
         }
         catch { /* best-effort write */ }
+    }
+
+    /// <summary>
+    /// Checks for and processes any pending presidential decision request written to disk by the Godot client.
+    /// If presidential_desk_request.json exists, reads the proposed rate and confirmed flag,
+    /// applies the decision via <see cref="ApplyTaxDecision(double, bool, string?, string?)"/>,
+    /// ensures the updated state file is exported, deletes the request file, and returns the action result.
+    /// Returns null if no request file exists.
+    /// </summary>
+    public static PresidentialActionResult? ProcessPendingDecisionRequest(
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestFilePath = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetRequestPath = requestFilePath ?? ResolveDefaultRequestFilePath(targetStatePath);
+
+        if (!File.Exists(targetRequestPath))
+        {
+            return null;
+        }
+
+        string rawJson;
+        try
+        {
+            rawJson = File.ReadAllText(targetRequestPath);
+        }
+        catch (IOException)
+        {
+            // Transient file lock while client finishes writing; wait briefly and retry
+            System.Threading.Thread.Sleep(50);
+            try
+            {
+                rawJson = File.ReadAllText(targetRequestPath);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(rawJson))
+        {
+            return null;
+        }
+
+        double proposedRate = 0.25;
+        bool confirmed = true;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(rawJson);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("proposed_rate", out var propRateEl) ||
+                root.TryGetProperty("proposed_rate_percent", out propRateEl) ||
+                root.TryGetProperty("rate", out propRateEl) ||
+                root.TryGetProperty("income_tax_rate", out propRateEl))
+            {
+                if (propRateEl.ValueKind == JsonValueKind.Number && propRateEl.TryGetDouble(out var rateVal))
+                {
+                    proposedRate = rateVal > 1.0 ? rateVal / 100.0 : rateVal;
+                }
+                else if (propRateEl.ValueKind == JsonValueKind.String &&
+                         double.TryParse(propRateEl.GetString(), System.Globalization.CultureInfo.InvariantCulture, out var strRate))
+                {
+                    proposedRate = strRate > 1.0 ? strRate / 100.0 : strRate;
+                }
+            }
+
+            if (root.TryGetProperty("confirmed", out var confEl) ||
+                root.TryGetProperty("is_confirmed", out confEl))
+            {
+                if (confEl.ValueKind == JsonValueKind.True || confEl.ValueKind == JsonValueKind.False)
+                {
+                    confirmed = confEl.GetBoolean();
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Corrupt request JSON
+            var corruptResult = new PresidentialActionResult
+            {
+                Success = false,
+                Result = "InvalidInput",
+                Message = "Decision request file contained corrupt or invalid JSON."
+            };
+            TryDeleteFile(targetRequestPath);
+            return corruptResult;
+        }
+
+        // Apply decision using existing ApplyTaxDecision logic
+        var result = ApplyTaxDecision(proposedRate, confirmed: confirmed, stateFilePath: targetStatePath, saveFilePath: saveFilePath);
+
+        // Delete the request file once processed
+        TryDeleteFile(targetRequestPath);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Creates a file system watcher on the directory of the state file to automatically detect
+    /// and process incoming presidential decision requests from the Godot client in real time.
+    /// </summary>
+    public static IDisposable CreateRequestWatcher(
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        Action<PresidentialActionResult>? onDecisionProcessed = null)
+    {
+        var targetState = stateFilePath ?? ResolveDefaultStateFilePath();
+        var dir = Path.GetDirectoryName(targetState);
+        if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+        {
+            dir = Path.GetDirectoryName(ResolveDefaultStateFilePath());
+            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+            {
+                return new EmptyDisposable();
+            }
+        }
+
+        var watcher = new FileSystemWatcher(dir)
+        {
+            Filter = DefaultRequestFileName,
+            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
+            EnableRaisingEvents = true
+        };
+
+        var syncLock = new object();
+
+        void HandleRequest()
+        {
+            lock (syncLock)
+            {
+                System.Threading.Thread.Sleep(80);
+                var result = ProcessPendingDecisionRequest(targetState, saveFilePath);
+                if (result != null)
+                {
+                    onDecisionProcessed?.Invoke(result);
+                }
+            }
+        }
+
+        watcher.Created += (_, _) => HandleRequest();
+        watcher.Changed += (_, _) => HandleRequest();
+
+        // Process any request file already pending on startup
+        HandleRequest();
+
+        return watcher;
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch { /* best-effort deletion */ }
+    }
+
+    private sealed class EmptyDisposable : IDisposable
+    {
+        public void Dispose() { }
     }
 }
 

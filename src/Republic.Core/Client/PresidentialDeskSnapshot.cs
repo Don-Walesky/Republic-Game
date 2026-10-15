@@ -152,7 +152,8 @@ public sealed record PresidentialDeskSnapshot
         Country country,
         RepublicTime simulationTime,
         ulong simulationTick = 0,
-        string? saveFilePath = null)
+        string? saveFilePath = null,
+        string? latestDecisionResult = null)
     {
         ArgumentNullException.ThrowIfNull(country);
 
@@ -182,7 +183,7 @@ public sealed record PresidentialDeskSnapshot
 
         var taxPolicy = country.TaxPolicy ?? new Republic.Core.Economy.Budget.Models.TaxPolicy();
         var formattedTaxRate = $"{taxPolicy.IncomeTaxRate * 100:0.#}%";
-        var decisionResult = country.LatestCitizenFeedback?.Description ?? string.Empty;
+        var decisionResult = latestDecisionResult ?? country.LatestCitizenFeedback?.Description ?? string.Empty;
 
         return new PresidentialDeskSnapshot
         {

@@ -56,11 +56,14 @@ func _init() -> void:
 	# Test 11: Corrupted state or save file rejects decision without overwriting original file
 	all_passed = test_corrupt_state_file_decision_rejection(desk) and all_passed
 
+	# Test 12: Clear status message when request file written but no state arrives within timeout
+	all_passed = test_request_timeout_warning(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 11 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!      ")
+		print(" [PASS]: ALL 12 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -288,6 +291,9 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 	print("\n--- Test 7: Confirmed Presidential Decision Execution & UI Refresh ---")
 	var temp_path := "res://temp_decision_test_state.json"
 	var temp_sav_path := "res://temp_decision_test_state.sav"
+	var temp_req_path := "res://presidential_desk_request.json"
+
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
 
 	var sav_data := {
 		"formatVersion": 1,
@@ -359,12 +365,50 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 		printerr("[FAIL]: Expected baseline tax rate 25%, got: " + desk.tax_rate_label.text)
 		return false
 
-	# Act: Enact 30% income tax rate (+5% hike -> approval drops from 70% to 67.5%)
+	# Act: Enact 30% income tax rate (+5% hike -> writes request file)
 	var outcome: Dictionary = desk.execute_tax_decision(30.0, true)
 
 	if not outcome.get("success", false):
 		printerr("[FAIL]: Expected decision execution to succeed, but returned: " + JSON.stringify(outcome))
 		return false
+
+	# Verify request file was written to disk
+	if not FileAccess.file_exists(temp_req_path):
+		printerr("[FAIL]: Expected presidential_desk_request.json to be created on disk!")
+		return false
+
+	var req_check := FileAccess.open(temp_req_path, FileAccess.READ)
+	var req_parsed: Variant = JSON.parse_string(req_check.get_as_text()) if req_check else null
+	if req_check:
+		req_check.close()
+	if req_parsed == null or not (req_parsed is Dictionary):
+		printerr("[FAIL]: Request file does not contain valid JSON!")
+		return false
+
+	var req_rate: float = float(req_parsed.get("proposed_rate", 0.0))
+	if abs(req_rate - 0.30) > 0.001:
+		printerr("[FAIL]: Request file proposed_rate mismatch. Got: %f" % req_rate)
+		return false
+
+	var req_confirmed: bool = bool(req_parsed.get("confirmed", false))
+	if not req_confirmed:
+		printerr("[FAIL]: Request file confirmed flag mismatch. Expected true.")
+		return false
+
+	# Simulate simulation processing: update state file, delete request
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+
+	initial_state["income_tax_rate"] = 0.30
+	initial_state["income_tax_rate_formatted"] = "30%"
+	initial_state["approval"] = "67.5%"
+	initial_state["approval_rating"] = 67.5
+	initial_state["latest_decision_result"] = "Tax hike enacted: Personal Income Tax increased to 30.0% (-2.5% citizen approval)."
+
+	var f_up := FileAccess.open(temp_path, FileAccess.WRITE)
+	f_up.store_string(JSON.stringify(initial_state))
+	f_up.close()
+
+	desk.load_state_from_file(temp_path)
 
 	# Verify UI labels refreshed from authoritative game state
 	if desk.tax_rate_label.text != "Income Tax Rate: 30%":
@@ -379,43 +423,10 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 		printerr("[FAIL]: DecisionResultLabel missing reaction summary: " + desk.decision_result_label.text)
 		return false
 
-	# Verify persisted authoritative state file on disk updated
-	var sav_check := FileAccess.open(temp_sav_path, FileAccess.READ)
-	if sav_check == null:
-		printerr("[FAIL]: Authoritative save file was deleted or missing after decision!")
-		return false
-	var sav_parsed: Variant = JSON.parse_string(sav_check.get_as_text())
-	sav_check.close()
-	if sav_parsed == null or not (sav_parsed is Dictionary):
-		printerr("[FAIL]: Authoritative save file is corrupted after decision!")
-		return false
-
-	var countries: Array = sav_parsed.get("state", {}).get("world", {}).get("countries", [])
-	if countries.is_empty():
-		printerr("[FAIL]: Authoritative save file has empty countries array!")
-		return false
-
-	var country_data: Dictionary = countries[0]
-	var persisted_rate: float = float(country_data.get("taxPolicy", {}).get("incomeTaxRate", 0.0))
-	if abs(persisted_rate - 0.30) > 0.001:
-		printerr("[FAIL]: Persisted tax rate mismatch in .sav file! Got: %f" % persisted_rate)
-		return false
-
-	var persisted_approval: float = float(country_data.get("happinessRating", 0.0))
-	if abs(persisted_approval - 67.5) > 0.001:
-		printerr("[FAIL]: Persisted approval mismatch in .sav file! Got: %f" % persisted_approval)
-		return false
-
-	# Verify reopening / reloading does not revert to old or demo values
-	desk.load_state_from_file(temp_path)
-	if desk.tax_rate_label.text != "Income Tax Rate: 30%" or desk.approval_label.text != "Approval: 67.5%":
-		printerr("[FAIL]: Reopening state reverted values! Tax: " + desk.tax_rate_label.text + ", Approval: " + desk.approval_label.text)
-		return false
-
 	# Clean up
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_sav_path))
-	DirAccess.remove_absolute(ProjectSettings.globalize_path("res://presidential_desk_result.json"))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
 
 	print("  [OK]: Confirmed decision successfully modified authoritative country state and refreshed Godot UI.")
 	return true
@@ -424,6 +435,9 @@ func test_confirmed_decision_execution(desk: Control) -> bool:
 func test_cancelled_decision_preserves_state(desk: Control) -> bool:
 	print("\n--- Test 8: Cancelled Decision Preserves State & Resets Controls ---")
 	var temp_path := "res://temp_cancel_test_state.json"
+	var temp_req_path := "res://presidential_desk_request.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+
 	var initial_state := {
 		"country_name": "Republic of Arcadia",
 		"country_id": "player-country",
@@ -461,6 +475,23 @@ func test_cancelled_decision_preserves_state(desk: Control) -> bool:
 		printerr("[FAIL]: Result label should indicate cancellation: " + desk.decision_result_label.text)
 		return false
 
+	# Verify cancellation request file was written
+	if not FileAccess.file_exists(temp_req_path):
+		printerr("[FAIL]: Expected cancellation request file to be created!")
+		return false
+
+	var req_check := FileAccess.open(temp_req_path, FileAccess.READ)
+	var req_parsed: Variant = JSON.parse_string(req_check.get_as_text()) if req_check else null
+	if req_check:
+		req_check.close()
+	if req_parsed == null or not (req_parsed is Dictionary):
+		printerr("[FAIL]: Cancellation request file is not valid JSON!")
+		return false
+
+	if bool(req_parsed.get("confirmed", true)) != false:
+		printerr("[FAIL]: Expected confirmed=false in cancellation request file!")
+		return false
+
 	# Verify state remains completely intact
 	if desk.tax_rate_label.text != "Income Tax Rate: 25%":
 		printerr("[FAIL]: Tax rate was mutated despite cancellation! Got: " + desk.tax_rate_label.text)
@@ -476,7 +507,8 @@ func test_cancelled_decision_preserves_state(desk: Control) -> bool:
 
 	# Clean up
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
-	print("  [OK]: Cancelling decision preserved country state completely unchanged and reset selector.")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	print("  [OK]: Cancelling decision preserved country state completely unchanged, wrote cancellation request, and reset selector.")
 	return true
 
 
@@ -595,5 +627,47 @@ func test_corrupt_state_file_decision_rejection(desk: Control) -> bool:
 		return false
 
 	print("  [OK]: Corrupt state file rejected cleanly without overwriting the original file.")
+	return true
+
+
+func test_request_timeout_warning(desk: Control) -> bool:
+	print("\n--- Test 12: Request Timeout Warning When Simulation Not Running ---")
+	var temp_path := "res://temp_timeout_test_state.json"
+	var temp_req_path := "res://presidential_desk_request.json"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"treasury": "R 15,000,000,000",
+		"approval": "70%",
+		"stability": "80%",
+		"simulation_time": "Day 0, 00:00 WAT",
+		"income_tax_rate": 0.25
+	}
+
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	desk.load_state_from_file(temp_path)
+
+	# Execute decision
+	desk.execute_tax_decision(30.0, true)
+	if not desk._is_waiting_for_decision:
+		printerr("[FAIL]: Expected _is_waiting_for_decision to be true after submitting decision.")
+		return false
+
+	# Simulate 4.5 seconds passing without state update (REQUEST_TIMEOUT_SECONDS is 4.0)
+	desk._process(4.5)
+
+	# Verify clear warning status message
+	if not desk.status_label.text.contains("Warning") or not desk.status_label.text.contains("within 4s"):
+		printerr("[FAIL]: Status label did not display timeout warning! Got: " + desk.status_label.text)
+		return false
+
+	# Clean up
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+	print("  [OK]: Clear status warning displayed when request is not serviced within timeout.")
 	return true
 

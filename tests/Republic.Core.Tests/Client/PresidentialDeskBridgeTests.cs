@@ -786,4 +786,60 @@ public sealed class PresidentialDeskBridgeTests
             if (File.Exists(tempFile)) File.Delete(tempFile);
         }
     }
+
+    [Fact]
+    public void ProcessPendingDecisionRequest_WhenRequestFileExists_AppliesDecision_UpdatesStateFile_AndDeletesRequestFile()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"req_state_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, $"req_file_{Guid.NewGuid():N}.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "player-country");
+            country.HappinessRating = 70.0;
+            country.BaselineStability = 80.0;
+            country.TaxPolicy.IncomeTaxRate = 0.25;
+
+            PresidentialDeskBridge.ExportState(country, time, 10, tempStateFile, tempSaveFile);
+
+            // Write request file proposing 32% income tax rate
+            var requestJson = """
+            {
+                "proposed_rate": 0.32,
+                "confirmed": true
+            }
+            """;
+            File.WriteAllText(tempRequestFile, requestJson);
+            Assert.True(File.Exists(tempRequestFile));
+
+            // Act: Call bridge to process pending request
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(0.32, result.IncomeTaxRate);
+            Assert.Equal(66.5, result.ApprovalRating);
+            Assert.False(File.Exists(tempRequestFile), "Request file must be deleted after processing.");
+
+            // Verify state file was updated
+            var reloaded = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(reloaded);
+            Assert.Equal(0.32, reloaded.IncomeTaxRate);
+            Assert.Equal("32%", reloaded.IncomeTaxRateFormatted);
+            Assert.Equal(66.5, reloaded.ApprovalRating);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
 }
