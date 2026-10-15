@@ -1469,5 +1469,436 @@ public sealed class PresidentialDeskBridgeTests
             if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
         }
     }
+
+    [Fact]
+    public void ExportState_WhenAuthoritativeSaveFails_ThrowsException_AndDoesNotWriteMisleadingSnapshot()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"state_fail_{Guid.NewGuid():N}.json");
+        var companionSav = Path.ChangeExtension(tempStateFile, ".sav");
+
+        try
+        {
+            // Create a companion .sav with corrupt content so SaveAuthoritativeState fails
+            const string corruptSaveContent = "{ corrupt_incomplete_envelope: true ";
+            File.WriteAllText(companionSav, corruptSaveContent);
+
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+
+            // Act & Assert: ExportState must throw InvalidDataException and not write snapshot
+            Assert.Throws<InvalidDataException>(() =>
+                PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, companionSav));
+
+            // Verify misleading snapshot was NOT created
+            Assert.False(File.Exists(tempStateFile), "Snapshot must not be written if authoritative save fails.");
+            Assert.Equal(corruptSaveContent, File.ReadAllText(companionSav));
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(companionSav)) File.Delete(companionSav);
+        }
+    }
+
+    [Fact]
+    public void TryExportState_WhenAuthoritativeSaveFails_ReturnsFalse_AndDoesNotWriteSnapshot()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"try_fail_{Guid.NewGuid():N}.json");
+        var companionSav = Path.ChangeExtension(tempStateFile, ".sav");
+
+        try
+        {
+            const string corruptSaveContent = "{ corrupt_invalid_save: [ ";
+            File.WriteAllText(companionSav, corruptSaveContent);
+
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+
+            // Act: TryExportState
+            var success = PresidentialDeskBridge.TryExportState(country, time, out var exportedPath, 1, tempStateFile, companionSav);
+
+            // Assert
+            Assert.False(success, "TryExportState must return false when save fails.");
+            Assert.Null(exportedPath);
+            Assert.False(File.Exists(tempStateFile), "No snapshot should be created on save failure.");
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(companionSav)) File.Delete(companionSav);
+        }
+    }
+
+    [Fact]
+    public void ExportState_WorldOverload_WhenAuthoritativeSaveFails_ThrowsException_AndDoesNotWriteSnapshot()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"world_fail_{Guid.NewGuid():N}.json");
+        var companionSav = Path.ChangeExtension(tempStateFile, ".sav");
+
+        try
+        {
+            const string corruptSaveContent = "{ not_a_valid_json: ";
+            File.WriteAllText(companionSav, corruptSaveContent);
+
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            var world = new WorldState
+            {
+                WorldId = Guid.NewGuid(),
+                Name = "Arcadia World",
+                Countries = new List<Country> { country }
+            };
+
+            // Act & Assert
+            Assert.Throws<InvalidDataException>(() =>
+                PresidentialDeskBridge.ExportState(world, country, time, 1, tempStateFile, companionSav));
+
+            Assert.False(File.Exists(tempStateFile));
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(companionSav)) File.Delete(companionSav);
+        }
+    }
+
+    [Fact]
+    public void ExportReadOnlyDashboard_WritesSnapshot_WithoutCreatingSaveFile_AndMarksStatusAsReadOnly()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"readonly_state_{Guid.NewGuid():N}.json");
+        var companionSav = Path.ChangeExtension(tempStateFile, ".sav");
+
+        try
+        {
+            var time = CreateTime(3);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+
+            // Act
+            var exportedPath = PresidentialDeskBridge.ExportReadOnlyDashboard(country, time, 5, tempStateFile);
+
+            // Assert
+            Assert.Equal(tempStateFile, exportedPath);
+            Assert.True(File.Exists(tempStateFile));
+            Assert.False(File.Exists(companionSav), "Read-only export must never create an authoritative save file.");
+
+            var loaded = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(loaded);
+            Assert.True(string.IsNullOrEmpty(loaded.SaveFilePath));
+            Assert.Contains("Read-only presidential dashboard", loaded.StatusMessage, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(companionSav)) File.Delete(companionSav);
+        }
+    }
+
+    [Fact]
+    public void ProcessPendingDecisionRequest_WhenRateFieldIsMissing_RejectsWithInvalidInput_DeletesRequest_AndLeavesCountryUnchanged()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"req_missing_rate_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, $"req_missing_rate_{Guid.NewGuid():N}.req.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.TaxPolicy.IncomeTaxRate = 0.20;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+            var originalSavePayload = File.ReadAllText(tempSaveFile);
+
+            // Request omits rate field completely
+            var requestJson = """
+            {
+                "confirmed": true,
+                "timestamp": "2026-10-15T19:00:00Z"
+            }
+            """;
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("InvalidInput", result.Result);
+            Assert.Contains("missing", result.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.False(File.Exists(tempRequestFile), "Invalid request file must be deleted.");
+
+            // Country and save file must be unmodified
+            var reloadedSave = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.Equal(0.20, reloadedSave?.State?.World?.Countries?.First()?.TaxPolicy?.IncomeTaxRate);
+            Assert.Equal(originalSavePayload, File.ReadAllText(tempSaveFile));
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
+
+    [Fact]
+    public void ProcessPendingDecisionRequest_WhenConfirmationFieldIsMissing_RejectsWithInvalidInput()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"req_missing_conf_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, $"req_missing_conf_{Guid.NewGuid():N}.req.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.TaxPolicy.IncomeTaxRate = 0.20;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+            var originalSavePayload = File.ReadAllText(tempSaveFile);
+
+            // Request omits confirmation field completely
+            var requestJson = """
+            {
+                "proposed_income_tax_rate": 0.35,
+                "timestamp": "2026-10-15T19:00:00Z"
+            }
+            """;
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("InvalidInput", result.Result);
+            Assert.Contains("confirmation", result.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.False(File.Exists(tempRequestFile));
+
+            // State file and save file must be unchanged
+            Assert.Equal(originalSavePayload, File.ReadAllText(tempSaveFile));
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
+
+    [Theory]
+    [InlineData("\"true\"")]
+    [InlineData("1")]
+    [InlineData("0")]
+    [InlineData("null")]
+    [InlineData("[true]")]
+    [InlineData("{\"confirmed\": true}")]
+    public void ProcessPendingDecisionRequest_WhenConfirmationFieldIsNotBoolean_RejectsWithInvalidInput(string rawConfirmation)
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"req_nonbool_conf_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, $"req_nonbool_conf_{Guid.NewGuid():N}.req.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.TaxPolicy.IncomeTaxRate = 0.20;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var requestJson = $"{{\"proposed_income_tax_rate\": 0.30, \"confirmed\": {rawConfirmation}}}";
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("InvalidInput", result.Result);
+            Assert.Contains("Boolean", result.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.False(File.Exists(tempRequestFile));
+
+            var reloaded = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.Equal(0.20, reloaded?.State?.World?.Countries?.First()?.TaxPolicy?.IncomeTaxRate);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
+
+    [Theory]
+    [InlineData("\"NaN\"")]
+    [InlineData("\"Infinity\"")]
+    [InlineData("\"-Infinity\"")]
+    [InlineData("\"not_a_number\"")]
+    [InlineData("true")]
+    [InlineData("null")]
+    [InlineData("[0.30]")]
+    [InlineData("{\"rate\": 0.30}")]
+    [InlineData("-0.05")]
+    [InlineData("0.71")]
+    [InlineData("1.50")]
+    [InlineData("\"-5%\"")]
+    [InlineData("\"75%\"")]
+    public void ProcessPendingDecisionRequest_WithInvalidMalformedOrOutOfRangeRates_RejectsWithInvalidInput(string rawRate)
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"req_invalid_rate_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, $"req_invalid_rate_{Guid.NewGuid():N}.req.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.TaxPolicy.IncomeTaxRate = 0.20;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var requestJson = $"{{\"proposed_income_tax_rate\": {rawRate}, \"confirmed\": true}}";
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Equal("InvalidInput", result.Result);
+            Assert.False(File.Exists(tempRequestFile));
+
+            var reloaded = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.Equal(0.20, reloaded?.State?.World?.Countries?.First()?.TaxPolicy?.IncomeTaxRate);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
+
+    [Theory]
+    [InlineData("proposed_income_tax_rate", "0.30", 0.30)]
+    [InlineData("proposed_rate", "0.35", 0.35)]
+    [InlineData("proposed_rate_percent", "40.0", 0.40)]
+    [InlineData("rate", "28", 0.28)]
+    [InlineData("income_tax_rate", "0.22", 0.22)]
+    [InlineData("proposed_income_tax_rate", "\"30%\"", 0.30)]
+    [InlineData("rate", "\"25.5%\"", 0.255)]
+    [InlineData("rate", "\"0.32\"", 0.32)]
+    public void ProcessPendingDecisionRequest_PreservesSupportForDocumentedFieldNamesAndFormats(
+        string fieldName,
+        string rawValue,
+        double expectedRate)
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"req_valid_format_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, $"req_valid_format_{Guid.NewGuid():N}.req.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.TaxPolicy.IncomeTaxRate = 0.20;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var requestJson = $"{{\"{fieldName}\": {rawValue}, \"confirmed\": true}}";
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(expectedRate, result.IncomeTaxRate, precision: 4);
+            Assert.False(File.Exists(tempRequestFile));
+
+            var reloaded = PresidentialDeskBridge.LoadAuthoritativeState(tempSaveFile);
+            Assert.Equal(expectedRate, reloaded?.State?.World?.Countries?.First()?.TaxPolicy?.IncomeTaxRate ?? 0, precision: 4);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
+
+    [Fact]
+    public void ProcessPendingDecisionRequest_WhenCalledRepeatedly_DoesNotApplySameRequestTwice()
+    {
+        // Arrange
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"req_repeat_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = Path.Combine(Path.GetDirectoryName(tempStateFile)!, $"req_repeat_{Guid.NewGuid():N}.req.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "arcadia");
+            country.TaxPolicy.IncomeTaxRate = 0.20;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var requestJson = """
+            {
+                "proposed_income_tax_rate": 0.30,
+                "confirmed": true
+            }
+            """;
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Act 1: Process request
+            var firstResult = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            Assert.NotNull(firstResult);
+            Assert.True(firstResult.Success);
+            Assert.False(File.Exists(tempRequestFile));
+
+            // Act 2: Process again without new request
+            var secondResult = PresidentialDeskBridge.ProcessPendingDecisionRequest(
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile,
+                requestFilePath: tempRequestFile);
+
+            // Assert: Second call returns null since request file was consumed
+            Assert.Null(secondResult);
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+        }
+    }
 }
 

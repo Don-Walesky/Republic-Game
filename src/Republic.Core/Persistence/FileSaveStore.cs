@@ -36,7 +36,7 @@ public sealed class FileSaveStore
         Directory.CreateDirectory(directory);
         var fullPath = Path.Combine(directory, fileName);
         var payload = _serializer.Serialize(envelope);
-        await File.WriteAllTextAsync(fullPath, payload, cancellationToken).ConfigureAwait(false);
+        await AtomicFileWriter.WriteAllTextSafelyAsync(fullPath, payload, cancellationToken: cancellationToken).ConfigureAwait(false);
         return fullPath;
     }
 

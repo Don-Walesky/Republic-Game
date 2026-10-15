@@ -294,7 +294,7 @@ public static class PresidentialDeskBridge
 
         var saveSerializer = new JsonStateSerializer();
         var payload = saveSerializer.Serialize(envelope);
-        File.WriteAllText(path, payload);
+        AtomicFileWriter.WriteAllTextSafely(path, payload);
 
         return path;
     }
@@ -375,7 +375,7 @@ public static class PresidentialDeskBridge
 
         var saveSerializer = new JsonStateSerializer();
         var payload = saveSerializer.Serialize(envelope);
-        File.WriteAllText(path, payload);
+        AtomicFileWriter.WriteAllTextSafely(path, payload);
 
         return path;
     }
@@ -430,28 +430,24 @@ public static class PresidentialDeskBridge
         }
 
         var companionSavePath = saveFilePath ?? Path.ChangeExtension(path, ".sav");
-        try
-        {
-            SaveAuthoritativeState(country, simulationTime, simulationTick, companionSavePath);
-        }
-        catch (InvalidDataException)
-        {
-            // Never silently overwrite a corrupted save with incomplete state; rethrow
-            throw;
-        }
-        catch { /* best-effort companion save */ }
+
+        // Authoritative save must succeed before writing the dashboard snapshot.
+        // If saving fails (e.g. disk error, permissions, corruption), propagate the failure
+        // and do not write a misleading snapshot that suggests authoritative state was saved.
+        SaveAuthoritativeState(country, simulationTime, simulationTick, companionSavePath);
 
         var snapshot = PresidentialDeskSnapshot.Create(country, simulationTime, simulationTick, companionSavePath);
         var json = Serialize(snapshot);
-        File.WriteAllText(path, json);
+        AtomicFileWriter.WriteAllTextSafely(path, json);
 
         return path;
     }
 
     /// <summary>
     /// Exports the live simulation state for a sovereign country within a complete game world to a JSON state file,
-    /// also persisting the complete world state to the companion save file if needed.
+    /// also persisting the complete world state to the companion save file.
     /// Preserves all sovereign nations, world identity, entities, and systemic state.
+    /// Throws an exception if saving the authoritative state fails, never reporting false success.
     /// </summary>
     public static string ExportState(
         WorldState world,
@@ -473,21 +469,137 @@ public static class PresidentialDeskBridge
 
         var companionSavePath = saveFilePath ?? Path.ChangeExtension(path, ".sav");
 
-        try
-        {
-            SaveAuthoritativeState(world, simulationTime, simulationTick, companionSavePath);
-        }
-        catch (InvalidDataException)
-        {
-            throw;
-        }
-        catch { /* best-effort companion save */ }
+        // Authoritative world save must succeed before writing the display snapshot.
+        SaveAuthoritativeState(world, simulationTime, simulationTick, companionSavePath);
 
         var snapshot = PresidentialDeskSnapshot.Create(country, simulationTime, simulationTick, companionSavePath);
         var json = Serialize(snapshot);
-        File.WriteAllText(path, json);
+        AtomicFileWriter.WriteAllTextSafely(path, json);
 
         return path;
+    }
+
+    /// <summary>
+    /// Exports a read-only display snapshot for the Godot presidential desk without saving or updating
+    /// the authoritative game save file. Explicitly indicates read-only status in the snapshot metadata.
+    /// </summary>
+    public static string ExportReadOnlyDashboard(
+        Country country,
+        RepublicTime simulationTime,
+        ulong simulationTick = 0,
+        string? targetPath = null)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        var path = targetPath ?? ResolveDefaultStateFilePath();
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var snapshot = PresidentialDeskSnapshot.Create(
+            country,
+            simulationTime,
+            simulationTick,
+            saveFilePath: null,
+            latestDecisionResult: null,
+            statusMessage: "Read-only presidential dashboard (authoritative state not synchronized)");
+
+        var json = Serialize(snapshot);
+        AtomicFileWriter.WriteAllTextSafely(path, json);
+
+        return path;
+    }
+
+    /// <summary>
+    /// Attempts to export a read-only display snapshot, catching any IO errors safely.
+    /// </summary>
+    public static bool TryExportReadOnlyDashboard(
+        Country country,
+        RepublicTime simulationTime,
+        out string? exportedPath,
+        ulong simulationTick = 0,
+        string? targetPath = null)
+    {
+        exportedPath = null;
+        if (country == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            exportedPath = ExportReadOnlyDashboard(country, simulationTime, simulationTick, targetPath);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Exports a read-only display snapshot for the Godot presidential desk for a country in a world
+    /// without saving or updating the authoritative game save file. Explicitly indicates read-only status in the snapshot metadata.
+    /// </summary>
+    public static string ExportReadOnlyDashboard(
+        WorldState world,
+        Country country,
+        RepublicTime simulationTime,
+        ulong simulationTick = 0,
+        string? targetPath = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(country);
+
+        var path = targetPath ?? ResolveDefaultStateFilePath();
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var snapshot = PresidentialDeskSnapshot.Create(
+            country,
+            simulationTime,
+            simulationTick,
+            saveFilePath: null,
+            latestDecisionResult: null,
+            statusMessage: "Read-only presidential dashboard (authoritative state not synchronized)");
+
+        var json = Serialize(snapshot);
+        AtomicFileWriter.WriteAllTextSafely(path, json);
+
+        return path;
+    }
+
+    /// <summary>
+    /// Attempts to export a read-only display snapshot for a country in a world, catching any IO errors safely.
+    /// </summary>
+    public static bool TryExportReadOnlyDashboard(
+        WorldState world,
+        Country country,
+        RepublicTime simulationTime,
+        out string? exportedPath,
+        ulong simulationTick = 0,
+        string? targetPath = null)
+    {
+        exportedPath = null;
+        if (world == null || country == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            exportedPath = ExportReadOnlyDashboard(world, country, simulationTime, simulationTick, targetPath);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -894,7 +1006,7 @@ public static class PresidentialDeskBridge
             {
                 var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, cancelResult.Message);
                 var snapshotJson = Serialize(snapshot);
-                File.WriteAllText(exportCancelPath, snapshotJson);
+                AtomicFileWriter.WriteAllTextSafely(exportCancelPath, snapshotJson);
             }
             catch { /* best-effort export */ }
 
@@ -936,7 +1048,7 @@ public static class PresidentialDeskBridge
         {
             var serializer = new JsonStateSerializer();
             var updatedSavePayload = serializer.Serialize(envelope);
-            File.WriteAllText(targetSavePath, updatedSavePayload);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
         }
         catch (Exception ex)
         {
@@ -970,7 +1082,7 @@ public static class PresidentialDeskBridge
         {
             var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath);
             var snapshotJson = Serialize(snapshot);
-            File.WriteAllText(exportPath, snapshotJson);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
         }
         catch { /* best-effort export */ }
 
@@ -1061,7 +1173,7 @@ public static class PresidentialDeskBridge
             {
                 var snapshot = PresidentialDeskSnapshot.Create(country, simulationTime, simulationTick, saveFilePath, cancelResult.Message);
                 var snapshotJson = Serialize(snapshot);
-                File.WriteAllText(targetPath, snapshotJson);
+                AtomicFileWriter.WriteAllTextSafely(targetPath, snapshotJson);
             }
             catch { /* best-effort export */ }
 
@@ -1219,7 +1331,7 @@ public static class PresidentialDeskBridge
             {
                 var resultPath = Path.Combine(dir, DefaultResultFileName);
                 var resultJson = JsonSerializer.Serialize(result, SerializerOptions);
-                File.WriteAllText(resultPath, resultJson);
+                AtomicFileWriter.WriteAllTextSafely(resultPath, resultJson);
             }
         }
         catch { /* best-effort write */ }
@@ -1272,52 +1384,196 @@ public static class PresidentialDeskBridge
 
             if (string.IsNullOrWhiteSpace(rawJson))
             {
-                return null;
+                // Brief pause in case client just created the file handle but hasn't flushed bytes yet
+                System.Threading.Thread.Sleep(50);
+                try
+                {
+                    rawJson = File.ReadAllText(targetRequestPath);
+                }
+                catch { }
+
+                if (string.IsNullOrWhiteSpace(rawJson))
+                {
+                    var emptyResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        "Decision request file was empty or contained no readable JSON content.");
+                    TryWriteResultFile(targetStatePath, emptyResult);
+                    TryDeleteFile(targetRequestPath);
+                    return emptyResult;
+                }
             }
 
-            double proposedRate = 0.25;
-            bool confirmed = true;
+            double proposedRate;
+            bool confirmed;
 
             try
             {
                 using var doc = JsonDocument.Parse(rawJson);
                 var root = doc.RootElement;
 
-                if (root.TryGetProperty("proposed_income_tax_rate", out var propRateEl) ||
-                    root.TryGetProperty("proposed_rate", out propRateEl) ||
-                    root.TryGetProperty("proposed_rate_percent", out propRateEl) ||
-                    root.TryGetProperty("rate", out propRateEl) ||
-                    root.TryGetProperty("income_tax_rate", out propRateEl))
+                if (root.ValueKind != JsonValueKind.Object)
                 {
-                    if (propRateEl.ValueKind == JsonValueKind.Number && propRateEl.TryGetDouble(out var rateVal))
-                    {
-                        proposedRate = rateVal > 1.0 ? rateVal / 100.0 : rateVal;
-                    }
-                    else if (propRateEl.ValueKind == JsonValueKind.String &&
-                             double.TryParse(propRateEl.GetString(), System.Globalization.CultureInfo.InvariantCulture, out var strRate))
-                    {
-                        proposedRate = strRate > 1.0 ? strRate / 100.0 : strRate;
-                    }
+                    var invalidObjectResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        "Decision request must be a JSON object.");
+                    TryWriteResultFile(targetStatePath, invalidObjectResult);
+                    TryDeleteFile(targetRequestPath);
+                    return invalidObjectResult;
                 }
 
-                if (root.TryGetProperty("confirmed", out var confEl) ||
-                    root.TryGetProperty("is_confirmed", out confEl))
+                // 1. Validate rate field presence and format
+                bool isPercentField = root.TryGetProperty("proposed_rate_percent", out var propRateEl);
+                bool hasRateField = isPercentField ||
+                    root.TryGetProperty("proposed_income_tax_rate", out propRateEl) ||
+                    root.TryGetProperty("proposed_rate", out propRateEl) ||
+                    root.TryGetProperty("rate", out propRateEl) ||
+                    root.TryGetProperty("income_tax_rate", out propRateEl);
+
+                if (!hasRateField)
                 {
-                    if (confEl.ValueKind == JsonValueKind.True || confEl.ValueKind == JsonValueKind.False)
+                    var missingRateResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        "Decision request is missing the required proposed tax rate field (e.g. 'proposed_income_tax_rate').");
+                    TryWriteResultFile(targetStatePath, missingRateResult);
+                    TryDeleteFile(targetRequestPath);
+                    return missingRateResult;
+                }
+
+                if (propRateEl.ValueKind == JsonValueKind.Number)
+                {
+                    if (!propRateEl.TryGetDouble(out var rateVal) || !double.IsFinite(rateVal))
                     {
-                        confirmed = confEl.GetBoolean();
+                        var nonFiniteResult = CreateInvalidInputResult(
+                            targetStatePath,
+                            "Taxation policy rejected: rates must be finite, valid numbers.");
+                        TryWriteResultFile(targetStatePath, nonFiniteResult);
+                        TryDeleteFile(targetRequestPath);
+                        return nonFiniteResult;
+                    }
+
+                    if (isPercentField)
+                    {
+                        proposedRate = rateVal / 100.0;
+                    }
+                    else if (rateVal >= 2.0)
+                    {
+                        proposedRate = rateVal / 100.0;
+                    }
+                    else
+                    {
+                        proposedRate = rateVal;
                     }
                 }
+                else if (propRateEl.ValueKind == JsonValueKind.String)
+                {
+                    var strVal = propRateEl.GetString()?.Trim();
+                    if (string.IsNullOrWhiteSpace(strVal))
+                    {
+                        var emptyStrResult = CreateInvalidInputResult(
+                            targetStatePath,
+                            "Taxation policy rejected: proposed tax rate string is empty.");
+                        TryWriteResultFile(targetStatePath, emptyStrResult);
+                        TryDeleteFile(targetRequestPath);
+                        return emptyStrResult;
+                    }
+
+                    // Check for strings representing NaN or Infinity explicitly
+                    if (string.Equals(strVal, "NaN", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(strVal, "Infinity", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(strVal, "+Infinity", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(strVal, "-Infinity", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var nonFiniteStrResult = CreateInvalidInputResult(
+                            targetStatePath,
+                            "Taxation policy rejected: rates must be finite, valid numbers.");
+                        TryWriteResultFile(targetStatePath, nonFiniteStrResult);
+                        TryDeleteFile(targetRequestPath);
+                        return nonFiniteStrResult;
+                    }
+
+                    bool hasPercentSign = strVal.EndsWith('%');
+                    var numPart = hasPercentSign ? strVal[..^1].Trim() : strVal;
+
+                    if (!double.TryParse(numPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedRate) ||
+                        !double.IsFinite(parsedRate))
+                    {
+                        var parseFailResult = CreateInvalidInputResult(
+                            targetStatePath,
+                            $"Taxation policy rejected: '{strVal}' is not a valid numeric tax rate.");
+                        TryWriteResultFile(targetStatePath, parseFailResult);
+                        TryDeleteFile(targetRequestPath);
+                        return parseFailResult;
+                    }
+
+                    if (hasPercentSign || isPercentField)
+                    {
+                        proposedRate = parsedRate / 100.0;
+                    }
+                    else if (parsedRate >= 2.0)
+                    {
+                        proposedRate = parsedRate / 100.0;
+                    }
+                    else
+                    {
+                        proposedRate = parsedRate;
+                    }
+                }
+                else
+                {
+                    // Invalid type (e.g. boolean, array, object, null)
+                    var invalidTypeResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        $"Taxation policy rejected: tax rate field has invalid JSON type '{propRateEl.ValueKind}'.");
+                    TryWriteResultFile(targetStatePath, invalidTypeResult);
+                    TryDeleteFile(targetRequestPath);
+                    return invalidTypeResult;
+                }
+
+                // Range validation (0.0 to 0.70)
+                if (proposedRate < 0.0 || proposedRate > 0.70)
+                {
+                    var rangeResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        "Taxation policy rejected: rates exceed constitutional bounds (Income: 0-70%).");
+                    TryWriteResultFile(targetStatePath, rangeResult);
+                    TryDeleteFile(targetRequestPath);
+                    return rangeResult;
+                }
+
+                // 2. Validate confirmation field presence and format
+                bool hasConfField =
+                    root.TryGetProperty("confirmed", out var confEl) ||
+                    root.TryGetProperty("is_confirmed", out confEl);
+
+                if (!hasConfField)
+                {
+                    var missingConfResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        "Decision request is missing the required confirmation field ('confirmed' or 'is_confirmed').");
+                    TryWriteResultFile(targetStatePath, missingConfResult);
+                    TryDeleteFile(targetRequestPath);
+                    return missingConfResult;
+                }
+
+                if (confEl.ValueKind != JsonValueKind.True && confEl.ValueKind != JsonValueKind.False)
+                {
+                    var nonBoolConfResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        $"Decision request confirmation field must be a valid Boolean (true/false), but found '{confEl.ValueKind}'.");
+                    TryWriteResultFile(targetStatePath, nonBoolConfResult);
+                    TryDeleteFile(targetRequestPath);
+                    return nonBoolConfResult;
+                }
+
+                confirmed = confEl.GetBoolean();
             }
             catch (JsonException)
             {
                 // Corrupt request JSON
-                var corruptResult = new PresidentialActionResult
-                {
-                    Success = false,
-                    Result = "InvalidInput",
-                    Message = "Decision request file contained corrupt or invalid JSON."
-                };
+                var corruptResult = CreateInvalidInputResult(
+                    targetStatePath,
+                    "Decision request file contained corrupt or invalid JSON.");
+                TryWriteResultFile(targetStatePath, corruptResult);
                 TryDeleteFile(targetRequestPath);
                 return corruptResult;
             }
@@ -1333,6 +1589,38 @@ public static class PresidentialDeskBridge
                 TryDeleteFile(targetRequestPath);
             }
         }
+    }
+
+    private static PresidentialActionResult CreateInvalidInputResult(string targetStatePath, string message)
+    {
+        double currentRate = 0.0;
+        double currentApproval = 0.0;
+        double currentStability = 0.0;
+
+        try
+        {
+            var snapshot = LoadState(targetStatePath);
+            if (snapshot != null)
+            {
+                currentRate = snapshot.IncomeTaxRate;
+                currentApproval = snapshot.ApprovalRating;
+                currentStability = snapshot.StabilityRating;
+            }
+        }
+        catch { /* best effort */ }
+
+        return new PresidentialActionResult
+        {
+            Success = false,
+            Result = "InvalidInput",
+            Message = message,
+            IncomeTaxRate = currentRate,
+            PreviousIncomeTaxRate = currentRate,
+            ApprovalRating = currentApproval,
+            PreviousApprovalRating = currentApproval,
+            StabilityRating = currentStability,
+            PreviousStabilityRating = currentStability
+        };
     }
 
     /// <summary>

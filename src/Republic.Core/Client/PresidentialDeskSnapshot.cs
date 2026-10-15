@@ -153,7 +153,8 @@ public sealed record PresidentialDeskSnapshot
         RepublicTime simulationTime,
         ulong simulationTick = 0,
         string? saveFilePath = null,
-        string? latestDecisionResult = null)
+        string? latestDecisionResult = null,
+        string? statusMessage = null)
     {
         ArgumentNullException.ThrowIfNull(country);
 
@@ -205,7 +206,7 @@ public sealed record PresidentialDeskSnapshot
             SimulationTimeDetailed = detailedTime,
             RulingParty = rulingPartyName,
             Election = electionText,
-            StatusMessage = "Connected to live Republic simulation state",
+            StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,
             SaveFilePath = saveFilePath ?? string.Empty
