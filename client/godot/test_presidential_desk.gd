@@ -100,13 +100,26 @@ func test_missing_state_behavior(desk: Control) -> bool:
 			printerr("[FAIL]: Hardcoded demo text detected in label: " + label_text)
 			return false
 
-	# Verify status label is visible and indicates waiting/missing
+	# Verify status label is visible and indicates waiting/missing, state file presence, timestamp, and request status
 	if not desk.status_label.text.contains("Waiting for Republic simulation state"):
 		printerr("[FAIL]: Status label does not indicate waiting state: " + desk.status_label.text)
 		return false
 
+	if not desk.status_label.text.contains("State file:") or not desk.status_label.text.contains("Last updated:") or not desk.status_label.text.contains("Tax request:"):
+		printerr("[FAIL]: Status label missing improved state/file/request telemetry: " + desk.status_label.text)
+		return false
+
+	# Verify SpinBox and buttons remain usable even when state file is missing
+	if not desk.proposed_rate_spinbox.editable:
+		printerr("[FAIL]: ProposedRateSpinBox should remain editable when state is missing!")
+		return false
+	if desk.confirm_button.disabled or desk.cancel_button.disabled:
+		printerr("[FAIL]: Decision buttons should remain enabled when state is missing!")
+		return false
+
 	print("  [OK]: Missing state safely handled and hardcoded demo values confirmed absent.")
 	return true
+
 
 
 func test_corrupted_json_handling(desk: Control) -> bool:
@@ -253,8 +266,24 @@ func test_taxation_decision_ui_controls(desk: Control) -> bool:
 		printerr("[FAIL]: SpinBox limits do not match 0-70% range. Min: %f, Max: %f" % [desk.proposed_rate_spinbox.min_value, desk.proposed_rate_spinbox.max_value])
 		return false
 
+	# Verify missing node warning system warns once
+	var missing_node: Node = desk._get_required_node("NonExistent/MissingPath")
+	if missing_node != null:
+		printerr("[FAIL]: Expected null for non-existent node path.")
+		return false
+	if not desk._warned_missing_nodes.has("NonExistent/MissingPath"):
+		printerr("[FAIL]: Expected missing node path to be recorded in _warned_missing_nodes.")
+		return false
+	var warned_count_before: int = desk._warned_missing_nodes.size()
+	var missing_node_again: Node = desk._get_required_node("NonExistent/MissingPath")
+	if desk._warned_missing_nodes.size() != warned_count_before:
+		printerr("[FAIL]: Missing node warning was triggered more than once for the same path!")
+		return false
+
+
 	print("  [OK]: All 6 decision controls correctly declared and configured within constitutional bounds.")
 	return true
+
 
 
 func test_expected_consequence_calculations(desk: Control) -> bool:

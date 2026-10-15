@@ -4,7 +4,7 @@
 
 In Republic, every player governs their own procedurally generated country in a shared, living geopolitical world.
 
-> **Visual Client Note**: The active visual client is Godot 4 located in `client/godot/`. The legacy Unity client (`Assets/`) has been retired.
+> **Visual Client Note**: The active visual client is Godot 4 located in `client/godot/` (open `client/godot/project.godot` in Godot 4 and press **F5** to run; the **Status** label reports whether the state file was found, when it was last updated, and whether a tax request is pending). The legacy Unity client (`Assets/`) has been retired.
 
 ---
 

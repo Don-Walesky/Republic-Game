@@ -2,6 +2,8 @@
 
 This folder contains the Godot 4 client for Republic, connected directly to the authoritative `Republic.Core` simulation state and providing interactive presidential decision capabilities.
 
+> **Developer Note**: Open `client/godot/project.godot` in Godot 4 and press **F5** to run; the bottom **Status** label reports whether `presidential_desk_state.json` was found, its last update timestamp, and whether a tax decision request is pending.
+
 ## Requirements
 
 - [Godot Engine 4.x](https://godotengine.org/download) (Standard or .NET build)

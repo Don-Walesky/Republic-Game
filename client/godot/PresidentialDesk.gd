@@ -1,22 +1,32 @@
 extends Control
 
+var _warned_missing_nodes: Dictionary = {}
+
+## Retrieves a required node or pushes a one-time warning to the Godot Output panel
+func _get_required_node(node_path: String) -> Node:
+	var n := get_node_or_null(node_path)
+	if n == null and not _warned_missing_nodes.has(node_path):
+		_warned_missing_nodes[node_path] = true
+		push_warning("PresidentialDesk: Required node not found at path '%s'. Please check your scene tree." % node_path)
+	return n
+
 ## UI Labels in the Presidential Desk
-@onready var country_label: Label = get_node_or_null("VBoxContainer/CountryLabel")
-@onready var treasury_label: Label = get_node_or_null("VBoxContainer/TreasuryLabel")
-@onready var approval_label: Label = get_node_or_null("VBoxContainer/ApprovalLabel")
-@onready var stability_label: Label = get_node_or_null("VBoxContainer/StabilityLabel")
-@onready var simulation_time_label: Label = get_node_or_null("VBoxContainer/SimulationTimeLabel")
-@onready var ruling_party_label: Label = get_node_or_null("VBoxContainer/RulingPartyLabel")
-@onready var election_label: Label = get_node_or_null("VBoxContainer/ElectionLabel")
-@onready var tax_rate_label: Label = get_node_or_null("VBoxContainer/TaxRateLabel")
-@onready var status_label: Label = get_node_or_null("VBoxContainer/StatusLabel")
+@onready var country_label: Label = _get_required_node("VBoxContainer/CountryLabel") as Label
+@onready var treasury_label: Label = _get_required_node("VBoxContainer/TreasuryLabel") as Label
+@onready var approval_label: Label = _get_required_node("VBoxContainer/ApprovalLabel") as Label
+@onready var stability_label: Label = _get_required_node("VBoxContainer/StabilityLabel") as Label
+@onready var simulation_time_label: Label = _get_required_node("VBoxContainer/SimulationTimeLabel") as Label
+@onready var ruling_party_label: Label = _get_required_node("VBoxContainer/RulingPartyLabel") as Label
+@onready var election_label: Label = _get_required_node("VBoxContainer/ElectionLabel") as Label
+@onready var tax_rate_label: Label = _get_required_node("VBoxContainer/TaxRateLabel") as Label
+@onready var status_label: Label = _get_required_node("VBoxContainer/StatusLabel") as Label
 
 ## Interactive Presidential Decision Controls
-@onready var proposed_rate_spinbox: SpinBox = get_node_or_null("VBoxContainer/ProposedRateHBox/ProposedRateSpinBox")
-@onready var expected_consequence_label: Label = get_node_or_null("VBoxContainer/ExpectedConsequenceLabel")
-@onready var confirm_button: Button = get_node_or_null("VBoxContainer/DecisionControlsHBox/ConfirmButton")
-@onready var cancel_button: Button = get_node_or_null("VBoxContainer/DecisionControlsHBox/CancelButton")
-@onready var decision_result_label: Label = get_node_or_null("VBoxContainer/DecisionResultLabel")
+@onready var proposed_rate_spinbox: SpinBox = _get_required_node("VBoxContainer/ProposedRateHBox/ProposedRateSpinBox") as SpinBox
+@onready var expected_consequence_label: Label = _get_required_node("VBoxContainer/ExpectedConsequenceLabel") as Label
+@onready var confirm_button: Button = _get_required_node("VBoxContainer/DecisionControlsHBox/ConfirmButton") as Button
+@onready var cancel_button: Button = _get_required_node("VBoxContainer/DecisionControlsHBox/CancelButton") as Button
+@onready var decision_result_label: Label = _get_required_node("VBoxContainer/DecisionResultLabel") as Label
 
 ## File paths scanned for authoritative Republic simulation state
 const DEFAULT_STATE_PATHS: Array[String] = [
@@ -47,37 +57,45 @@ func _ready() -> void:
 	refresh()
 
 
-## Initializes node references if not already bound
+## Initializes node references if not already bound and guarantees interactive controls remain usable
 func _init_controls() -> void:
 	if country_label == null:
-		country_label = get_node_or_null("VBoxContainer/CountryLabel")
+		country_label = _get_required_node("VBoxContainer/CountryLabel") as Label
 	if treasury_label == null:
-		treasury_label = get_node_or_null("VBoxContainer/TreasuryLabel")
+		treasury_label = _get_required_node("VBoxContainer/TreasuryLabel") as Label
 	if approval_label == null:
-		approval_label = get_node_or_null("VBoxContainer/ApprovalLabel")
+		approval_label = _get_required_node("VBoxContainer/ApprovalLabel") as Label
 	if stability_label == null:
-		stability_label = get_node_or_null("VBoxContainer/StabilityLabel")
+		stability_label = _get_required_node("VBoxContainer/StabilityLabel") as Label
 	if simulation_time_label == null:
-		simulation_time_label = get_node_or_null("VBoxContainer/SimulationTimeLabel")
+		simulation_time_label = _get_required_node("VBoxContainer/SimulationTimeLabel") as Label
 	if ruling_party_label == null:
-		ruling_party_label = get_node_or_null("VBoxContainer/RulingPartyLabel")
+		ruling_party_label = _get_required_node("VBoxContainer/RulingPartyLabel") as Label
 	if election_label == null:
-		election_label = get_node_or_null("VBoxContainer/ElectionLabel")
+		election_label = _get_required_node("VBoxContainer/ElectionLabel") as Label
 	if tax_rate_label == null:
-		tax_rate_label = get_node_or_null("VBoxContainer/TaxRateLabel")
+		tax_rate_label = _get_required_node("VBoxContainer/TaxRateLabel") as Label
 	if status_label == null:
-		status_label = get_node_or_null("VBoxContainer/StatusLabel")
+		status_label = _get_required_node("VBoxContainer/StatusLabel") as Label
 
 	if proposed_rate_spinbox == null:
-		proposed_rate_spinbox = get_node_or_null("VBoxContainer/ProposedRateHBox/ProposedRateSpinBox")
+		proposed_rate_spinbox = _get_required_node("VBoxContainer/ProposedRateHBox/ProposedRateSpinBox") as SpinBox
 	if expected_consequence_label == null:
-		expected_consequence_label = get_node_or_null("VBoxContainer/ExpectedConsequenceLabel")
+		expected_consequence_label = _get_required_node("VBoxContainer/ExpectedConsequenceLabel") as Label
 	if confirm_button == null:
-		confirm_button = get_node_or_null("VBoxContainer/DecisionControlsHBox/ConfirmButton")
+		confirm_button = _get_required_node("VBoxContainer/DecisionControlsHBox/ConfirmButton") as Button
 	if cancel_button == null:
-		cancel_button = get_node_or_null("VBoxContainer/DecisionControlsHBox/CancelButton")
+		cancel_button = _get_required_node("VBoxContainer/DecisionControlsHBox/CancelButton") as Button
 	if decision_result_label == null:
-		decision_result_label = get_node_or_null("VBoxContainer/DecisionResultLabel")
+		decision_result_label = _get_required_node("VBoxContainer/DecisionResultLabel") as Label
+
+	# Ensure SpinBox and buttons remain completely usable even if state file is temporarily missing
+	if proposed_rate_spinbox:
+		proposed_rate_spinbox.editable = true
+	if confirm_button:
+		confirm_button.disabled = false
+	if cancel_button:
+		cancel_button.disabled = false
 
 
 ## Connects interactive control signals
@@ -102,7 +120,9 @@ func _process(delta: float) -> void:
 			_is_waiting_for_decision = false
 			if not _pending_request_path.is_empty() and FileAccess.file_exists(_pending_request_path):
 				if status_label:
-					status_label.text = "Status: Warning - Decision request written, but no updated simulation state arrived within %.0fs. Is Republic simulation running?" % REQUEST_TIMEOUT_SECONDS
+					var warn_text := "Status: Warning - Decision request written, but no updated simulation state arrived within %.0fs. Is Republic simulation running?" % REQUEST_TIMEOUT_SECONDS
+					status_label.text = _format_status_text(warn_text, "Timed out")
+
 
 
 ## Manually triggers a reload of the simulation state file
@@ -204,7 +224,7 @@ func apply_state(data: Dictionary) -> void:
 	if tax_rate_label:
 		tax_rate_label.text = "Income Tax Rate: " + tax_rate_fmt
 	if status_label:
-		status_label.text = "Status: " + status_msg
+		status_label.text = _format_status_text("Status: " + status_msg, "None")
 
 	var current_rate_pct := raw_tax_rate * 100.0
 
@@ -222,6 +242,44 @@ func apply_state(data: Dictionary) -> void:
 			var res_msg := str(result_data.get("message", ""))
 			if not res_msg.is_empty():
 				decision_result_label.text = "Decision Result: " + res_msg
+
+
+## Formats the status label text to clearly display connection state, state file presence,
+## last updated timestamp, and tax request status.
+func _format_status_text(base_msg: String = "", tax_req_status: String = "") -> String:
+	var prefix := base_msg.strip_edges()
+	if prefix.is_empty():
+		prefix = "Status: Connected to live Republic simulation state" if _is_connected else "Status: Waiting for Republic simulation state"
+
+	# 1. State file presence
+	var file_status: String
+	var resolved_path := _active_state_path if (_is_connected and not _active_state_path.is_empty()) else _resolve_state_path()
+	if not resolved_path.is_empty() and FileAccess.file_exists(resolved_path):
+		file_status = "State file: Found (%s)" % resolved_path
+	else:
+		file_status = "State file: Not found"
+
+	# 2. Last updated timestamp
+	var updated_str: String
+	if _last_modified_time > 0:
+		updated_str = "Last updated: " + Time.get_datetime_string_from_unix_time(_last_modified_time, false).replace("T", " ")
+	else:
+		updated_str = "Last updated: Never"
+
+	# 3. Tax request status
+	var req_status_text: String
+	if not tax_req_status.is_empty():
+		req_status_text = "Tax request: " + tax_req_status
+	elif _is_waiting_for_decision:
+		req_status_text = "Tax request: Pending"
+	else:
+		var req_path := _resolve_request_path(resolved_path)
+		if not req_path.is_empty() and FileAccess.file_exists(req_path):
+			req_status_text = "Tax request: Pending"
+		else:
+			req_status_text = "Tax request: None"
+
+	return "%s | %s | %s | %s" % [prefix, file_status, updated_str, req_status_text]
 
 
 ## Visually displays a missing state notice without falling back to sample demonstration data
@@ -247,11 +305,19 @@ func display_missing_state(details: String = "") -> void:
 	if tax_rate_label:
 		tax_rate_label.text = "Income Tax Rate: [No State Loaded]"
 	if status_label:
-		status_label.text = "Status: Waiting for Republic simulation state (" + details + ")"
+		status_label.text = _format_status_text("Status: Waiting for Republic simulation state (" + details + ")", "None")
 	if expected_consequence_label:
 		expected_consequence_label.text = "Expected Approval Effect: [No State Loaded]"
 	if decision_result_label:
 		decision_result_label.text = "Decision Result: [No State Loaded]"
+
+	# Ensure SpinBox and buttons remain completely usable even if state file is temporarily missing
+	if proposed_rate_spinbox:
+		proposed_rate_spinbox.editable = true
+	if confirm_button:
+		confirm_button.disabled = false
+	if cancel_button:
+		cancel_button.disabled = false
 
 
 ## Visually displays an error condition without falling back to sample demonstration data
@@ -277,11 +343,19 @@ func display_error(error_msg: String) -> void:
 	if tax_rate_label:
 		tax_rate_label.text = "Income Tax Rate: [No State Loaded]"
 	if status_label:
-		status_label.text = "Status: Error - " + error_msg
+		status_label.text = _format_status_text("Status: Error - " + error_msg, "None")
 	if expected_consequence_label:
 		expected_consequence_label.text = "Expected Approval Effect: Error"
 	if decision_result_label:
 		decision_result_label.text = "Decision Result: Error - " + error_msg
+
+	# Ensure SpinBox and buttons remain completely usable even if state file is corrupted
+	if proposed_rate_spinbox:
+		proposed_rate_spinbox.editable = true
+	if confirm_button:
+		confirm_button.disabled = false
+	if cancel_button:
+		cancel_button.disabled = false
 
 
 ## Checks if the state file has been modified on disk and reloads when changed
@@ -360,8 +434,19 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	# 1. Reject if no valid simulation state is connected
 	if not _is_connected or _latest_state.is_empty():
 		var no_state_msg := "Cannot submit decision: No Republic simulation state loaded."
+		if not confirmed:
+			no_state_msg = "Decision cancelled: No Republic simulation state loaded."
+			if proposed_rate_spinbox:
+				proposed_rate_spinbox.set_value_no_signal(25.0)
+				_update_expected_consequence_display(25.0)
 		if decision_result_label:
 			decision_result_label.text = "Decision Result: " + no_state_msg
+		if proposed_rate_spinbox:
+			proposed_rate_spinbox.editable = true
+		if confirm_button:
+			confirm_button.disabled = false
+		if cancel_button:
+			cancel_button.disabled = false
 		return {
 			"success": false,
 			"result": "StateMissingOrCorrupt",
@@ -396,7 +481,7 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	if req_file == null:
 		var err_msg := "Failed to create decision request file: " + request_path
 		if status_label:
-			status_label.text = "Status: Error - " + err_msg
+			status_label.text = _format_status_text("Status: Error - " + err_msg, "Failed")
 		if decision_result_label:
 			decision_result_label.text = "Decision Result: Error - " + err_msg
 		return {
@@ -418,7 +503,7 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 		if decision_result_label:
 			decision_result_label.text = "Decision Result: " + cancel_msg
 		if status_label:
-			status_label.text = "Status: Cancellation request written to " + DEFAULT_REQUEST_FILENAME
+			status_label.text = _format_status_text("Status: Cancellation request written to " + DEFAULT_REQUEST_FILENAME, "None")
 		# Reset spinbox back to current live rate
 		var current_rate: float = float(_latest_state.get("income_tax_rate", 0.25)) * 100.0
 		if proposed_rate_spinbox:
@@ -434,7 +519,8 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	if decision_result_label:
 		decision_result_label.text = "Decision Result: " + submit_msg
 	if status_label:
-		status_label.text = "Status: Decision request written to " + DEFAULT_REQUEST_FILENAME
+		status_label.text = _format_status_text("Status: Decision request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
 
 	return {
 		"success": true,
