@@ -487,4 +487,10 @@ saves/
 TestResults/
 coverage/
 *presidential_desk_result.json
+*presidential_desk_buff_request.json
+
+# Godot 4
+.godot/
+*.uid
+client/godot/builds/
 

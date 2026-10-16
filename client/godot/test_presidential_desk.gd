@@ -92,11 +92,14 @@ func _init() -> void:
 	# Test 23: Phase 4 Offline progression and Last AI decision line display
 	all_passed = test_phase4_ai_decision_display(desk) and all_passed
 
+	# Test 24: Phase 5 Monetization hooks and Ad placeholder
+	all_passed = test_phase5_monetization_and_ad_hooks(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 23 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 24 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -1642,6 +1645,106 @@ func test_phase4_ai_decision_display(desk: Control) -> bool:
 
 	print("  [OK]: Phase 4 offline progression and Last AI Decision UI line verified.")
 	return true
+
+
+## Validates Phase 5 monetization hooks (Buffs panel and simulated purchases) and Ad placeholder
+func test_phase5_monetization_and_ad_hooks(desk: Control) -> bool:
+	print("\n--- Test 24: Phase 5 Monetization Hooks & Ad Placeholders ---")
+
+	# 1. Verify existence of Buffs UI controls and Ad placeholder
+	if desk.buy_admin_buff_button == null:
+		printerr("[FAIL]: BuyAdminBuffButton not found on PresidentialDesk.")
+		return false
+	if desk.buy_investor_buff_button == null:
+		printerr("[FAIL]: BuyInvestorBuffButton not found on PresidentialDesk.")
+		return false
+	if desk.buff_status_label == null:
+		printerr("[FAIL]: BuffStatusLabel not found on PresidentialDesk.")
+		return false
+	if desk.ad_placeholder == null:
+		printerr("[FAIL]: AdPlaceholder ColorRect not found on PresidentialDesk.")
+		return false
+
+	# 2. Test initial status label text
+	if not desk.buff_status_label.text.contains("Buff Status: Ready"):
+		printerr("[FAIL]: BuffStatusLabel does not have ready initial text: " + desk.buff_status_label.text)
+		return false
+
+	# 3. Clean up any existing buff request file
+	var buff_req_path: String = desk._resolve_buff_request_path()
+	if FileAccess.file_exists(buff_req_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(buff_req_path))
+
+	# 4. Trigger buy_admin_buff
+	desk.buy_admin_buff_button.pressed.emit()
+	if not FileAccess.file_exists(buff_req_path):
+		printerr("[FAIL]: Buff request file was not created at " + buff_req_path)
+		return false
+
+	var file := FileAccess.open(buff_req_path, FileAccess.READ)
+	if file == null:
+		printerr("[FAIL]: Could not open written buff request file at " + buff_req_path)
+		return false
+	var content := file.get_as_text()
+	file.close()
+
+	var parsed: Variant = JSON.parse_string(content)
+	if not (parsed is Dictionary):
+		printerr("[FAIL]: Buff request JSON is invalid: " + content)
+		return false
+
+	var req_dict: Dictionary = parsed
+	if req_dict.get("buff_id") != "admin_efficiency":
+		printerr("[FAIL]: Expected buff_id 'admin_efficiency' but got: " + str(req_dict.get("buff_id")))
+		return false
+	if req_dict.get("price_usd") != 0.99:
+		printerr("[FAIL]: Expected price_usd 0.99 but got: " + str(req_dict.get("price_usd")))
+		return false
+	if req_dict.get("status") != "SimulatedPurchaseRequested":
+		printerr("[FAIL]: Expected status 'SimulatedPurchaseRequested' but got: " + str(req_dict.get("status")))
+		return false
+
+	if not desk.buff_status_label.text.contains("Administrative Efficiency"):
+		printerr("[FAIL]: BuffStatusLabel did not reflect purchased buff: " + desk.buff_status_label.text)
+		return false
+
+	# 5. Trigger buy_investor_buff
+	desk.buy_investor_buff_button.emit_signal("pressed")
+	if not FileAccess.file_exists(buff_req_path):
+		printerr("[FAIL]: Buff request file was not found after second purchase")
+		return false
+
+	file = FileAccess.open(buff_req_path, FileAccess.READ)
+	content = file.get_as_text()
+	file.close()
+	parsed = JSON.parse_string(content)
+	req_dict = parsed
+	if req_dict.get("buff_id") != "investor_confidence":
+		printerr("[FAIL]: Expected buff_id 'investor_confidence' but got: " + str(req_dict.get("buff_id")))
+		return false
+	if req_dict.get("price_usd") != 1.99:
+		printerr("[FAIL]: Expected price_usd 1.99 but got: " + str(req_dict.get("price_usd")))
+		return false
+
+	if not desk.buff_status_label.text.contains("Investor Confidence"):
+		printerr("[FAIL]: BuffStatusLabel did not reflect investor buff: " + desk.buff_status_label.text)
+		return false
+
+	# 6. Verify Ad Placeholder dimensions and visibility
+	if not desk.ad_placeholder.visible:
+		printerr("[FAIL]: AdPlaceholder is not visible.")
+		return false
+	if desk.ad_placeholder.custom_minimum_size.x < 300:
+		printerr("[FAIL]: AdPlaceholder width is unreasonably small.")
+		return false
+
+	# Clean up test file
+	if FileAccess.file_exists(buff_req_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(buff_req_path))
+
+	print("  [OK]: Phase 5 Buffs panel, simulated buy requests, status feedback, and Ad placeholder verified.")
+	return true
+
 
 
 

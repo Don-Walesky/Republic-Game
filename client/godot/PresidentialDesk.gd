@@ -53,6 +53,12 @@ func _get_required_node(node_path: String) -> Node:
 @onready var reject_trade_button: Button = _get_required_node("VBoxContainer/TradeControlsHBox/RejectTradeButton") as Button
 @onready var latest_trade_status_label: Label = _get_required_node("VBoxContainer/LatestTradeStatusLabel") as Label
 
+## Phase 5 Monetization & Ad Placeholders
+@onready var buy_admin_buff_button: Button = _get_required_node("VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox/BuyAdminBuffButton") as Button
+@onready var buy_investor_buff_button: Button = _get_required_node("VBoxContainer/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox/BuyInvestorBuffButton") as Button
+@onready var buff_status_label: Label = _get_required_node("VBoxContainer/BuffStatusLabel") as Label
+@onready var ad_placeholder: ColorRect = _get_required_node("VBoxContainer/AdPlaceholder") as ColorRect
+
 ## File paths scanned for authoritative Republic simulation state
 const DEFAULT_STATE_PATHS: Array[String] = [
 	"res://presidential_desk_state.json",
@@ -63,6 +69,7 @@ const DEFAULT_STATE_PATHS: Array[String] = [
 @export var poll_interval: float = 0.5
 
 const DEFAULT_REQUEST_FILENAME: String = "presidential_desk_request.json"
+const DEFAULT_BUFF_REQUEST_FILENAME: String = "presidential_desk_buff_request.json"
 const REQUEST_TIMEOUT_SECONDS: float = 4.0
 
 var _active_state_path: String = ""
@@ -178,6 +185,15 @@ func _init_controls() -> void:
 	if latest_trade_status_label == null:
 		latest_trade_status_label = _get_required_node("VBoxContainer/LatestTradeStatusLabel") as Label
 
+	if buy_admin_buff_button == null:
+		buy_admin_buff_button = _get_required_node("VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox/BuyAdminBuffButton") as Button
+	if buy_investor_buff_button == null:
+		buy_investor_buff_button = _get_required_node("VBoxContainer/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox/BuyInvestorBuffButton") as Button
+	if buff_status_label == null:
+		buff_status_label = _get_required_node("VBoxContainer/BuffStatusLabel") as Label
+	if ad_placeholder == null:
+		ad_placeholder = _get_required_node("VBoxContainer/AdPlaceholder") as ColorRect
+
 	if not _is_network_connected and not _is_network_connecting:
 		if host_button:
 			host_button.disabled = false
@@ -207,6 +223,8 @@ func _init_controls() -> void:
 		if refresh_button:
 			refresh_button.disabled = false
 
+	_wire_signals()
+
 
 ## Connects interactive control signals
 func _wire_signals() -> void:
@@ -234,6 +252,10 @@ func _wire_signals() -> void:
 		accept_trade_button.pressed.connect(_on_accept_trade_button_pressed)
 	if reject_trade_button and not reject_trade_button.pressed.is_connected(_on_reject_trade_button_pressed):
 		reject_trade_button.pressed.connect(_on_reject_trade_button_pressed)
+	if buy_admin_buff_button and not buy_admin_buff_button.pressed.is_connected(_on_buy_admin_buff_pressed):
+		buy_admin_buff_button.pressed.connect(_on_buy_admin_buff_pressed)
+	if buy_investor_buff_button and not buy_investor_buff_button.pressed.is_connected(_on_buy_investor_buff_pressed):
+		buy_investor_buff_button.pressed.connect(_on_buy_investor_buff_pressed)
 
 
 func _process(delta: float) -> void:
@@ -499,6 +521,8 @@ func display_missing_state(details: String = "") -> void:
 		expected_consequence_label.text = "Expected Approval Effect: [No State Loaded]"
 	if decision_result_label:
 		decision_result_label.text = "Decision Result: [No State Loaded]"
+	if buff_status_label:
+		buff_status_label.text = "Buff Status: Ready (No active purchase requests)"
 
 	# Ensure SpinBox and buttons remain completely usable even if state file is temporarily missing
 	if proposed_rate_spinbox:
@@ -541,6 +565,8 @@ func display_error(error_msg: String) -> void:
 		decision_result_label.text = "Decision Result: Error - " + error_msg
 	if last_ai_decision_label:
 		last_ai_decision_label.text = "Last AI Decision: [No AI decisions recorded]"
+	if buff_status_label:
+		buff_status_label.text = "Buff Status: Ready (No active purchase requests)"
 
 	# Ensure SpinBox and buttons remain completely usable even if state file is corrupted
 	if proposed_rate_spinbox:
@@ -1406,4 +1432,55 @@ func _notification(what: int) -> void:
 		if _is_hosting_process and _host_process_pid > 0:
 			OS.kill(_host_process_pid)
 		disconnect_network()
+
+
+## Resolves target path for writing simulated buff purchase requests
+func _resolve_buff_request_path() -> String:
+	if not _active_state_path.is_empty():
+		return _active_state_path.get_base_dir().path_join(DEFAULT_BUFF_REQUEST_FILENAME)
+	return "user://" + DEFAULT_BUFF_REQUEST_FILENAME
+
+
+## Simulates purchasing an executive buff by writing a request file and updating status
+func buy_buff(buff_id: String, buff_name: String, price_usd: float) -> bool:
+	_init_controls()
+	var country_id: String = ""
+	if _latest_state.has("country_id"):
+		country_id = str(_latest_state["country_id"])
+	elif _latest_state.has("country"):
+		country_id = str(_latest_state["country"])
+
+	var req_id := "buff_req_" + str(Time.get_ticks_msec())
+	var request_data := {
+		"request_id": req_id,
+		"buff_id": buff_id,
+		"buff_name": buff_name,
+		"price_usd": price_usd,
+		"country_id": country_id,
+		"status": "SimulatedPurchaseRequested",
+		"timestamp_utc": Time.get_datetime_string_from_system(true)
+	}
+
+	var json_str := JSON.stringify(request_data, "\t")
+	var path := _resolve_buff_request_path()
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		if buff_status_label:
+			buff_status_label.text = "Buff Status: Error writing purchase request to " + path
+		return false
+
+	file.store_string(json_str)
+	file.close()
+
+	if buff_status_label:
+		buff_status_label.text = "Buff Status: Simulated purchase request written for '%s' ($%.2f USD)" % [buff_name, price_usd]
+	return true
+
+
+func _on_buy_admin_buff_pressed() -> void:
+	buy_buff("admin_efficiency", "Administrative Efficiency", 0.99)
+
+
+func _on_buy_investor_buff_pressed() -> void:
+	buy_buff("investor_confidence", "Investor Confidence", 1.99)
 

@@ -334,3 +334,92 @@ On the Presidential Desk:
 2. Inspect the foreign country's updated **Treasury** and **Approval** ratings reflecting the completed yield cycles and tax policy changes.
 3. Verify that all domestic player data (treasury, approval, tax rate, bills, parties, dispatches, and relations) was fully preserved across the save/load cycle.
 
+---
+
+## Phase 5 Launch Readiness: Web Export, UI Polish & Monetization Hooks
+
+Phase 5 brings the Godot client to launch readiness for an Early Access candidate with HTML5 web export capability, executive UI polish, simulated IAP buffs, and web ad integration hooks.
+
+### 1. HTML5 Web Export Instructions
+
+The Godot client includes configured web export presets (`export_presets.cfg`) and a custom HTML shell (`shell.html`).
+
+#### Option A: Command Line Interface (CLI / Headless)
+Run the following command from the repository root:
+```powershell
+godot --headless --path client/godot --export-release "Web" "builds/web/index.html"
+```
+*(Replace `godot` with the path to your Godot 4 console binary, e.g. `C:\Users\...\Godot_v4.7.2-stable_win64_console.exe`).*
+
+#### Option B: Godot Editor GUI
+1. Open `client/godot` in Godot Engine 4.x.
+2. In the top menu, navigate to **Project > Export...**.
+3. Select the **Web** preset from the Presets list.
+4. Click **Export Project...** at the bottom.
+5. Ensure the export target path is set to `builds/web/index.html` and click **Save**.
+
+#### Resulting Build Artifacts
+When the export completes, the web distribution files are generated in `client/godot/builds/web/`:
+- `index.html` — The main entrypoint web page container with canvas and loader.
+- `index.pck` — Packed game scene resources, textures, scripts, and initial state.
+- `index.png` — High-resolution application splash image.
+- `index.icon.png` — Web browser favicon and application shortcut icon.
+- `index.apple-touch-icon.png` — iOS home screen touch icon.
+
+---
+
+### 2. Presidential Desk Visual Polish
+
+The Presidential Desk features clean, intentional 3D-adjacent styling:
+- **Executive Dark Palette**: Slate-navy background (`#0B0F17`) with a solid 4px executive gold accent border (`#D9AD48`) running across the upper margin.
+- **Structured Card StyleBoxes**: Flat panels with 1px slate-grey borders (`#2E3E58`), rounded corners, and interior padding.
+- **High-Contrast Typography**: Clear hierarchy with executive amber/gold section headers (`#EAB308`), cyan system headers (`#60A5FA`), and legible off-white text values (`#E2E8F0`).
+- **Clean Spacing**: Expanded layout bounds (`960x1450`) with consistent vertical separation between governance panels.
+
+---
+
+### 3. Executive Orders & National Buffs (Simulated IAP)
+
+A dedicated Buffs panel provides simulated in-app purchases:
+- **Administrative Efficiency** ($0.99 USD): +10% National Yield Processing Speed (12h duration).
+- **Investor Confidence** ($1.99 USD): +5.0% Sovereign Stability & Approval Bonus (24h duration).
+- **Simulated Purchase Flow**:
+  - Clicking **Buy Decrees** writes a request file (`presidential_desk_buff_request.json`) adjacent to the state file with request ID, buff ID, price, and timestamp.
+  - Real payment processing is bypassed in Phase 5; the UI status label updates to confirm:
+    `Buff Status: Simulated purchase request written for '<Buff Name>' ($<Price> USD)`
+
+---
+
+### 4. Web Ad Unit Placeholder & Google AdSense Injection Guide
+
+The Presidential Desk includes a labeled leaderboard placeholder (`AdPlaceholder`, 728x70) positioned cleanly below the Buffs panel.
+
+When deploying the HTML5 export to production, replace or augment this placeholder with a live web ad unit such as Google AdSense:
+
+#### Injecting Google AdSense in `shell.html` / `index.html`
+
+1. **Add the AdSense Script Tag** in the `<head>` of `client/godot/shell.html`:
+   ```html
+   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+        crossorigin="anonymous"></script>
+   ```
+
+2. **Add the Ad Container** inside the `<body>` of `shell.html`:
+   Place the ad container either in a dedicated header/footer bar outside the canvas:
+   ```html
+   <div id="ad-banner-container" style="width: 728px; height: 90px; margin: 10px auto; z-index: 100;">
+       <!-- Republic Leaderboard Ad -->
+       <ins class="adsbygoogle"
+            style="display:inline-block;width:728px;height:90px"
+            data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+            data-ad-slot="1234567890"></ins>
+       <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+       </script>
+   </div>
+   ```
+
+3. **Canvas Ad Overlay via JavaScript Bridge**:
+   In Godot 4 Web builds, JavaScript interop (`JavaScriptBridge.eval(...)`) can trigger ad units on demand or communicate with parent DOM elements without interrupting game execution.
+
+
