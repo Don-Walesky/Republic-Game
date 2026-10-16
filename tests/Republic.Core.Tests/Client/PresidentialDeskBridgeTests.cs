@@ -2382,6 +2382,83 @@ public sealed class PresidentialDeskBridgeTests
             if (File.Exists(tempResultFile)) File.Delete(tempResultFile);
         }
     }
+
+    [Fact]
+    public async Task CreateRequestWatcher_DetectsPendingRequest_AppliesDecision_UpdatesStateAndDeletesRequest()
+    {
+        var tempStateFile = Path.Combine(Path.GetTempPath(), $"watcher_test_{Guid.NewGuid():N}.json");
+        var tempSaveFile = Path.ChangeExtension(tempStateFile, ".sav");
+        var tempRequestFile = PresidentialDeskBridge.ResolveDefaultRequestFilePath(tempStateFile);
+        var tempResultFile = PresidentialDeskBridge.ResolveDefaultResultFilePath(tempStateFile);
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Arcadia", time, "player-country");
+            country.TaxPolicy.IncomeTaxRate = 0.25;
+            country.HappinessRating = 70.0;
+            country.BaselineStability = 80.0;
+
+            var world = new WorldState
+            {
+                WorldId = Guid.NewGuid(),
+                Name = "Arcadia World",
+                CreatedAt = time.UtcTimestamp,
+                CurrentTick = 1,
+                Countries = new List<Country> { country }
+            };
+
+            PresidentialDeskBridge.SaveAuthoritativeState(world, time, 1, tempSaveFile);
+            PresidentialDeskBridge.ExportState(world, country, time, 1, tempStateFile, tempSaveFile);
+
+            var processedTcs = new TaskCompletionSource<PresidentialActionResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            using var watcher = PresidentialDeskBridge.CreateRequestWatcher(
+                tempStateFile,
+                tempSaveFile,
+                result => processedTcs.TrySetResult(result));
+
+            // Write request proposing 30% income tax
+            var requestJson = """
+            {
+                "request_id": "req_watcher_test_01",
+                "proposed_income_tax_rate": 0.30,
+                "confirmed": true
+            }
+            """;
+            File.WriteAllText(tempRequestFile, requestJson);
+
+            // Wait for watcher to detect and process the request
+            var completedTask = await Task.WhenAny(processedTcs.Task, Task.Delay(4000));
+            Assert.Same(processedTcs.Task, completedTask);
+
+            var actionResult = await processedTcs.Task;
+            Assert.NotNull(actionResult);
+            Assert.True(actionResult.Success);
+            Assert.Equal(0.30, actionResult.IncomeTaxRate);
+            Assert.Equal(0.25, actionResult.PreviousIncomeTaxRate);
+            Assert.Equal(67.5, actionResult.ApprovalRating); // -5% tax hike -> -2.5% approval
+
+            // Verify state file was updated
+            var reloadedSnapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(reloadedSnapshot);
+            Assert.Equal(0.30, reloadedSnapshot.IncomeTaxRate);
+            Assert.Equal(67.5, reloadedSnapshot.ApprovalRating);
+
+            // Verify result file exists on disk
+            Assert.True(File.Exists(tempResultFile));
+
+            // Verify request file was deleted
+            Assert.False(File.Exists(tempRequestFile));
+        }
+        finally
+        {
+            if (File.Exists(tempStateFile)) File.Delete(tempStateFile);
+            if (File.Exists(tempSaveFile)) File.Delete(tempSaveFile);
+            if (File.Exists(tempRequestFile)) File.Delete(tempRequestFile);
+            if (File.Exists(tempResultFile)) File.Delete(tempResultFile);
+        }
+    }
 }
 
 

@@ -1720,10 +1720,20 @@ public static class PresidentialDeskBridge
         watcher.Created += (_, _) => HandleRequest();
         watcher.Changed += (_, _) => HandleRequest();
 
+        // Periodic polling fallback (1s) to ensure requests are never dropped across platforms/filesystems
+        var timer = new System.Threading.Timer(_ =>
+        {
+            var reqPath = ResolveDefaultRequestFilePath(targetState);
+            if (File.Exists(reqPath))
+            {
+                HandleRequest();
+            }
+        }, null, 1000, 1000);
+
         // Process any request file already pending on startup
         HandleRequest();
 
-        return watcher;
+        return new CompositeWatcher(watcher, timer);
     }
 
     private static void TryDeleteFile(string path)
@@ -1741,6 +1751,30 @@ public static class PresidentialDeskBridge
     private sealed class EmptyDisposable : IDisposable
     {
         public void Dispose() { }
+    }
+
+    private sealed class CompositeWatcher : IDisposable
+    {
+        private readonly FileSystemWatcher _watcher;
+        private readonly System.Threading.Timer _timer;
+        private bool _disposed;
+
+        public CompositeWatcher(FileSystemWatcher watcher, System.Threading.Timer timer)
+        {
+            _watcher = watcher;
+            _timer = timer;
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _disposed = true;
+                _watcher.EnableRaisingEvents = false;
+                _watcher.Dispose();
+                _timer.Dispose();
+            }
+        }
     }
 }
 

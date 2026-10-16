@@ -80,11 +80,14 @@ func _init() -> void:
 	# Test 19: Stale / mismatched request ID results are rejected and cannot satisfy active decision
 	all_passed = test_stale_mismatched_request_id_rejected(desk) and all_passed
 
+	# Test 20: Refresh / Apply Pending flow and button
+	all_passed = test_refresh_and_apply_pending_flow(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 19 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 20 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -1201,6 +1204,73 @@ func test_stale_mismatched_request_id_rejected(desk: Control) -> bool:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
 	print("  [OK]: Mismatched request ID results are rejected without satisfying active decision.")
+	return true
+
+
+func test_refresh_and_apply_pending_flow(desk: Control) -> bool:
+	print("\n--- Test 20: Refresh / Apply Pending Flow & Button ---")
+	if desk.refresh_button == null:
+		printerr("[FAIL]: RefreshButton node is missing on PresidentialDesk.")
+		return false
+
+	if desk.refresh_button.text != "Refresh / Apply Pending":
+		printerr("[FAIL]: RefreshButton text unexpected: " + desk.refresh_button.text)
+		return false
+
+	var temp_path := "res://temp_refresh_test_state.json"
+	var temp_res_path := "res://presidential_desk_result.json"
+
+	var initial_state := {
+		"country_name": "Republic of Arcadia",
+		"treasury": "R 15,000,000,000",
+		"approval": "70%",
+		"stability": "80%",
+		"simulation_time": "Day 0, 00:00 WAT",
+		"income_tax_rate": 0.25
+	}
+	var f := FileAccess.open(temp_path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(initial_state))
+	f.close()
+
+	desk.load_state_from_file(temp_path)
+
+	# Write result file representing a processed pending decision
+	var pending_result := {
+		"request_id": "req_refresh_test",
+		"success": true,
+		"result": "Success",
+		"message": "Tax rate updated to 32.0% via manual refresh flow",
+		"income_tax_rate": 0.32
+	}
+	var rf := FileAccess.open(temp_res_path, FileAccess.WRITE)
+	rf.store_string(JSON.stringify(pending_result))
+	rf.close()
+
+	# Also update state file to reflect the 32% rate
+	initial_state["income_tax_rate"] = 0.32
+	var uf := FileAccess.open(temp_path, FileAccess.WRITE)
+	uf.store_string(JSON.stringify(initial_state))
+	uf.close()
+
+	# Call apply_pending_or_refresh()
+	var refresh_ok: bool = desk.apply_pending_or_refresh()
+	if not refresh_ok:
+		printerr("[FAIL]: apply_pending_or_refresh() returned false!")
+		return false
+
+	if not desk.decision_result_label.text.contains("Tax rate updated to 32.0%"):
+		printerr("[FAIL]: Decision result label did not update via apply_pending_or_refresh: " + desk.decision_result_label.text)
+		return false
+
+	if not desk.tax_rate_label.text.contains("32.0%"):
+		printerr("[FAIL]: TaxRateLabel was not updated: " + desk.tax_rate_label.text)
+		return false
+
+	# Clean up
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_res_path))
+
+	print("  [OK]: RefreshButton and apply_pending_or_refresh() successfully verified.")
 	return true
 
 

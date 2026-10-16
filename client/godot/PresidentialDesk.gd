@@ -26,6 +26,7 @@ func _get_required_node(node_path: String) -> Node:
 @onready var expected_consequence_label: Label = _get_required_node("VBoxContainer/ExpectedConsequenceLabel") as Label
 @onready var confirm_button: Button = _get_required_node("VBoxContainer/DecisionControlsHBox/ConfirmButton") as Button
 @onready var cancel_button: Button = _get_required_node("VBoxContainer/DecisionControlsHBox/CancelButton") as Button
+@onready var refresh_button: Button = _get_required_node("VBoxContainer/DecisionControlsHBox/RefreshButton") as Button
 @onready var decision_result_label: Label = _get_required_node("VBoxContainer/DecisionResultLabel") as Label
 
 ## File paths scanned for authoritative Republic simulation state
@@ -87,6 +88,8 @@ func _init_controls() -> void:
 		confirm_button = _get_required_node("VBoxContainer/DecisionControlsHBox/ConfirmButton") as Button
 	if cancel_button == null:
 		cancel_button = _get_required_node("VBoxContainer/DecisionControlsHBox/CancelButton") as Button
+	if refresh_button == null:
+		refresh_button = _get_required_node("VBoxContainer/DecisionControlsHBox/RefreshButton") as Button
 	if decision_result_label == null:
 		decision_result_label = _get_required_node("VBoxContainer/DecisionResultLabel") as Label
 
@@ -98,6 +101,8 @@ func _init_controls() -> void:
 			confirm_button.disabled = false
 		if cancel_button:
 			cancel_button.disabled = false
+		if refresh_button:
+			refresh_button.disabled = false
 
 
 ## Connects interactive control signals
@@ -108,6 +113,8 @@ func _wire_signals() -> void:
 		confirm_button.pressed.connect(_on_confirm_button_pressed)
 	if cancel_button and not cancel_button.pressed.is_connected(_on_cancel_button_pressed):
 		cancel_button.pressed.connect(_on_cancel_button_pressed)
+	if refresh_button and not refresh_button.pressed.is_connected(_on_refresh_button_pressed):
+		refresh_button.pressed.connect(_on_refresh_button_pressed)
 
 
 func _process(delta: float) -> void:
@@ -136,6 +143,8 @@ func _process(delta: float) -> void:
 				confirm_button.disabled = false
 			if cancel_button:
 				cancel_button.disabled = false
+			if refresh_button:
+				refresh_button.disabled = false
 			if proposed_rate_spinbox:
 				proposed_rate_spinbox.editable = true
 			if not _pending_request_path.is_empty() and FileAccess.file_exists(_pending_request_path):
@@ -233,6 +242,8 @@ func apply_state(data: Dictionary) -> void:
 			confirm_button.disabled = false
 		if cancel_button:
 			cancel_button.disabled = false
+		if refresh_button:
+			refresh_button.disabled = false
 		if proposed_rate_spinbox:
 			proposed_rate_spinbox.editable = true
 
@@ -313,10 +324,10 @@ func _format_status_text(base_msg: String = "", tax_req_status: String = "") -> 
 
 	# 3. Tax request status
 	var req_status_text: String
-	if not tax_req_status.is_empty():
-		req_status_text = "Tax request: " + tax_req_status
-	elif _is_waiting_for_decision:
+	if _is_waiting_for_decision:
 		req_status_text = "Tax request: Pending"
+	elif not tax_req_status.is_empty():
+		req_status_text = "Tax request: " + tax_req_status
 	else:
 		var req_path := _resolve_request_path(resolved_path)
 		if not req_path.is_empty() and FileAccess.file_exists(req_path):
@@ -363,6 +374,8 @@ func display_missing_state(details: String = "") -> void:
 		confirm_button.disabled = false
 	if cancel_button:
 		cancel_button.disabled = false
+	if refresh_button:
+		refresh_button.disabled = false
 
 
 ## Visually displays an error condition without falling back to sample demonstration data
@@ -401,6 +414,8 @@ func display_error(error_msg: String) -> void:
 		confirm_button.disabled = false
 	if cancel_button:
 		cancel_button.disabled = false
+	if refresh_button:
+		refresh_button.disabled = false
 
 
 ## Checks if the state file has been modified on disk and reloads when changed
@@ -485,6 +500,72 @@ func _on_confirm_button_pressed() -> void:
 func _on_cancel_button_pressed() -> void:
 	var rate_val := proposed_rate_spinbox.value if proposed_rate_spinbox else 0.0
 	execute_tax_decision(rate_val, false)
+
+
+## Handler for refresh / apply pending button
+func _on_refresh_button_pressed() -> void:
+	apply_pending_or_refresh()
+
+
+## Manually refreshes the simulation state, checks for decision results, and processes any pending request
+func apply_pending_or_refresh() -> bool:
+	# 1. Process pending decision results first if result file is already available
+	var res_path := _resolve_result_path(_active_state_path)
+	if FileAccess.file_exists(res_path):
+		var file := FileAccess.open(res_path, FileAccess.READ)
+		if file:
+			var text := file.get_as_text()
+			file.close()
+			var parsed: Variant = JSON.parse_string(text)
+			if parsed is Dictionary and not parsed.is_empty():
+				_handle_decision_result(parsed)
+				return true
+
+	# 2. Check if a request file is pending on disk; if so, attempt non-blocking backend processing
+	var target_state := _active_state_path if not _active_state_path.is_empty() else _resolve_state_path()
+	var req_path := _resolve_request_path(target_state)
+	if FileAccess.file_exists(req_path):
+		_try_run_cli_request_processor()
+
+	# 3. Reload state file
+	var reloaded := refresh()
+	if reloaded and status_label:
+		status_label.text = _format_status_text("Status: Refreshed live Republic simulation state")
+	return reloaded
+
+
+## Attempts non-blocking execution of the CLI request processor if DLL or project is present
+func _try_run_cli_request_processor() -> void:
+	var candidates: Array[String] = [
+		ProjectSettings.globalize_path("res://../../src/Republic.Cli/bin/Debug/net8.0/Republic.Cli.dll"),
+		ProjectSettings.globalize_path("res://../../src/Republic.Cli/bin/Release/net8.0/Republic.Cli.dll"),
+		"src/Republic.Cli/bin/Debug/net8.0/Republic.Cli.dll",
+		"src/Republic.Cli/bin/Release/net8.0/Republic.Cli.dll"
+	]
+	var cli_dll := ""
+	for c in candidates:
+		if FileAccess.file_exists(c):
+			cli_dll = c
+			break
+
+	var state_path := _resolve_state_path()
+	if not cli_dll.is_empty():
+		var args: PackedStringArray = [cli_dll, "--process-request"]
+		if not state_path.is_empty():
+			args.append("--state-file=" + ProjectSettings.globalize_path(state_path))
+		OS.create_process("dotnet", args)
+	else:
+		var proj_candidates: Array[String] = [
+			ProjectSettings.globalize_path("res://../../src/Republic.Cli/Republic.Cli.csproj"),
+			"src/Republic.Cli/Republic.Cli.csproj"
+		]
+		for proj in proj_candidates:
+			if FileAccess.file_exists(proj):
+				var args: PackedStringArray = ["run", "--project", proj, "--no-build", "--", "--process-request"]
+				if not state_path.is_empty():
+					args.append("--state-file=" + ProjectSettings.globalize_path(state_path))
+				OS.create_process("dotnet", args)
+				break
 
 
 ## Submits a presidential taxation decision via file-based request (presidential_desk_request.json)
@@ -639,6 +720,8 @@ func _handle_decision_result(result_dict: Dictionary) -> void:
 		confirm_button.disabled = false
 	if cancel_button:
 		cancel_button.disabled = false
+	if refresh_button:
+		refresh_button.disabled = false
 	if proposed_rate_spinbox:
 		proposed_rate_spinbox.editable = true
 
