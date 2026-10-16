@@ -56,6 +56,11 @@ public sealed class RepublicNetworkClient : IDisposable
     public event Action<Republic.Core.World.TradeProposal>? OnTradeReceived;
 
     /// <summary>
+    /// Event invoked whenever a decision result or rejection message is received from the host.
+    /// </summary>
+    public event Action<NetworkMessage>? OnDecisionResultReceived;
+
+    /// <summary>
     /// Event invoked when the client is disconnected from the host.
     /// </summary>
     public event Action? OnDisconnected;
@@ -170,6 +175,67 @@ public sealed class RepublicNetworkClient : IDisposable
         await SendMessageAsync(message).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Claims ownership of the specified sovereign country on the authoritative host.
+    /// </summary>
+    public async Task ClaimCountryAsync(string countryId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var message = new NetworkMessage
+        {
+            Type = "claim_country",
+            SenderId = ClientId,
+            CountryId = countryId
+        };
+
+        await SendMessageAsync(message).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a tax decision request to the authoritative host for validation and application.
+    /// </summary>
+    public async Task SendTaxDecisionRequestAsync(string countryId, double proposedRate, string? requestId = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var message = new NetworkMessage
+        {
+            Type = "tax_decision",
+            SenderId = ClientId,
+            CountryId = countryId,
+            TaxRate = proposedRate,
+            RequestId = requestId ?? Guid.NewGuid().ToString("N")
+        };
+
+        await SendMessageAsync(message).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a treasury transaction request to the authoritative host for validation and application.
+    /// </summary>
+    public async Task SendTreasuryTransactionAsync(string countryId, string action, double amount, string? targetCountryId = null, string? requestId = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(action);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var message = new NetworkMessage
+        {
+            Type = "treasury_transaction",
+            SenderId = ClientId,
+            CountryId = countryId,
+            Action = action,
+            Amount = amount,
+            TargetCountryId = targetCountryId,
+            RequestId = requestId ?? Guid.NewGuid().ToString("N")
+        };
+
+        await SendMessageAsync(message).ConfigureAwait(false);
+    }
+
     private async Task SendMessageAsync(NetworkMessage message)
     {
         if (_writer == null || !IsConnected)
@@ -235,6 +301,10 @@ public sealed class RepublicNetworkClient : IDisposable
                     else if (message.Type == "trade" && message.Trade != null)
                     {
                         OnTradeReceived?.Invoke(message.Trade);
+                    }
+                    else if (message.Type == "decision_result")
+                    {
+                        OnDecisionResultReceived?.Invoke(message);
                     }
                 }
                 catch (JsonException)

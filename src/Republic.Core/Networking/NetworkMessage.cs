@@ -49,4 +49,58 @@ public sealed record NetworkMessage
     /// </summary>
     [JsonPropertyName("trade")]
     public Republic.Core.World.TradeProposal? Trade { get; init; }
+
+    /// <summary>
+    /// Gets the unique request identifier for idempotent operation validation.
+    /// </summary>
+    [JsonPropertyName("request_id")]
+    public string? RequestId { get; init; }
+
+    /// <summary>
+    /// Gets the action or command discriminator if <see cref="Type"/> is an action request.
+    /// </summary>
+    [JsonPropertyName("action")]
+    public string? Action { get; init; }
+
+    /// <summary>
+    /// Gets the target country identifier for authoritative sovereign actions.
+    /// </summary>
+    [JsonPropertyName("country_id")]
+    public string? CountryId { get; init; }
+
+    /// <summary>
+    /// Gets the proposed personal income tax rate if enacting taxation decisions.
+    /// </summary>
+    [JsonPropertyName("tax_rate")]
+    public double? TaxRate { get; init; }
+
+    /// <summary>
+    /// Gets the transaction or resource amount if performing treasury operations.
+    /// </summary>
+    [JsonPropertyName("amount")]
+    public double? Amount { get; init; }
+
+    /// <summary>
+    /// Gets the destination country identifier if performing a bilateral transfer.
+    /// </summary>
+    [JsonPropertyName("target_country_id")]
+    public string? TargetCountryId { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether an authoritative action request succeeded.
+    /// </summary>
+    [JsonPropertyName("success")]
+    public bool? Success { get; init; }
+
+    /// <summary>
+    /// Gets the structured result discriminator (e.g. "Success", "Rejected", "InvalidInput", "AlreadyProcessed").
+    /// </summary>
+    [JsonPropertyName("result")]
+    public string? Result { get; init; }
+
+    /// <summary>
+    /// Gets a human-readable status or diagnostic feedback message.
+    /// </summary>
+    [JsonPropertyName("status_message")]
+    public string? StatusMessage { get; init; }
 }

@@ -1374,6 +1374,12 @@ func test_multiplayer_networking_and_country_sync(desk: Control) -> bool:
 	desk._handle_network_message(self_msg)
 	if desk.foreign_country_name_label.text.contains("Self Sovereign"):
 		printerr("[FAIL]: Foreign country label should not display local client's own reflection!")
+	# 4b. Test connected status display with authoritative country ownership
+	desk._is_network_connected = true
+	desk._latest_state = {"country_name": "Republic of Arcadia"}
+	desk._update_network_status_display()
+	if not desk.network_status_label.text.to_lower().contains("connected as owner of [republic of arcadia]"):
+		printerr("[FAIL]: NetworkStatusLabel should contain 'connected as owner of [Republic of Arcadia]'! Got: " + desk.network_status_label.text)
 		return false
 
 	# 5. Test disconnect reset behavior

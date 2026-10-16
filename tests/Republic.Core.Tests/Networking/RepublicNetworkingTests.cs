@@ -1,9 +1,11 @@
 namespace Republic.Core.Tests.Networking;
 
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Republic.Core.Networking;
 using Republic.Core.Time;
+using Republic.Core.World;
 using Xunit;
 
 public sealed class RepublicNetworkingTests
@@ -326,6 +328,155 @@ public sealed class RepublicNetworkingTests
         Assert.Equal(2, await countTcsReconnected.Task);
 
         client2.Dispose();
+    }
+
+    [Fact]
+    public async Task ClientRequest_RejectedIfNotOwner_AndAcceptedTrade_UpdatesTreasuriesExactlyOnce()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"republic_test_world_{Guid.NewGuid():N}.json");
+        try
+        {
+            // 1. Arrange: Start host with single-file persistence
+            using var host = new RepublicHost(port: 0, saveFilePath: tempFile);
+            host.Start();
+
+            // Set up host initial country & treasury
+            var hostCountry = new CountrySnapshot
+            {
+                Id = "country-arcadia",
+                Name = "Republic of Arcadia",
+                Treasury = "R 10,000,000,000",
+                Approval = "70.0%",
+                TaxRate = "25.0%"
+            };
+            host.SetHostCountry(hostCountry);
+            var hostTreasury = host.GetOrCreateTreasury(hostCountry.Id, hostCountry);
+
+            // Connect Client 1 (representing owner of Country 1 / Valoria)
+            using var client1 = new RepublicNetworkClient();
+            await client1.ConnectAsync("127.0.0.1", host.Port);
+
+            var valoriaCountry = new CountrySnapshot
+            {
+                Id = "country-valoria",
+                Name = "Federation of Valoria",
+                Treasury = "R 5,000,000,000",
+                Approval = "65.0%",
+                TaxRate = "20.0%"
+            };
+            await client1.SendCountrySnapshotAsync(valoriaCountry);
+
+            // Connect Client 2 (representing untrusted intruder or owner of Country 2 / Norse)
+            using var client2 = new RepublicNetworkClient();
+            await client2.ConnectAsync("127.0.0.1", host.Port);
+
+            var norseCountry = new CountrySnapshot
+            {
+                Id = "country-norse",
+                Name = "Commonwealth of Norse",
+                Treasury = "R 8,000,000,000",
+                Approval = "60.0%",
+                TaxRate = "22.0%"
+            };
+            await client2.SendCountrySnapshotAsync(norseCountry);
+
+            // 2. Part A: Client Request Rejected If Not Owner
+            // Client 2 attempts to change tax rate on Valoria (owned by Client 1)
+            var client2RejectionTcs = new TaskCompletionSource<NetworkMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+            client2.OnDecisionResultReceived += res =>
+            {
+                if (res.CountryId == "country-valoria")
+                {
+                    client2RejectionTcs.TrySetResult(res);
+                }
+            };
+
+            await client2.SendTaxDecisionRequestAsync("country-valoria", proposedRate: 0.50);
+
+            var rejectCompleted = await Task.WhenAny(client2RejectionTcs.Task, Task.Delay(4000));
+            Assert.Same(client2RejectionTcs.Task, rejectCompleted);
+
+            var rejectionMsg = await client2RejectionTcs.Task;
+            Assert.False(rejectionMsg.Success);
+            Assert.Equal("Rejected", rejectionMsg.Result);
+
+            // Verify Valoria's tax rate on host was NOT altered
+            var valoriaOnHost = host.KnownCountries["country-valoria"];
+            Assert.Equal("20.0%", valoriaOnHost.TaxRate);
+
+            // Also test direct host API verification for ownership rejection
+            var unauthorizedTax = host.SubmitTaxDecision(playerId: client2.ClientId, countryId: "country-valoria", proposedRate: 0.45);
+            Assert.False(unauthorizedTax);
+
+            // 3. Part B: Trade Validation & Exactly-Once Treasury Update
+            // Client 1 (Valoria) proposes a trade of 1,000,000,000 REPU to Norse (owned by Client 2)
+            var tradeId = "trade-" + Guid.NewGuid().ToString("N");
+            var proposal = new TradeProposal("country-valoria", "country-norse", 1_000_000_000.0)
+            {
+                Id = tradeId
+            };
+
+            var proposed = host.SubmitTradeProposal(client1.ClientId, proposal);
+            Assert.True(proposed);
+
+            var valoriaTreasury = host.GetOrCreateTreasury("country-valoria");
+            var norseTreasury = host.GetOrCreateTreasury("country-norse");
+            var initialValoriaBal = valoriaTreasury.Balance;
+            var initialNorseBal = norseTreasury.Balance;
+
+            // Step B1: Unauthorized accept attempt (Client 1 tries to accept its own proposal)
+            var unauthorizedAccept = host.AcceptTrade(playerId: client1.ClientId, tradeId: tradeId);
+            Assert.False(unauthorizedAccept);
+            Assert.Equal(initialValoriaBal, valoriaTreasury.Balance);
+            Assert.Equal(initialNorseBal, norseTreasury.Balance);
+
+            // Step B2: Authorized accept by Client 2 (the recipient)
+            var accepted = host.AcceptTrade(playerId: client2.ClientId, tradeId: tradeId);
+            Assert.True(accepted);
+
+            // Verify both treasuries updated
+            Assert.Equal(initialValoriaBal - 1_000_000_000.0, valoriaTreasury.Balance);
+            Assert.Equal(initialNorseBal + 1_000_000_000.0, norseTreasury.Balance);
+
+            // Step B3: Duplicate accept attempt (cannot be applied twice / exactly once)
+            var duplicateAccept = host.AcceptTrade(playerId: client2.ClientId, tradeId: tradeId);
+            Assert.False(duplicateAccept);
+
+            // Treasuries must remain unchanged after duplicate accept attempt
+            Assert.Equal(initialValoriaBal - 1_000_000_000.0, valoriaTreasury.Balance);
+            Assert.Equal(initialNorseBal + 1_000_000_000.0, norseTreasury.Balance);
+
+            // 4. Part C: Persistence check - restart host and ensure state survives
+            host.SaveWorld();
+            host.Dispose();
+
+            using var restartedHost = new RepublicHost(port: 0, saveFilePath: tempFile);
+            restartedHost.Start();
+
+            // Verify countries, ownership, treasuries, and trade status were restored
+            Assert.True(restartedHost.KnownCountries.ContainsKey("country-valoria"));
+            Assert.True(restartedHost.KnownCountries.ContainsKey("country-norse"));
+            Assert.Equal(client1.ClientId, restartedHost.GetCountryOwner("country-valoria"));
+            Assert.Equal(client2.ClientId, restartedHost.GetCountryOwner("country-norse"));
+
+            var reloadedValoriaTreasury = restartedHost.GetOrCreateTreasury("country-valoria");
+            var reloadedNorseTreasury = restartedHost.GetOrCreateTreasury("country-norse");
+            Assert.Equal(initialValoriaBal - 1_000_000_000.0, reloadedValoriaTreasury.Balance);
+            Assert.Equal(initialNorseBal + 1_000_000_000.0, reloadedNorseTreasury.Balance);
+
+            Assert.True(restartedHost.KnownTrades.TryGetValue(tradeId, out var reloadedTrade));
+            Assert.Equal("Accepted", reloadedTrade.Status);
+
+            // Duplicate accept on restarted host is also rejected!
+            Assert.False(restartedHost.AcceptTrade(client2.ClientId, tradeId));
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                try { File.Delete(tempFile); } catch { }
+            }
+        }
     }
 }
 

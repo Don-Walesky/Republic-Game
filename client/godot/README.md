@@ -204,7 +204,7 @@ You can start the host in either of two ways:
 1. Run the Presidential Desk scene in Godot (**F5** or `Play Scene`).
 2. If using the CLI host, click **Join** with address `127.0.0.1:7777`.
 3. Verify connection status displays:
-   `Network: Connected to host`
+   `Network: Connected as owner of [Republic of Arcadia]`
 4. Verify the **Shared World Clock** begins ticking:
    `Shared World Clock: Day 0 - 02:00 WAT (Tick 2)`
 
@@ -217,7 +217,7 @@ You can start the host in either of two ways:
    *(If running standard two windows on the same machine, Godot will assign distinct client IDs automatically).*
 2. Ensure the address field contains `127.0.0.1:7777` and click **Join**.
 3. Verify connection status on Client 2 displays:
-   `Network: Connected to host`
+   `Network: Connected as owner of [Republic of Valoria]`
 
 #### Step 4 — Confirm Mutual Visibility & Synchronization
 1. **On Client 1**:
@@ -239,79 +239,96 @@ Click **Disconnect** on either client. The interface immediately clears foreign 
 
 ---
 
-## Phase 3 Diplomacy & Economy: Two-Player Test Steps (Recognition, Messaging, & Trade)
+## Phase 3 Authoritative Host & Persistent Shared World: Two-Player Test Steps
 
-Phase 3 builds on the multiplayer foundation to provide bilateral diplomatic recognition, diplomatic message broadcasts (cables), and trade proposals with authoritative treasury adjustments between two connected players.
-
-### Prerequisites
-1. Start the host:
-   ```bash
-   dotnet run --project src/Republic.Cli -- --host --port=7777
-   ```
-2. Launch Client 1 (Player 1) and click **Join** (`127.0.0.1:7777`).
-3. Launch Client 2 (Player 2) and click **Join** (`127.0.0.1:7777`).
-4. Both players verify connection and peer country detection under **Foreign Sovereign State (Connected Peer)**.
+Phase 3 transitions multiplayer to a fully production-ready authoritative architecture:
+- **Single Source of Truth**: The host owns the world state (clock, sovereign countries, treasuries, diplomacy, and trade proposals). Clients send requests; the host validates and applies them using `Republic.Core` rules.
+- **Player Identity & Ownership**: Each connection receives a distinct ID. Only the registered owner of a country can submit decisions (tax policy, project investments, diplomacy) or accept trades for that country.
+- **Deduplication & Exactly-Once Execution**: Request IDs and proposal states prevent replay attacks. Trades cannot be double-accepted, and unowned requests are rejected.
+- **Persistent World File**: The shared world state (clock, countries, treasuries, ownership, diplomacy, and trades) is continuously persisted to a single file (`shared_world.json`) on the host and reloaded automatically upon restart.
 
 ---
 
-### Step 1 — Diplomatic Recognition
-1. Under **Diplomacy & Trade Relations**, verify the baseline standing displays:
-   `Diplomatic Standing: Unrecognized`
-2. Player 1 or Player 2 clicks **Recognize Country**.
-3. **Verification on Both Desks**:
-   - The standing immediately updates to: `Diplomatic Standing: Recognized`.
-   - The **Recognize Country** button disables to indicate bilateral recognition is active.
+### Step 1 — Start the Authoritative Host with World Persistence
+Start the host on port 7777 specifying the persistent world file (defaults to `shared_world.json`):
+```bash
+dotnet run --project src/Republic.Cli -- --host --port=7777 --save-file=shared_world.json
+```
+*(Or click **Host Game** in the Presidential Desk interface).*
 
 ---
 
-### Step 2 — Exchange Diplomatic Cables / Messages
-1. In the **MessageLineEdit** text field, Player 1 types a diplomatic dispatch:
-   `"We offer peace, cooperation, and open borders."`
-2. Player 1 clicks **Send Cable**.
-3. **Verification on Both Desks**:
-   - Under **Latest Dispatch**, both Player 1 and Player 2 see:
-     `Latest Dispatch [12:00 WAT]: Player1_ID - "We offer peace, cooperation, and open borders."`
-4. Player 2 can type a reply (e.g., `"Agreed. Let us discuss mutual trade."`) and click **Send Cable**. The latest dispatch immediately updates on both desks.
+### Step 2 — Join with Two Clients & Confirm Sovereign Ownership Status
+1. **Client 1 (Player 1 Desk - Republic of Arcadia)**:
+   - Launch Presidential Desk in Godot (**F5** or `Play Scene`).
+   - Enter `127.0.0.1:7777` and click **Join**.
+   - Verify network status label displays:
+     `Network: Connected as owner of [Republic of Arcadia]`
+2. **Client 2 (Player 2 Desk - Republic of Valoria)**:
+   - In a second Godot instance or terminal, launch Client 2:
+     ```bash
+     godot client/godot/project.godot -- --client-id=valoria_player --state-file=client/godot/presidential_desk_state_p2.json
+     ```
+   - Enter `127.0.0.1:7777` and click **Join**.
+   - Verify network status label displays:
+     `Network: Connected as owner of [Republic of Valoria]`
+3. **Host Ownership Registration**:
+   - The host records `_countryOwners[Arcadia] = Client1` and `_countryOwners[Valoria] = Client2`.
+   - The shared world state is saved to `shared_world.json`.
 
 ---
 
-### Step 3 — Propose a Trade (Currency Transfer)
-1. On Player 1's desk, locate the **Trade Controls** section.
-2. In the **Trade Amount (REPU)** spinbox, select an amount (e.g. `50,000,000.0` or `50000000`).
-3. Player 1 clicks **Propose Trade**.
-4. **Verification**:
-   - **Player 1 (Proposer Desk)**:
-     - Latest trade status displays: `Trade Status: Pending proposal (R 50.0M) from Player1_ID`.
-     - The **Accept Trade** and **Reject Trade** buttons remain disabled (a nation cannot accept its own trade proposal).
-   - **Player 2 (Recipient Desk)**:
-     - Latest trade status displays: `Trade Status: Pending proposal (R 50.0M) from Player1_ID`.
-     - The **Accept Trade** and **Reject Trade** buttons become enabled.
+### Step 3 — Perform an Authoritative Tax Action
+1. On **Client 1 (Arcadia)**:
+   - Adjust Personal Income Tax to `30.0%` in the interactive tax spinner.
+   - Click **Confirm Decision**.
+   - Client 1 dispatches an authoritative `tax_decision` request (`proposedRate: 0.30`, `countryId: Arcadia`).
+2. **Authoritative Host Validation**:
+   - The host verifies Client 1 is the registered owner of Arcadia.
+   - The host verifies `30.0%` is within constitutional bounds (`0% - 70%`).
+   - The host updates Arcadia's tax policy and public approval, saves state to `shared_world.json`, and broadcasts the updated snapshot to all connected clients.
+3. **Non-Owner Rejection Verification**:
+   - If an untrusted peer or Client 2 sends a decision targeting Arcadia, the host rejects the request with `[Rejected]: You do not own country 'Arcadia'`. Zero changes are made.
 
 ---
 
-### Step 4 — Accept the Trade & Verify Authoritative Treasury Updates
-1. On Player 2's desk, click **Accept Trade**.
-2. **Authoritative Execution**:
-   - The host evaluates the transaction against `Republic.Core` treasury rules (`TryWithdraw` on Player 1 and `Deposit` on Player 2).
-   - If Player 1 has sufficient liquid reserves, the funds are safely debited and credited.
-3. **Verification on Both Desks**:
-   - Both desks display:
-     `Trade Status: Accepted - R 50.0M transferred from Player1_ID to Player2_ID`
-   - Both **Accept Trade** and **Reject Trade** buttons disable.
-   - **Player 1's Desk**: Treasury balance reflects the `R 50,000,000` deduction.
-   - **Player 2's Desk**: Treasury balance reflects the `R 50,000,000` addition.
+### Step 4 — Perform an Authoritative Trade Action (Exactly-Once Treasury Update)
+1. On **Client 1 (Arcadia)**:
+   - Under **Trade Controls**, set **Trade Amount (REPU)** to `50,000,000.0`.
+   - Click **Propose Trade**.
+   - Status updates on both desks: `Trade Status: Pending proposal (R 50.0M) from Client1`.
+2. On **Client 2 (Valoria - Recipient)**:
+   - Click **Accept Trade**.
+3. **Authoritative Execution & Deduplication**:
+   - The host validates that Client 2 is the legitimate recipient (`Trade.To == Valoria`).
+   - The host verifies the trade is in `Pending` status.
+   - The host executes `proposal.Accept(arcadiaTreasury, valoriaTreasury)`, transitioning status to `Accepted`.
+   - **Treasuries Update**: Arcadia is debited `R 50,000,000` and Valoria is credited `R 50,000,000`.
+   - The host broadcasts updated `CountrySnapshot` and `TradeProposal` to all peers and persists to `shared_world.json`.
+4. **Replay / Duplicate Prevention**:
+   - Any second click or replayed accept request is immediately rejected (`Trade status != Pending`). Treasuries are updated **exactly once**.
 
 ---
 
-### Step 5 — Alternate Flow: Rejecting a Trade Proposal
-1. Propose another trade from either desk.
-2. On the recipient's desk, click **Reject Trade**.
-3. **Verification on Both Desks**:
-   - Latest trade status displays: `Trade Status: Proposal rejected`.
-   - Neither country's treasury balance is modified.
-   - Buttons are reset.
-
----
+### Step 5 — Restart the Host & Confirm Full State Restoration
+1. **Stop the Host**:
+   - In the host terminal, press **Ctrl+C** to stop the server process cleanly.
+   - Both Godot clients report `Network: Connection closed or unreachable`.
+2. **Restart the Host**:
+   - Start the host again targeting the existing persistence file:
+     ```bash
+     dotnet run --project src/Republic.Cli -- --host --port=7777 --save-file=shared_world.json
+     ```
+   - Notice the host console confirms loading existing world data from `shared_world.json`.
+3. **Reconnect Both Clients**:
+   - On Client 1, click **Join** with `127.0.0.1:7777`.
+   - On Client 2, click **Join** with `127.0.0.1:7777`.
+4. **Confirm State is Completely Restored**:
+   - **Clock & Ticks**: Restored to the saved tick and simulation time.
+   - **Sovereign Ownership**: Client 1 restores ownership of Arcadia; Client 2 restores ownership of Valoria.
+   - **Treasury Balances**: Arcadia reflects `R 50,000,000` deduction; Valoria reflects `R 50,000,000` addition.
+   - **Tax Policy**: Arcadia's tax rate remains at `30.0%` with preserved approval ratings.
+   - **Trades**: The trade record displays `Accepted`. Any attempt to re-accept remains rejected.
 
 ## Phase 4 Offline Progression & AI Governments: Offline Test Steps
 

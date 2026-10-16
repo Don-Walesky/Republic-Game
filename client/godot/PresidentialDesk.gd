@@ -536,9 +536,10 @@ func apply_state(data: Dictionary) -> void:
 				if not res_msg.is_empty():
 					decision_result_label.text = "Decision Result: " + res_msg
 
-	# If connected to multiplayer network host, broadcast updated country snapshot
+	# If connected to multiplayer network host, broadcast updated country snapshot and update status
 	if _is_network_connected:
 		_send_local_country_snapshot()
+		_update_network_status_display()
 
 
 ## Formats the status label text to clearly display connection state, state file presence,
@@ -991,6 +992,16 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	_is_waiting_for_decision = true
 	_request_wait_timer = 0.0
 
+	if _is_network_connected:
+		var tax_net_msg := {
+			"type": "tax_decision",
+			"sender_id": _local_client_id,
+			"country_id": _local_client_id,
+			"tax_rate": proposed_rate_percent / 100.0,
+			"request_id": _active_request_id
+		}
+		_send_network_message(tax_net_msg)
+
 	var submit_msg := "Proposed %.1f%% tax submitted. Awaiting simulation..." % proposed_rate_percent
 	if decision_result_label:
 		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
@@ -1436,7 +1447,7 @@ func _on_disconnect_button_pressed() -> void:
 
 
 func _try_start_host_cli() -> void:
-	var args := ["run", "--project", "src/Republic.Cli", "--", "--host", "--port=7777"]
+	var args := ["run", "--project", "src/Republic.Cli", "--", "--host", "--port=7777", "--save-file=shared_world.json"]
 	var repo_root := ProjectSettings.globalize_path("res://../../")
 	if FileAccess.file_exists(repo_root + "src/Republic.Cli/Republic.Cli.csproj"):
 		var pid := OS.create_process("dotnet", args, false)
@@ -1539,8 +1550,7 @@ func _poll_network() -> void:
 		if _is_network_connecting:
 			_is_network_connecting = false
 			_is_network_connected = true
-			if network_status_label:
-				network_status_label.text = "Network: Connected to host"
+			_update_network_status_display()
 			if host_button:
 				host_button.disabled = true
 			if join_button:
@@ -1576,6 +1586,19 @@ func _poll_network() -> void:
 				network_status_label.text = "Network: Connection closed or unreachable"
 
 
+## Updates the multiplayer network status label to clearly indicate connection
+## and authoritative sovereign ownership of the local country.
+func _update_network_status_display() -> void:
+	if not network_status_label:
+		return
+	if not _is_network_connected:
+		return
+	var country_name := str(_latest_state.get("country_name", _latest_state.get("CountryName", "Republic of Arcadia")))
+	if country_name.is_empty() or country_name == "Unknown":
+		country_name = "Republic of Arcadia"
+	network_status_label.text = "Network: Connected as owner of [%s]" % country_name
+
+
 func _send_network_message(msg: Dictionary) -> void:
 	if _tcp_client == null or not _is_network_connected:
 		return
@@ -1603,6 +1626,7 @@ func _send_local_country_snapshot() -> void:
 		"country": snap
 	}
 	_send_network_message(msg)
+	_update_network_status_display()
 
 
 func _handle_network_message(msg: Dictionary) -> void:
@@ -1706,6 +1730,16 @@ func _handle_network_message(msg: Dictionary) -> void:
 					accept_trade_button.disabled = true
 				if reject_trade_button:
 					reject_trade_button.disabled = true
+
+	elif msg_type == "decision_result":
+		var success := bool(msg.get("success", false))
+		var result := str(msg.get("result", ""))
+		var status_msg := str(msg.get("status_message", ""))
+		if decision_result_label and not status_msg.is_empty():
+			decision_result_label.text = "Decision Result: [%s] %s" % [result, status_msg]
+		if status_label and not status_msg.is_empty():
+			status_label.text = _format_status_text("Host Result: " + status_msg, "None")
+		_update_network_status_display()
 
 
 func _on_recognize_button_pressed() -> void:

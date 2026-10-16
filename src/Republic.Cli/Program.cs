@@ -171,9 +171,15 @@ public static class Program
                 port = parsedPort;
             }
 
+            string? saveFilePath = args.FirstOrDefault(a => a.StartsWith("--save-file=") || a.StartsWith("--world-file="))?.Split('=', 2)[1].Trim();
+            if (string.IsNullOrEmpty(saveFilePath))
+            {
+                saveFilePath = "shared_world.json";
+            }
+
             var exportCountry = playerCountry ?? Country.Found("Republic of Arcadia", app.TimeSystem.CurrentRepublicTime);
-            Console.WriteLine($"[MULTIPLAYER HOST]: Starting Republic host on port {port}...");
-            using var host = new Republic.Core.Networking.RepublicHost(app.TimeSystem, port);
+            Console.WriteLine($"[MULTIPLAYER HOST]: Starting Republic host on port {port} with world file '{saveFilePath}'...");
+            using var host = new Republic.Core.Networking.RepublicHost(app.TimeSystem, port, saveFilePath);
             host.Start();
             host.SetHostCountry(new Republic.Core.Networking.CountrySnapshot
             {
