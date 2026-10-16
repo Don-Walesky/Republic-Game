@@ -83,11 +83,14 @@ func _init() -> void:
 	# Test 20: Refresh / Apply Pending flow and button
 	all_passed = test_refresh_and_apply_pending_flow(desk) and all_passed
 
+	# Test 21: Phase 2 Multiplayer networking UI controls, shared clock sync, and peer country state
+	all_passed = test_multiplayer_networking_and_country_sync(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 20 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 21 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -1272,6 +1275,110 @@ func test_refresh_and_apply_pending_flow(desk: Control) -> bool:
 
 	print("  [OK]: RefreshButton and apply_pending_or_refresh() successfully verified.")
 	return true
+
+
+func test_multiplayer_networking_and_country_sync(desk: Control) -> bool:
+	print("\n--- Test 21: Phase 2 Multiplayer Networking UI & Country State Sync ---")
+
+	# 1. Verify presence and types of multiplayer UI nodes
+	if desk.host_button == null:
+		printerr("[FAIL]: HostButton not found or bound on PresidentialDesk.")
+		return false
+	if desk.join_button == null:
+		printerr("[FAIL]: JoinButton not found or bound on PresidentialDesk.")
+		return false
+	if desk.address_line_edit == null:
+		printerr("[FAIL]: AddressLineEdit not found or bound on PresidentialDesk.")
+		return false
+	if desk.disconnect_button == null:
+		printerr("[FAIL]: DisconnectButton not found or bound on PresidentialDesk.")
+		return false
+	if desk.network_status_label == null:
+		printerr("[FAIL]: NetworkStatusLabel not found or bound on PresidentialDesk.")
+		return false
+	if desk.foreign_country_name_label == null:
+		printerr("[FAIL]: ForeignCountryNameLabel not found or bound on PresidentialDesk.")
+		return false
+	if desk.foreign_country_treasury_label == null:
+		printerr("[FAIL]: ForeignCountryTreasuryLabel not found or bound on PresidentialDesk.")
+		return false
+	if desk.foreign_country_approval_label == null:
+		printerr("[FAIL]: ForeignCountryApprovalLabel not found or bound on PresidentialDesk.")
+		return false
+	if desk.shared_clock_label == null:
+		printerr("[FAIL]: SharedClockLabel not found or bound on PresidentialDesk.")
+		return false
+
+	# 2. Test shared clock sync handling
+	var clock_msg := {
+		"type": "clock",
+		"sender_id": "host",
+		"clock": {
+			"tick": 120,
+			"day": 5,
+			"time_string": "14:00 WAT",
+			"is_paused": false
+		}
+	}
+	desk._handle_network_message(clock_msg)
+	if not desk.shared_clock_label.text.contains("Day 5 - 14:00 WAT (Tick 120)"):
+		printerr("[FAIL]: SharedClockLabel failed to update with network clock sync: " + desk.shared_clock_label.text)
+		return false
+
+	# 3. Test peer country state snapshot handling
+	var peer_msg := {
+		"type": "country",
+		"sender_id": "peer_player_2",
+		"country": {
+			"id": "peer_player_2",
+			"name": "Republic of Valoria",
+			"treasury": "R 42,000,000,000",
+			"approval": "68.5%",
+			"tax_rate": 0.20
+		}
+	}
+	desk._handle_network_message(peer_msg)
+	if not desk.foreign_country_name_label.text.contains("Republic of Valoria"):
+		printerr("[FAIL]: ForeignCountryNameLabel did not display peer country name: " + desk.foreign_country_name_label.text)
+		return false
+	if not desk.foreign_country_treasury_label.text.contains("R 42,000,000,000"):
+		printerr("[FAIL]: ForeignCountryTreasuryLabel did not display peer treasury: " + desk.foreign_country_treasury_label.text)
+		return false
+	if not desk.foreign_country_approval_label.text.contains("68.5%"):
+		printerr("[FAIL]: ForeignCountryApprovalLabel did not display peer approval: " + desk.foreign_country_approval_label.text)
+		return false
+
+	# 4. Test self reflection rejection (should not overwrite peer with own ID)
+	var self_msg := {
+		"type": "country",
+		"sender_id": desk._local_client_id,
+		"country": {
+			"id": desk._local_client_id,
+			"name": "Self Sovereign",
+			"treasury": "$100",
+			"approval": "10%"
+		}
+	}
+	desk._handle_network_message(self_msg)
+	if desk.foreign_country_name_label.text.contains("Self Sovereign"):
+		printerr("[FAIL]: Foreign country label should not display local client's own reflection!")
+		return false
+
+	# 5. Test disconnect reset behavior
+	desk.disconnect_network()
+	if not desk.foreign_country_name_label.text.contains("[None Connected]"):
+		printerr("[FAIL]: ForeignCountryNameLabel did not reset after disconnect: " + desk.foreign_country_name_label.text)
+		return false
+	if not desk.shared_clock_label.text.contains("[Local Clock]"):
+		printerr("[FAIL]: SharedClockLabel did not reset after disconnect: " + desk.shared_clock_label.text)
+		return false
+	if not desk.network_status_label.text.contains("Disconnected"):
+		printerr("[FAIL]: NetworkStatusLabel did not reflect disconnected state: " + desk.network_status_label.text)
+		return false
+
+	print("  [OK]: Phase 2 multiplayer UI controls, shared clock sync, and peer country display verified.")
+	return true
+
 
 
 

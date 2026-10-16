@@ -138,3 +138,64 @@ To run the automated Godot test suite verifying missing state safety, corrupt JS
 ```bash
 godot --headless -s test_presidential_desk.gd
 ```
+
+---
+
+## Phase 2 Multiplayer: Running Two Connected Clients (Host & Join)
+
+Phase 2 establishes the minimal multiplayer foundation in `Republic.Core/Networking` allowing two sovereign players to connect, synchronize to a shared simulation world clock, and view each other's national state in real time.
+
+### Multiplayer Architecture
+- **Host**: A lightweight TCP listener (`RepublicHost`) running on localhost (default port `7777`). Manages the single authoritative `RepublicTime` clock and relays state between sovereign clients.
+- **Client**: `StreamPeerTCP` non-blocking socket loop in Godot (`PresidentialDesk.gd`) connecting via `RepublicNetworkClient` protocol.
+- **Shared World Clock**: The host periodically broadcasts ticks (`NetworkClockSnapshot`), updating the synchronized `SharedWorldClock` label on all connected desks.
+- **State Synchronization**: When a sovereign state loads or updates (e.g. following a tax policy decision), a lightweight `CountrySnapshot` (`id`, `name`, `treasury`, `approval`, `tax_rate`) is automatically broadcast to connected peers.
+
+### Exact Local Test Steps
+
+#### Step 1 — Start the Network Host
+You can start the host in either of two ways:
+- **Option A (Terminal CLI Host)**:
+  Run in your terminal at repository root:
+  ```bash
+  dotnet run --project src/Republic.Cli -- --host --port=7777
+  ```
+- **Option B (Directly from Godot)**:
+  Click the **Host (Port 7777)** button in the Presidential Desk interface (it will automatically launch the background CLI host and connect).
+
+#### Step 2 — Run Client 1 (Player 1 Desk)
+1. Run the Presidential Desk scene in Godot (**F5** or `Play Scene`).
+2. If using the CLI host, click **Join** with address `127.0.0.1:7777`.
+3. Verify connection status displays:
+   `Network: Connected to host`
+4. Verify the **Shared World Clock** begins ticking:
+   `Shared World Clock: Day 0 - 02:00 WAT (Tick 2)`
+
+#### Step 3 — Run Client 2 (Player 2 Desk)
+1. In a second terminal or Godot instance, launch the second client (optionally providing a separate state file or client identifier):
+   ```bash
+   # From repository root:
+   godot client/godot/project.godot -- --client-id=valoria_sovereign --state-file=client/godot/presidential_desk_state_p2.json
+   ```
+   *(If running standard two windows on the same machine, Godot will assign distinct client IDs automatically).*
+2. Ensure the address field contains `127.0.0.1:7777` and click **Join**.
+3. Verify connection status on Client 2 displays:
+   `Network: Connected to host`
+
+#### Step 4 — Confirm Mutual Visibility & Synchronization
+1. **On Client 1**:
+   Under **Foreign Sovereign State (Connected Peer)**, verify:
+   - **Foreign Country**: Displays Client 2's nation name (e.g. `Republic of Valoria` or Sovereign name).
+   - **Treasury**: Displays Client 2's treasury balance.
+   - **Approval**: Displays Client 2's approval rating.
+2. **On Client 2**:
+   Under **Foreign Sovereign State (Connected Peer)**, verify:
+   - **Foreign Country**: Displays Client 1's nation name (e.g. `Republic of Arcadia`).
+   - **Treasury**: Displays Client 1's treasury balance.
+   - **Approval**: Displays Client 1's approval rating.
+3. **On Both Desks**:
+   - The **Shared World Clock** shows the exact same simulation day, time string, and tick number.
+   - When Player 1 enacts a tax decision on their desk, their updated treasury and approval are immediately broadcast to Player 2's desk.
+
+#### Step 5 — Disconnect
+Click **Disconnect** on either client. The interface immediately clears foreign country metrics, resets the clock to local mode, and resumes single-player local operation.

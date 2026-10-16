@@ -29,6 +29,17 @@ func _get_required_node(node_path: String) -> Node:
 @onready var refresh_button: Button = _get_required_node("VBoxContainer/DecisionControlsHBox/RefreshButton") as Button
 @onready var decision_result_label: Label = _get_required_node("VBoxContainer/DecisionResultLabel") as Label
 
+## Multiplayer Networking Controls & Display
+@onready var host_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/HostButton") as Button
+@onready var join_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/JoinButton") as Button
+@onready var address_line_edit: LineEdit = _get_required_node("VBoxContainer/MultiplayerControlsHBox/AddressLineEdit") as LineEdit
+@onready var disconnect_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/DisconnectButton") as Button
+@onready var network_status_label: Label = _get_required_node("VBoxContainer/NetworkStatusLabel") as Label
+@onready var foreign_country_name_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryNameLabel") as Label
+@onready var foreign_country_treasury_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryTreasuryLabel") as Label
+@onready var foreign_country_approval_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryApprovalLabel") as Label
+@onready var shared_clock_label: Label = _get_required_node("VBoxContainer/SharedClockLabel") as Label
+
 ## File paths scanned for authoritative Republic simulation state
 const DEFAULT_STATE_PATHS: Array[String] = [
 	"res://presidential_desk_state.json",
@@ -52,8 +63,23 @@ var _is_waiting_for_decision: bool = false
 var _active_request_id: String = ""
 var _request_wait_timer: float = 0.0
 
+## Multiplayer network session state
+var _tcp_client: StreamPeerTCP = null
+var _is_network_connected: bool = false
+var _is_network_connecting: bool = false
+var _network_read_buffer: String = ""
+var _local_client_id: String = ""
+var _peer_country_id: String = ""
+var _is_hosting_process: bool = false
+var _host_process_pid: int = -1
+
 
 func _ready() -> void:
+	if _local_client_id.is_empty():
+		_local_client_id = "client_" + str(Time.get_ticks_msec())
+	for arg in OS.get_cmdline_args():
+		if arg.begins_with("--client-id="):
+			_local_client_id = arg.substr("--client-id=".length()).strip_edges()
 	_init_controls()
 	_wire_signals()
 	refresh()
@@ -93,6 +119,33 @@ func _init_controls() -> void:
 	if decision_result_label == null:
 		decision_result_label = _get_required_node("VBoxContainer/DecisionResultLabel") as Label
 
+	if host_button == null:
+		host_button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/HostButton") as Button
+	if join_button == null:
+		join_button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/JoinButton") as Button
+	if address_line_edit == null:
+		address_line_edit = _get_required_node("VBoxContainer/MultiplayerControlsHBox/AddressLineEdit") as LineEdit
+	if disconnect_button == null:
+		disconnect_button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/DisconnectButton") as Button
+	if network_status_label == null:
+		network_status_label = _get_required_node("VBoxContainer/NetworkStatusLabel") as Label
+	if foreign_country_name_label == null:
+		foreign_country_name_label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryNameLabel") as Label
+	if foreign_country_treasury_label == null:
+		foreign_country_treasury_label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryTreasuryLabel") as Label
+	if foreign_country_approval_label == null:
+		foreign_country_approval_label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryApprovalLabel") as Label
+	if shared_clock_label == null:
+		shared_clock_label = _get_required_node("VBoxContainer/SharedClockLabel") as Label
+
+	if not _is_network_connected and not _is_network_connecting:
+		if host_button:
+			host_button.disabled = false
+		if join_button:
+			join_button.disabled = false
+		if disconnect_button:
+			disconnect_button.disabled = true
+
 	# Ensure SpinBox and buttons remain completely usable even if state file is temporarily missing (unless waiting for decision)
 	if not _is_waiting_for_decision:
 		if proposed_rate_spinbox:
@@ -115,6 +168,12 @@ func _wire_signals() -> void:
 		cancel_button.pressed.connect(_on_cancel_button_pressed)
 	if refresh_button and not refresh_button.pressed.is_connected(_on_refresh_button_pressed):
 		refresh_button.pressed.connect(_on_refresh_button_pressed)
+	if host_button and not host_button.pressed.is_connected(_on_host_button_pressed):
+		host_button.pressed.connect(_on_host_button_pressed)
+	if join_button and not join_button.pressed.is_connected(_on_join_button_pressed):
+		join_button.pressed.connect(_on_join_button_pressed)
+	if disconnect_button and not disconnect_button.pressed.is_connected(_on_disconnect_button_pressed):
+		disconnect_button.pressed.connect(_on_disconnect_button_pressed)
 
 
 func _process(delta: float) -> void:
@@ -157,6 +216,9 @@ func _process(delta: float) -> void:
 	if _poll_timer >= poll_interval:
 		_poll_timer = 0.0
 		_check_for_live_updates()
+
+	# 3. Poll multiplayer network stream
+	_poll_network()
 
 
 
@@ -298,6 +360,10 @@ func apply_state(data: Dictionary) -> void:
 				var res_msg := str(result_data.get("message", ""))
 				if not res_msg.is_empty():
 					decision_result_label.text = "Decision Result: " + res_msg
+
+	# If connected to multiplayer network host, broadcast updated country snapshot
+	if _is_network_connected:
+		_send_local_country_snapshot()
 
 
 ## Formats the status label text to clearly display connection state, state file presence,
@@ -828,3 +894,223 @@ func _read_result_file() -> Dictionary:
 				if parsed is Dictionary and not parsed.is_empty():
 					return parsed
 	return {}
+
+
+## -----------------------------------------------------------------------------
+## PHASE 2 MULTIPLAYER NETWORKING METHODS
+## -----------------------------------------------------------------------------
+
+func _on_host_button_pressed() -> void:
+	if network_status_label:
+		network_status_label.text = "Network: Starting host & connecting..."
+	_try_start_host_cli()
+	var port := 7777
+	if address_line_edit and not address_line_edit.text.is_empty():
+		var parts := address_line_edit.text.split(":")
+		if parts.size() >= 2 and parts[1].is_valid_int():
+			port = int(parts[1])
+	_connect_to_network("127.0.0.1", port)
+
+
+func _on_join_button_pressed() -> void:
+	var host := "127.0.0.1"
+	var port := 7777
+	if address_line_edit and not address_line_edit.text.is_empty():
+		var addr_text := address_line_edit.text.strip_edges()
+		if ":" in addr_text:
+			var parts := addr_text.split(":")
+			host = parts[0].strip_edges()
+			if parts.size() > 1 and parts[1].is_valid_int():
+				port = int(parts[1])
+		else:
+			host = addr_text
+
+	if network_status_label:
+		network_status_label.text = "Network: Joining %s:%d..." % [host, port]
+	_connect_to_network(host, port)
+
+
+func _on_disconnect_button_pressed() -> void:
+	disconnect_network()
+
+
+func _try_start_host_cli() -> void:
+	var args := ["run", "--project", "src/Republic.Cli", "--", "--host", "--port=7777"]
+	var repo_root := ProjectSettings.globalize_path("res://../../")
+	if FileAccess.file_exists(repo_root + "src/Republic.Cli/Republic.Cli.csproj"):
+		var pid := OS.create_process("dotnet", args, false)
+		if pid > 0:
+			_host_process_pid = pid
+			_is_hosting_process = true
+
+
+func _connect_to_network(host: String, port: int) -> void:
+	if _tcp_client != null:
+		disconnect_network()
+
+	_tcp_client = StreamPeerTCP.new()
+	var err := _tcp_client.connect_to_host(host, port)
+	if err != OK:
+		if network_status_label:
+			network_status_label.text = "Network: Failed to connect to %s:%d (Error %d)" % [host, port, err]
+		_tcp_client = null
+		return
+
+	_is_network_connecting = true
+	_is_network_connected = false
+	_network_read_buffer = ""
+	if host_button:
+		host_button.disabled = true
+	if join_button:
+		join_button.disabled = true
+	if disconnect_button:
+		disconnect_button.disabled = false
+
+
+func disconnect_network() -> void:
+	if _tcp_client != null:
+		_tcp_client.disconnect_from_host()
+		_tcp_client = null
+	_is_network_connected = false
+	_is_network_connecting = false
+	_network_read_buffer = ""
+	_peer_country_id = ""
+
+	if _is_hosting_process and _host_process_pid > 0:
+		OS.kill(_host_process_pid)
+		_host_process_pid = -1
+		_is_hosting_process = false
+
+	if network_status_label:
+		network_status_label.text = "Network: Disconnected (Single-player local mode)"
+	if host_button:
+		host_button.disabled = false
+	if join_button:
+		join_button.disabled = false
+	if disconnect_button:
+		disconnect_button.disabled = true
+
+	_reset_foreign_country_display()
+
+
+func _reset_foreign_country_display() -> void:
+	if foreign_country_name_label:
+		foreign_country_name_label.text = "Foreign Country: [None Connected]"
+	if foreign_country_treasury_label:
+		foreign_country_treasury_label.text = "Treasury: [N/A]"
+	if foreign_country_approval_label:
+		foreign_country_approval_label.text = "Approval: [N/A]"
+	if shared_clock_label:
+		shared_clock_label.text = "Shared World Clock: [Local Clock]"
+
+
+func _poll_network() -> void:
+	if _tcp_client == null:
+		return
+
+	_tcp_client.poll()
+	var status := _tcp_client.get_status()
+
+	if status == StreamPeerTCP.STATUS_CONNECTING:
+		return
+
+	if status == StreamPeerTCP.STATUS_CONNECTED:
+		if _is_network_connecting:
+			_is_network_connecting = false
+			_is_network_connected = true
+			if network_status_label:
+				network_status_label.text = "Network: Connected to host"
+			if host_button:
+				host_button.disabled = true
+			if join_button:
+				join_button.disabled = true
+			if disconnect_button:
+				disconnect_button.disabled = false
+			_send_local_country_snapshot()
+
+		var avail := _tcp_client.get_available_bytes()
+		if avail > 0:
+			var incoming_str := _tcp_client.get_utf8_string(avail)
+			_network_read_buffer += incoming_str
+
+			while "\n" in _network_read_buffer:
+				var newline_pos := _network_read_buffer.find("\n")
+				var line := _network_read_buffer.substr(0, newline_pos).strip_edges()
+				_network_read_buffer = _network_read_buffer.substr(newline_pos + 1)
+				if not line.is_empty():
+					var parsed: Variant = JSON.parse_string(line)
+					if parsed is Dictionary:
+						_handle_network_message(parsed)
+
+	elif status == StreamPeerTCP.STATUS_ERROR or status == StreamPeerTCP.STATUS_NONE:
+		if _is_network_connected or _is_network_connecting:
+			disconnect_network()
+			if network_status_label:
+				network_status_label.text = "Network: Connection closed or unreachable"
+
+
+func _send_network_message(msg: Dictionary) -> void:
+	if _tcp_client == null or not _is_network_connected:
+		return
+	var json_str := JSON.stringify(msg) + "\n"
+	_tcp_client.put_utf8_string(json_str)
+
+
+func _send_local_country_snapshot() -> void:
+	var country_name := str(_latest_state.get("country_name", _latest_state.get("CountryName", "Republic Sovereign")))
+	var treasury := str(_latest_state.get("treasury", _latest_state.get("Treasury", "$0")))
+	var approval := str(_latest_state.get("approval", _latest_state.get("Approval", "50.0%")))
+	var raw_tax_rate := float(_latest_state.get("income_tax_rate", _latest_state.get("IncomeTaxRate", 0.15)))
+
+	var snap := {
+		"id": _local_client_id,
+		"name": country_name,
+		"treasury": treasury,
+		"approval": approval,
+		"tax_rate": raw_tax_rate
+	}
+
+	var msg := {
+		"type": "country",
+		"sender_id": _local_client_id,
+		"country": snap
+	}
+	_send_network_message(msg)
+
+
+func _handle_network_message(msg: Dictionary) -> void:
+	var msg_type := str(msg.get("type", ""))
+	var sender_id := str(msg.get("sender_id", ""))
+
+	if msg_type == "clock":
+		var clock_data: Variant = msg.get("clock", {})
+		if clock_data is Dictionary:
+			var time_str := str(clock_data.get("time_string", ""))
+			var tick := int(clock_data.get("tick", 0))
+			var day := int(clock_data.get("day", 1))
+			if shared_clock_label:
+				shared_clock_label.text = "Shared World Clock: Day %d - %s (Tick %d)" % [day, time_str, tick]
+
+	elif msg_type == "country":
+		var snap: Variant = msg.get("country", {})
+		if snap is Dictionary:
+			var snap_id := str(snap.get("id", sender_id))
+			if snap_id != _local_client_id:
+				_peer_country_id = snap_id
+				var peer_name := str(snap.get("name", "Unknown Sovereign"))
+				var peer_treasury := str(snap.get("treasury", "N/A"))
+				var peer_approval := str(snap.get("approval", "N/A"))
+				if foreign_country_name_label:
+					foreign_country_name_label.text = "Foreign Country: " + peer_name
+				if foreign_country_treasury_label:
+					foreign_country_treasury_label.text = "Treasury: " + peer_treasury
+				if foreign_country_approval_label:
+					foreign_country_approval_label.text = "Approval: " + peer_approval
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
+		if _is_hosting_process and _host_process_pid > 0:
+			OS.kill(_host_process_pid)
+		disconnect_network()
+

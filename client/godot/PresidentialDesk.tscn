@@ -23,9 +23,9 @@ color = Color(0.0627451, 0.0823529, 0.117647, 1)
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
 offset_left = 40.0
-offset_top = 28.0
+offset_top = 24.0
 offset_right = 880.0
-offset_bottom = 620.0
+offset_bottom = 760.0
 theme_override_constants/separation = 8
 
 [node name="NationalOverviewHeader" type="Label" parent="VBoxContainer"]
@@ -139,3 +139,76 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Status: Waiting for Republic simulation state..."
 autowrap_mode = 2
+
+[node name="HSeparator3" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="MultiplayerHeader" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "=== MULTIPLAYER DIPLOMATIC LINK ==="
+
+[node name="MultiplayerControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HostButton" type="Button" parent="VBoxContainer/MultiplayerControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Host Game"
+
+[node name="JoinButton" type="Button" parent="VBoxContainer/MultiplayerControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Join Game"
+
+[node name="AddressLabel" type="Label" parent="VBoxContainer/MultiplayerControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Host Address:"
+
+[node name="AddressLineEdit" type="LineEdit" parent="VBoxContainer/MultiplayerControlsHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+theme_override_font_sizes/font_size = 14
+text = "127.0.0.1:7777"
+placeholder_text = "127.0.0.1:7777"
+
+[node name="DisconnectButton" type="Button" parent="VBoxContainer/MultiplayerControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Disconnect"
+
+[node name="NetworkStatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Network: Disconnected (Single-player local mode)"
+
+[node name="ForeignCountryHeader" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "--- Foreign Sovereign State (Connected Peer) ---"
+
+[node name="ForeignCountryGrid" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ForeignCountryNameLabel" type="Label" parent="VBoxContainer/ForeignCountryGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Peer Country: [No peer connected]"
+
+[node name="ForeignCountryTreasuryLabel" type="Label" parent="VBoxContainer/ForeignCountryGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Peer Treasury: [No peer connected]"
+
+[node name="ForeignCountryApprovalLabel" type="Label" parent="VBoxContainer/ForeignCountryGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Peer Approval: [No peer connected]"
+
+[node name="SharedClockLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Shared World Clock: [Local Clock]"

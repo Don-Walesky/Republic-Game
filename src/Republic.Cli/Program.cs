@@ -114,6 +114,44 @@ public static class Program
             return;
         }
 
+        // Handle multiplayer host mode if specified
+        if (args != null && (args.Contains("--host") || args.Contains("--multiplayer-host")))
+        {
+            int port = 7777;
+            var portArg = args.FirstOrDefault(a => a.StartsWith("--port="));
+            if (portArg != null && int.TryParse(portArg.Split('=', 2)[1].Trim(), out var parsedPort))
+            {
+                port = parsedPort;
+            }
+
+            var exportCountry = playerCountry ?? Country.Found("Republic of Arcadia", app.TimeSystem.CurrentRepublicTime);
+            Console.WriteLine($"[MULTIPLAYER HOST]: Starting Republic host on port {port}...");
+            using var host = new Republic.Core.Networking.RepublicHost(app.TimeSystem, port);
+            host.Start();
+            host.SetHostCountry(new Republic.Core.Networking.CountrySnapshot
+            {
+                Id = exportCountry.Id,
+                Name = exportCountry.Name,
+                Treasury = $"R {exportCountry.Treasury.LiquidBalance:N0}",
+                Approval = $"{exportCountry.HappinessRating:0.#}%",
+                TaxRate = $"{exportCountry.TaxPolicy.IncomeTaxRate * 100:0.#}%"
+            });
+
+            host.OnCountryUpdated += peerCountry =>
+            {
+                Console.WriteLine($"[MULTIPLAYER HOST]: Peer country synchronized: '{peerCountry.Name}' (Treasury: {peerCountry.Treasury}, Approval: {peerCountry.Approval})");
+            };
+
+            host.OnClientCountChanged += count =>
+            {
+                Console.WriteLine($"[MULTIPLAYER HOST]: Active connected peers: {count}");
+            };
+
+            Console.WriteLine($"[MULTIPLAYER HOST]: Hosting '{exportCountry.Name}'. Listening for clients on localhost:{port}. Press Enter or Ctrl+C to stop.");
+            Console.ReadLine();
+            return;
+        }
+
         // Handle one-off request processing if specified
         if (args != null && args.Contains("--process-request"))
         {
