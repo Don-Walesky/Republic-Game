@@ -86,11 +86,14 @@ func _init() -> void:
 	# Test 21: Phase 2 Multiplayer networking UI controls, shared clock sync, and peer country state
 	all_passed = test_multiplayer_networking_and_country_sync(desk) and all_passed
 
+	# Test 22: Phase 3 Diplomacy recognition, messaging, and trade proposal acceptance UI
+	all_passed = test_diplomacy_and_trade_sync(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 21 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 22 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -1378,6 +1381,199 @@ func test_multiplayer_networking_and_country_sync(desk: Control) -> bool:
 
 	print("  [OK]: Phase 2 multiplayer UI controls, shared clock sync, and peer country display verified.")
 	return true
+
+
+## Test 22: Phase 3 Diplomacy recognition, messaging, and trade proposal acceptance UI
+func test_diplomacy_and_trade_sync(desk: Node) -> bool:
+	print("[RUN]: Test 22 - Phase 3 Diplomacy recognition, messaging, and trade proposal acceptance UI...")
+
+	desk._init_controls()
+
+	# 1. Verify existence and binding of all Phase 3 diplomacy and trade nodes
+	if desk.diplomacy_status_label == null:
+		printerr("[FAIL]: DiplomacyStatusLabel not found or bound on PresidentialDesk.")
+		return false
+	if desk.recognize_button == null:
+		printerr("[FAIL]: RecognizeButton not found or bound on PresidentialDesk.")
+		return false
+	if desk.message_line_edit == null:
+		printerr("[FAIL]: MessageLineEdit not found or bound on PresidentialDesk.")
+		return false
+	if desk.send_message_button == null:
+		printerr("[FAIL]: SendMessageButton not found or bound on PresidentialDesk.")
+		return false
+	if desk.latest_message_label == null:
+		printerr("[FAIL]: LatestMessageLabel not found or bound on PresidentialDesk.")
+		return false
+	if desk.trade_amount_spinbox == null:
+		printerr("[FAIL]: TradeAmountSpinBox not found or bound on PresidentialDesk.")
+		return false
+	if desk.propose_trade_button == null:
+		printerr("[FAIL]: ProposeTradeButton not found or bound on PresidentialDesk.")
+		return false
+	if desk.accept_trade_button == null:
+		printerr("[FAIL]: AcceptTradeButton not found or bound on PresidentialDesk.")
+		return false
+	if desk.reject_trade_button == null:
+		printerr("[FAIL]: RejectTradeButton not found or bound on PresidentialDesk.")
+		return false
+	if desk.latest_trade_status_label == null:
+		printerr("[FAIL]: LatestTradeStatusLabel not found or bound on PresidentialDesk.")
+		return false
+
+	# 2. Test diplomacy recognition update via network sync
+	var dip_msg := {
+		"type": "diplomacy",
+		"sender_id": "host",
+		"diplomacy": {
+			"from_country_id": "peer_player_2",
+			"to_country_id": desk._local_client_id,
+			"status": "Recognized",
+			"is_recognized": true
+		}
+	}
+	desk._handle_network_message(dip_msg)
+	if not desk.diplomacy_status_label.text.contains("Recognized"):
+		printerr("[FAIL]: DiplomacyStatusLabel did not reflect recognized status: " + desk.diplomacy_status_label.text)
+		return false
+	if not desk._is_recognized:
+		printerr("[FAIL]: _is_recognized flag not set to true after recognition message.")
+		return false
+	if not desk.recognize_button.disabled:
+		printerr("[FAIL]: RecognizeButton should be disabled after recognition is established.")
+		return false
+
+	# 3. Test diplomatic message reception and display
+	var chat_msg := {
+		"type": "message",
+		"sender_id": "peer_player_2",
+		"message": {
+			"from": "Valoria Sovereign",
+			"to": desk._local_client_id,
+			"text": "Greetings from across the border.",
+			"timestamp": "14:30 WAT"
+		}
+	}
+	desk._handle_network_message(chat_msg)
+	if not desk.latest_message_label.text.contains("Greetings from across the border."):
+		printerr("[FAIL]: LatestMessageLabel did not display incoming message text: " + desk.latest_message_label.text)
+		return false
+	if not desk.latest_message_label.text.contains("Valoria Sovereign"):
+		printerr("[FAIL]: LatestMessageLabel did not display sender name: " + desk.latest_message_label.text)
+		return false
+
+	# 4. Test trade proposal from peer to local client (recipient perspective)
+	var trade_prop_msg := {
+		"type": "trade",
+		"sender_id": "peer_player_2",
+		"trade": {
+			"id": "prop-101",
+			"from": "peer_player_2",
+			"to": desk._local_client_id,
+			"amount": 50000000.0,
+			"resource": "Currency",
+			"status": "Pending"
+		}
+	}
+	desk._handle_network_message(trade_prop_msg)
+	if not desk.latest_trade_status_label.text.contains("Pending proposal"):
+		printerr("[FAIL]: LatestTradeStatusLabel did not reflect pending trade: " + desk.latest_trade_status_label.text)
+		return false
+	if desk.accept_trade_button.disabled:
+		printerr("[FAIL]: AcceptTradeButton should be enabled for trade proposal recipient.")
+		return false
+	if desk.reject_trade_button.disabled:
+		printerr("[FAIL]: RejectTradeButton should be enabled for trade proposal recipient.")
+		return false
+
+	# 5. Test trade proposal from local client to peer (proposer perspective)
+	var outgoing_prop := {
+		"type": "trade",
+		"sender_id": desk._local_client_id,
+		"trade": {
+			"id": "prop-102",
+			"from": desk._local_client_id,
+			"to": "peer_player_2",
+			"amount": 25000000.0,
+			"resource": "Currency",
+			"status": "Pending"
+		}
+	}
+	desk._handle_network_message(outgoing_prop)
+	if not desk.accept_trade_button.disabled:
+		printerr("[FAIL]: Proposer must not be allowed to accept their own trade proposal!")
+		return false
+	if not desk.reject_trade_button.disabled:
+		printerr("[FAIL]: Proposer must not be allowed to reject their own trade proposal!")
+		return false
+
+	# 6. Test trade acceptance & treasury adjustment
+	desk._latest_state = {
+		"treasury": "R 100,000,000",
+		"Treasury": "R 100,000,000",
+		"country_name": "Republic Sovereign"
+	}
+	desk.treasury_label.text = "Treasury: R 100,000,000"
+
+	var trade_accept_msg := {
+		"type": "trade",
+		"sender_id": "host",
+		"trade": {
+			"id": "prop-101",
+			"from": "peer_player_2",
+			"to": desk._local_client_id,
+			"amount": 50000000.0,
+			"resource": "Currency",
+			"status": "Accepted"
+		}
+	}
+	desk._handle_network_message(trade_accept_msg)
+	if not desk.latest_trade_status_label.text.contains("Accepted"):
+		printerr("[FAIL]: LatestTradeStatusLabel did not reflect accepted trade: " + desk.latest_trade_status_label.text)
+		return false
+	if not desk.accept_trade_button.disabled:
+		printerr("[FAIL]: AcceptTradeButton should be disabled after trade is resolved.")
+		return false
+	if not desk.reject_trade_button.disabled:
+		printerr("[FAIL]: RejectTradeButton should be disabled after trade is resolved.")
+		return false
+	if not desk.treasury_label.text.contains("150"):
+		printerr("[FAIL]: Local treasury was not adjusted on desk upon receiving accepted trade funds: " + desk.treasury_label.text)
+		return false
+
+	# 7. Test trade rejection
+	var trade_reject_msg := {
+		"type": "trade",
+		"sender_id": "peer_player_2",
+		"trade": {
+			"id": "prop-103",
+			"from": "peer_player_2",
+			"to": desk._local_client_id,
+			"amount": 10000000.0,
+			"resource": "Currency",
+			"status": "Rejected"
+		}
+	}
+	desk._handle_network_message(trade_reject_msg)
+	if not desk.latest_trade_status_label.text.contains("rejected"):
+		printerr("[FAIL]: LatestTradeStatusLabel did not reflect rejected trade: " + desk.latest_trade_status_label.text)
+		return false
+
+	# 8. Test disconnect reset behavior
+	desk.disconnect_network()
+	if not desk.diplomacy_status_label.text.contains("Unrecognized"):
+		printerr("[FAIL]: DiplomacyStatusLabel did not reset after disconnect: " + desk.diplomacy_status_label.text)
+		return false
+	if not desk.latest_message_label.text.contains("[No messages exchanged]"):
+		printerr("[FAIL]: LatestMessageLabel did not reset after disconnect: " + desk.latest_message_label.text)
+		return false
+	if not desk.latest_trade_status_label.text.contains("[No active proposal]"):
+		printerr("[FAIL]: LatestTradeStatusLabel did not reset after disconnect: " + desk.latest_trade_status_label.text)
+		return false
+
+	print("  [OK]: Phase 3 diplomacy recognition, messaging, and trade proposal acceptance UI verified.")
+	return true
+
 
 
 

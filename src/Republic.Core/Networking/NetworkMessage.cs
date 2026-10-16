@@ -31,4 +31,22 @@ public sealed record NetworkMessage
     /// </summary>
     [JsonPropertyName("country")]
     public CountrySnapshot? Country { get; init; }
+
+    /// <summary>
+    /// Gets the diplomatic recognition snapshot payload if <see cref="Type"/> is "diplomacy".
+    /// </summary>
+    [JsonPropertyName("diplomacy")]
+    public DiplomaticSnapshot? Diplomacy { get; init; }
+
+    /// <summary>
+    /// Gets the diplomatic message payload if <see cref="Type"/> is "message".
+    /// </summary>
+    [JsonPropertyName("message")]
+    public Republic.Core.World.DiplomaticMessage? Message { get; init; }
+
+    /// <summary>
+    /// Gets the trade proposal payload if <see cref="Type"/> is "trade".
+    /// </summary>
+    [JsonPropertyName("trade")]
+    public Republic.Core.World.TradeProposal? Trade { get; init; }
 }

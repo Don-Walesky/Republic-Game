@@ -25,7 +25,7 @@ layout_mode = 0
 offset_left = 40.0
 offset_top = 24.0
 offset_right = 880.0
-offset_bottom = 760.0
+offset_bottom = 1040.0
 theme_override_constants/separation = 8
 
 [node name="NationalOverviewHeader" type="Label" parent="VBoxContainer"]
@@ -212,3 +212,86 @@ text = "Peer Approval: [No peer connected]"
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Shared World Clock: [Local Clock]"
+
+[node name="HSeparator4" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="DiplomacyHeader" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "=== BILATERAL DIPLOMACY & TRADE ==="
+
+[node name="DiplomacyControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DiplomacyStatusLabel" type="Label" parent="VBoxContainer/DiplomacyControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Diplomatic Standing: Unrecognized"
+
+[node name="RecognizeButton" type="Button" parent="VBoxContainer/DiplomacyControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Recognize Country"
+
+[node name="MessageHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MessageLabel" type="Label" parent="VBoxContainer/MessageHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Diplomatic Cable:"
+
+[node name="MessageLineEdit" type="LineEdit" parent="VBoxContainer/MessageHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 0)
+theme_override_font_sizes/font_size = 14
+placeholder_text = "Type diplomatic dispatch here..."
+
+[node name="SendMessageButton" type="Button" parent="VBoxContainer/MessageHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Send Cable"
+
+[node name="LatestMessageLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Latest Dispatch: [No messages exchanged]"
+
+[node name="TradeControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TradeAmountLabel" type="Label" parent="VBoxContainer/TradeControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Trade Amount (REPU):"
+
+[node name="TradeAmountSpinBox" type="SpinBox" parent="VBoxContainer/TradeControlsHBox"]
+layout_mode = 2
+min_value = 1000000.0
+max_value = 100000000000.0
+step = 100000000.0
+value = 1000000000.0
+
+[node name="ProposeTradeButton" type="Button" parent="VBoxContainer/TradeControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Propose Trade"
+
+[node name="AcceptTradeButton" type="Button" parent="VBoxContainer/TradeControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Accept"
+
+[node name="RejectTradeButton" type="Button" parent="VBoxContainer/TradeControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Reject"
+
+[node name="LatestTradeStatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Trade Status: [No active proposal]"

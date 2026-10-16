@@ -25,6 +25,9 @@ public sealed class RepublicHost : IDisposable
     private readonly int _requestedPort;
     private readonly ConcurrentDictionary<string, ConnectedClient> _clients = new();
     private readonly ConcurrentDictionary<string, CountrySnapshot> _knownCountries = new();
+    private readonly ConcurrentDictionary<string, DiplomaticSnapshot> _diplomacy = new();
+    private readonly ConcurrentDictionary<string, Republic.Core.World.TradeProposal> _trades = new();
+    private readonly ConcurrentDictionary<string, Republic.Core.Economy.Treasury.RepuTreasury> _treasuries = new();
     private readonly CancellationTokenSource _cts = new();
 
     private TcpListener? _listener;
@@ -35,9 +38,29 @@ public sealed class RepublicHost : IDisposable
     private bool _disposed;
 
     /// <summary>
+    /// Gets the authoritative world state tracking entities, messages, and trade proposals.
+    /// </summary>
+    public Republic.Core.World.WorldState World { get; } = new();
+
+    /// <summary>
     /// Event invoked whenever a connected peer or host updates their country state snapshot.
     /// </summary>
     public event Action<CountrySnapshot>? OnCountryUpdated;
+
+    /// <summary>
+    /// Event invoked whenever a bilateral diplomatic recognition relation is updated.
+    /// </summary>
+    public event Action<DiplomaticSnapshot>? OnDiplomacyUpdated;
+
+    /// <summary>
+    /// Event invoked whenever a diplomatic message is received.
+    /// </summary>
+    public event Action<Republic.Core.World.DiplomaticMessage>? OnMessageReceived;
+
+    /// <summary>
+    /// Event invoked whenever a trade proposal is proposed, accepted, or rejected.
+    /// </summary>
+    public event Action<Republic.Core.World.TradeProposal>? OnTradeUpdated;
 
     /// <summary>
     /// Event invoked whenever the authoritative shared world clock is updated.
@@ -73,6 +96,16 @@ public sealed class RepublicHost : IDisposable
     /// Gets a dictionary of all known sovereign country snapshots received across the session.
     /// </summary>
     public IReadOnlyDictionary<string, CountrySnapshot> KnownCountries => _knownCountries;
+
+    /// <summary>
+    /// Gets a dictionary of active diplomatic recognition records.
+    /// </summary>
+    public IReadOnlyDictionary<string, DiplomaticSnapshot> KnownDiplomacy => _diplomacy;
+
+    /// <summary>
+    /// Gets a dictionary of active and resolved trade proposals.
+    /// </summary>
+    public IReadOnlyDictionary<string, Republic.Core.World.TradeProposal> KnownTrades => _trades;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RepublicHost"/> class.
@@ -153,6 +186,122 @@ public sealed class RepublicHost : IDisposable
     }
 
     /// <summary>
+    /// Registers a sovereign treasury with the host for authoritative trade settlement.
+    /// </summary>
+    public void RegisterTreasury(string countryId, Republic.Core.Economy.Treasury.RepuTreasury treasury)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
+        ArgumentNullException.ThrowIfNull(treasury);
+        _treasuries[countryId] = treasury;
+    }
+
+    /// <summary>
+    /// Registers a sovereign country with the host, wiring its treasury and recording it on the world state.
+    /// </summary>
+    public void RegisterCountry(Republic.Core.World.Models.Country country)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+        _treasuries[country.Id] = country.Treasury;
+        World.Countries.Add(country);
+    }
+
+    /// <summary>
+    /// Retrieves or initializes a sovereign treasury for the specified country identifier.
+    /// </summary>
+    public Republic.Core.Economy.Treasury.RepuTreasury GetOrCreateTreasury(string countryId, CountrySnapshot? snapshot = null)
+    {
+        if (_treasuries.TryGetValue(countryId, out var existing))
+        {
+            return existing;
+        }
+
+        var balance = ParseTreasuryBalance(snapshot?.Treasury);
+        var created = new Republic.Core.Economy.Treasury.RepuTreasury(balance, countryId);
+        _treasuries[countryId] = created;
+        return created;
+    }
+
+    private static double ParseTreasuryBalance(string? treasuryStr)
+    {
+        if (string.IsNullOrWhiteSpace(treasuryStr))
+        {
+            return 15_000_000_000.0;
+        }
+
+        var sb = new StringBuilder();
+        bool hasDot = false;
+        foreach (var c in treasuryStr)
+        {
+            if (char.IsAsciiDigit(c))
+            {
+                sb.Append(c);
+            }
+            else if (c == '.' && !hasDot)
+            {
+                sb.Append(c);
+                hasDot = true;
+            }
+        }
+
+        if (double.TryParse(sb.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+        {
+            return parsed;
+        }
+
+        return 15_000_000_000.0;
+    }
+
+    /// <summary>
+    /// Broadcasts a diplomatic recognition update to all connected peers.
+    /// </summary>
+    public void BroadcastDiplomacy(DiplomaticSnapshot diplomacy)
+    {
+        ArgumentNullException.ThrowIfNull(diplomacy);
+        var key = $"{diplomacy.FromCountryId}:{diplomacy.ToCountryId}";
+        _diplomacy[key] = diplomacy;
+        OnDiplomacyUpdated?.Invoke(diplomacy);
+        _ = BroadcastMessageAsync(new NetworkMessage
+        {
+            Type = "diplomacy",
+            SenderId = "host",
+            Diplomacy = diplomacy
+        });
+    }
+
+    /// <summary>
+    /// Broadcasts a diplomatic message to all connected peers and records it on the world state.
+    /// </summary>
+    public void BroadcastDiplomaticMessage(Republic.Core.World.DiplomaticMessage message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        World.Messages.Add(message);
+        OnMessageReceived?.Invoke(message);
+        _ = BroadcastMessageAsync(new NetworkMessage
+        {
+            Type = "message",
+            SenderId = "host",
+            Message = message
+        });
+    }
+
+    /// <summary>
+    /// Broadcasts a trade proposal to all connected peers and records it on the world state.
+    /// </summary>
+    public void BroadcastTradeProposal(Republic.Core.World.TradeProposal trade)
+    {
+        ArgumentNullException.ThrowIfNull(trade);
+        _trades[trade.Id] = trade;
+        World.TradeProposals.Add(trade);
+        OnTradeUpdated?.Invoke(trade);
+        _ = BroadcastMessageAsync(new NetworkMessage
+        {
+            Type = "trade",
+            SenderId = "host",
+            Trade = trade
+        });
+    }
+
+    /// <summary>
     /// Updates the authoritative simulation clock and broadcasts the new time to all connected client peers.
     /// </summary>
     public void UpdateClock(RepublicTime time, ulong tick = 0, bool isPaused = false)
@@ -216,6 +365,39 @@ public sealed class RepublicHost : IDisposable
                             }).ConfigureAwait(false);
                         }
 
+                        // 3. Send all active bilateral diplomatic recognition snapshots
+                        foreach (var dip in _diplomacy.Values)
+                        {
+                            await client.SendMessageAsync(new NetworkMessage
+                            {
+                                Type = "diplomacy",
+                                SenderId = "host",
+                                Diplomacy = dip
+                            }).ConfigureAwait(false);
+                        }
+
+                        // 4. Send all recent diplomatic messages
+                        foreach (var msg in World.Messages)
+                        {
+                            await client.SendMessageAsync(new NetworkMessage
+                            {
+                                Type = "message",
+                                SenderId = "host",
+                                Message = msg
+                            }).ConfigureAwait(false);
+                        }
+
+                        // 5. Send all active trade proposals
+                        foreach (var tr in _trades.Values)
+                        {
+                            await client.SendMessageAsync(new NetworkMessage
+                            {
+                                Type = "trade",
+                                SenderId = "host",
+                                Trade = tr
+                            }).ConfigureAwait(false);
+                        }
+
                         // Begin listening for incoming client messages
                         await HandleClientReadLoopAsync(client).ConfigureAwait(false);
                     });
@@ -267,9 +449,63 @@ public sealed class RepublicHost : IDisposable
                     if (message.Type == "country" && message.Country != null)
                     {
                         _knownCountries[message.Country.Id] = message.Country;
+                        GetOrCreateTreasury(message.Country.Id, message.Country);
                         OnCountryUpdated?.Invoke(message.Country);
 
                         // Broadcast foreign country state update to all other connected peers
+                        await BroadcastMessageAsync(message, excludeClientId: client.Id).ConfigureAwait(false);
+                    }
+                    else if (message.Type == "diplomacy" && message.Diplomacy != null)
+                    {
+                        var key = $"{message.Diplomacy.FromCountryId}:{message.Diplomacy.ToCountryId}";
+                        _diplomacy[key] = message.Diplomacy;
+                        OnDiplomacyUpdated?.Invoke(message.Diplomacy);
+
+                        await BroadcastMessageAsync(message, excludeClientId: client.Id).ConfigureAwait(false);
+                    }
+                    else if (message.Type == "message" && message.Message != null)
+                    {
+                        World.Messages.Add(message.Message);
+                        OnMessageReceived?.Invoke(message.Message);
+
+                        await BroadcastMessageAsync(message, excludeClientId: client.Id).ConfigureAwait(false);
+                    }
+                    else if (message.Type == "trade" && message.Trade != null)
+                    {
+                        var trade = message.Trade;
+                        _trades[trade.Id] = trade;
+
+                        if (string.Equals(trade.Status, Republic.Core.World.TradeProposalStatus.Accepted.ToString(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            var fromTreasury = GetOrCreateTreasury(trade.From);
+                            var toTreasury = GetOrCreateTreasury(trade.To);
+                            if (trade.Accept(fromTreasury, toTreasury))
+                            {
+                                if (_knownCountries.TryGetValue(trade.From, out var fromSnap))
+                                {
+                                    var updatedFrom = fromSnap with { Treasury = $"R {fromTreasury.Balance:N0}" };
+                                    _knownCountries[trade.From] = updatedFrom;
+                                    OnCountryUpdated?.Invoke(updatedFrom);
+                                    _ = BroadcastMessageAsync(new NetworkMessage { Type = "country", SenderId = "host", Country = updatedFrom });
+                                }
+
+                                if (_knownCountries.TryGetValue(trade.To, out var toSnap))
+                                {
+                                    var updatedTo = toSnap with { Treasury = $"R {toTreasury.Balance:N0}" };
+                                    _knownCountries[trade.To] = updatedTo;
+                                    OnCountryUpdated?.Invoke(updatedTo);
+                                    _ = BroadcastMessageAsync(new NetworkMessage { Type = "country", SenderId = "host", Country = updatedTo });
+                                }
+                            }
+                        }
+                        else if (string.Equals(trade.Status, Republic.Core.World.TradeProposalStatus.Rejected.ToString(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            trade.Reject();
+                        }
+
+                        World.TradeProposals.Add(trade);
+                        OnTradeUpdated?.Invoke(trade);
+
                         await BroadcastMessageAsync(message, excludeClientId: client.Id).ConfigureAwait(false);
                     }
                 }

@@ -40,6 +40,18 @@ func _get_required_node(node_path: String) -> Node:
 @onready var foreign_country_approval_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryApprovalLabel") as Label
 @onready var shared_clock_label: Label = _get_required_node("VBoxContainer/SharedClockLabel") as Label
 
+## Bilateral Diplomacy & Trade Controls
+@onready var diplomacy_status_label: Label = _get_required_node("VBoxContainer/DiplomacyControlsHBox/DiplomacyStatusLabel") as Label
+@onready var recognize_button: Button = _get_required_node("VBoxContainer/DiplomacyControlsHBox/RecognizeButton") as Button
+@onready var message_line_edit: LineEdit = _get_required_node("VBoxContainer/MessageHBox/MessageLineEdit") as LineEdit
+@onready var send_message_button: Button = _get_required_node("VBoxContainer/MessageHBox/SendMessageButton") as Button
+@onready var latest_message_label: Label = _get_required_node("VBoxContainer/LatestMessageLabel") as Label
+@onready var trade_amount_spinbox: SpinBox = _get_required_node("VBoxContainer/TradeControlsHBox/TradeAmountSpinBox") as SpinBox
+@onready var propose_trade_button: Button = _get_required_node("VBoxContainer/TradeControlsHBox/ProposeTradeButton") as Button
+@onready var accept_trade_button: Button = _get_required_node("VBoxContainer/TradeControlsHBox/AcceptTradeButton") as Button
+@onready var reject_trade_button: Button = _get_required_node("VBoxContainer/TradeControlsHBox/RejectTradeButton") as Button
+@onready var latest_trade_status_label: Label = _get_required_node("VBoxContainer/LatestTradeStatusLabel") as Label
+
 ## File paths scanned for authoritative Republic simulation state
 const DEFAULT_STATE_PATHS: Array[String] = [
 	"res://presidential_desk_state.json",
@@ -72,6 +84,10 @@ var _local_client_id: String = ""
 var _peer_country_id: String = ""
 var _is_hosting_process: bool = false
 var _host_process_pid: int = -1
+
+## Bilateral diplomacy and trade state
+var _is_recognized: bool = false
+var _active_trade_proposal: Dictionary = {}
 
 
 func _ready() -> void:
@@ -138,6 +154,27 @@ func _init_controls() -> void:
 	if shared_clock_label == null:
 		shared_clock_label = _get_required_node("VBoxContainer/SharedClockLabel") as Label
 
+	if diplomacy_status_label == null:
+		diplomacy_status_label = _get_required_node("VBoxContainer/DiplomacyControlsHBox/DiplomacyStatusLabel") as Label
+	if recognize_button == null:
+		recognize_button = _get_required_node("VBoxContainer/DiplomacyControlsHBox/RecognizeButton") as Button
+	if message_line_edit == null:
+		message_line_edit = _get_required_node("VBoxContainer/MessageHBox/MessageLineEdit") as LineEdit
+	if send_message_button == null:
+		send_message_button = _get_required_node("VBoxContainer/MessageHBox/SendMessageButton") as Button
+	if latest_message_label == null:
+		latest_message_label = _get_required_node("VBoxContainer/LatestMessageLabel") as Label
+	if trade_amount_spinbox == null:
+		trade_amount_spinbox = _get_required_node("VBoxContainer/TradeControlsHBox/TradeAmountSpinBox") as SpinBox
+	if propose_trade_button == null:
+		propose_trade_button = _get_required_node("VBoxContainer/TradeControlsHBox/ProposeTradeButton") as Button
+	if accept_trade_button == null:
+		accept_trade_button = _get_required_node("VBoxContainer/TradeControlsHBox/AcceptTradeButton") as Button
+	if reject_trade_button == null:
+		reject_trade_button = _get_required_node("VBoxContainer/TradeControlsHBox/RejectTradeButton") as Button
+	if latest_trade_status_label == null:
+		latest_trade_status_label = _get_required_node("VBoxContainer/LatestTradeStatusLabel") as Label
+
 	if not _is_network_connected and not _is_network_connecting:
 		if host_button:
 			host_button.disabled = false
@@ -145,6 +182,16 @@ func _init_controls() -> void:
 			join_button.disabled = false
 		if disconnect_button:
 			disconnect_button.disabled = true
+		if recognize_button:
+			recognize_button.disabled = true
+		if send_message_button:
+			send_message_button.disabled = true
+		if propose_trade_button:
+			propose_trade_button.disabled = true
+		if accept_trade_button:
+			accept_trade_button.disabled = true
+		if reject_trade_button:
+			reject_trade_button.disabled = true
 
 	# Ensure SpinBox and buttons remain completely usable even if state file is temporarily missing (unless waiting for decision)
 	if not _is_waiting_for_decision:
@@ -174,6 +221,16 @@ func _wire_signals() -> void:
 		join_button.pressed.connect(_on_join_button_pressed)
 	if disconnect_button and not disconnect_button.pressed.is_connected(_on_disconnect_button_pressed):
 		disconnect_button.pressed.connect(_on_disconnect_button_pressed)
+	if recognize_button and not recognize_button.pressed.is_connected(_on_recognize_button_pressed):
+		recognize_button.pressed.connect(_on_recognize_button_pressed)
+	if send_message_button and not send_message_button.pressed.is_connected(_on_send_message_button_pressed):
+		send_message_button.pressed.connect(_on_send_message_button_pressed)
+	if propose_trade_button and not propose_trade_button.pressed.is_connected(_on_propose_trade_button_pressed):
+		propose_trade_button.pressed.connect(_on_propose_trade_button_pressed)
+	if accept_trade_button and not accept_trade_button.pressed.is_connected(_on_accept_trade_button_pressed):
+		accept_trade_button.pressed.connect(_on_accept_trade_button_pressed)
+	if reject_trade_button and not reject_trade_button.pressed.is_connected(_on_reject_trade_button_pressed):
+		reject_trade_button.pressed.connect(_on_reject_trade_button_pressed)
 
 
 func _process(delta: float) -> void:
@@ -1002,6 +1059,24 @@ func _reset_foreign_country_display() -> void:
 		foreign_country_approval_label.text = "Approval: [N/A]"
 	if shared_clock_label:
 		shared_clock_label.text = "Shared World Clock: [Local Clock]"
+	if diplomacy_status_label:
+		diplomacy_status_label.text = "Diplomatic Standing: Unrecognized"
+	if recognize_button:
+		recognize_button.disabled = true
+	if latest_message_label:
+		latest_message_label.text = "Latest Dispatch: [No messages exchanged]"
+	if send_message_button:
+		send_message_button.disabled = true
+	if latest_trade_status_label:
+		latest_trade_status_label.text = "Trade Status: [No active proposal]"
+	if accept_trade_button:
+		accept_trade_button.disabled = true
+	if reject_trade_button:
+		reject_trade_button.disabled = true
+	if propose_trade_button:
+		propose_trade_button.disabled = true
+	_is_recognized = false
+	_active_trade_proposal = {}
 
 
 func _poll_network() -> void:
@@ -1026,6 +1101,12 @@ func _poll_network() -> void:
 				join_button.disabled = true
 			if disconnect_button:
 				disconnect_button.disabled = false
+			if recognize_button and not _is_recognized:
+				recognize_button.disabled = false
+			if send_message_button:
+				send_message_button.disabled = false
+			if propose_trade_button:
+				propose_trade_button.disabled = false
 			_send_local_country_snapshot()
 
 		var avail := _tcp_client.get_available_bytes()
@@ -1106,6 +1187,196 @@ func _handle_network_message(msg: Dictionary) -> void:
 					foreign_country_treasury_label.text = "Treasury: " + peer_treasury
 				if foreign_country_approval_label:
 					foreign_country_approval_label.text = "Approval: " + peer_approval
+
+	elif msg_type == "diplomacy":
+		var dip_data: Variant = msg.get("diplomacy", {})
+		if dip_data is Dictionary:
+			var status := str(dip_data.get("status", "Unrecognized"))
+			_is_recognized = (status == "Recognized")
+			if diplomacy_status_label:
+				diplomacy_status_label.text = "Diplomatic Standing: " + status
+			if recognize_button and _is_recognized:
+				recognize_button.disabled = true
+
+	elif msg_type == "message":
+		var message_data: Variant = msg.get("message", {})
+		if message_data is Dictionary:
+			var from_str := str(message_data.get("from", "Diplomat"))
+			var text_str := str(message_data.get("text", ""))
+			var ts_str := str(message_data.get("timestamp", ""))
+			if latest_message_label:
+				latest_message_label.text = "Latest Dispatch [%s]: %s - \"%s\"" % [ts_str, from_str, text_str]
+
+	elif msg_type == "trade":
+		var trade_data: Variant = msg.get("trade", {})
+		if trade_data is Dictionary:
+			_active_trade_proposal = trade_data
+			var from_id := str(trade_data.get("from", ""))
+			var to_id := str(trade_data.get("to", ""))
+			var amount := float(trade_data.get("amount", 0.0))
+			var status := str(trade_data.get("status", "Pending"))
+
+			var amount_str := "R " + str(amount)
+			if amount >= 1000000000.0:
+				amount_str = "R %.1fB" % (amount / 1000000000.0)
+			elif amount >= 1000000.0:
+				amount_str = "R %.1fM" % (amount / 1000000.0)
+
+			if status == "Pending":
+				if latest_trade_status_label:
+					latest_trade_status_label.text = "Trade Status: Pending proposal (%s) from %s" % [amount_str, from_id]
+				if from_id != _local_client_id:
+					if accept_trade_button:
+						accept_trade_button.disabled = false
+					if reject_trade_button:
+						reject_trade_button.disabled = false
+				else:
+					if accept_trade_button:
+						accept_trade_button.disabled = true
+					if reject_trade_button:
+						reject_trade_button.disabled = true
+
+			elif status == "Accepted":
+				if latest_trade_status_label:
+					latest_trade_status_label.text = "Trade Status: Accepted - %s transferred from %s to %s" % [amount_str, from_id, to_id]
+				if accept_trade_button:
+					accept_trade_button.disabled = true
+				if reject_trade_button:
+					reject_trade_button.disabled = true
+				_apply_local_trade_treasury_adjustment(from_id, to_id, amount)
+
+			elif status == "Rejected":
+				if latest_trade_status_label:
+					latest_trade_status_label.text = "Trade Status: Proposal rejected"
+				if accept_trade_button:
+					accept_trade_button.disabled = true
+				if reject_trade_button:
+					reject_trade_button.disabled = true
+
+
+func _on_recognize_button_pressed() -> void:
+	var peer_id := _peer_country_id if not _peer_country_id.is_empty() else "peer"
+	var dip := {
+		"from_country_id": _local_client_id,
+		"to_country_id": peer_id,
+		"status": "Recognized"
+	}
+	var msg := {
+		"type": "diplomacy",
+		"sender_id": _local_client_id,
+		"diplomacy": dip
+	}
+	_send_network_message(msg)
+	_handle_network_message(msg)
+
+
+func _on_send_message_button_pressed() -> void:
+	if message_line_edit == null or message_line_edit.text.strip_edges().is_empty():
+		return
+	var text := message_line_edit.text.strip_edges()
+	var peer_id := _peer_country_id if not _peer_country_id.is_empty() else "peer"
+	var sender_name := str(_latest_state.get("country_name", _local_client_id))
+	var msg_payload := {
+		"from": sender_name,
+		"to": peer_id,
+		"text": text,
+		"timestamp": Time.get_time_string_from_system()
+	}
+	var net_msg := {
+		"type": "message",
+		"sender_id": _local_client_id,
+		"message": msg_payload
+	}
+	_send_network_message(net_msg)
+	_handle_network_message(net_msg)
+	message_line_edit.text = ""
+
+
+func _on_propose_trade_button_pressed() -> void:
+	var amount := 1000000000.0
+	if trade_amount_spinbox:
+		amount = trade_amount_spinbox.value
+	var peer_id := _peer_country_id if not _peer_country_id.is_empty() else "peer"
+	var trade_id := "tr_" + str(Time.get_ticks_msec())
+	var trade_payload := {
+		"id": trade_id,
+		"from": _local_client_id,
+		"to": peer_id,
+		"amount": amount,
+		"resource": "REPU",
+		"status": "Pending"
+	}
+	var net_msg := {
+		"type": "trade",
+		"sender_id": _local_client_id,
+		"trade": trade_payload
+	}
+	_send_network_message(net_msg)
+	_handle_network_message(net_msg)
+
+
+func _on_accept_trade_button_pressed() -> void:
+	if _active_trade_proposal.is_empty():
+		return
+	_active_trade_proposal["status"] = "Accepted"
+	var net_msg := {
+		"type": "trade",
+		"sender_id": _local_client_id,
+		"trade": _active_trade_proposal
+	}
+	_send_network_message(net_msg)
+	_handle_network_message(net_msg)
+
+
+func _on_reject_trade_button_pressed() -> void:
+	if _active_trade_proposal.is_empty():
+		return
+	_active_trade_proposal["status"] = "Rejected"
+	var net_msg := {
+		"type": "trade",
+		"sender_id": _local_client_id,
+		"trade": _active_trade_proposal
+	}
+	_send_network_message(net_msg)
+	_handle_network_message(net_msg)
+
+
+func _apply_local_trade_treasury_adjustment(from_id: String, to_id: String, amount: float) -> void:
+	# If local client is sender or recipient and we have a treasury displayed, update it locally
+	if treasury_label and not treasury_label.text.is_empty():
+		var raw_str := treasury_label.text.replace("Treasury: R ", "").replace("Treasury: ", "").replace(",", "").strip_edges()
+		if raw_str.is_valid_float():
+			var cur_val := raw_str.to_float()
+			if from_id == _local_client_id:
+				cur_val = max(0.0, cur_val - amount)
+				treasury_label.text = "Treasury: R " + _format_number_commas(cur_val)
+			elif to_id == _local_client_id:
+				cur_val += amount
+				treasury_label.text = "Treasury: R " + _format_number_commas(cur_val)
+
+	if foreign_country_treasury_label and not foreign_country_treasury_label.text.is_empty():
+		var peer_raw := foreign_country_treasury_label.text.replace("Treasury: R ", "").replace("Treasury: ", "").replace(",", "").strip_edges()
+		if peer_raw.is_valid_float():
+			var cur_peer := peer_raw.to_float()
+			if from_id == _peer_country_id:
+				cur_peer = max(0.0, cur_peer - amount)
+				foreign_country_treasury_label.text = "Treasury: R " + _format_number_commas(cur_peer)
+			elif to_id == _peer_country_id:
+				cur_peer += amount
+				foreign_country_treasury_label.text = "Treasury: R " + _format_number_commas(cur_peer)
+
+
+func _format_number_commas(val: float) -> String:
+	var int_val := int(round(val))
+	var s := str(int_val)
+	var res := ""
+	var count := 0
+	for i in range(s.length() - 1, -1, -1):
+		res = s[i] + res
+		count += 1
+		if count % 3 == 0 and i > 0:
+			res = "," + res
+	return res
 
 
 func _notification(what: int) -> void:

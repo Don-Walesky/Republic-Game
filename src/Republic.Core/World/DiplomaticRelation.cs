@@ -143,6 +143,27 @@ public sealed record DiplomaticRelation
     public static implicit operator bool(DiplomaticRelation? relation) => relation is not null;
 
     /// <summary>
+    /// Returns a new diplomatic relation record with the specified recognition status.
+    /// Either party can update recognition status in bilateral diplomacy.
+    /// </summary>
+    public DiplomaticRelation WithStatus(DiplomaticRelationStatus status, RepublicTime? boundary = null)
+    {
+        return this with
+        {
+            Status = status,
+            RecognizedBoundary = status == DiplomaticRelationStatus.Recognized
+                ? (boundary ?? RecognizedBoundary ?? OpenedBoundary)
+                : null
+        };
+    }
+
+    /// <summary>
+    /// Recognizes this bilateral diplomatic relation.
+    /// </summary>
+    public DiplomaticRelation Recognize(RepublicTime? boundary = null) =>
+        WithStatus(DiplomaticRelationStatus.Recognized, boundary);
+
+    /// <summary>
     /// Formats the diplomatic relation for dashboard and diagnostic inspection.
     /// </summary>
     public override string ToString()

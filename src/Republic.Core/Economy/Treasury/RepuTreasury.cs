@@ -93,6 +93,11 @@ public sealed class RepuTreasury
     }
 
     /// <summary>
+    /// Gets the current liquid accumulated balance (alias for <see cref="Balance"/>).
+    /// </summary>
+    public double LiquidBalance => _balance;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="RepuTreasury"/> class with a default zero balance.
     /// </summary>
     public RepuTreasury()

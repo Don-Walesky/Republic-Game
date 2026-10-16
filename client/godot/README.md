@@ -199,3 +199,78 @@ You can start the host in either of two ways:
 
 #### Step 5 — Disconnect
 Click **Disconnect** on either client. The interface immediately clears foreign country metrics, resets the clock to local mode, and resumes single-player local operation.
+
+---
+
+## Phase 3 Diplomacy & Economy: Two-Player Test Steps (Recognition, Messaging, & Trade)
+
+Phase 3 builds on the multiplayer foundation to provide bilateral diplomatic recognition, diplomatic message broadcasts (cables), and trade proposals with authoritative treasury adjustments between two connected players.
+
+### Prerequisites
+1. Start the host:
+   ```bash
+   dotnet run --project src/Republic.Cli -- --host --port=7777
+   ```
+2. Launch Client 1 (Player 1) and click **Join** (`127.0.0.1:7777`).
+3. Launch Client 2 (Player 2) and click **Join** (`127.0.0.1:7777`).
+4. Both players verify connection and peer country detection under **Foreign Sovereign State (Connected Peer)**.
+
+---
+
+### Step 1 — Diplomatic Recognition
+1. Under **Diplomacy & Trade Relations**, verify the baseline standing displays:
+   `Diplomatic Standing: Unrecognized`
+2. Player 1 or Player 2 clicks **Recognize Country**.
+3. **Verification on Both Desks**:
+   - The standing immediately updates to: `Diplomatic Standing: Recognized`.
+   - The **Recognize Country** button disables to indicate bilateral recognition is active.
+
+---
+
+### Step 2 — Exchange Diplomatic Cables / Messages
+1. In the **MessageLineEdit** text field, Player 1 types a diplomatic dispatch:
+   `"We offer peace, cooperation, and open borders."`
+2. Player 1 clicks **Send Cable**.
+3. **Verification on Both Desks**:
+   - Under **Latest Dispatch**, both Player 1 and Player 2 see:
+     `Latest Dispatch [12:00 WAT]: Player1_ID - "We offer peace, cooperation, and open borders."`
+4. Player 2 can type a reply (e.g., `"Agreed. Let us discuss mutual trade."`) and click **Send Cable**. The latest dispatch immediately updates on both desks.
+
+---
+
+### Step 3 — Propose a Trade (Currency Transfer)
+1. On Player 1's desk, locate the **Trade Controls** section.
+2. In the **Trade Amount (REPU)** spinbox, select an amount (e.g. `50,000,000.0` or `50000000`).
+3. Player 1 clicks **Propose Trade**.
+4. **Verification**:
+   - **Player 1 (Proposer Desk)**:
+     - Latest trade status displays: `Trade Status: Pending proposal (R 50.0M) from Player1_ID`.
+     - The **Accept Trade** and **Reject Trade** buttons remain disabled (a nation cannot accept its own trade proposal).
+   - **Player 2 (Recipient Desk)**:
+     - Latest trade status displays: `Trade Status: Pending proposal (R 50.0M) from Player1_ID`.
+     - The **Accept Trade** and **Reject Trade** buttons become enabled.
+
+---
+
+### Step 4 — Accept the Trade & Verify Authoritative Treasury Updates
+1. On Player 2's desk, click **Accept Trade**.
+2. **Authoritative Execution**:
+   - The host evaluates the transaction against `Republic.Core` treasury rules (`TryWithdraw` on Player 1 and `Deposit` on Player 2).
+   - If Player 1 has sufficient liquid reserves, the funds are safely debited and credited.
+3. **Verification on Both Desks**:
+   - Both desks display:
+     `Trade Status: Accepted - R 50.0M transferred from Player1_ID to Player2_ID`
+   - Both **Accept Trade** and **Reject Trade** buttons disable.
+   - **Player 1's Desk**: Treasury balance reflects the `R 50,000,000` deduction.
+   - **Player 2's Desk**: Treasury balance reflects the `R 50,000,000` addition.
+
+---
+
+### Step 5 — Alternate Flow: Rejecting a Trade Proposal
+1. Propose another trade from either desk.
+2. On the recipient's desk, click **Reject Trade**.
+3. **Verification on Both Desks**:
+   - Latest trade status displays: `Trade Status: Proposal rejected`.
+   - Neither country's treasury balance is modified.
+   - Buttons are reset.
+

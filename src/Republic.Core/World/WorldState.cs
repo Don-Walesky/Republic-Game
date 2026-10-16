@@ -34,4 +34,14 @@ public sealed class WorldState
     /// Gets or sets the sovereign countries registered in the world.
     /// </summary>
     public List<Republic.Core.World.Models.Country> Countries { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the registered diplomatic messages exchanged between countries.
+    /// </summary>
+    public List<DiplomaticMessage> Messages { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the registered trade proposals in the world.
+    /// </summary>
+    public List<TradeProposal> TradeProposals { get; set; } = new();
 }

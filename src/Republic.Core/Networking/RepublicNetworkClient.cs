@@ -41,6 +41,21 @@ public sealed class RepublicNetworkClient : IDisposable
     public event Action<CountrySnapshot>? OnCountryReceived;
 
     /// <summary>
+    /// Event invoked whenever a diplomatic recognition update is received from the host.
+    /// </summary>
+    public event Action<DiplomaticSnapshot>? OnDiplomacyReceived;
+
+    /// <summary>
+    /// Event invoked whenever a diplomatic message is received.
+    /// </summary>
+    public event Action<Republic.Core.World.DiplomaticMessage>? OnMessageReceived;
+
+    /// <summary>
+    /// Event invoked whenever a trade proposal is received or updated.
+    /// </summary>
+    public event Action<Republic.Core.World.TradeProposal>? OnTradeReceived;
+
+    /// <summary>
     /// Event invoked when the client is disconnected from the host.
     /// </summary>
     public event Action? OnDisconnected;
@@ -101,6 +116,60 @@ public sealed class RepublicNetworkClient : IDisposable
         await SendMessageAsync(message).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Sends a diplomatic recognition update to the host.
+    /// </summary>
+    public async Task SendDiplomacyAsync(DiplomaticSnapshot diplomacy)
+    {
+        ArgumentNullException.ThrowIfNull(diplomacy);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var message = new NetworkMessage
+        {
+            Type = "diplomacy",
+            SenderId = ClientId,
+            Diplomacy = diplomacy
+        };
+
+        await SendMessageAsync(message).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a diplomatic message to the host to be recorded and broadcast.
+    /// </summary>
+    public async Task SendDiplomaticMessageAsync(Republic.Core.World.DiplomaticMessage message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var netMsg = new NetworkMessage
+        {
+            Type = "message",
+            SenderId = ClientId,
+            Message = message
+        };
+
+        await SendMessageAsync(netMsg).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sends a trade proposal, acceptance, or rejection to the host.
+    /// </summary>
+    public async Task SendTradeProposalAsync(Republic.Core.World.TradeProposal trade)
+    {
+        ArgumentNullException.ThrowIfNull(trade);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var message = new NetworkMessage
+        {
+            Type = "trade",
+            SenderId = ClientId,
+            Trade = trade
+        };
+
+        await SendMessageAsync(message).ConfigureAwait(false);
+    }
+
     private async Task SendMessageAsync(NetworkMessage message)
     {
         if (_writer == null || !IsConnected)
@@ -154,6 +223,18 @@ public sealed class RepublicNetworkClient : IDisposable
                     {
                         _knownCountries[message.Country.Id] = message.Country;
                         OnCountryReceived?.Invoke(message.Country);
+                    }
+                    else if (message.Type == "diplomacy" && message.Diplomacy != null)
+                    {
+                        OnDiplomacyReceived?.Invoke(message.Diplomacy);
+                    }
+                    else if (message.Type == "message" && message.Message != null)
+                    {
+                        OnMessageReceived?.Invoke(message.Message);
+                    }
+                    else if (message.Type == "trade" && message.Trade != null)
+                    {
+                        OnTradeReceived?.Invoke(message.Trade);
                     }
                 }
                 catch (JsonException)
