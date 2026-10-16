@@ -259,4 +259,73 @@ public sealed class RepublicNetworkingTests
         Assert.Equal(4_000_000_000.0, clientTreasury.Balance);
         Assert.Equal(11_000_000_000.0, hostTreasury.Balance);
     }
+
+    [Fact]
+    public async Task Host_TwoClients_ConnectDisconnectReconnect_HandlesPeerCountsAndSync()
+    {
+        // Arrange: Start host on dynamic port
+        using var host = new RepublicHost(port: 0);
+        host.Start();
+
+        var hostCountry = new CountrySnapshot
+        {
+            Id = "host-country",
+            Name = "Republic of Arcadia",
+            Treasury = "R 10,000,000,000",
+            Approval = "70.0%",
+            TaxRate = "25.0%"
+        };
+        host.SetHostCountry(hostCountry);
+
+        var countTcs2 = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var countTcs1 = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var countTcsReconnected = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        int currentCount = 0;
+        host.OnClientCountChanged += c =>
+        {
+            currentCount = c;
+            if (c == 2 && !countTcs2.Task.IsCompleted)
+            {
+                countTcs2.TrySetResult(c);
+            }
+            else if (c == 1 && countTcs2.Task.IsCompleted && !countTcs1.Task.IsCompleted)
+            {
+                countTcs1.TrySetResult(c);
+            }
+            else if (c == 2 && countTcs1.Task.IsCompleted && !countTcsReconnected.Task.IsCompleted)
+            {
+                countTcsReconnected.TrySetResult(c);
+            }
+        };
+
+        // Act 1: Connect Client 1 and Client 2
+        var client1 = new RepublicNetworkClient();
+        var client2 = new RepublicNetworkClient();
+
+        await client1.ConnectAsync("127.0.0.1", host.Port);
+        await client2.ConnectAsync("127.0.0.1", host.Port);
+
+        var completed2 = await Task.WhenAny(countTcs2.Task, Task.Delay(4000));
+        Assert.Same(countTcs2.Task, completed2);
+        Assert.Equal(2, await countTcs2.Task);
+
+        // Act 2: Disconnect Client 1
+        client1.Dispose();
+
+        var completed1 = await Task.WhenAny(countTcs1.Task, Task.Delay(4000));
+        Assert.Same(countTcs1.Task, completed1);
+        Assert.Equal(1, await countTcs1.Task);
+
+        // Act 3: Reconnect Client 1 (new socket)
+        using var client1Reconnected = new RepublicNetworkClient();
+        await client1Reconnected.ConnectAsync("127.0.0.1", host.Port);
+
+        var completedReconnected = await Task.WhenAny(countTcsReconnected.Task, Task.Delay(4000));
+        Assert.Same(countTcsReconnected.Task, completedReconnected);
+        Assert.Equal(2, await countTcsReconnected.Task);
+
+        client2.Dispose();
+    }
 }
+

@@ -49,7 +49,7 @@ layout_mode = 0
 offset_left = 40.0
 offset_top = 24.0
 offset_right = 960.0
-offset_bottom = 1450.0
+offset_bottom = 1950.0
 theme_override_constants/separation = 8
 
 [node name="NationalOverviewHeader" type="Label" parent="VBoxContainer"]
@@ -97,6 +97,106 @@ text = "Election: [No State Loaded]"
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Income Tax Rate: [No State Loaded]"
+
+[node name="ActiveProjectLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Active Project: [No State Loaded]"
+
+[node name="NationalBriefingPanel" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="NationalBriefingVBox" type="VBoxContainer" parent="VBoxContainer/NationalBriefingPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BriefingHeader" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 15
+text = "=== NATIONAL BRIEFING (SITUATION REPORT) ==="
+
+[node name="BriefingGrid" type="GridContainer" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 4
+
+[node name="BriefingTreasuryLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Treasury: [No State Loaded]"
+
+[node name="BriefingApprovalLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Approval: [No State Loaded]"
+
+[node name="BriefingStabilityLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Stability: [No State Loaded]"
+
+[node name="BriefingActiveProjectLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Active Project: None"
+
+[node name="BriefingLatestDecisionLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "Latest Decision: [No decisions recorded]"
+autowrap_mode = 2
+
+[node name="HSeparator0" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="CountrySetupHeader" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 15
+text = "=== SOVEREIGN COUNTRY FOUNDING & SAVE MANAGEMENT ==="
+
+[node name="CountrySetupHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CountryNameLabel" type="Label" parent="VBoxContainer/CountrySetupHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Republic Name:"
+
+[node name="CountryNameLineEdit" type="LineEdit" parent="VBoxContainer/CountrySetupHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+theme_override_font_sizes/font_size = 14
+text = "Republic of Arcadia"
+placeholder_text = "Must contain 'Republic'"
+
+[node name="FoundCountryButton" type="Button" parent="VBoxContainer/CountrySetupHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Found Republic"
+
+[node name="SavePathLineEdit" type="LineEdit" parent="VBoxContainer/CountrySetupHBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+theme_override_font_sizes/font_size = 14
+text = "republic_game.sav"
+placeholder_text = "republic_game.sav"
+
+[node name="ResumeSaveButton" type="Button" parent="VBoxContainer/CountrySetupHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Resume Save"
+
+[node name="CountrySetupStatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 13
+text = "Founder Status: Ready (Found a named Republic or resume from a save file)"
 
 [node name="HSeparator1" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
@@ -153,6 +253,34 @@ theme_override_font_sizes/font_size = 14
 text = "Decision Result: No decision made"
 
 [node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="ProjectDecisionHeader" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 16
+text = "=== PRESIDENTIAL DECISION: NATIONAL PROJECTS ==="
+
+[node name="ProjectControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="StartRoadProjectButton" type="Button" parent="VBoxContainer/ProjectControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Initiate National Road Program (Cost: R500,000)"
+
+[node name="CancelProjectButton" type="Button" parent="VBoxContainer/ProjectControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cancel Project Order"
+
+[node name="ProjectStatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Project Status: Ready (Select a development program to commission)"
+
+[node name="HSeparatorProjects" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
 
 [node name="StatusHeader" type="Label" parent="VBoxContainer"]

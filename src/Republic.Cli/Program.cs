@@ -66,6 +66,45 @@ public static class Program
             ai.ProcessDueCycles(aiCountry, app.TimeSystem.CurrentRepublicTime, new NationalYieldCycleService());
         }
 
+        // Handle CLI presidential country creation / load path
+        if (args != null && (args.Any(a => a.StartsWith("--create-country=") || a.StartsWith("--found-country="))))
+        {
+            var nameArg = args.FirstOrDefault(a => a.StartsWith("--create-country=") || a.StartsWith("--found-country="));
+            var countryName = nameArg?.Split('=', 2)[1].Trim() ?? string.Empty;
+            string? customStatePath = args.FirstOrDefault(a => a.StartsWith("--state-file="))?.Split('=', 2)[1].Trim();
+            string? customSavePath = args.FirstOrDefault(a => a.StartsWith("--save-file="))?.Split('=', 2)[1].Trim();
+
+            var result = PresidentialDeskBridge.CreateOrLoadCountry(countryName, customStatePath, customSavePath);
+            Console.WriteLine($"[PRESIDENTIAL ACTION]: Result={result.Result}, Success={result.Success}, Country={result.CountryName}, Message=\"{result.Message}\"");
+            return;
+        }
+
+        // Handle CLI presidential load/resume save path
+        if (args != null && (args.Any(a => a.StartsWith("--load-save=") || a.StartsWith("--resume-save="))))
+        {
+            var saveArg = args.FirstOrDefault(a => a.StartsWith("--load-save=") || a.StartsWith("--resume-save="));
+            var saveFile = saveArg?.Split('=', 2)[1].Trim() ?? string.Empty;
+            string? customStatePath = args.FirstOrDefault(a => a.StartsWith("--state-file="))?.Split('=', 2)[1].Trim();
+
+            var result = PresidentialDeskBridge.ResumeFromSave(saveFile, customStatePath);
+            Console.WriteLine($"[PRESIDENTIAL ACTION]: Result={result.Result}, Success={result.Success}, Country={result.CountryName}, Message=\"{result.Message}\"");
+            return;
+        }
+
+        // Handle CLI presidential project decision request if specified
+        if (args != null && (args.Any(a => a.StartsWith("--start-project=") || a.StartsWith("--apply-project=")) || args.Contains("--cancel-project")))
+        {
+            var projectArg = args.FirstOrDefault(a => a.StartsWith("--start-project=") || a.StartsWith("--apply-project="));
+            var isConfirmed = !args.Contains("--cancel-project") && !args.Contains("--confirmed=false");
+            var projectType = projectArg != null ? projectArg.Split('=', 2)[1].Trim() : "Road";
+            string? customStatePath = args.FirstOrDefault(a => a.StartsWith("--state-file="))?.Split('=', 2)[1].Trim();
+            string? customSavePath = args.FirstOrDefault(a => a.StartsWith("--save-file="))?.Split('=', 2)[1].Trim();
+
+            var result = PresidentialDeskBridge.ApplyProjectDecision(projectType, confirmed: isConfirmed, stateFilePath: customStatePath, saveFilePath: customSavePath);
+            Console.WriteLine($"[PROJECT DECISION]: Result={result.Result}, Success={result.Success}, ActiveProject={result.ActiveProject}, Treasury=R {result.TreasuryBalance:N0}, Message=\"{result.Message}\"");
+            return;
+        }
+
         // Handle CLI presidential taxation decision request if specified
         if (args != null && (args.Any(a => a.StartsWith("--apply-tax=") || a.StartsWith("--tax-rate=")) || args.Contains("--cancel-tax")))
         {
@@ -114,7 +153,7 @@ public static class Program
             Console.WriteLine("[GODOT BRIDGE]: Watching for presidential decision requests (presidential_desk_request.json)...");
             using var watcher = PresidentialDeskBridge.CreateRequestWatcher(customStatePath, customSavePath, result =>
             {
-                Console.WriteLine($"[TAX DECISION]: Result={result.Result}, Success={result.Success}, TaxRate={result.IncomeTaxRate * 100:0.#}%, Approval={result.ApprovalRating:0.#}%, Message=\"{result.Message}\"");
+                Console.WriteLine($"[PRESIDENTIAL ACTION]: Result={result.Result}, Success={result.Success}, Country={result.CountryName}, TaxRate={result.IncomeTaxRate * 100:0.#}%, ActiveProject={result.ActiveProject}, Message=\"{result.Message}\"");
             });
 
             Console.WriteLine("[GODOT BRIDGE]: Active. Press Enter or Ctrl+C to stop.");
@@ -169,7 +208,7 @@ public static class Program
             var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(customStatePath, customSavePath);
             if (result != null)
             {
-                Console.WriteLine($"[TAX DECISION]: Result={result.Result}, Success={result.Success}, TaxRate={result.IncomeTaxRate * 100:0.#}%, Approval={result.ApprovalRating:0.#}%, Message=\"{result.Message}\"");
+                Console.WriteLine($"[PRESIDENTIAL ACTION]: Result={result.Result}, Success={result.Success}, Country={result.CountryName}, TaxRate={result.IncomeTaxRate * 100:0.#}%, ActiveProject={result.ActiveProject}, Message=\"{result.Message}\"");
             }
             else
             {

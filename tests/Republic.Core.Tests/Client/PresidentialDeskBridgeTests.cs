@@ -2459,6 +2459,105 @@ public sealed class PresidentialDeskBridgeTests
             if (File.Exists(tempResultFile)) File.Delete(tempResultFile);
         }
     }
+
+    [Fact]
+    public void SinglePlayerLoop_CreateCountry_ApplyTaxDecision_ReloadWithChangeIntact()
+    {
+        var testId = Guid.NewGuid().ToString("N");
+        var tempDir = Path.Combine(Path.GetTempPath(), $"Republic_Phase2_Test_{testId}");
+        Directory.CreateDirectory(tempDir);
+
+        var tempStateFile = Path.Combine(tempDir, "presidential_desk_state.json");
+        var tempSaveFile = Path.Combine(tempDir, "republic_game.sav");
+
+        try
+        {
+            // 1. Invalid country name without 'Republic' must be rejected
+            var invalidCreation = PresidentialDeskBridge.CreateOrLoadCountry(
+                "Kingdom of Arcadia",
+                tempStateFile,
+                tempSaveFile);
+            Assert.False(invalidCreation.Success);
+            Assert.Equal("InvalidName", invalidCreation.Result);
+            Assert.Contains("must contain the whole word 'Republic'", invalidCreation.Message);
+
+            // 2. Create valid sovereign country
+            var countryCreation = PresidentialDeskBridge.CreateOrLoadCountry(
+                "Republic of Arcadia",
+                tempStateFile,
+                tempSaveFile);
+            Assert.True(countryCreation.Success);
+            Assert.Equal("Success", countryCreation.Result);
+            Assert.Equal("Republic of Arcadia", countryCreation.CountryName);
+            Assert.Equal(0.25, countryCreation.IncomeTaxRate);
+            Assert.Equal("None", countryCreation.ActiveProject);
+            Assert.True(File.Exists(tempStateFile));
+            Assert.True(File.Exists(tempSaveFile));
+
+            var initialSnapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(initialSnapshot);
+            Assert.Equal("Republic of Arcadia", initialSnapshot.CountryName);
+            Assert.Equal(0.25, initialSnapshot.IncomeTaxRate);
+            Assert.Equal("None", initialSnapshot.ActiveProject);
+            var initialTreasury = initialSnapshot.TreasuryBalance;
+            Assert.True(initialTreasury > 0);
+
+            // 3. Apply a tax decision (hike to 32%)
+            var taxResult = PresidentialDeskBridge.ApplyTaxDecision(
+                0.32,
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+            Assert.True(taxResult.Success);
+            Assert.Equal("Success", taxResult.Result);
+            Assert.Equal(0.32, taxResult.IncomeTaxRate);
+            Assert.Equal("Republic of Arcadia", taxResult.CountryName);
+
+            // 4. Apply a project decision (National Road Program, costing R500,000)
+            var projectResult = PresidentialDeskBridge.ApplyProjectDecision(
+                "Road",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+            Assert.True(projectResult.Success);
+            Assert.Equal("Success", projectResult.Result);
+            Assert.Equal("National Road Program", projectResult.ActiveProject);
+            Assert.Equal(initialTreasury - 500_000.0, projectResult.TreasuryBalance);
+
+            // 5. Verify live state file reloads with changes intact
+            var liveSnapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(liveSnapshot);
+            Assert.Equal("Republic of Arcadia", liveSnapshot.CountryName);
+            Assert.Equal(0.32, liveSnapshot.IncomeTaxRate);
+            Assert.Contains("National Road Program", liveSnapshot.ActiveProject);
+            Assert.Equal(initialTreasury - 500_000.0, liveSnapshot.TreasuryBalance);
+
+            // 6. Resume from authoritative .sav file and verify persistence
+            var resumeResult = PresidentialDeskBridge.ResumeFromSave(
+                tempSaveFile,
+                tempStateFile);
+            Assert.True(resumeResult.Success);
+            Assert.Equal("Success", resumeResult.Result);
+            Assert.Equal("Republic of Arcadia", resumeResult.CountryName);
+            Assert.Equal(0.32, resumeResult.IncomeTaxRate);
+            Assert.Equal("National Road Program", resumeResult.ActiveProject);
+            Assert.Equal(initialTreasury - 500_000.0, resumeResult.TreasuryBalance);
+
+            var reloadedSaveSnapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(reloadedSaveSnapshot);
+            Assert.Equal("Republic of Arcadia", reloadedSaveSnapshot.CountryName);
+            Assert.Equal(0.32, reloadedSaveSnapshot.IncomeTaxRate);
+            Assert.Contains("National Road Program", reloadedSaveSnapshot.ActiveProject);
+            Assert.Equal(initialTreasury - 500_000.0, reloadedSaveSnapshot.TreasuryBalance);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
 }
 
 

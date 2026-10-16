@@ -133,6 +133,12 @@ public sealed record PresidentialDeskSnapshot
     public string LatestDecisionResult { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets the name and status of the current active national development project, or "None" if no project is active.
+    /// </summary>
+    [JsonPropertyName("active_project")]
+    public string ActiveProject { get; init; } = "None";
+
+    /// <summary>
     /// Gets the simulation engine tick at which this state snapshot was exported.
     /// </summary>
     [JsonPropertyName("simulation_tick")]
@@ -196,6 +202,11 @@ public sealed record PresidentialDeskSnapshot
             ? lastAiDecision
             : (country.LastAIDecision ?? "[No AI decisions recorded]");
 
+        var activeProj = country.Projects?.FirstOrDefault(p => p.IsActive);
+        string activeProjectText = activeProj != null
+            ? $"{activeProj.Name} (Finishes: {activeProj.FinishBoundary})"
+            : "None";
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -211,6 +222,7 @@ public sealed record PresidentialDeskSnapshot
             CorporateTaxRate = taxPolicy.CorporateTaxRate,
             ImportTariffRate = taxPolicy.ImportTariffRate,
             LatestDecisionResult = decisionResult,
+            ActiveProject = activeProjectText,
             SimulationDay = simulationTime.DayNumber,
             SimulationTime = conciseTime,
             SimulationTimeDetailed = detailedTime,

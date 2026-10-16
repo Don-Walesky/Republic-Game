@@ -111,6 +111,54 @@ public static class PresidentialWorkspaceHandler
     }
 
     /// <summary>
+    /// Initiates a National Road Program development project for the specified sovereign country.
+    /// Validates fund availability and explicit executive confirmation before deducting treasury or mutating state.
+    /// </summary>
+    public static ExecutiveActionOutcome InitiateRoadProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidCountry,
+                "Cannot initiate development project: invalid or missing sovereign country.");
+        }
+
+        if (!confirmed)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.Cancelled,
+                "Project initiation cancelled by executive order. Zero funds deducted.");
+        }
+
+        if (country.Projects.OfType<NationalRoadProject>().Any(p => p.IsActive))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.AlreadyActive,
+                "A National Road Program is already under active construction.");
+        }
+
+        if (country.Treasury.Balance < NationalRoadProject.StandardCost)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InsufficientFunds,
+                $"Insufficient sovereign funds. Required: {RepuTreasury.Format(NationalRoadProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        }
+
+        var project = country.StartRoadProject(simulationTime);
+        if (project == null)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.PrerequisitesNotMet,
+                "Unable to start National Road Program. Verify sovereign treasury and country prerequisites.");
+        }
+
+        return new ExecutiveActionOutcome(
+            ExecutiveActionResult.Success,
+            $"National Road Program construction commenced. Deducted {RepuTreasury.Format(project.Cost)} from sovereign treasury. Scheduled completion: {project.FinishBoundary}.",
+            project);
+    }
+
+    /// <summary>
     /// Adjusts the national taxation policy for the specified sovereign country.
     /// Validates inputs, requires explicit presidential confirmation, and evaluates citizen welfare and approval consequences.
     /// </summary>

@@ -19,7 +19,22 @@ func _get_required_node(node_path: String) -> Node:
 @onready var ruling_party_label: Label = _get_required_node("VBoxContainer/RulingPartyLabel") as Label
 @onready var election_label: Label = _get_required_node("VBoxContainer/ElectionLabel") as Label
 @onready var tax_rate_label: Label = _get_required_node("VBoxContainer/TaxRateLabel") as Label
+@onready var active_project_label: Label = _get_required_node("VBoxContainer/ActiveProjectLabel") as Label
 @onready var status_label: Label = _get_required_node("VBoxContainer/StatusLabel") as Label
+
+## National Briefing Panel
+@onready var briefing_treasury_label: Label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid/BriefingTreasuryLabel") as Label
+@onready var briefing_approval_label: Label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid/BriefingApprovalLabel") as Label
+@onready var briefing_stability_label: Label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid/BriefingStabilityLabel") as Label
+@onready var briefing_active_project_label: Label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid/BriefingActiveProjectLabel") as Label
+@onready var briefing_latest_decision_label: Label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingLatestDecisionLabel") as Label
+
+## Country Setup & Save Management Controls
+@onready var country_name_line_edit: LineEdit = _get_required_node("VBoxContainer/CountrySetupHBox/CountryNameLineEdit") as LineEdit
+@onready var found_country_button: Button = _get_required_node("VBoxContainer/CountrySetupHBox/FoundCountryButton") as Button
+@onready var save_path_line_edit: LineEdit = _get_required_node("VBoxContainer/CountrySetupHBox/SavePathLineEdit") as LineEdit
+@onready var resume_save_button: Button = _get_required_node("VBoxContainer/CountrySetupHBox/ResumeSaveButton") as Button
+@onready var country_setup_status_label: Label = _get_required_node("VBoxContainer/CountrySetupStatusLabel") as Label
 
 ## Interactive Presidential Decision Controls
 @onready var proposed_rate_spinbox: SpinBox = _get_required_node("VBoxContainer/ProposedRateHBox/ProposedRateSpinBox") as SpinBox
@@ -28,6 +43,11 @@ func _get_required_node(node_path: String) -> Node:
 @onready var cancel_button: Button = _get_required_node("VBoxContainer/DecisionControlsHBox/CancelButton") as Button
 @onready var refresh_button: Button = _get_required_node("VBoxContainer/DecisionControlsHBox/RefreshButton") as Button
 @onready var decision_result_label: Label = _get_required_node("VBoxContainer/DecisionResultLabel") as Label
+
+## National Project Decision Controls
+@onready var start_road_project_button: Button = _get_required_node("VBoxContainer/ProjectControlsHBox/StartRoadProjectButton") as Button
+@onready var cancel_project_button: Button = _get_required_node("VBoxContainer/ProjectControlsHBox/CancelProjectButton") as Button
+@onready var project_status_label: Label = _get_required_node("VBoxContainer/ProjectStatusLabel") as Label
 
 ## Multiplayer Networking Controls & Display
 @onready var host_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/HostButton") as Button
@@ -194,6 +214,37 @@ func _init_controls() -> void:
 	if ad_placeholder == null:
 		ad_placeholder = _get_required_node("VBoxContainer/AdPlaceholder") as ColorRect
 
+	if active_project_label == null:
+		active_project_label = _get_required_node("VBoxContainer/ActiveProjectLabel") as Label
+	if briefing_treasury_label == null:
+		briefing_treasury_label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid/BriefingTreasuryLabel") as Label
+	if briefing_approval_label == null:
+		briefing_approval_label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid/BriefingApprovalLabel") as Label
+	if briefing_stability_label == null:
+		briefing_stability_label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid/BriefingStabilityLabel") as Label
+	if briefing_active_project_label == null:
+		briefing_active_project_label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid/BriefingActiveProjectLabel") as Label
+	if briefing_latest_decision_label == null:
+		briefing_latest_decision_label = _get_required_node("VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingLatestDecisionLabel") as Label
+
+	if country_name_line_edit == null:
+		country_name_line_edit = _get_required_node("VBoxContainer/CountrySetupHBox/CountryNameLineEdit") as LineEdit
+	if found_country_button == null:
+		found_country_button = _get_required_node("VBoxContainer/CountrySetupHBox/FoundCountryButton") as Button
+	if save_path_line_edit == null:
+		save_path_line_edit = _get_required_node("VBoxContainer/CountrySetupHBox/SavePathLineEdit") as LineEdit
+	if resume_save_button == null:
+		resume_save_button = _get_required_node("VBoxContainer/CountrySetupHBox/ResumeSaveButton") as Button
+	if country_setup_status_label == null:
+		country_setup_status_label = _get_required_node("VBoxContainer/CountrySetupStatusLabel") as Label
+
+	if start_road_project_button == null:
+		start_road_project_button = _get_required_node("VBoxContainer/ProjectControlsHBox/StartRoadProjectButton") as Button
+	if cancel_project_button == null:
+		cancel_project_button = _get_required_node("VBoxContainer/ProjectControlsHBox/CancelProjectButton") as Button
+	if project_status_label == null:
+		project_status_label = _get_required_node("VBoxContainer/ProjectStatusLabel") as Label
+
 	if not _is_network_connected and not _is_network_connecting:
 		if host_button:
 			host_button.disabled = false
@@ -222,6 +273,14 @@ func _init_controls() -> void:
 			cancel_button.disabled = false
 		if refresh_button:
 			refresh_button.disabled = false
+		if found_country_button:
+			found_country_button.disabled = false
+		if resume_save_button:
+			resume_save_button.disabled = false
+		if start_road_project_button:
+			start_road_project_button.disabled = false
+		if cancel_project_button:
+			cancel_project_button.disabled = false
 
 	_wire_signals()
 
@@ -236,6 +295,14 @@ func _wire_signals() -> void:
 		cancel_button.pressed.connect(_on_cancel_button_pressed)
 	if refresh_button and not refresh_button.pressed.is_connected(_on_refresh_button_pressed):
 		refresh_button.pressed.connect(_on_refresh_button_pressed)
+	if found_country_button and not found_country_button.pressed.is_connected(_on_found_country_button_pressed):
+		found_country_button.pressed.connect(_on_found_country_button_pressed)
+	if resume_save_button and not resume_save_button.pressed.is_connected(_on_resume_save_button_pressed):
+		resume_save_button.pressed.connect(_on_resume_save_button_pressed)
+	if start_road_project_button and not start_road_project_button.pressed.is_connected(_on_start_road_project_button_pressed):
+		start_road_project_button.pressed.connect(_on_start_road_project_button_pressed)
+	if cancel_project_button and not cancel_project_button.pressed.is_connected(_on_cancel_project_button_pressed):
+		cancel_project_button.pressed.connect(_on_cancel_project_button_pressed)
 	if host_button and not host_button.pressed.is_connected(_on_host_button_pressed):
 		host_button.pressed.connect(_on_host_button_pressed)
 	if join_button and not join_button.pressed.is_connected(_on_join_button_pressed):
@@ -421,6 +488,26 @@ func apply_state(data: Dictionary) -> void:
 		election_label.text = "Election: " + election
 	if tax_rate_label:
 		tax_rate_label.text = "Income Tax Rate: " + tax_rate_fmt
+
+	var active_proj: String = str(data.get("active_project", data.get("ActiveProject", "None")))
+	var latest_result: String = str(data.get("latest_decision_result", data.get("LatestDecisionResult", "")))
+
+	if active_project_label:
+		active_project_label.text = "Active Project: " + active_proj
+	if briefing_treasury_label:
+		briefing_treasury_label.text = "Treasury: " + treasury
+	if briefing_approval_label:
+		briefing_approval_label.text = "Approval: " + approval
+	if briefing_stability_label:
+		briefing_stability_label.text = "Stability: " + stability
+	if briefing_active_project_label:
+		briefing_active_project_label.text = "Active Project: " + active_proj
+	if briefing_latest_decision_label:
+		if not latest_result.is_empty():
+			briefing_latest_decision_label.text = "Latest Decision: " + latest_result
+		else:
+			briefing_latest_decision_label.text = "Latest Decision: [No decisions recorded]"
+
 	if status_label:
 		status_label.text = _format_status_text("Status: " + status_msg, "None")
 
@@ -440,7 +527,6 @@ func apply_state(data: Dictionary) -> void:
 
 	# Only update decision result label if not actively waiting for a decision outcome
 	if not was_waiting:
-		var latest_result: String = str(data.get("latest_decision_result", data.get("LatestDecisionResult", "")))
 		if not latest_result.is_empty() and decision_result_label:
 			decision_result_label.text = "Decision Result: " + latest_result
 		else:
@@ -515,6 +601,18 @@ func display_missing_state(details: String = "") -> void:
 		election_label.text = "Election: [No State Loaded]"
 	if tax_rate_label:
 		tax_rate_label.text = "Income Tax Rate: [No State Loaded]"
+	if active_project_label:
+		active_project_label.text = "Active Project: [No State Loaded]"
+	if briefing_treasury_label:
+		briefing_treasury_label.text = "Treasury: [No State Loaded]"
+	if briefing_approval_label:
+		briefing_approval_label.text = "Approval: [No State Loaded]"
+	if briefing_stability_label:
+		briefing_stability_label.text = "Stability: [No State Loaded]"
+	if briefing_active_project_label:
+		briefing_active_project_label.text = "Active Project: [No State Loaded]"
+	if briefing_latest_decision_label:
+		briefing_latest_decision_label.text = "Latest Decision: [No State Loaded]"
 	if status_label:
 		status_label.text = _format_status_text("Status: Waiting for Republic simulation state (" + details + ")", "None")
 	if expected_consequence_label:
@@ -557,6 +655,18 @@ func display_error(error_msg: String) -> void:
 		election_label.text = "Election: [No State Loaded]"
 	if tax_rate_label:
 		tax_rate_label.text = "Income Tax Rate: [No State Loaded]"
+	if active_project_label:
+		active_project_label.text = "Active Project: [No State Loaded]"
+	if briefing_treasury_label:
+		briefing_treasury_label.text = "Treasury: [No State Loaded]"
+	if briefing_approval_label:
+		briefing_approval_label.text = "Approval: [No State Loaded]"
+	if briefing_stability_label:
+		briefing_stability_label.text = "Stability: [No State Loaded]"
+	if briefing_active_project_label:
+		briefing_active_project_label.text = "Active Project: [No State Loaded]"
+	if briefing_latest_decision_label:
+		briefing_latest_decision_label.text = "Latest Decision: Error - " + error_msg
 	if status_label:
 		status_label.text = _format_status_text("Status: Error - " + error_msg, "None")
 	if expected_consequence_label:
@@ -666,6 +776,28 @@ func _on_cancel_button_pressed() -> void:
 ## Handler for refresh / apply pending button
 func _on_refresh_button_pressed() -> void:
 	apply_pending_or_refresh()
+
+
+## Handler for found country button
+func _on_found_country_button_pressed() -> void:
+	var c_name := country_name_line_edit.text.strip_edges() if country_name_line_edit else ""
+	execute_create_country(c_name)
+
+
+## Handler for resume save button
+func _on_resume_save_button_pressed() -> void:
+	var s_path := save_path_line_edit.text.strip_edges() if save_path_line_edit else ""
+	execute_load_save(s_path)
+
+
+## Handler for start road project button
+func _on_start_road_project_button_pressed() -> void:
+	execute_project_decision("Road", true)
+
+
+## Handler for cancel project button
+func _on_cancel_project_button_pressed() -> void:
+	execute_project_decision("Road", false)
 
 
 ## Manually refreshes the simulation state, checks for decision results, and processes any pending request
@@ -861,15 +993,267 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 
 	var submit_msg := "Proposed %.1f%% tax submitted. Awaiting simulation..." % proposed_rate_percent
 	if decision_result_label:
-		decision_result_label.text = "Decision Result: " + submit_msg
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
 	if status_label:
-		status_label.text = _format_status_text("Status: Decision request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+		status_label.text = _format_status_text("Status: [Pending] Decision request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
 
 	return {
 		"success": true,
 		"result": "Pending",
 		"message": submit_msg
 	}
+
+
+## Submits a request to create/found a sovereign country
+func execute_create_country(c_name: String) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	if c_name.is_empty():
+		var empty_msg := "Country name cannot be empty."
+		if country_setup_status_label:
+			country_setup_status_label.text = "Founder Status: [Rejected] " + empty_msg
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Invalid Input - " + empty_msg
+		return {
+			"success": false,
+			"result": "InvalidInput",
+			"message": empty_msg
+		}
+
+	var regex := RegEx.new()
+	regex.compile("(?i)\\bRepublic\\b")
+	if not regex.search(c_name):
+		var name_msg := "Country name '%s' is invalid. Every player country name must contain the whole word 'Republic'." % c_name
+		if country_setup_status_label:
+			country_setup_status_label.text = "Founder Status: [Rejected] " + name_msg
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Invalid Name - " + name_msg
+		return {
+			"success": false,
+			"result": "InvalidName",
+			"message": name_msg
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_found_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "create_country",
+		"country_name": c_name,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create request file: " + request_path
+		_active_request_id = ""
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Error - " + err_msg
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	if found_country_button:
+		found_country_button.disabled = true
+	if resume_save_button:
+		resume_save_button.disabled = true
+	if confirm_button:
+		confirm_button.disabled = true
+	if cancel_button:
+		cancel_button.disabled = true
+	if start_road_project_button:
+		start_road_project_button.disabled = true
+	if cancel_project_button:
+		cancel_project_button.disabled = true
+
+	var submit_msg := "Founding request for '%s' submitted. Awaiting simulation..." % c_name
+	if decision_result_label:
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
+	if country_setup_status_label:
+		country_setup_status_label.text = "Founder Status: [Pending] Founding %s..." % c_name
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Country founding request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
+
+## Submits a request to resume/load an authoritative save file
+func execute_load_save(save_file: String) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_load_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "load_save",
+		"save_file": save_file,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create request file: " + request_path
+		_active_request_id = ""
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Error - " + err_msg
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	if found_country_button:
+		found_country_button.disabled = true
+	if resume_save_button:
+		resume_save_button.disabled = true
+	if confirm_button:
+		confirm_button.disabled = true
+	if cancel_button:
+		cancel_button.disabled = true
+	if start_road_project_button:
+		start_road_project_button.disabled = true
+	if cancel_project_button:
+		cancel_project_button.disabled = true
+
+	var submit_msg := "Resume request for '%s' submitted. Awaiting simulation..." % save_file
+	if decision_result_label:
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
+	if country_setup_status_label:
+		country_setup_status_label.text = "Founder Status: [Pending] Resuming save..."
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Save resume request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
+
+## Submits a project commissioning decision (e.g. "Road")
+func execute_project_decision(project_type: String, confirmed: bool) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	if not _is_connected or _latest_state.is_empty():
+		var no_state_msg := "Cannot submit project decision: No Republic simulation state loaded."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Missing or Corrupted Save - " + no_state_msg
+		if project_status_label:
+			project_status_label.text = "Project Status: [Rejected] " + no_state_msg
+		return {
+			"success": false,
+			"result": "StateMissingOrCorrupt",
+			"message": no_state_msg
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_proj_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id if confirmed else ""
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "start_project",
+		"project_type": project_type,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create project request file: " + request_path
+		_active_request_id = ""
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Error - " + err_msg
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	if not confirmed:
+		_is_waiting_for_decision = false
+		_active_request_id = ""
+		var cancel_msg := "Project initiation cancelled by executive order. Zero funds deducted."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Cancelled] " + cancel_msg
+		if project_status_label:
+			project_status_label.text = "Project Status: [Cancelled] Order cancelled."
+		if status_label:
+			status_label.text = _format_status_text("Status: [Cancelled] Project cancellation written to " + DEFAULT_REQUEST_FILENAME, "Cancelled")
+		return {
+			"success": false,
+			"result": "Cancelled",
+			"message": cancel_msg
+		}
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	if start_road_project_button:
+		start_road_project_button.disabled = true
+	if cancel_project_button:
+		cancel_project_button.disabled = true
+	if confirm_button:
+		confirm_button.disabled = true
+	if cancel_button:
+		cancel_button.disabled = true
+
+	var submit_msg := "Commissioning of %s project submitted. Awaiting simulation..." % project_type
+	if decision_result_label:
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
+	if project_status_label:
+		project_status_label.text = "Project Status: [Pending] Submitting commission..."
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Project request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
 
 
 ## Handles incoming structured action results from Republic simulation
@@ -885,6 +1269,14 @@ func _handle_decision_result(result_dict: Dictionary) -> void:
 		refresh_button.disabled = false
 	if proposed_rate_spinbox:
 		proposed_rate_spinbox.editable = true
+	if found_country_button:
+		found_country_button.disabled = false
+	if resume_save_button:
+		resume_save_button.disabled = false
+	if start_road_project_button:
+		start_road_project_button.disabled = false
+	if cancel_project_button:
+		cancel_project_button.disabled = false
 
 	# Clean up result file so each result is handled only once and not mistaken for future decisions
 	var res_path := _resolve_result_path(_active_state_path)
@@ -907,13 +1299,21 @@ func _handle_decision_result(result_dict: Dictionary) -> void:
 
 		if reload_success:
 			if decision_result_label:
-				decision_result_label.text = "Decision Result: Successfully applied - " + message
+				decision_result_label.text = "Decision Result: [Success] Successfully applied - " + message
+			if country_setup_status_label:
+				country_setup_status_label.text = "Founder Status: [Success] " + message
+			if project_status_label:
+				project_status_label.text = "Project Status: [Success] " + message
 			if status_label:
-				status_label.text = _format_status_text("Status: Decision enacted and persisted successfully", "Completed")
+				status_label.text = _format_status_text("Status: [Success] Decision enacted and persisted successfully", "Completed")
 		else:
 			# Authoritative save succeeded, but refreshing the display failed
 			if decision_result_label:
 				decision_result_label.text = "Decision Result: Authoritative decision saved, but refreshing the display state file failed."
+			if country_setup_status_label:
+				country_setup_status_label.text = "Founder Status: [Success] " + message
+			if project_status_label:
+				project_status_label.text = "Project Status: [Success] " + message
 			if status_label:
 				status_label.text = _format_status_text("Status: Warning - Decision saved, but display refresh failed", "RefreshFailed")
 	else:
@@ -921,20 +1321,26 @@ func _handle_decision_result(result_dict: Dictionary) -> void:
 		var formatted_result := ""
 		match result_type:
 			"Cancelled":
-				formatted_result = "Decision Result: Cancelled - " + message
+				formatted_result = "Decision Result: [Cancelled] Cancelled - " + message
+			"InvalidName":
+				formatted_result = "Decision Result: [Rejected] Invalid Name - " + message
 			"InvalidInput":
-				formatted_result = "Decision Result: Invalid Input - " + message
+				formatted_result = "Decision Result: [Rejected] Invalid Input - " + message
 			"StateMissingOrCorrupt":
-				formatted_result = "Decision Result: Missing or Corrupted Save - " + message
+				formatted_result = "Decision Result: [Rejected] Missing or Corrupted Save - " + message
 			"PersistenceFailure":
-				formatted_result = "Decision Result: Persistence Failure - " + message
+				formatted_result = "Decision Result: [Rejected] Persistence Failure - " + message
 			_:
-				formatted_result = "Decision Result: Rejected - " + message
+				formatted_result = "Decision Result: [Rejected] Rejected - " + message
 
 		if decision_result_label:
 			decision_result_label.text = formatted_result
+		if country_setup_status_label and (result_type == "InvalidName" or result_type == "InvalidInput"):
+			country_setup_status_label.text = "Founder Status: [Rejected] " + message
+		if project_status_label and (result_type == "Cancelled" or result_type == "InvalidInput" or result_type == "StateMissingOrCorrupt"):
+			project_status_label.text = "Project Status: [Rejected] " + message
 		if status_label:
-			status_label.text = _format_status_text("Status: " + message, result_type)
+			status_label.text = _format_status_text("Status: [Rejected] " + message, result_type)
 
 		# Reset SpinBox to current live rate on cancellation or failure
 		if _is_connected and not _latest_state.is_empty():

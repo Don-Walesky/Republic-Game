@@ -217,6 +217,65 @@ public sealed class AIGovernmentTests : IDisposable
         Assert.True(aiCountry.Treasury.Balance > 10_000_000.0);
     }
 
+    [Fact]
+    public async Task AICountry_CatchesUpMissedCycles_SurvivesSaveAndReloadAcrossNewSession()
+    {
+        // 1. Arrange: Setup initial state at t0
+        var epoch = new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.FromHours(1));
+        var t0 = RepublicTime.FromDayAndTime(0, new TimeOnly(0, 0), epoch);
+        var t18 = RepublicTime.FromDayAndTime(0, new TimeOnly(18, 0), epoch);
+
+        var yield = new Republic.Core.NationalYield.NationalYield
+        {
+            IndustrialCapacity = 60.0,
+            InfrastructureCapacity = 60.0,
+            HumanCapital = 60.0,
+            ScienceCapacity = 60.0,
+            AdministrativeCapacity = 60.0,
+            SecurityCapacity = 60.0
+        };
+
+        var aiCountry = Country.Found("Republic of Valoria", t0, id: "ai-valoria-multi", treasury: new RepuTreasury(5_000_000.0, "ai-valoria-multi"), yield: yield, stateCapacity: StateCapacityInputs.All(1.0));
+        aiCountry.IsAIControlled = true;
+        _world.Countries.RegisterCountry(aiCountry);
+
+        // 2. Act: Process multiple missed cycles (06:00, 12:00, 18:00)
+        var aiGov = new AIGovernment { CountryId = aiCountry.Id };
+        var tempSave = Path.Combine(_testSaveDir, "temp_multi.sav");
+        var tempState = Path.Combine(_testSaveDir, "temp_multi.json");
+        var results = aiGov.ProcessDueCycles(aiCountry, t18, stateFilePath: tempState, saveFilePath: tempSave);
+
+        Assert.Equal(3, results.Count);
+        Assert.Equal(t18, aiCountry.LastCreditedBoundary);
+
+        var preSaveTreasury = aiCountry.Treasury.Balance;
+        var preSaveTaxRate = aiCountry.TaxPolicy.IncomeTaxRate;
+        var preSaveDecision = aiCountry.LastAIDecision;
+
+        // 3. Act: Save world
+        var slotName = "ai_multi_cycle_save";
+        var savePath = await _saveManager.SaveGameAsync(slotName);
+        Assert.True(File.Exists(savePath));
+
+        // 4. Act: Load into fresh WorldManager
+        var loaded = await _saveManager.LoadGameAsync(slotName);
+        Assert.NotNull(loaded);
+
+        var restored = _world.Countries.GetCountry("ai-valoria-multi");
+        Assert.NotNull(restored);
+
+        // 5. Assert: State matches across missed cycles
+        Assert.True(restored.IsAIControlled);
+        Assert.Equal(t18, restored.LastCreditedBoundary);
+        Assert.Equal(preSaveTreasury, restored.Treasury.Balance);
+        Assert.Equal(preSaveTaxRate, restored.TaxPolicy.IncomeTaxRate);
+        Assert.Equal(preSaveDecision, restored.LastAIDecision);
+
+        // 6. Assert: Next cycle at 18:00 produces no extra due cycles since already up to date
+        var noDue = aiGov.ProcessDueCycles(restored, t18);
+        Assert.Empty(noDue);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_testSaveDir))
@@ -225,3 +284,4 @@ public sealed class AIGovernmentTests : IDisposable
         }
     }
 }
+

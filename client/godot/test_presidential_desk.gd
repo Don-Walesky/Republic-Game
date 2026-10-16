@@ -95,11 +95,14 @@ func _init() -> void:
 	# Test 24: Phase 5 Monetization hooks and Ad placeholder
 	all_passed = test_phase5_monetization_and_ad_hooks(desk) and all_passed
 
+	# Test 25: Phase 2 Single-player presidential game loop (country creation, briefing, project decisions)
+	all_passed = test_phase2_single_player_loop(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 24 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 25 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -1743,6 +1746,172 @@ func test_phase5_monetization_and_ad_hooks(desk: Control) -> bool:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(buff_req_path))
 
 	print("  [OK]: Phase 5 Buffs panel, simulated buy requests, status feedback, and Ad placeholder verified.")
+	return true
+
+
+func test_phase2_single_player_loop(desk: Control) -> bool:
+	print("\n--- Test 25: Phase 2 Single-Player Presidential Game Loop ---")
+
+	var temp_state_path := "res://temp_phase2_state.json"
+	var temp_sav_path := "res://temp_phase2_state.sav"
+	var req_path := "res://presidential_desk_request.json"
+
+	if FileAccess.file_exists(req_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	# 1. Country creation validation: Non-'Republic' name must be rejected
+	var invalid_res: Dictionary = desk.execute_create_country("Kingdom of Arcadia")
+	if invalid_res.get("success", true):
+		printerr("[FAIL]: Country creation with 'Kingdom of Arcadia' should be rejected!")
+		return false
+	if invalid_res.get("result", "") != "InvalidName":
+		printerr("[FAIL]: Expected result 'InvalidName', got: " + str(invalid_res.get("result")))
+		return false
+	if not desk.country_setup_status_label.text.contains("[Rejected]"):
+		printerr("[FAIL]: Expected CountrySetupStatusLabel to indicate [Rejected]: " + desk.country_setup_status_label.text)
+		return false
+
+	# 2. Valid country creation request: Must contain 'Republic'
+	var valid_res: Dictionary = desk.execute_create_country("Republic of Solaria")
+	if not valid_res.get("success", false) or valid_res.get("result", "") != "Pending":
+		printerr("[FAIL]: Expected valid creation to return Pending: " + str(valid_res))
+		return false
+	if not desk.country_setup_status_label.text.contains("[Pending]"):
+		printerr("[FAIL]: Expected CountrySetupStatusLabel to indicate [Pending]: " + desk.country_setup_status_label.text)
+		return false
+
+	# Verify request file content
+	if not FileAccess.file_exists(req_path):
+		printerr("[FAIL]: Expected presidential_desk_request.json to be created on disk for country creation!")
+		return false
+	var req_file := FileAccess.open(req_path, FileAccess.READ)
+	var req_data: Variant = JSON.parse_string(req_file.get_as_text()) if req_file else null
+	if req_file:
+		req_file.close()
+	if req_data == null or req_data.get("action") != "create_country" or req_data.get("country_name") != "Republic of Solaria":
+		printerr("[FAIL]: Request file contents mismatch: " + JSON.stringify(req_data))
+		return false
+
+	# Clean up request file
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	# Simulate successful creation result
+	var create_sim_result := {
+		"request_id": desk._active_request_id,
+		"success": true,
+		"result": "Success",
+		"message": "Sovereign republic established: Republic of Solaria"
+	}
+	desk._handle_decision_result(create_sim_result)
+	if not desk.country_setup_status_label.text.contains("[Success]"):
+		printerr("[FAIL]: Expected CountrySetupStatusLabel to indicate [Success]: " + desk.country_setup_status_label.text)
+		return false
+
+	# 3. National Briefing & Active Project display verification
+	var briefing_state := {
+		"country_name": "Republic of Solaria",
+		"country_id": "solaria-1",
+		"treasury": "R 25,000,000",
+		"treasury_balance": 25000000,
+		"approval": "74%",
+		"approval_rating": 74.0,
+		"stability": "82%",
+		"stability_rating": 82.0,
+		"simulation_day": 1,
+		"simulation_time": "Day 1, 08:00 WAT",
+		"ruling_party": "Democratic Coalition",
+		"election": "In 364 days",
+		"income_tax_rate": 0.25,
+		"income_tax_rate_formatted": "25%",
+		"corporate_tax_rate": 0.20,
+		"import_tariff_rate": 0.05,
+		"active_project": "None",
+		"latest_decision_result": "Constitution enacted",
+		"save_file_path": ProjectSettings.globalize_path(temp_sav_path),
+		"simulation_tick": 1
+	}
+
+	var state_file := FileAccess.open(temp_state_path, FileAccess.WRITE)
+	state_file.store_string(JSON.stringify(briefing_state))
+	state_file.close()
+
+	if not desk.load_state_from_file(temp_state_path):
+		printerr("[FAIL]: Failed to load state from file: " + temp_state_path)
+		return false
+
+	if not desk.briefing_treasury_label.text.contains("25,000,000"):
+		printerr("[FAIL]: BriefingTreasuryLabel did not display treasury: " + desk.briefing_treasury_label.text)
+		return false
+	if not desk.briefing_approval_label.text.contains("74%"):
+		printerr("[FAIL]: BriefingApprovalLabel did not display approval: " + desk.briefing_approval_label.text)
+		return false
+	if not desk.briefing_stability_label.text.contains("82%"):
+		printerr("[FAIL]: BriefingStabilityLabel did not display stability: " + desk.briefing_stability_label.text)
+		return false
+	if not desk.briefing_active_project_label.text.contains("None"):
+		printerr("[FAIL]: BriefingActiveProjectLabel did not display active project: " + desk.briefing_active_project_label.text)
+		return false
+	if not desk.briefing_latest_decision_label.text.contains("Constitution enacted"):
+		printerr("[FAIL]: BriefingLatestDecisionLabel did not display latest decision: " + desk.briefing_latest_decision_label.text)
+		return false
+	if not desk.active_project_label.text.contains("None"):
+		printerr("[FAIL]: ActiveProjectLabel did not display active project: " + desk.active_project_label.text)
+		return false
+
+	# 4. Project decision cancellation
+	var cancel_proj_res: Dictionary = desk.execute_project_decision("Road", false)
+	if cancel_proj_res.get("result", "") != "Cancelled":
+		printerr("[FAIL]: Expected project cancellation result, got: " + JSON.stringify(cancel_proj_res))
+		return false
+	if not desk.project_status_label.text.contains("[Cancelled]"):
+		printerr("[FAIL]: Expected ProjectStatusLabel to indicate [Cancelled]: " + desk.project_status_label.text)
+		return false
+
+	# 5. Project decision commissioning (Road)
+	var start_proj_res: Dictionary = desk.execute_project_decision("Road", true)
+	if not start_proj_res.get("success", false) or start_proj_res.get("result", "") != "Pending":
+		printerr("[FAIL]: Expected project commissioning to return Pending: " + JSON.stringify(start_proj_res))
+		return false
+	if not desk.project_status_label.text.contains("[Pending]"):
+		printerr("[FAIL]: Expected ProjectStatusLabel to indicate [Pending]: " + desk.project_status_label.text)
+		return false
+
+	# Verify project request file written to disk
+	if not FileAccess.file_exists(req_path):
+		printerr("[FAIL]: Expected presidential_desk_request.json to be created for project commissioning!")
+		return false
+
+	var proj_req_file := FileAccess.open(req_path, FileAccess.READ)
+	var proj_req_data: Variant = JSON.parse_string(proj_req_file.get_as_text()) if proj_req_file else null
+	if proj_req_file:
+		proj_req_file.close()
+	if proj_req_data == null or proj_req_data.get("action") != "start_project" or proj_req_data.get("project_type") != "Road":
+		printerr("[FAIL]: Project request file invalid: " + JSON.stringify(proj_req_data))
+		return false
+
+	# 6. Simulate project execution result from simulation backend
+	var sim_result := {
+		"request_id": desk._active_request_id,
+		"success": true,
+		"result": "Success",
+		"message": "National Road Program initiated. R500,000 deducted from treasury."
+	}
+	desk._handle_decision_result(sim_result)
+
+	if not desk.decision_result_label.text.contains("[Success]"):
+		printerr("[FAIL]: Expected DecisionResultLabel to contain [Success]: " + desk.decision_result_label.text)
+		return false
+	if not desk.project_status_label.text.contains("[Success]"):
+		printerr("[FAIL]: Expected ProjectStatusLabel to contain [Success]: " + desk.project_status_label.text)
+		return false
+
+	# Clean up temporary test files
+	if FileAccess.file_exists(temp_state_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_state_path))
+	if FileAccess.file_exists(req_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	print("  [OK]: Phase 2 single-player loop (country creation, briefing panel, and project decision) fully verified.")
 	return true
 
 

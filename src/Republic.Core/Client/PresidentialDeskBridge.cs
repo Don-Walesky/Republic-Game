@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Republic.Core.Economy.Budget.Models;
+using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Persistence;
 using Republic.Core.Persistence.Models;
@@ -13,6 +14,7 @@ using Republic.Core.Persistence.Services;
 using Republic.Core.Time;
 using Republic.Core.World;
 using Republic.Core.World.Models;
+using Republic.Core.World.Rules;
 
 /// <summary>
 /// Bridge service coordinating the live Republic simulation state connection to the Godot presidential desk client.
@@ -436,7 +438,8 @@ public static class PresidentialDeskBridge
         RepublicTime simulationTime,
         ulong simulationTick = 0,
         string? targetPath = null,
-        string? saveFilePath = null)
+        string? saveFilePath = null,
+        string? latestDecisionResult = null)
     {
         ArgumentNullException.ThrowIfNull(country);
 
@@ -454,7 +457,7 @@ public static class PresidentialDeskBridge
         // and do not write a misleading snapshot that suggests authoritative state was saved.
         SaveAuthoritativeState(country, simulationTime, simulationTick, companionSavePath);
 
-        var snapshot = PresidentialDeskSnapshot.Create(country, simulationTime, simulationTick, companionSavePath);
+        var snapshot = PresidentialDeskSnapshot.Create(country, simulationTime, simulationTick, companionSavePath, latestDecisionResult: latestDecisionResult);
         var json = Serialize(snapshot);
         AtomicFileWriter.WriteAllTextSafely(path, json);
 
@@ -473,7 +476,8 @@ public static class PresidentialDeskBridge
         RepublicTime simulationTime,
         ulong simulationTick = 0,
         string? targetPath = null,
-        string? saveFilePath = null)
+        string? saveFilePath = null,
+        string? latestDecisionResult = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(country);
@@ -490,7 +494,7 @@ public static class PresidentialDeskBridge
         // Authoritative world save must succeed before writing the display snapshot.
         SaveAuthoritativeState(world, simulationTime, simulationTick, companionSavePath);
 
-        var snapshot = PresidentialDeskSnapshot.Create(world, country, simulationTime, simulationTick, companionSavePath);
+        var snapshot = PresidentialDeskSnapshot.Create(world, country, simulationTime, simulationTick, companionSavePath, latestDecisionResult: latestDecisionResult);
         var json = Serialize(snapshot);
         AtomicFileWriter.WriteAllTextSafely(path, json);
 
@@ -1114,7 +1118,7 @@ public static class PresidentialDeskBridge
 
         try
         {
-            var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath);
+            var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, outcome.Message);
             var snapshotJson = Serialize(snapshot);
             AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
         }
@@ -1126,6 +1130,9 @@ public static class PresidentialDeskBridge
             Success = true,
             Result = "Success",
             Message = outcome.Message,
+            CountryName = country.Name,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
             IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
             PreviousIncomeTaxRate = prevRate,
             ApprovalRating = country.HappinessRating,
@@ -1360,6 +1367,470 @@ public static class PresidentialDeskBridge
         return $"Tax {dir} of {(deltaRate >= 0 ? "+" : "")}{deltaRate * 100:0.#}%: Expected approval effect is {sign}{approvalDelta:0.#}%.{stabilityWarning}";
     }
 
+    /// <summary>
+    /// Creates and founds a sovereign country, initializes its treasury, stability, and tax policy,
+    /// saves authoritative state, and exports the state file for the Godot presidential desk.
+    /// Rejects names that do not contain the whole word 'Republic'.
+    /// </summary>
+    public static PresidentialActionResult CreateOrLoadCountry(
+        string countryName,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        if (string.IsNullOrWhiteSpace(countryName) || !CountryNameRule.Default.IsValid(countryName))
+        {
+            var invalidNameResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidName",
+                Message = "Country name must contain the whole word 'Republic'.",
+                CountryName = countryName ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, invalidNameResult);
+            return invalidNameResult;
+        }
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var simTime = new RepublicTime(launchEpoch, launchEpoch);
+        var treasury = new RepuTreasury(10_000_000_000.0, "player-country");
+        var country = Country.Found(
+            name: countryName.Trim(),
+            foundingTime: simTime,
+            id: "player-country",
+            capitalCity: "Capital City",
+            treasury: treasury);
+
+        country.HappinessRating = 70.0;
+        country.BaselineStability = 75.0;
+        country.TaxPolicy.IncomeTaxRate = 0.25;
+        country.TaxPolicy.CorporateTaxRate = 0.20;
+        country.TaxPolicy.ImportTariffRate = 0.10;
+
+        SaveAuthoritativeState(country, simTime, 0, targetSavePath);
+        ExportState(country, simTime, 0, targetStatePath, targetSavePath, latestDecisionResult: $"Successfully founded {country.Name}. Executive desk ready.");
+
+        var result = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = $"Successfully founded {country.Name}. Executive desk ready.",
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            PreviousIncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            PreviousApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            PreviousStabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = "None"
+        };
+
+        TryWriteResultFile(targetStatePath, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Resumes a game session from an authoritative save file, projecting the sovereign state
+    /// into the presidential desk state file for live gameplay.
+    /// </summary>
+    public static PresidentialActionResult ResumeFromSave(
+        string? saveFilePath = null,
+        string? stateFilePath = null,
+        string? requestId = null)
+    {
+        var targetSavePath = saveFilePath ?? ResolveDefaultSaveFilePath();
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot resume from save: Save file '{targetSavePath}' does not exist."
+            };
+            TryWriteResultFile(targetStatePath, missingResult);
+            return missingResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot resume from save: Save file '{targetSavePath}' is corrupted ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, corruptResult);
+            return corruptResult;
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var emptyResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot resume from save: Save file '{targetSavePath}' contains no valid countries."
+            };
+            TryWriteResultFile(targetStatePath, emptyResult);
+            return emptyResult;
+        }
+
+        var country = envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+
+        ExportState(envelope.State.World, country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: $"Resumed game session from {Path.GetFileName(targetSavePath)}.");
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = $"Successfully resumed game for {country.Name}.",
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None"
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Applies an executive capital development project decision (e.g. National Road Program)
+    /// to the sovereign nation, deducting funds from treasury and scheduling construction.
+    /// </summary>
+    public static PresidentialActionResult ApplyProjectDecision(
+        string projectType = "Road",
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        string? snapshotCountryId = null;
+
+        // Resolve save file path
+        string targetSavePath;
+        if (!string.IsNullOrWhiteSpace(saveFilePath))
+        {
+            targetSavePath = saveFilePath;
+        }
+        else if (targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
+        {
+            targetSavePath = targetStatePath;
+        }
+        else
+        {
+            if (!File.Exists(targetStatePath))
+            {
+                var missingResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply project decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, missingResult);
+                return missingResult;
+            }
+
+            string rawJson;
+            try
+            {
+                rawJson = File.ReadAllText(targetStatePath);
+            }
+            catch (Exception ex)
+            {
+                var ioResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply project decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, ioResult);
+                return ioResult;
+            }
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                var emptyResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply project decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, emptyResult);
+                return emptyResult;
+            }
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (JsonException)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply project decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+
+            using (doc)
+            {
+                if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+                {
+                    targetSavePath = targetStatePath;
+                }
+                else
+                {
+                    string? snapshotSavePath = null;
+                    if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
+                    {
+                        snapshotSavePath = savePathEl.GetString();
+                    }
+
+                    if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                    {
+                        snapshotCountryId = cIdEl.GetString();
+                    }
+                    if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                    {
+                        snapshotCountryId = cNameEl.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                    {
+                        targetSavePath = snapshotSavePath;
+                    }
+                    else
+                    {
+                        var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                        if (File.Exists(companion))
+                        {
+                            targetSavePath = companion;
+                        }
+                        else
+                        {
+                            var noSaveResult = new PresidentialActionResult
+                            {
+                                RequestId = requestId ?? string.Empty,
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot apply project decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, noSaveResult);
+                            return noSaveResult;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply project decision: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingSaveResult);
+            return missingSaveResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply project decision: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptSaveResult);
+            return corruptSaveResult;
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply project decision: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        country ??= envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+
+        var tick = envelope.State.CurrentTick;
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Project initiation cancelled by executive order. Zero funds deducted.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None"
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        ExecutiveActionOutcome outcome;
+        if (string.Equals(projectType, "PowerPlant", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(projectType, "National Power Plant", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiatePowerPlantProject(country, simTime, confirmed: true);
+        }
+        else
+        {
+            // Default to Road
+            outcome = PresidentialWorkspaceHandler.InitiateRoadProject(country, simTime, confirmed: true);
+        }
+
+        if (!outcome.IsSuccess)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = outcome.Result.ToString(),
+                Message = outcome.Message,
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None"
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        // Persist authoritative save file
+        envelope.State.CurrentTick = tick + 1;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        try
+        {
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+        catch (Exception ex)
+        {
+            var persistFailResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PersistenceFailure",
+                Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Project not recorded.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, persistFailResult);
+            return persistFailResult;
+        }
+
+        // Export updated dashboard snapshot for Godot
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, latestDecisionResult: outcome.Message);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcome.Message,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = outcome.Project?.Name ?? country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None"
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
     private static void TryWriteResultFile(string stateOrSavePath, PresidentialActionResult result)
     {
         try
@@ -1462,7 +1933,94 @@ public static class PresidentialDeskBridge
                     requestId = reqIdEl.GetString();
                 }
 
-                // 1. Validate rate field presence and format
+                // Check for explicit action / request_type
+                string? action = null;
+                if (root.TryGetProperty("action", out var actionEl) && actionEl.ValueKind == JsonValueKind.String)
+                {
+                    action = actionEl.GetString();
+                }
+                else if (root.TryGetProperty("request_type", out var reqTypeEl) && reqTypeEl.ValueKind == JsonValueKind.String)
+                {
+                    action = reqTypeEl.GetString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(action))
+                {
+                    var normalizedAction = action.Trim().ToLowerInvariant();
+                    if (normalizedAction is "create_country" or "found_country")
+                    {
+                        string countryName = string.Empty;
+                        if (root.TryGetProperty("country_name", out var cNameEl) && cNameEl.ValueKind == JsonValueKind.String)
+                        {
+                            countryName = cNameEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == JsonValueKind.String)
+                        {
+                            countryName = nameEl.GetString() ?? string.Empty;
+                        }
+
+                        try
+                        {
+                            return CreateOrLoadCountry(countryName, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "load_save" or "resume_save")
+                    {
+                        string? specifiedSave = null;
+                        if (root.TryGetProperty("save_file", out var sFileEl) && sFileEl.ValueKind == JsonValueKind.String)
+                        {
+                            specifiedSave = sFileEl.GetString();
+                        }
+                        else if (root.TryGetProperty("path", out var pEl) && pEl.ValueKind == JsonValueKind.String)
+                        {
+                            specifiedSave = pEl.GetString();
+                        }
+
+                        try
+                        {
+                            return ResumeFromSave(specifiedSave ?? saveFilePath, targetStatePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "project" or "start_project")
+                    {
+                        string projectType = "Road";
+                        if (root.TryGetProperty("project_type", out var pTypeEl) && pTypeEl.ValueKind == JsonValueKind.String)
+                        {
+                            projectType = pTypeEl.GetString() ?? "Road";
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            projectType = tEl.GetString() ?? "Road";
+                        }
+
+                        bool projectConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var projConfEl) && (projConfEl.ValueKind == JsonValueKind.True || projConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            projectConfirmed = projConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyProjectDecision(projectType, projectConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+                }
+
+                // 1. Validate rate field presence and format for taxation decisions
                 bool isPercentField = root.TryGetProperty("proposed_rate_percent", out var propRateEl);
                 bool hasRateField = isPercentField ||
                     root.TryGetProperty("proposed_income_tax_rate", out propRateEl) ||
@@ -1812,4 +2370,13 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("previous_stability_rating")]
     public double PreviousStabilityRating { get; init; }
+
+    [JsonPropertyName("country_name")]
+    public string CountryName { get; init; } = string.Empty;
+
+    [JsonPropertyName("active_project")]
+    public string ActiveProject { get; init; } = string.Empty;
+
+    [JsonPropertyName("treasury_balance")]
+    public double TreasuryBalance { get; init; }
 }

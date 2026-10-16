@@ -4,11 +4,11 @@ This folder contains the Godot 4 client for Republic, connected directly to the 
 
 ---
 
-## Novice Quick Start: Running the Presidential Desk & Enacting a Tax Decision
+## Novice Quick Start: Single-Player Presidential Game Loop
 
-Follow these exact steps to run the playable presidential desk and see a tax decision update live country data in real time:
+Follow these exact steps to run the complete, playable single-player presidential loop: create a country, view the national briefing, enact tax reform, commission a national project, and verify persistence.
 
-### Step 1 — Start the Simulation Watcher or Export State
+### Step 1 — Start the Simulation Watcher
 
 In your terminal at the repository root, start the background request watcher daemon:
 
@@ -16,49 +16,70 @@ In your terminal at the repository root, start the background request watcher da
 dotnet run --project src/Republic.Cli -- --watch-requests
 ```
 
-*(Alternatively, run `dotnet run --project src/Republic.Cli -- --export-godot` once to export initial state, or use the interactive CLI with `dotnet run --project src/Republic.Cli` which also processes requests in the background).*
+*(Alternatively, run `dotnet run --project src/Republic.Cli` for the interactive CLI which also processes requests in the background).*
 
-### Step 2 — Open the Project in Godot
+### Step 2 — Open and Run the Presidential Desk in Godot
 
 1. Open **Godot Engine 4.x**.
-2. Click **Import** in the Project Manager.
-3. Browse to `client/godot/` and select `project.godot`.
-4. Click **Import & Edit**.
+2. Open or import `client/godot/project.godot`.
+3. Press **F5** (or click the **Play** button in the top right).
 
-### Step 3 — Run the Presidential Desk Scene
+The Presidential Desk opens with the dark executive theme. If no state has been loaded yet, the desk safely displays `[No State Loaded]` without fallback demo values.
 
-Press **F5** (or click the **Play** button in the upper-right corner of the Godot editor).
+### Step 3 — Create or Load Your Republic
 
-The Presidential Desk window opens with the dark executive theme, displaying live national telemetry:
-- **Country**: Sovereign nation name (e.g. `Republic of Arcadia`)
-- **Treasury**: Liquid balance in REPU (e.g. `R 15,000,000,000`)
-- **Approval**: Citizen approval rating (e.g. `70.0%`)
-- **Stability**: Baseline stability rating (e.g. `80.0%`)
-- **Income Tax Rate**: Current personal income tax rate (e.g. `25.0%`)
-- **System Status**: Displays connection health, state file path, last update timestamp, and request status (`Tax request: None`)
+Under **Country Setup (Single-Player Loop)**:
+1. **Found a New Country**:
+   - In **Country Name**, enter a sovereign name that contains the whole word **"Republic"** (case-insensitive), for example:
+     `Republic of Arcadia` (or `Federal Republic of Nigeria`, `Republic of Solaria`).
+     *(Names omitting "Republic", such as "Kingdom of Arcadia", will be rejected with `Founder Status: [Rejected] Invalid Name`).*
+   - Click **Found Republic**.
+   - Notice the status update: `Founder Status: [Pending] Founding Republic of Arcadia...`.
+   - The `.NET` watcher validates constitutional rules, establishes the sovereign nation, generates an initial treasury of **R 10,000,000**, saves `republic_game.sav`, and writes `presidential_desk_state.json`.
+   - Within 1–2 seconds, the desk updates: `Founder Status: [Success] Sovereign republic established: Republic of Arcadia`.
+2. **Resume an Existing Save** (Alternative):
+   - Enter your save file path (e.g. `republic_game.sav` or custom path) and click **Resume Save**.
+   - The authoritative save is loaded, live state is refreshed, and your sovereign state is restored intact.
 
-### Step 4 — Propose a New Tax Rate
+### Step 4 — Inspect the National Briefing
+
+Review the **National Briefing** panel in the center of the desk:
+- **Treasury**: Current sovereign treasury balance (e.g. `R 10,000,000`).
+- **Approval**: Citizen public approval rating (e.g. `70.0%`).
+- **Stability**: Sovereign stability rating (e.g. `80.0%`).
+- **Active Project**: Displays currently commissioned national infrastructure (initially `None`).
+- **Latest Decision**: Displays the outcome of the most recent executive action.
+
+### Step 5 — Enact a Tax Decision
 
 1. Under **Presidential Decision: Taxation Policy**, find the **Proposed Income Tax Rate (%)** spinbox.
-2. Adjust the spinbox value from `25.0%` to `30.0%`.
-3. Notice the live **Expected Approval Effect** label update dynamically:
-   - Increasing the tax rate displays: `Expected Approval Effect: -2.5% (Tax hike reduces household disposable income; -0.5% approval per +1% tax).`
+2. Adjust the rate from `25.0%` to `30.0%`.
+3. Note the live dynamic preview:
+   `Expected Approval Effect: -2.5% (Tax hike reduces household disposable income; -0.5% approval per +1% tax).`
+4. Click **Confirm Decision**:
+   - Status updates: `Decision Result: [Pending] Tax decision submitted...`.
+   - The watcher processes the request in `Republic.Core`, applies the fiscal change, updates citizen approval (to `67.5%`), writes the persistent `.sav` and `.json` state.
+   - Within 1–2 seconds, the desk updates:
+     `Decision Result: [Success] Successfully applied - Income tax rate updated from 25.0% to 30.0%...`.
+   - The top header and the **National Briefing** both reflect the new approval rating and tax rate.
 
-### Step 5 — Confirm the Decision
+### Step 6 — Commission a National Project (National Road Program)
 
-Click the **Confirm Decision** button.
-- The desk status updates to indicate `Tax request: Pending` and writes `presidential_desk_request.json`.
-- The decision controls disable temporarily to prevent duplicate submissions.
+1. Under **National Projects (Single-Player Loop)**, click **Start Road Program (R500,000)**.
+2. The desk immediately writes a project initiation request:
+   `Project Status: [Pending] Submitting commission...`.
+3. The simulation core verifies available treasury funds (cost: R500,000), checks for active project concurrency, commissions the **National Road Program** (with a 90-day completion ETA), deducts R500,000 from the treasury, and updates persistent state.
+4. The desk updates:
+   - `Project Status: [Success] National Road Program initiated. R500,000 deducted from treasury.`
+   - **Active Project** (both in header and National Briefing): `National Road Program (ETA: ...)`
+   - **Treasury**: Decreased by R500,000 (e.g. `R 9,500,000`).
+5. Clicking **Cancel Order** cancels unconfirmed project requests without any treasury deduction:
+   `Project Status: [Cancelled] Order cancelled.`
 
-### Step 6 — See the Live Update Take Effect
+### Step 7 — Confirm Persistence Across Reload
 
-- **Automatic Loop**: The `.NET` watcher daemon running in your terminal detects the request, evaluates authoritative simulation rules in `Republic.Core`, applies the change, updates `presidential_desk_state.json` and `presidential_desk_result.json`, and deletes the request file.
-- **Immediate Refresh**: Within 1–2 seconds, the Godot desk automatically detects the state update and displays:
-  - **Income Tax Rate**: `30.0%`
-  - **Approval**: Updated according to simulation rules (e.g. `67.5%`)
-  - **Decision Result**: `Successfully applied - Income tax rate updated from 25.0% to 30.0%. Approval adjusted...`
-  - **System Status**: Shows `Connected`, refreshed timestamp, and `Tax request: None`
-- **Manual Path**: You can also click **Refresh / Apply Pending** at any time to immediately trigger result pickup and reload state.
+1. Close the Godot window and press **F5** to reopen it, or click **Refresh / Apply Pending**.
+2. Notice that the country identity (`Republic of Arcadia`), treasury balance (`R 9,500,000`), income tax rate (`30.0%`), approval rating, stability, and active project (`National Road Program`) are completely preserved and restored intact from the authoritative save.
 
 ---
 
@@ -75,39 +96,48 @@ The Presidential Desk interface reads authoritative state exported from `Republi
 - **State File**: `res://presidential_desk_state.json` (also checks `user://presidential_desk_state.json` or custom path via `--state-file=<path>` or `REPUBLIC_STATE_FILE`).
 - **Live Fields Connected**:
   - **Country**: Sovereign nation name (e.g. `Republic of Arcadia`).
-  - **Treasury**: Sovereign liquid treasury balance in REPU (e.g. `R 15,000,000,000`).
-  - **Approval**: Public approval rating percentage (e.g. `70.0%`).
+  - **Treasury**: Sovereign liquid treasury balance in REPU (e.g. `R 9,500,000`).
+  - **Approval**: Public approval rating percentage (e.g. `67.5%`).
   - **Stability**: Baseline stability rating percentage (e.g. `80.0%`).
+  - **Active Project**: Currently active commissioned project and completion ETA (e.g. `National Road Program`).
   - **Simulation Time**: Authoritative simulation time in West Africa Time (e.g. `Day 0, 00:00 WAT`).
   - **Ruling party**: Active ruling party name or `None`.
   - **Election**: Most recent democratic national election result or `No election`.
-  - **Income Tax Rate**: Current personal income tax rate percentage (e.g. `25.0%`).
+  - **Income Tax Rate**: Current personal income tax rate percentage (e.g. `30.0%`).
   - **System Status**: Full connection status, state file presence, last update timestamp, and request telemetry.
-- **Auto-Refresh**: The scene automatically detects modification timestamps on the state file every 0.5s and reloads instantly when simulation time advances or tax policies change.
+- **Auto-Refresh**: The scene automatically detects modification timestamps on the state file every 0.5s and reloads instantly when simulation time advances or policies change.
 - **Safe Fallback**: If the state file is missing or contains invalid JSON, the interface displays `[No State Loaded]` with a visible status message; it never silently falls back to hardcoded sample values.
 
 ---
 
-## Interactive Presidential Decision Controls
+## Interactive Presidential Decision & Management Controls
 
-The presidential desk provides interactive governance controls allowing the player to enact tax policy reforms:
-1. **View Current Rate**: Displays the current personal income tax rate from live simulation state.
-2. **Select Proposed Rate**: A `ProposedRateSpinBox` control bounded by constitutional limits (`0%` to `70%`).
-3. **Dynamic Feedback Preview**: Automatically previews the expected public approval delta (`-0.5%` per `+1%` tax hike, `+0.5%` per `-1%` tax cut) and any stability warnings (such as the `-2.0%` penalty for exceeding `50%` income tax).
-4. **File-Based Decision Flow (`presidential_desk_request.json`)**:
-   - When the player confirms or cancels a decision, Godot writes a small JSON request file (`presidential_desk_request.json`) next to the state file:
+The presidential desk provides interactive governance controls allowing the player to manage sovereign affairs:
+1. **Country Creation & Loading**:
+   - `CountryNameLineEdit` & `FoundCountryButton`: Creates a new sovereign nation. Validates that the country name contains the word "Republic".
+   - `SavePathLineEdit` & `ResumeSaveButton`: Resumes from an existing authoritative `.sav` file.
+2. **National Briefing Panel**:
+   - Centrally presents five key pillars: Treasury balance, Public approval, Baseline stability, Active infrastructure project, and Latest decision outcome.
+3. **Taxation Policy Reform**:
+   - `ProposedRateSpinBox`: Adjusts personal income tax rate within constitutional bounds (`0%` to `70%`).
+   - Dynamic preview calculates expected approval changes (`-0.5%` per `+1%` tax hike) and stability penalties (> 50%).
+4. **National Projects**:
+   - `StartRoadProjectButton`: Commissions the National Road Program (cost: R500,000). Deducts funds, sets the active project, and updates national stability upon completion.
+   - `CancelProjectButton`: Cancels unconfirmed commissions with zero funds deducted.
+5. **Standardized In-Desk Outcome Feedback**:
+   - All actions display clear bracketed outcomes: `[Success]`, `[Rejected]`, `[Pending]`, and `[Cancelled]`.
+6. **File-Based Decision Flow (`presidential_desk_request.json`)**:
+   - Requests are written to disk as JSON:
      ```json
      {
        "request_id": "req_1729000000_12345",
-       "proposed_income_tax_rate": 0.30,
-       "confirmed": true,
+       "action": "create_country",
+       "country_name": "Republic of Arcadia",
        "timestamp": "2026-10-16T14:00:00"
      }
      ```
-   - **Simulation Processing**: When the request file appears, `PresidentialDeskBridge.CreateRequestWatcher` or the CLI detects it, applies the decision using authoritative `ApplyTaxDecision` simulation rules in `Republic.Core`, updates the persistent `.sav` save file, writes `presidential_desk_state.json` and `presidential_desk_result.json`, and deletes `presidential_desk_request.json`.
-   - **Cancellation**: If cancelled, the request is written with `"confirmed": false`. Existing tax rates, public approval, and simulation state are preserved 100% unchanged, and the selector resets back to the live rate.
-   - **Refresh / Apply Pending**: The **Refresh / Apply Pending** button checks for pending result files, triggers backend processing if a request is waiting, and refreshes the display immediately.
-   - **Timeout Warning**: If a request file is written but no updated state arrives within 4 seconds (e.g. if the simulation backend is stopped), a clear warning status message is displayed on the desk.
+   - Supported actions: `"tax"`, `"create_country"`, `"load_save"`, `"start_project"`.
+   - The CLI or bridge watcher processes the request, applies core simulation logic, writes updated `.sav`, `presidential_desk_state.json`, and `presidential_desk_result.json`, then deletes the request file.
 
 ---
 
@@ -125,7 +155,13 @@ dotnet run --project src/Republic.Cli
 # Option 3: Process a single pending request
 dotnet run --project src/Republic.Cli -- --process-request
 
-# Option 4: Standalone state export
+# Option 4: Create a country via CLI
+dotnet run --project src/Republic.Cli -- --create-country="Republic of Arcadia"
+
+# Option 5: Commission a project via CLI
+dotnet run --project src/Republic.Cli -- --start-project="Road"
+
+# Option 6: Standalone state export
 dotnet run --project src/Republic.Cli -- --export-godot
 ```
 
@@ -133,11 +169,12 @@ dotnet run --project src/Republic.Cli -- --export-godot
 
 ## Running Automated Headless Checks
 
-To run the automated Godot test suite verifying missing state safety, corrupt JSON handling, live state loading, dynamic state updates, taxation decision controls, Phase 11 consequence calculations, file-based request creation, cancellation preservation, timeout warnings, constitutional bounds rejection, and the refresh/apply flow:
+To run the automated Godot test suite verifying missing state safety, corrupt JSON handling, live state loading, dynamic state updates, taxation decision controls, Phase 11 consequence calculations, country creation validation, national briefing panel, project commissions, timeout warnings, and multiplayer networking (25 automated checks):
 
 ```bash
 godot --headless -s test_presidential_desk.gd
 ```
+
 
 ---
 
