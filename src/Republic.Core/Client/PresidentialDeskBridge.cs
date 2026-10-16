@@ -490,7 +490,7 @@ public static class PresidentialDeskBridge
         // Authoritative world save must succeed before writing the display snapshot.
         SaveAuthoritativeState(world, simulationTime, simulationTick, companionSavePath);
 
-        var snapshot = PresidentialDeskSnapshot.Create(country, simulationTime, simulationTick, companionSavePath);
+        var snapshot = PresidentialDeskSnapshot.Create(world, country, simulationTime, simulationTick, companionSavePath);
         var json = Serialize(snapshot);
         AtomicFileWriter.WriteAllTextSafely(path, json);
 

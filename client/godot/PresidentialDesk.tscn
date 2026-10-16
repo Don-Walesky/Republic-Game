@@ -25,7 +25,7 @@ layout_mode = 0
 offset_left = 40.0
 offset_top = 24.0
 offset_right = 880.0
-offset_bottom = 1040.0
+offset_bottom = 1100.0
 theme_override_constants/separation = 8
 
 [node name="NationalOverviewHeader" type="Label" parent="VBoxContainer"]
@@ -207,6 +207,11 @@ text = "Peer Treasury: [No peer connected]"
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Peer Approval: [No peer connected]"
+
+[node name="LastAiDecisionLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Last AI Decision: [No AI decisions recorded]"
 
 [node name="SharedClockLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2

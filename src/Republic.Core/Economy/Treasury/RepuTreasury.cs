@@ -32,7 +32,22 @@ public sealed class RepuTreasury
                 return _appliedSnapshotIds.ToArray();
             }
         }
+        init
+        {
+            if (value != null)
+            {
+                lock (_appliedSnapshotIds)
+                {
+                    _appliedSnapshotIds.Clear();
+                    foreach (var id in value)
+                    {
+                        _appliedSnapshotIds.Add(id);
+                    }
+                }
+            }
+        }
     }
+
 
     /// <summary>
     /// Determines whether the specified yield cycle snapshot has already been applied to this treasury.

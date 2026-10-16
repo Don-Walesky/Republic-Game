@@ -42,6 +42,16 @@ public sealed class Country
     public string GovernmentType { get; set; } = "Democratic Republic";
 
     /// <summary>
+    /// Gets or sets whether this sovereign country is autonomous and governed by an AI government.
+    /// </summary>
+    public bool IsAIControlled { get; set; }
+
+    /// <summary>
+    /// Gets or sets a description of the latest decision enacted by the sovereign AI government.
+    /// </summary>
+    public string? LastAIDecision { get; set; }
+
+    /// <summary>
     /// Gets or sets the sovereign land area in square kilometers.
     /// </summary>
     public double TerritorySizeSqKm { get; init; } = 500000;
@@ -561,8 +571,23 @@ public sealed class Country
     /// <summary>
     /// Gets the list of legislative bills proposed in this sovereign country.
     /// </summary>
-    [JsonIgnore]
-    public IReadOnlyList<CountryBill> Bills => _bills;
+    public IReadOnlyList<CountryBill> Bills
+    {
+        get => _bills;
+        init
+        {
+            if (value != null)
+            {
+                foreach (var b in value)
+                {
+                    if (!_bills.Any(existing => existing.Title.Equals(b.Title, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        _bills.Add(b);
+                    }
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Proposes a new legislative bill for this country.
@@ -724,8 +749,23 @@ public sealed class Country
     /// <summary>
     /// Gets the list of democratic national elections conducted in this sovereign country.
     /// </summary>
-    [JsonIgnore]
-    public IReadOnlyList<CountryElection> Elections => _elections;
+    public IReadOnlyList<CountryElection> Elections
+    {
+        get => _elections;
+        init
+        {
+            if (value != null)
+            {
+                foreach (var e in value)
+                {
+                    if (!_elections.Any(existing => existing.Boundary == e.Boundary))
+                    {
+                        _elections.Add(e);
+                    }
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Holds a democratic national election between the country's ruling party and opposition party at the specified clock boundary.
@@ -825,8 +865,23 @@ public sealed class Country
     /// <summary>
     /// Gets the read-only list of diplomatic relations opened by this sovereign country.
     /// </summary>
-    [JsonIgnore]
-    public IReadOnlyList<DiplomaticRelation> Relations => _relations;
+    public IReadOnlyList<DiplomaticRelation> Relations
+    {
+        get => _relations;
+        init
+        {
+            if (value != null)
+            {
+                foreach (var r in value)
+                {
+                    if (!_relations.Any(existing => existing.TargetCountryId == r.TargetCountryId))
+                    {
+                        _relations.Add(r);
+                    }
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Alias for <see cref="Relations"/>.

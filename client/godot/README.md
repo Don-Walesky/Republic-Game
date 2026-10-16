@@ -274,3 +274,63 @@ Phase 3 builds on the multiplayer foundation to provide bilateral diplomatic rec
    - Neither country's treasury balance is modified.
    - Buttons are reset.
 
+---
+
+## Phase 4 Offline Progression & AI Governments: Offline Test Steps
+
+In Phase 4, the world continues to progress while players are offline. AI-controlled sovereign countries run scheduled National Yield cycles and enact tax rate adjustments within constitutional bounds, saving full state (treasuries, yields, parties, bills, elections, diplomatic relations, dispatches, and trades). When the player returns and reloads, AI progression and decisions are immediately visible.
+
+### Prerequisites
+Ensure the .NET CLI and Godot client are built:
+```bash
+dotnet build Republic.sln
+```
+
+---
+
+### Step 1 — Export Initial State & Save Game
+Start the CLI simulation and save your active world:
+```bash
+dotnet run --project src/Republic.Cli -- --export-godot
+```
+Notice `client/godot/presidential_desk_state.json` and the authoritative save file are created. In the Godot desk (press **F5** in Godot), the player sees:
+- **Country**: `Republic of Arcadia`
+- **Foreign Country**: `Republic of Valoria` (or AI peer nation)
+- **Last AI Decision**: `Last AI Decision: None recorded` (or initial baseline note)
+
+---
+
+### Step 2 — Quit and Advance the Clock (Offline Gap)
+Close the Godot desk and quit the application to simulate going offline.
+Advance the global simulation time past one or more six-hour National Yield cycle boundaries (00:00, 06:00, 12:00, 18:00 WAT). You can simulate an offline gap using the CLI startup flag:
+```bash
+dotnet run --project src/Republic.Cli -- --startup-gap=18h --export-godot
+```
+Or run the watcher daemon while waiting for time boundaries to pass:
+```bash
+dotnet run --project src/Republic.Cli -- --watch-requests
+```
+
+During this gap:
+- The authoritative Republic simulation clock advances.
+- At each 6-hour boundary, the AI government (`AIGovernment` in `Republic.Core`) processes a National Yield cycle, collecting tax revenue into its treasury.
+- The AI evaluates domestic stability, treasury reserves, and citizen approval, selecting a constitutional income tax rate (0%–70%).
+- The AI applies its decision through the same `ApplyTaxDecision` pipeline used by players, logging a decision rationale note and updating its sovereign state.
+
+---
+
+### Step 3 — Reload and Inspect the Presidential Desk
+Relaunch or return to the Godot Presidential Desk:
+1. Open Godot and press **F5** (or click **Play**).
+2. The desk automatically reloads the restored authoritative state.
+
+---
+
+### Step 4 — Confirm AI Progression & Tax Decision
+On the Presidential Desk:
+1. Under **Foreign Sovereign State**, inspect the **Last AI Decision** line:
+   - It clearly displays the action taken while offline, for example:
+     `Last AI Decision: Republic of Valoria set tax to 26.0% (Day 1, 06:00 WAT) - Lowered income tax to stimulate public approval.`
+2. Inspect the foreign country's updated **Treasury** and **Approval** ratings reflecting the completed yield cycles and tax policy changes.
+3. Verify that all domestic player data (treasury, approval, tax rate, bills, parties, dispatches, and relations) was fully preserved across the save/load cycle.
+

@@ -145,6 +145,12 @@ public sealed record PresidentialDeskSnapshot
     public string SaveFilePath { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets the descriptive summary of the latest decision made by an autonomous AI government.
+    /// </summary>
+    [JsonPropertyName("last_ai_decision")]
+    public string LastAiDecision { get; init; } = "[No AI decisions recorded]";
+
+    /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
     /// Reuses existing core models and services without duplicating domain rules.
     /// </summary>
@@ -154,7 +160,8 @@ public sealed record PresidentialDeskSnapshot
         ulong simulationTick = 0,
         string? saveFilePath = null,
         string? latestDecisionResult = null,
-        string? statusMessage = null)
+        string? statusMessage = null,
+        string? lastAiDecision = null)
     {
         ArgumentNullException.ThrowIfNull(country);
 
@@ -185,6 +192,9 @@ public sealed record PresidentialDeskSnapshot
         var taxPolicy = country.TaxPolicy ?? new Republic.Core.Economy.Budget.Models.TaxPolicy();
         var formattedTaxRate = $"{taxPolicy.IncomeTaxRate * 100:0.#}%";
         var decisionResult = latestDecisionResult ?? country.LatestCitizenFeedback?.Description ?? string.Empty;
+        var resolvedAiDecision = !string.IsNullOrWhiteSpace(lastAiDecision)
+            ? lastAiDecision
+            : (country.LastAIDecision ?? "[No AI decisions recorded]");
 
         return new PresidentialDeskSnapshot
         {
@@ -209,7 +219,36 @@ public sealed record PresidentialDeskSnapshot
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,
-            SaveFilePath = saveFilePath ?? string.Empty
+            SaveFilePath = saveFilePath ?? string.Empty,
+            LastAiDecision = resolvedAiDecision
         };
     }
+
+    /// <summary>
+    /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from a world state and player country,
+    /// resolving autonomous AI government decisions across registered nations.
+    /// </summary>
+    public static PresidentialDeskSnapshot Create(
+        Republic.Core.World.WorldState world,
+        Country country,
+        RepublicTime simulationTime,
+        ulong simulationTick = 0,
+        string? saveFilePath = null,
+        string? latestDecisionResult = null,
+        string? statusMessage = null,
+        string? lastAiDecision = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(country);
+
+        string? resolvedAiDecision = lastAiDecision;
+        if (string.IsNullOrWhiteSpace(resolvedAiDecision))
+        {
+            var otherCountry = world.Countries?.FirstOrDefault(c => c.Id != country.Id && !string.IsNullOrWhiteSpace(c.LastAIDecision));
+            resolvedAiDecision = otherCountry?.LastAIDecision;
+        }
+
+        return Create(country, simulationTime, simulationTick, saveFilePath, latestDecisionResult, statusMessage, resolvedAiDecision);
+    }
 }
+

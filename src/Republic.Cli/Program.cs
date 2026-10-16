@@ -58,6 +58,14 @@ public static class Program
             }
         }
 
+        // Resume AI countries from saved state and continue their cycles using the global Republic clock
+        foreach (var aiCountry in app.WorldManager.Countries.GetAllCountries().Where(c => c.Id != playerCountry?.Id))
+        {
+            aiCountry.IsAIControlled = true;
+            var ai = new Republic.Core.AI.AIGovernment { CountryId = aiCountry.Id };
+            ai.ProcessDueCycles(aiCountry, app.TimeSystem.CurrentRepublicTime, new NationalYieldCycleService());
+        }
+
         // Handle CLI presidential taxation decision request if specified
         if (args != null && (args.Any(a => a.StartsWith("--apply-tax=") || a.StartsWith("--tax-rate=")) || args.Contains("--cancel-tax")))
         {
@@ -174,7 +182,7 @@ public static class Program
         if (args != null && (args.Contains("--export-godot") || args.Contains("--export-state")))
         {
             var exportCountry = playerCountry ?? Country.Found("Republic of Arcadia", app.TimeSystem.CurrentRepublicTime);
-            if (PresidentialDeskBridge.TryExportState(exportCountry, app.TimeSystem.CurrentRepublicTime, out var outPath, app.TimeSystem.CurrentTick))
+            if (PresidentialDeskBridge.TryExportState(app.WorldManager.Current, exportCountry, app.TimeSystem.CurrentRepublicTime, out var outPath, app.TimeSystem.CurrentTick))
             {
                 Console.WriteLine($"[GODOT BRIDGE]: Exported live simulation state to: {outPath}");
             }
@@ -184,7 +192,7 @@ public static class Program
         // Export initial live state for the Godot presidential desk
         if (playerCountry != null)
         {
-            PresidentialDeskBridge.TryExportState(playerCountry, app.TimeSystem.CurrentRepublicTime, app.TimeSystem.CurrentTick);
+            PresidentialDeskBridge.TryExportState(app.WorldManager.Current, playerCountry, app.TimeSystem.CurrentRepublicTime, app.TimeSystem.CurrentTick);
         }
 
         using var requestWatcher = PresidentialDeskBridge.CreateRequestWatcher(

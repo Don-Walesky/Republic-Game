@@ -77,6 +77,7 @@ public sealed record DiplomaticRelation
     /// <summary>
     /// Initializes a new diplomatic relation record with full status and recognition specification.
     /// </summary>
+    [JsonConstructor]
     public DiplomaticRelation(
         string fromCountryId,
         string toCountryId,

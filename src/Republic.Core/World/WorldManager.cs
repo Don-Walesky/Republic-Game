@@ -127,6 +127,8 @@ public sealed class WorldManager : IWorldManager
         CurrentTick = Current.CurrentTick,
         Entities = _entities.Values.ToList(),
         Countries = Countries.GetAllCountries().ToList(),
+        Messages = Current.Messages?.ToList() ?? new(),
+        TradeProposals = Current.TradeProposals?.ToList() ?? new(),
     };
 
     /// <inheritdoc />
@@ -141,6 +143,8 @@ public sealed class WorldManager : IWorldManager
             CurrentTick = state.CurrentTick,
             Entities = state.Entities.Select(entity => entity with { }).ToList(),
             Countries = state.Countries?.ToList() ?? new(),
+            Messages = state.Messages?.ToList() ?? new(),
+            TradeProposals = state.TradeProposals?.ToList() ?? new(),
         };
 
         _entities.Clear();
@@ -149,6 +153,7 @@ public sealed class WorldManager : IWorldManager
             _entities[entity.Id] = entity;
         }
 
+        Countries.Clear();
         if (state.Countries != null)
         {
             foreach (var country in state.Countries)
@@ -157,6 +162,7 @@ public sealed class WorldManager : IWorldManager
             }
         }
     }
+
 
     private void EnsureWorldExists()
     {

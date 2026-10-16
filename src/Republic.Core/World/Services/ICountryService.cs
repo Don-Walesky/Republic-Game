@@ -37,4 +37,10 @@ public interface ICountryService
     /// Updates the baseline stability of a country.
     /// </summary>
     bool UpdateStability(string countryId, double delta);
+
+    /// <summary>
+    /// Clears all registered countries.
+    /// </summary>
+    void Clear();
 }
+

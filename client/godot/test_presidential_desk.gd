@@ -89,11 +89,14 @@ func _init() -> void:
 	# Test 22: Phase 3 Diplomacy recognition, messaging, and trade proposal acceptance UI
 	all_passed = test_diplomacy_and_trade_sync(desk) and all_passed
 
+	# Test 23: Phase 4 Offline progression and Last AI decision line display
+	all_passed = test_phase4_ai_decision_display(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 22 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 23 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -1572,6 +1575,72 @@ func test_diplomacy_and_trade_sync(desk: Node) -> bool:
 		return false
 
 	print("  [OK]: Phase 3 diplomacy recognition, messaging, and trade proposal acceptance UI verified.")
+	return true
+
+
+func test_phase4_ai_decision_display(desk: Control) -> bool:
+	print("\n--- Test 23: Phase 4 Offline Progression & Last AI Decision Line Display ---")
+
+	# 1. Verify LastAiDecisionLabel node exists and is bound
+	if desk.last_ai_decision_label == null:
+		printerr("[FAIL]: desk.last_ai_decision_label is null!")
+		return false
+
+	# 2. Verify display_missing_state sets default message
+	desk.display_missing_state("Testing AI decision missing state")
+	if not (desk.last_ai_decision_label.text.contains("No AI decisions recorded") or desk.last_ai_decision_label.text.contains("None recorded")):
+		printerr("[FAIL]: LastAiDecisionLabel did not show default on missing state: " + desk.last_ai_decision_label.text)
+		return false
+
+	# 3. Verify apply_state with last_ai_decision updates the label
+	var state_with_ai := {
+		"country_name": "Republic of Arcadia",
+		"treasury": "R 10,000,000",
+		"approval_rating": "65.0%",
+		"stability_rating": "70.0%",
+		"tax_rate": "25.0%",
+		"simulation_time": "Day 1, 06:00 WAT",
+		"ruling_party": "Progressive Unity",
+		"election_status": "No election held",
+		"last_ai_decision": "Republic of Valoria set tax to 26.0% (Day 1, 06:00 WAT) - Lowered income tax to stimulate public approval."
+	}
+	desk.apply_state(state_with_ai)
+
+	if not desk.last_ai_decision_label.text.contains("Republic of Valoria set tax to 26.0%"):
+		printerr("[FAIL]: LastAiDecisionLabel did not display AI decision from exported state: " + desk.last_ai_decision_label.text)
+		return false
+
+	# 4. Verify network message of type 'ai_decision' updates the label in real time
+	var ai_net_msg := {
+		"type": "ai_decision",
+		"sender_id": "host",
+		"decision": "Republic of Valoria set tax to 27.0% (Day 1, 12:00 WAT) - Raised income tax to reinforce sovereign treasury reserves."
+	}
+	desk._handle_network_message(ai_net_msg)
+
+	if not desk.last_ai_decision_label.text.contains("27.0%"):
+		printerr("[FAIL]: LastAiDecisionLabel did not update from live ai_decision network message: " + desk.last_ai_decision_label.text)
+		return false
+
+	# 5. Verify peer snapshot with last_ai_decision updates label
+	var peer_snap_msg := {
+		"type": "country",
+		"sender_id": "peer_ai_host",
+		"country": {
+			"id": "valoria",
+			"name": "Republic of Valoria",
+			"treasury": 12500000.0,
+			"approval": 62.0,
+			"last_ai_decision": "Republic of Valoria set tax to 28.0% (Day 1, 18:00 WAT) - Adjusted income tax."
+		}
+	}
+	desk._handle_network_message(peer_snap_msg)
+
+	if not desk.last_ai_decision_label.text.contains("28.0%"):
+		printerr("[FAIL]: LastAiDecisionLabel did not update from peer country snapshot: " + desk.last_ai_decision_label.text)
+		return false
+
+	print("  [OK]: Phase 4 offline progression and Last AI Decision UI line verified.")
 	return true
 
 

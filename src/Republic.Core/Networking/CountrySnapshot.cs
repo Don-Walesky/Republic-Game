@@ -36,4 +36,11 @@ public sealed record CountrySnapshot
     /// </summary>
     [JsonPropertyName("tax_rate")]
     public string TaxRate { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the note or summary of the last AI governance decision.
+    /// </summary>
+    [JsonPropertyName("last_ai_decision")]
+    public string LastAiDecision { get; init; } = string.Empty;
 }
+

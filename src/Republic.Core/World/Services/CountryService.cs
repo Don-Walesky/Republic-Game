@@ -112,4 +112,14 @@ public sealed class CountryService : ICountryService
             return true;
         }
     }
+
+    /// <inheritdoc />
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            _countries.Clear();
+        }
+    }
 }
+

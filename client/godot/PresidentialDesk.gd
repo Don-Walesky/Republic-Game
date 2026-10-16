@@ -38,6 +38,7 @@ func _get_required_node(node_path: String) -> Node:
 @onready var foreign_country_name_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryNameLabel") as Label
 @onready var foreign_country_treasury_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryTreasuryLabel") as Label
 @onready var foreign_country_approval_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryApprovalLabel") as Label
+@onready var last_ai_decision_label: Label = _get_required_node("VBoxContainer/LastAiDecisionLabel") as Label
 @onready var shared_clock_label: Label = _get_required_node("VBoxContainer/SharedClockLabel") as Label
 
 ## Bilateral Diplomacy & Trade Controls
@@ -151,6 +152,8 @@ func _init_controls() -> void:
 		foreign_country_treasury_label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryTreasuryLabel") as Label
 	if foreign_country_approval_label == null:
 		foreign_country_approval_label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryApprovalLabel") as Label
+	if last_ai_decision_label == null:
+		last_ai_decision_label = _get_required_node("VBoxContainer/LastAiDecisionLabel") as Label
 	if shared_clock_label == null:
 		shared_clock_label = _get_required_node("VBoxContainer/SharedClockLabel") as Label
 
@@ -399,6 +402,13 @@ func apply_state(data: Dictionary) -> void:
 	if status_label:
 		status_label.text = _format_status_text("Status: " + status_msg, "None")
 
+	var last_ai_dec: String = str(data.get("last_ai_decision", data.get("LastAiDecision", "")))
+	if last_ai_decision_label:
+		if not last_ai_dec.is_empty():
+			last_ai_decision_label.text = "Last AI Decision: " + last_ai_dec
+		else:
+			last_ai_decision_label.text = "Last AI Decision: [No AI decisions recorded]"
+
 	var current_rate_pct := raw_tax_rate * 100.0
 
 	# Only synchronize spinbox if player is not currently typing / modifying
@@ -529,6 +539,8 @@ func display_error(error_msg: String) -> void:
 		expected_consequence_label.text = "Expected Approval Effect: Error"
 	if decision_result_label:
 		decision_result_label.text = "Decision Result: Error - " + error_msg
+	if last_ai_decision_label:
+		last_ai_decision_label.text = "Last AI Decision: [No AI decisions recorded]"
 
 	# Ensure SpinBox and buttons remain completely usable even if state file is corrupted
 	if proposed_rate_spinbox:
@@ -1057,6 +1069,8 @@ func _reset_foreign_country_display() -> void:
 		foreign_country_treasury_label.text = "Treasury: [N/A]"
 	if foreign_country_approval_label:
 		foreign_country_approval_label.text = "Approval: [N/A]"
+	if last_ai_decision_label:
+		last_ai_decision_label.text = "Last AI Decision: [No AI decisions recorded]"
 	if shared_clock_label:
 		shared_clock_label.text = "Shared World Clock: [Local Clock]"
 	if diplomacy_status_label:
@@ -1172,8 +1186,8 @@ func _handle_network_message(msg: Dictionary) -> void:
 			if shared_clock_label:
 				shared_clock_label.text = "Shared World Clock: Day %d - %s (Tick %d)" % [day, time_str, tick]
 
-	elif msg_type == "country":
-		var snap: Variant = msg.get("country", {})
+	elif msg_type == "country" or msg_type == "country_snapshot":
+		var snap: Variant = msg.get("country", msg.get("snapshot", {}))
 		if snap is Dictionary:
 			var snap_id := str(snap.get("id", sender_id))
 			if snap_id != _local_client_id:
@@ -1187,6 +1201,14 @@ func _handle_network_message(msg: Dictionary) -> void:
 					foreign_country_treasury_label.text = "Treasury: " + peer_treasury
 				if foreign_country_approval_label:
 					foreign_country_approval_label.text = "Approval: " + peer_approval
+				var peer_ai_dec := str(snap.get("last_ai_decision", ""))
+				if not peer_ai_dec.is_empty() and last_ai_decision_label:
+					last_ai_decision_label.text = "Last AI Decision: " + peer_ai_dec
+
+	elif msg_type == "ai_decision":
+		var dec_note := str(msg.get("decision", msg.get("text", "")))
+		if not dec_note.is_empty() and last_ai_decision_label:
+			last_ai_decision_label.text = "Last AI Decision: " + dec_note
 
 	elif msg_type == "diplomacy":
 		var dip_data: Variant = msg.get("diplomacy", {})
