@@ -104,11 +104,14 @@ func _init() -> void:
 	# Test 27: Executive cabinet appointments and competence vs loyalty trade-offs
 	all_passed = test_cabinet_appointment_and_tradeoff_loop(desk) and all_passed
 
+	# Test 28: MVP Multiplayer reliability, trade lifecycle stages, defense posture, and offline briefing
+	all_passed = test_mvp_multiplayer_simulation_and_trade_lifecycle(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 27 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 28 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -2251,6 +2254,128 @@ func test_cabinet_appointment_and_tradeoff_loop(desk: Control) -> bool:
 
 	print("  [OK]: Test 27 Executive cabinet appointments & competence vs loyalty loop fully verified.")
 	return true
+
+
+func test_mvp_multiplayer_simulation_and_trade_lifecycle(desk: Control) -> bool:
+	print("\n--- Test 28: MVP Multiplayer Reliability, Trade Lifecycle Stages, Defense Posture & Offline Briefing ---")
+
+	# 1. Verify UI nodes exist
+	if desk.defense_readiness_label == null:
+		printerr("[FAIL]: DefenseReadinessLabel not found")
+		return false
+	if desk.offline_briefing_label == null:
+		printerr("[FAIL]: OfflineBriefingLabel not found")
+		return false
+	if desk.trade_lifecycle_stage_label == null:
+		printerr("[FAIL]: TradeLifecycleStageLabel not found")
+		return false
+
+	var temp_state_path: String = "user://test_mvp_multiplayer_state.json"
+
+	# 2. Test state application with defense posture and offline catch-up briefing
+	var test_state: Dictionary = {
+		"country_name": "Republic of Arcadia",
+		"country_id": "arcadia-1",
+		"treasury": "R 10,000,000,000",
+		"treasury_balance": 10000000000,
+		"approval": "72%",
+		"approval_rating": 72.0,
+		"stability": "85%",
+		"stability_rating": 85.0,
+		"simulation_day": 10,
+		"simulation_time": "Day 10, 12:00 WAT",
+		"ruling_party": "Federal Republic Movement",
+		"opposition_party": "Civic Union",
+		"polling_support": 58.0,
+		"opposition_support": 42.0,
+		"income_tax_rate": 0.25,
+		"active_project": "None",
+		"defcon_level": "DEFCON 5 (Peacetime Watch)",
+		"military_readiness": "85.0% (Armed Forces Operational)",
+		"offline_briefing_summary": "Offline Catch-Up (Day 6 to Day 10): 4 production cycles credited (+R 4,000,000 deposited, 1 projects completed)."
+	}
+
+	var state_file := FileAccess.open(temp_state_path, FileAccess.WRITE)
+	state_file.store_string(JSON.stringify(test_state))
+	state_file.close()
+
+	if not desk.load_state_from_file(temp_state_path):
+		printerr("[FAIL]: Failed to load MVP test state from " + temp_state_path)
+		return false
+
+	# Verify defense posture and offline briefing labels
+	if not desk.defense_readiness_label.text.contains("DEFCON 5") or not desk.defense_readiness_label.text.contains("Armed Forces"):
+		printerr("[FAIL]: Defense readiness label did not display DEFCON and armed forces: " + desk.defense_readiness_label.text)
+		return false
+
+	if not desk.offline_briefing_label.text.contains("Offline Catch-Up") or not desk.offline_briefing_label.text.contains("4 production cycles credited"):
+		printerr("[FAIL]: Offline briefing label did not display catch-up summary: " + desk.offline_briefing_label.text)
+		return false
+
+	# 3. Test Trade Lifecycle Stages
+	# A. Tuning trade amount -> [Draft Proposal]
+	desk._on_trade_amount_changed(250000000.0)
+	if not desk.trade_lifecycle_stage_label.text.contains("[Draft Proposal]"):
+		printerr("[FAIL]: Expected trade_lifecycle_stage_label to show [Draft Proposal], got: " + desk.trade_lifecycle_stage_label.text)
+		return false
+
+	# B. Submitting trade proposal -> [Pending Proposal]
+	desk.trade_recipient_input.text = "Federation of Valoria"
+	desk._on_propose_trade_button_pressed()
+	if not desk.trade_lifecycle_stage_label.text.contains("[Pending Proposal]"):
+		printerr("[FAIL]: Expected trade_lifecycle_stage_label to show [Pending Proposal], got: " + desk.trade_lifecycle_stage_label.text)
+		return false
+
+	# C. Receiving Accepted / Completed Trade -> [Accepted Agreement / Completed Transaction]
+	desk._handle_network_message({
+		"type": "trade",
+		"trade": {
+			"from": "Republic of Arcadia",
+			"to": "Federation of Valoria",
+			"amount": 250000000.0,
+			"resource": "REPU",
+			"status": "Accepted",
+			"lifecycle_stage": "Accepted Agreement"
+		}
+	})
+	if not desk.trade_lifecycle_stage_label.text.contains("[Accepted Agreement / Completed Transaction]"):
+		printerr("[FAIL]: Expected trade_lifecycle_stage_label to show [Accepted Agreement / Completed Transaction], got: " + desk.trade_lifecycle_stage_label.text)
+		return false
+
+	# D. Receiving Rejected Trade -> [Rejected Proposal]
+	desk._handle_network_message({
+		"type": "trade",
+		"trade": {
+			"from": "Republic of Arcadia",
+			"to": "Federation of Valoria",
+			"amount": 250000000.0,
+			"resource": "REPU",
+			"status": "Rejected",
+			"lifecycle_stage": "Rejected Proposal"
+		}
+	})
+	if not desk.trade_lifecycle_stage_label.text.contains("[Rejected Proposal]"):
+		printerr("[FAIL]: Expected trade_lifecycle_stage_label to show [Rejected Proposal], got: " + desk.trade_lifecycle_stage_label.text)
+		return false
+
+	# 4. Test Session Reconnection / Recovery Message Handling
+	desk._handle_network_message({
+		"type": "decision_result",
+		"country_id": "arcadia-1",
+		"result": "Success",
+		"status_message": "Reconnected session for country 'arcadia-1'."
+	})
+	if not desk.multiplayer_status_label.text.contains("Reconnected session"):
+		printerr("[FAIL]: Multiplayer status label did not reflect reconnected session: " + desk.multiplayer_status_label.text)
+		return false
+
+	# Clean up temporary test file
+	if FileAccess.file_exists(temp_state_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_state_path))
+
+	print("  [OK]: Test 28 MVP multiplayer reliability, trade lifecycle stages, defense posture, and offline briefing fully verified.")
+	return true
+
 
 
 

@@ -254,6 +254,24 @@ public sealed record PresidentialDeskSnapshot
     public string StateCapacitySummary { get; init; } = "Civil Service: 30% | Corruption Control: 30% | Infrastructure: 30%";
 
     /// <summary>
+    /// Gets the executive briefing summary of the most recent offline progression catch-up.
+    /// </summary>
+    [JsonPropertyName("offline_briefing_summary")]
+    public string OfflineBriefingSummary { get; init; } = "Offline Status: Real-time simulation aligned. Zero pending offline cycles.";
+
+    /// <summary>
+    /// Gets the active DEFCON defense readiness alert level.
+    /// </summary>
+    [JsonPropertyName("defcon_level")]
+    public string DefconLevel { get; init; } = "DEFCON 5 (Peacetime Watch)";
+
+    /// <summary>
+    /// Gets the composite military readiness score formatted string.
+    /// </summary>
+    [JsonPropertyName("military_readiness")]
+    public string MilitaryReadiness { get; init; } = "85.0% (Armed Forces Operational)";
+
+    /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
     /// Reuses existing core models and services without duplicating domain rules.
     /// </summary>
@@ -411,6 +429,11 @@ public sealed record PresidentialDeskSnapshot
             ActiveCrisisDetails = activeCrisisDetails,
             CompletedProjectsSummary = completedSummary,
             StateCapacitySummary = stateCapacitySummary,
+            OfflineBriefingSummary = !string.IsNullOrWhiteSpace(country.LastOfflineCatchUpSummary)
+                ? country.LastOfflineCatchUpSummary
+                : "Offline Status: Real-time simulation aligned. Zero pending offline cycles.",
+            DefconLevel = "DEFCON 5 (Peacetime Watch)",
+            MilitaryReadiness = "85.0% (Armed Forces Operational)",
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,

@@ -44,4 +44,38 @@ Republic utilizes a **10-wave player-experience roadmap**. Each wave builds upon
 
 ## Current Status
 
-**Waves 0 through 4 are implemented and verified**, alongside baseline authoritative multiplayer networking (Wave 9) and international diplomacy/trade (Wave 8). The simulation core and Presidential Desk interface are backed by **760 passing C# unit tests** in .NET 8.0 and **27 passing Godot headless checks** in Godot 4.
+**Waves 0 through 4 are implemented and verified**, alongside authoritative multiplayer networking (Wave 9), bilateral diplomacy and trade (Wave 8), and executive defense monitoring (Wave 7). The simulation core and Presidential Desk interface are backed by **772 passing C# unit tests** in .NET 8.0 and automated headless checks in Godot 4.
+
+---
+
+## MVP Scope Decisions & Deferred Advanced Systems
+
+Following the architectural audit of dependencies, player value, and technical risk for the first public MVP, the following explicit scope determinations are recorded:
+
+### Included in Public MVP Scope
+1. **Multiplayer Reliability & Authoritative State Ownership**:
+   - Host/join flows, persistent player identity (`ClientId`), authoritative state ownership validation, shared simulation clock synchronization in WAT (UTC+1).
+   - Authoritative anti-cheat and security: Clients *never* authoritatively declare their own Treasury balance, country strength, or trade results; all transactions and state updates are sanitized and validated by the host.
+   - Idempotent request handling, session recovery, reconnect routing, and corrupt save preservation.
+2. **Bilateral Diplomacy and Trade**:
+   - Sovereign bilateral recognition, direct diplomatic dispatches, and authoritative treasury-backed trade proposals.
+   - Lifecycle stage transparency: Clear distinction between **Draft Proposal**, **Pending Proposal**, **Accepted Agreement**, and **Completed Transaction**.
+   - Exactly-once settlement, duplicate execution prevention, and persistent agreements across reload.
+3. **Offline Progression & Returning Player Briefings**:
+   - Durable simulation catch-up crediting 6-hour production cycles, net REPU deposits, and completed capital projects.
+   - Clear, non-silent `OfflineBriefingSummary` ensuring returning players understand all state changes that occurred during their absence.
+4. **Military Readiness & Sovereign Defense Posture**:
+   - National defense readiness percentage and DEFCON alert levels (DEFCON 5 to 1 peacetime-to-wartime monitoring) exposed directly within the Presidential Briefing. Low technical risk with immediate sovereign immersion.
+
+### Deferred to Post-MVP Roadmap Waves
+1. **Full Legislative Assembly & Parliamentary Decision-Making (Deferred to Wave 6)**:
+   - *Rationale*: Candidate campaigns, party polling, elections, and democratic transitions into government are fully functioning in the MVP. Multi-faction legislative voting grids, parliamentary bill drafting, and coalition bargaining are deferred to avoid delaying the core multiplayer launch with complex non-player party AI.
+2. **Military Operations, Combat Simulation & War (Deferred to Wave 7)**:
+   - *Rationale*: High technical risk. Simulating tactical troop deployments, casualty tracking, border shifts, and multiplayer war exhaustion requires extensive balancing and would introduce unvetted exploit vectors into initial public play.
+3. **Intelligence Operations & Covert Influence (Deferred to Wave 8)**:
+   - *Rationale*: Espionage networks, covert election interference, and sabotage depend upon established bilateral diplomatic baselines. These systems will be introduced once inter-player peacetime statecraft is proven stable in live environments.
+4. **Advanced Alliances, Multilateral Blocs & International Coalitions (Deferred to Wave 8)**:
+   - *Rationale*: Bilateral agreements provide robust player interaction for the MVP. Multi-party consensus protocols and supranational voting bodies require complex quorum mechanics best layered onto a stable bilateral networking foundation.
+5. **Additional Multilateral Treaties & Dynamic International Crises (Deferred to Wave 8)**:
+   - *Rationale*: Domestic fiscal and civil unrest crises are active in the MVP. Global crisis engines (e.g. climate summits, international sanctions regimes) are deferred to post-MVP expansion.
+

@@ -876,6 +876,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Trade Status: [No active proposal]"
 
+[node name="TradeLifecycleStageLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.75, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Trade Lifecycle: [Draft Proposal] — Configure amount above and propose to peer"
+
 [node name="SectionBriefings" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer"]
 visible = false
 layout_mode = 2
@@ -941,6 +947,19 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
 theme_override_font_sizes/font_size = 13
 text = "Latest Decision: [No decisions recorded]"
+autowrap_mode = 2
+
+[node name="DefenseReadinessLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.5, 1)
+theme_override_font_sizes/font_size = 13
+text = "Defense Posture: DEFCON 5 (Peacetime Watch) | Armed Forces: 85.0% Operational"
+
+[node name="OfflineBriefingLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.85, 0.75, 1)
+theme_override_font_sizes/font_size = 13
+text = "Offline Status: Real-time simulation aligned. Zero pending offline cycles."
 autowrap_mode = 2
 
 [node name="CrisisPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings"]

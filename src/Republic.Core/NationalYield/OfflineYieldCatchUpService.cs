@@ -75,7 +75,7 @@ public sealed class OfflineYieldCatchUpService : IOfflineYieldCatchUpService
         // 10. Complete any active capital development projects whose finish boundary has been reached
         var projectsCompletedCount = country.CheckProjectsCompletion(returnTime);
 
-        return new OfflineYieldBriefing
+        var briefing = new OfflineYieldBriefing
         {
             CountryId = country.Id,
             FromTime = fromTime,
@@ -88,6 +88,12 @@ public sealed class OfflineYieldCatchUpService : IOfflineYieldCatchUpService
             RoadProgramCompleted = roadCompleted,
             ProjectsCompletedCount = projectsCompletedCount
         };
+
+        country.LastOfflineCatchUpSummary = briefing.HasCredited
+            ? $"Offline Catch-Up ({briefing.FromTime} to {briefing.ToTime}): {briefing.BoundariesCredited} production cycles credited (+{briefing.FormattedRepuDeposited} deposited, {projectsCompletedCount} projects completed)."
+            : "Offline Status: Real-time simulation aligned. Zero pending offline cycles.";
+
+        return briefing;
     }
 
     /// <inheritdoc />

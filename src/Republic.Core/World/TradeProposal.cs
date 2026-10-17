@@ -6,11 +6,14 @@ using Republic.Core.Economy.Treasury;
 
 /// <summary>
 /// Status enumeration for bilateral trade proposals.
+/// Supports distinguishing Draft, Pending, Accepted, Completed, and Rejected states.
 /// </summary>
 public enum TradeProposalStatus
 {
+    Draft,
     Pending,
     Accepted,
+    Completed,
     Rejected
 }
 
@@ -51,10 +54,25 @@ public sealed class TradeProposal
     public string Resource { get; init; } = "REPU";
 
     /// <summary>
-    /// Gets or sets the resolution status of this trade proposal ("Pending", "Accepted", "Rejected").
+    /// Gets or sets the resolution status of this trade proposal ("Draft", "Pending", "Accepted", "Completed", "Rejected").
     /// </summary>
     [JsonPropertyName("status")]
     public string Status { get; set; } = TradeProposalStatus.Pending.ToString();
+
+    /// <summary>
+    /// Gets the human-readable lifecycle stage of the trade proposal.
+    /// Explicitly distinguishes draft proposal, pending proposal, accepted agreement, and completed transaction.
+    /// </summary>
+    [JsonPropertyName("lifecycle_stage")]
+    public string LifecycleStage => Status switch
+    {
+        "Draft" => "Draft Proposal",
+        "Pending" => "Pending Proposal",
+        "Accepted" => "Accepted Agreement",
+        "Completed" => "Completed Transaction",
+        "Rejected" => "Rejected Proposal",
+        _ => Status
+    };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TradeProposal"/> class.
@@ -108,6 +126,14 @@ public sealed class TradeProposal
         ArgumentNullException.ThrowIfNull(fromCountry);
         ArgumentNullException.ThrowIfNull(toCountry);
         return Accept(fromCountry.Treasury, toCountry.Treasury);
+    }
+
+    /// <summary>
+    /// Marks the accepted trade agreement as a completed transaction.
+    /// </summary>
+    public void Complete()
+    {
+        Status = TradeProposalStatus.Completed.ToString();
     }
 
     /// <summary>

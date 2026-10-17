@@ -68,7 +68,16 @@ public sealed class RepublicNetworkClient : IDisposable
     /// <summary>
     /// Gets the unique identifier for this client session.
     /// </summary>
-    public string ClientId { get; } = Guid.NewGuid().ToString("N");
+    public string ClientId { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RepublicNetworkClient"/> class.
+    /// </summary>
+    /// <param name="clientId">Optional explicit or persistent client identifier. If null or empty, a new Guid is generated.</param>
+    public RepublicNetworkClient(string? clientId = null)
+    {
+        ClientId = !string.IsNullOrWhiteSpace(clientId) ? clientId : Guid.NewGuid().ToString("N");
+    }
 
     /// <summary>
     /// Gets a value indicating whether the client is currently connected to the host.
@@ -188,6 +197,26 @@ public sealed class RepublicNetworkClient : IDisposable
             Type = "claim_country",
             SenderId = ClientId,
             CountryId = countryId
+        };
+
+        await SendMessageAsync(message).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Reconnects and reclaims ownership of the sovereign country after a disconnect or crash.
+    /// </summary>
+    public async Task SendReconnectAsync(string countryId, string previousClientId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(previousClientId);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var message = new NetworkMessage
+        {
+            Type = "reconnect",
+            SenderId = ClientId,
+            CountryId = countryId,
+            PreviousClientId = previousClientId
         };
 
         await SendMessageAsync(message).ConfigureAwait(false);

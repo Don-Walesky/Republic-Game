@@ -222,6 +222,28 @@ public sealed class RepublicHost : IDisposable
     }
 
     /// <summary>
+    /// Reconnects a player session to a previously claimed country, re-establishing session ownership.
+    /// </summary>
+    public bool ReconnectPlayer(string oldPlayerId, string newClientId, string countryId)
+    {
+        if (string.IsNullOrWhiteSpace(oldPlayerId) || string.IsNullOrWhiteSpace(newClientId) || string.IsNullOrWhiteSpace(countryId))
+        {
+            return false;
+        }
+
+        if (_countryOwners.TryGetValue(countryId, out var currentOwner) && currentOwner == oldPlayerId)
+        {
+            _countryOwners[countryId] = newClientId;
+            _playerCountries.TryRemove(oldPlayerId, out _);
+            _playerCountries[newClientId] = countryId;
+            SaveWorld();
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Checks whether the specified player identity owns the country.
     /// </summary>
     public bool IsOwner(string playerId, string countryId)
@@ -335,7 +357,7 @@ public sealed class RepublicHost : IDisposable
 
         if (double.TryParse(sb.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
         {
-            return parsed;
+            return Math.Clamp(parsed, 0.0, 15_000_000_000.0);
         }
 
         return 15_000_000_000.0;
@@ -1075,25 +1097,61 @@ public sealed class RepublicHost : IDisposable
                                 : $"Country {countryId} is already owned by another sovereign."
                         }).ConfigureAwait(false);
                     }
+                    else if (message.Type == "reconnect")
+                    {
+                        var countryId = message.CountryId ?? string.Empty;
+                        var prevClientId = message.PreviousClientId ?? string.Empty;
+                        var reconnected = ReconnectPlayer(prevClientId, message.SenderId, countryId);
+                        await client.SendMessageAsync(new NetworkMessage
+                        {
+                            Type = "decision_result",
+                            SenderId = "host",
+                            RequestId = message.RequestId,
+                            CountryId = countryId,
+                            Success = reconnected,
+                            Result = reconnected ? "Success" : "Rejected",
+                            StatusMessage = reconnected
+                                ? $"Reconnected session for country '{countryId}'."
+                                : $"Failed to reconnect country '{countryId}': invalid previous credentials."
+                        }).ConfigureAwait(false);
+                    }
                     else if (message.Type == "country" && message.Country != null)
                     {
                         var countryId = message.Country.Id;
                         if (!_countryOwners.ContainsKey(countryId))
                         {
                             TryClaimCountry(message.SenderId, countryId);
-                            _knownCountries[countryId] = message.Country;
-                            GetOrCreateTreasury(countryId, message.Country);
-                            OnCountryUpdated?.Invoke(message.Country);
+                            var authTreasury = GetOrCreateTreasury(countryId, message.Country);
+                            var sanitizedCountry = message.Country with
+                            {
+                                Treasury = $"R {authTreasury.Balance:N0}"
+                            };
+                            _knownCountries[countryId] = sanitizedCountry;
+                            OnCountryUpdated?.Invoke(sanitizedCountry);
                             SaveWorld();
-                            await BroadcastMessageAsync(message, excludeClientId: client.Id).ConfigureAwait(false);
+                            await BroadcastMessageAsync(new NetworkMessage
+                            {
+                                Type = "country",
+                                SenderId = "host",
+                                Country = sanitizedCountry
+                            }, excludeClientId: client.Id).ConfigureAwait(false);
                         }
                         else if (IsOwner(message.SenderId, countryId))
                         {
-                            _knownCountries[countryId] = message.Country;
-                            GetOrCreateTreasury(countryId, message.Country);
-                            OnCountryUpdated?.Invoke(message.Country);
+                            var authTreasury = GetOrCreateTreasury(countryId);
+                            var sanitizedCountry = message.Country with
+                            {
+                                Treasury = $"R {authTreasury.Balance:N0}"
+                            };
+                            _knownCountries[countryId] = sanitizedCountry;
+                            OnCountryUpdated?.Invoke(sanitizedCountry);
                             SaveWorld();
-                            await BroadcastMessageAsync(message, excludeClientId: client.Id).ConfigureAwait(false);
+                            await BroadcastMessageAsync(new NetworkMessage
+                            {
+                                Type = "country",
+                                SenderId = "host",
+                                Country = sanitizedCountry
+                            }, excludeClientId: client.Id).ConfigureAwait(false);
                         }
                         else
                         {

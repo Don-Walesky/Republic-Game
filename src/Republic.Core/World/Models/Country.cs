@@ -52,6 +52,11 @@ public sealed class Country
     public string? LastAIDecision { get; set; }
 
     /// <summary>
+    /// Gets or sets an executive briefing summary of the most recent offline National Yield catch-up.
+    /// </summary>
+    public string? LastOfflineCatchUpSummary { get; set; }
+
+    /// <summary>
     /// Gets or sets the sovereign land area in square kilometers.
     /// </summary>
     public double TerritorySizeSqKm { get; init; } = 500000;

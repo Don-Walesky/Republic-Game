@@ -78,6 +78,10 @@ func _get_required_node(node_path: String) -> Node:
 @onready var emergency_austerity_button: Button = _get_required_node("EmergencyAusterityButton") as Button
 @onready var emergency_relief_button: Button = _get_required_node("EmergencyReliefButton") as Button
 
+## Defense Readiness & Offline Catch-Up
+@onready var defense_readiness_label: Label = _get_required_node("DefenseReadinessLabel") as Label
+@onready var offline_briefing_label: Label = _get_required_node("OfflineBriefingLabel") as Label
+
 ## Multiplayer Networking Controls & Display
 @onready var host_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/HostButton") as Button
 @onready var join_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/JoinButton") as Button
@@ -101,6 +105,7 @@ func _get_required_node(node_path: String) -> Node:
 @onready var accept_trade_button: Button = _get_required_node("VBoxContainer/TradeControlsHBox/AcceptTradeButton") as Button
 @onready var reject_trade_button: Button = _get_required_node("VBoxContainer/TradeControlsHBox/RejectTradeButton") as Button
 @onready var latest_trade_status_label: Label = _get_required_node("VBoxContainer/LatestTradeStatusLabel") as Label
+@onready var trade_lifecycle_stage_label: Label = _get_required_node("TradeLifecycleStageLabel") as Label
 
 ## Phase 5 Monetization & Ad Placeholders
 @onready var buy_admin_buff_button: Button = _get_required_node("VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox/BuyAdminBuffButton") as Button
@@ -267,6 +272,12 @@ func _init_controls() -> void:
 		reject_trade_button = _get_required_node("VBoxContainer/TradeControlsHBox/RejectTradeButton") as Button
 	if latest_trade_status_label == null:
 		latest_trade_status_label = _get_required_node("VBoxContainer/LatestTradeStatusLabel") as Label
+	if trade_lifecycle_stage_label == null:
+		trade_lifecycle_stage_label = _get_required_node("TradeLifecycleStageLabel") as Label
+	if defense_readiness_label == null:
+		defense_readiness_label = _get_required_node("DefenseReadinessLabel") as Label
+	if offline_briefing_label == null:
+		offline_briefing_label = _get_required_node("OfflineBriefingLabel") as Label
 
 	if buy_admin_buff_button == null:
 		buy_admin_buff_button = _get_required_node("VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox/BuyAdminBuffButton") as Button
@@ -570,6 +581,8 @@ func _wire_signals() -> void:
 		recognize_button.pressed.connect(_on_recognize_button_pressed)
 	if send_message_button and not send_message_button.pressed.is_connected(_on_send_message_button_pressed):
 		send_message_button.pressed.connect(_on_send_message_button_pressed)
+	if trade_amount_spinbox and not trade_amount_spinbox.value_changed.is_connected(_on_trade_amount_changed):
+		trade_amount_spinbox.value_changed.connect(_on_trade_amount_changed)
 	if propose_trade_button and not propose_trade_button.pressed.is_connected(_on_propose_trade_button_pressed):
 		propose_trade_button.pressed.connect(_on_propose_trade_button_pressed)
 	if accept_trade_button and not accept_trade_button.pressed.is_connected(_on_accept_trade_button_pressed):
@@ -900,6 +913,15 @@ func apply_state(data: Dictionary) -> void:
 		else:
 			briefing_latest_decision_label.text = "Latest Decision: [No decisions recorded]"
 
+	var defcon: String = str(data.get("defcon_level", data.get("DefconLevel", "DEFCON 5 (Peacetime Watch)")))
+	var mil_readiness: String = str(data.get("military_readiness", data.get("MilitaryReadiness", "85.0% (Armed Forces Operational)")))
+	if defense_readiness_label:
+		defense_readiness_label.text = "Defense Posture: %s | Armed Forces: %s" % [defcon, mil_readiness]
+
+	var offline_briefing: String = str(data.get("offline_briefing_summary", data.get("OfflineBriefingSummary", "Offline Status: Real-time simulation aligned. Zero pending offline cycles.")))
+	if offline_briefing_label:
+		offline_briefing_label.text = offline_briefing
+
 	if status_label:
 		status_label.text = _format_status_text("Status: " + status_msg, "None")
 
@@ -1018,6 +1040,12 @@ func display_missing_state(details: String = "") -> void:
 		briefing_active_project_label.text = "Active Project: [No State Loaded]"
 	if briefing_latest_decision_label:
 		briefing_latest_decision_label.text = "Latest Decision: [No State Loaded]"
+	if defense_readiness_label:
+		defense_readiness_label.text = "Defense Posture: DEFCON 5 (Peacetime Watch) | Armed Forces: 85.0% Operational"
+	if offline_briefing_label:
+		offline_briefing_label.text = "Offline Status: Real-time simulation aligned. Zero pending offline cycles."
+	if trade_lifecycle_stage_label:
+		trade_lifecycle_stage_label.text = "Trade Lifecycle: [Draft Proposal] — Configure amount above and propose to peer"
 	if status_label:
 		status_label.text = _format_status_text("Status: Waiting for Republic simulation state (" + details + ")", "None")
 	if expected_consequence_label:
@@ -2487,6 +2515,8 @@ func _reset_foreign_country_display() -> void:
 		send_message_button.disabled = true
 	if latest_trade_status_label:
 		latest_trade_status_label.text = "Trade Status: [No active proposal]"
+	if trade_lifecycle_stage_label:
+		trade_lifecycle_stage_label.text = "Trade Lifecycle: [Draft Proposal] — Configure amount above and propose to peer"
 	if accept_trade_button:
 		accept_trade_button.disabled = true
 	if reject_trade_button:
@@ -2664,6 +2694,11 @@ func _handle_network_message(msg: Dictionary) -> void:
 			if status == "Pending":
 				if latest_trade_status_label:
 					latest_trade_status_label.text = "Trade Status: Pending proposal (%s) from %s" % [amount_str, from_id]
+				if trade_lifecycle_stage_label:
+					if from_id != _local_client_id:
+						trade_lifecycle_stage_label.text = "Trade Lifecycle: [Pending Proposal] — Inbound offer from %s awaiting your executive decision" % from_id
+					else:
+						trade_lifecycle_stage_label.text = "Trade Lifecycle: [Pending Proposal] — Outbound offer awaiting foreign peer acceptance"
 				if from_id != _local_client_id:
 					if accept_trade_button:
 						accept_trade_button.disabled = false
@@ -2678,6 +2713,8 @@ func _handle_network_message(msg: Dictionary) -> void:
 			elif status == "Accepted":
 				if latest_trade_status_label:
 					latest_trade_status_label.text = "Trade Status: Accepted - %s transferred from %s to %s" % [amount_str, from_id, to_id]
+				if trade_lifecycle_stage_label:
+					trade_lifecycle_stage_label.text = "Trade Lifecycle: [Accepted Agreement / Completed Transaction] — Sovereign trade ratified and settled authoritatively"
 				if accept_trade_button:
 					accept_trade_button.disabled = true
 				if reject_trade_button:
@@ -2687,6 +2724,8 @@ func _handle_network_message(msg: Dictionary) -> void:
 			elif status == "Rejected":
 				if latest_trade_status_label:
 					latest_trade_status_label.text = "Trade Status: Proposal rejected"
+				if trade_lifecycle_stage_label:
+					trade_lifecycle_stage_label.text = "Trade Lifecycle: [Rejected Proposal] — Proposal declined"
 				if accept_trade_button:
 					accept_trade_button.disabled = true
 				if reject_trade_button:
@@ -2741,6 +2780,15 @@ func _on_send_message_button_pressed() -> void:
 	message_line_edit.text = ""
 
 
+func _on_trade_amount_changed(new_val: float) -> void:
+	if _active_trade_proposal.is_empty() or str(_active_trade_proposal.get("status", "")) != "Pending":
+		var peer_name := "foreign peer"
+		if foreign_country_name_label and not foreign_country_name_label.text.contains("[None Connected]"):
+			peer_name = foreign_country_name_label.text.replace("Foreign Country: ", "").replace("Peer Country: ", "").strip_edges()
+		if trade_lifecycle_stage_label:
+			trade_lifecycle_stage_label.text = "Trade Lifecycle: [Draft Proposal] — Prepared offer of R %s for %s (Click 'Propose Trade' to send)" % [_format_number_commas(new_val), peer_name]
+
+
 func _on_propose_trade_button_pressed() -> void:
 	var amount := 1000000000.0
 	if trade_amount_spinbox:
@@ -2760,6 +2808,8 @@ func _on_propose_trade_button_pressed() -> void:
 		"sender_id": _local_client_id,
 		"trade": trade_payload
 	}
+	if trade_lifecycle_stage_label:
+		trade_lifecycle_stage_label.text = "Trade Lifecycle: [Pending Proposal] — Outbound proposal for R %s submitted to foreign sovereign" % _format_number_commas(amount)
 	_send_network_message(net_msg)
 	_handle_network_message(net_msg)
 

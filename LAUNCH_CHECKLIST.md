@@ -22,7 +22,7 @@ Before deploying to any hosting environment, verify that the web client builds c
   ```powershell
   godot --headless --path client/godot -s test_presidential_desk.gd
   ```
-  Ensure all 27 automated checks pass.
+  Ensure all 28 automated checks pass.
 
 ---
 

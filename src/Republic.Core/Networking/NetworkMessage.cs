@@ -109,4 +109,10 @@ public sealed record NetworkMessage
     /// </summary>
     [JsonPropertyName("status_message")]
     public string? StatusMessage { get; init; }
+
+    /// <summary>
+    /// Gets the previous client identifier for session resumption and reconnect flows.
+    /// </summary>
+    [JsonPropertyName("previous_client_id")]
+    public string? PreviousClientId { get; init; }
 }
