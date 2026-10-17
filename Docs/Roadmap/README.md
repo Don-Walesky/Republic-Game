@@ -44,4 +44,4 @@ Republic utilizes a **10-wave player-experience roadmap**. Each wave builds upon
 
 ## Current Status
 
-**Wave 0 is implemented as a testable .NET 8.0 foundation** with configuration management, multi-sink logging, high-performance event bus, deterministic time abstractions, persistence frameworks, and a headless world shell backed by 160+ automated unit tests.
+**Waves 0 through 4 are implemented and verified**, alongside baseline authoritative multiplayer networking (Wave 9) and international diplomacy/trade (Wave 8). The simulation core and Presidential Desk interface are backed by **760 passing C# unit tests** in .NET 8.0 and **27 passing Godot headless checks** in Godot 4.
