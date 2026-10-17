@@ -98,11 +98,17 @@ func _init() -> void:
 	# Test 25: Phase 2 Single-player presidential game loop (country creation, briefing, project decisions)
 	all_passed = test_phase2_single_player_loop(desk) and all_passed
 
+	# Test 26: Political campaign rally and democratic national election decision loop
+	all_passed = test_political_campaign_and_election_loop(desk) and all_passed
+
+	# Test 27: Executive cabinet appointments and competence vs loyalty trade-offs
+	all_passed = test_cabinet_appointment_and_tradeoff_loop(desk) and all_passed
+
 	desk.queue_free()
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 25 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
+		print(" [PASS]: ALL 27 GODOT PRESIDENTIAL DESK CHECKS SUCCEEDED!     ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -124,7 +130,9 @@ func test_missing_state_behavior(desk: Control) -> bool:
 		desk.simulation_time_label.text,
 		desk.ruling_party_label.text,
 		desk.election_label.text,
-		desk.tax_rate_label.text
+		desk.tax_rate_label.text,
+		desk.cabinet_overview_label.text,
+		desk.cabinet_summary_label.text
 	]
 
 	# Verify every label displays safe [No State Loaded] fallback
@@ -1919,6 +1927,331 @@ func test_phase2_single_player_loop(desk: Control) -> bool:
 
 	print("  [OK]: Phase 2 single-player loop (country creation, briefing panel, and project decision) fully verified.")
 	return true
+
+
+func test_political_campaign_and_election_loop(desk: Control) -> bool:
+	print("\n--- Test 26: Political Campaign & Democratic Election Decision Loop ---")
+
+	# 1. Verify existence of UI components
+	if desk.hold_campaign_rally_button == null:
+		printerr("[FAIL]: HoldCampaignRallyButton not found")
+		return false
+	if desk.contest_election_button == null:
+		printerr("[FAIL]: ContestElectionButton not found")
+		return false
+	if desk.cancel_election_action_button == null:
+		printerr("[FAIL]: CancelElectionActionButton not found")
+		return false
+	if desk.election_status_label == null:
+		printerr("[FAIL]: ElectionStatusLabel not found")
+		return false
+
+	var temp_state_path: String = "user://test_election_loop_state.json"
+	var req_path: String = desk._resolve_request_path(temp_state_path)
+
+	# 2. Write initial state with multi-party election landscape
+	var initial_state: Dictionary = {
+		"country_name": "Republic of Solaria",
+		"country_id": "solaria-1",
+		"treasury": "R 15,000,000",
+		"treasury_balance": 15000000,
+		"approval": "58%",
+		"approval_rating": 58.0,
+		"stability": "75%",
+		"stability_rating": 75.0,
+		"simulation_day": 120,
+		"simulation_time": "Day 120, 10:00 WAT",
+		"ruling_party": "Democratic Coalition",
+		"opposition_party": "Liberty Front",
+		"polling_support": 54.2,
+		"opposition_support": 45.8,
+		"election": "In 180 days",
+		"next_election_day": 180,
+		"income_tax_rate": 0.25,
+		"active_project": "None"
+	}
+
+	var state_file := FileAccess.open(temp_state_path, FileAccess.WRITE)
+	state_file.store_string(JSON.stringify(initial_state))
+	state_file.close()
+
+	if not desk.load_state_from_file(temp_state_path):
+		printerr("[FAIL]: Failed to load campaign election state: " + temp_state_path)
+		return false
+
+	# Verify party display and election schedule
+	if not desk.ruling_party_label.text.contains("Democratic Coalition (54.2%)") or not desk.ruling_party_label.text.contains("Liberty Front (45.8%)"):
+		printerr("[FAIL]: Ruling party label did not format multi-party polling properly: " + desk.ruling_party_label.text)
+		return false
+	if not desk.election_label.text.contains("In 180 days") or not desk.election_label.text.contains("Day 180"):
+		printerr("[FAIL]: Election label did not format election schedule: " + desk.election_label.text)
+		return false
+
+	# 3. Test Campaign Rally cancellation
+	var cancel_rally_res: Dictionary = desk.execute_campaign_rally(false)
+	if cancel_rally_res.get("result") != "Cancelled":
+		printerr("[FAIL]: Expected rally cancellation result to be 'Cancelled', got: " + str(cancel_rally_res))
+		return false
+	if not desk.election_status_label.text.contains("[Cancelled]"):
+		printerr("[FAIL]: Expected election_status_label to show [Cancelled]: " + desk.election_status_label.text)
+		return false
+
+	# 4. Test Campaign Rally submission
+	var rally_res: Dictionary = desk.execute_campaign_rally(true)
+	if rally_res.get("result") != "Pending":
+		printerr("[FAIL]: Expected rally result to be 'Pending', got: " + str(rally_res))
+		return false
+	if not desk.election_status_label.text.contains("[Pending]"):
+		printerr("[FAIL]: Expected election_status_label to show [Pending]: " + desk.election_status_label.text)
+		return false
+
+	if not FileAccess.file_exists(req_path):
+		printerr("[FAIL]: Rally request file not created at " + req_path)
+		return false
+
+	var req_file := FileAccess.open(req_path, FileAccess.READ)
+	var req_data = JSON.parse_string(req_file.get_as_text())
+	req_file.close()
+
+	if req_data == null or req_data.get("action") != "campaign_rally" or req_data.get("confirmed") != true:
+		printerr("[FAIL]: Rally request data mismatch: " + JSON.stringify(req_data))
+		return false
+
+	# Clean up request file
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	# Simulate rally success from simulation backend
+	var rally_sim_res: Dictionary = {
+		"request_id": desk._active_request_id,
+		"success": true,
+		"result": "Success",
+		"message": "National campaign rally held successfully. Public approval rose by 3.5%."
+	}
+	desk._handle_decision_result(rally_sim_res)
+	if not desk.election_status_label.text.contains("[Success]"):
+		printerr("[FAIL]: Expected election_status_label to show [Success]: " + desk.election_status_label.text)
+		return false
+
+	# 5. Test Election Contest cancellation
+	var cancel_elect_res: Dictionary = desk.execute_contest_election(false)
+	if cancel_elect_res.get("result") != "Cancelled":
+		printerr("[FAIL]: Expected election cancellation result to be 'Cancelled', got: " + str(cancel_elect_res))
+		return false
+	if not desk.election_status_label.text.contains("[Cancelled]"):
+		printerr("[FAIL]: Expected election_status_label to show [Cancelled]: " + desk.election_status_label.text)
+		return false
+
+	# 6. Test Election Contest submission
+	var contest_res: Dictionary = desk.execute_contest_election(true)
+	if contest_res.get("result") != "Pending":
+		printerr("[FAIL]: Expected contest election result to be 'Pending', got: " + str(contest_res))
+		return false
+	if not desk.election_status_label.text.contains("[Pending]"):
+		printerr("[FAIL]: Expected election_status_label to show [Pending]: " + desk.election_status_label.text)
+		return false
+
+	if not FileAccess.file_exists(req_path):
+		printerr("[FAIL]: Election request file not created at " + req_path)
+		return false
+
+	req_file = FileAccess.open(req_path, FileAccess.READ)
+	req_data = JSON.parse_string(req_file.get_as_text())
+	req_file.close()
+
+	if req_data == null or req_data.get("action") != "contest_election" or req_data.get("confirmed") != true:
+		printerr("[FAIL]: Election request data mismatch: " + JSON.stringify(req_data))
+		return false
+
+	# Clean up request file
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	# Simulate election victory result
+	var elect_sim_res := {
+		"request_id": desk._active_request_id,
+		"success": true,
+		"result": "Success",
+		"message": "Democratic election concluded. Democratic Coalition re-elected with 56.8% majority mandate!"
+	}
+	desk._handle_decision_result(elect_sim_res)
+	if not desk.election_status_label.text.contains("[Success]"):
+		printerr("[FAIL]: Expected election_status_label to show [Success]: " + desk.election_status_label.text)
+		return false
+
+	# Clean up temporary test files
+	if FileAccess.file_exists(temp_state_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_state_path))
+	if FileAccess.file_exists(req_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	print("  [OK]: Test 26 Political campaign & democratic national election decision loop fully verified.")
+	return true
+
+
+func test_cabinet_appointment_and_tradeoff_loop(desk: Control) -> bool:
+	print("\n--- Test 27: Executive Cabinet Appointments & Competence vs Loyalty Loop ---")
+
+	# 1. Verify existence of UI components
+	if desk.appoint_technocrat_finance_button == null:
+		printerr("[FAIL]: AppointTechnocratFinanceButton not found")
+		return false
+	if desk.appoint_loyalist_finance_button == null:
+		printerr("[FAIL]: AppointLoyalistFinanceButton not found")
+		return false
+	if desk.cancel_cabinet_action_button == null:
+		printerr("[FAIL]: CancelCabinetActionButton not found")
+		return false
+	if desk.cabinet_status_label == null:
+		printerr("[FAIL]: CabinetStatusLabel not found")
+		return false
+	if desk.cabinet_overview_label == null:
+		printerr("[FAIL]: CabinetOverviewLabel not found")
+		return false
+	if desk.cabinet_summary_label == null:
+		printerr("[FAIL]: CabinetSummaryLabel not found")
+		return false
+
+	var temp_state_path: String = "user://test_cabinet_loop_state.json"
+	var req_path: String = desk._resolve_request_path(temp_state_path)
+
+	# 2. Write initial state with vacant cabinet positions
+	var initial_state: Dictionary = {
+		"country_name": "Republic of Solaria",
+		"country_id": "solaria-1",
+		"treasury": "R 15,000,000",
+		"treasury_balance": 15000000,
+		"approval": "58%",
+		"approval_rating": 58.0,
+		"stability": "75%",
+		"stability_rating": 75.0,
+		"simulation_day": 120,
+		"simulation_time": "Day 120, 10:00 WAT",
+		"ruling_party": "Democratic Coalition",
+		"opposition_party": "Liberty Front",
+		"polling_support": 54.2,
+		"opposition_support": 45.8,
+		"election": "In 180 days",
+		"next_election_day": 180,
+		"income_tax_rate": 0.25,
+		"active_project": "None",
+		"cabinet_summary": "Finance: Vacant | Interior: Vacant",
+		"finance_minister": "Vacant",
+		"interior_minister": "Vacant",
+		"civil_service_quality": 0.30,
+		"corruption_control": 0.30
+	}
+
+	var state_file := FileAccess.open(temp_state_path, FileAccess.WRITE)
+	state_file.store_string(JSON.stringify(initial_state))
+	state_file.close()
+
+	if not desk.load_state_from_file(temp_state_path):
+		printerr("[FAIL]: Failed to load cabinet test state: " + temp_state_path)
+		return false
+
+	# Verify cabinet display formatting
+	if not desk.cabinet_overview_label.text.contains("Finance: Vacant"):
+		printerr("[FAIL]: Cabinet overview label did not show initial vacant status: " + desk.cabinet_overview_label.text)
+		return false
+	if not desk.cabinet_summary_label.text.contains("Civil Service: 30%") or not desk.cabinet_summary_label.text.contains("Corruption Control: 30%"):
+		printerr("[FAIL]: Cabinet summary label did not format capacity ratings: " + desk.cabinet_summary_label.text)
+		return false
+
+	# 3. Test Cabinet Appointment cancellation
+	var cancel_res: Dictionary = desk.execute_cabinet_appointment("Finance", "technocrat", false)
+	if cancel_res.get("result") != "Cancelled":
+		printerr("[FAIL]: Expected cabinet cancellation result to be 'Cancelled', got: " + str(cancel_res))
+		return false
+	if not desk.cabinet_status_label.text.contains("[Cancelled]"):
+		printerr("[FAIL]: Expected cabinet_status_label to show [Cancelled]: " + desk.cabinet_status_label.text)
+		return false
+
+	# 4. Test Technocrat Appointment submission
+	var tech_res: Dictionary = desk.execute_cabinet_appointment("Finance", "technocrat", true)
+	if tech_res.get("result") != "Pending":
+		printerr("[FAIL]: Expected technocrat appointment result to be 'Pending', got: " + str(tech_res))
+		return false
+	if not desk.cabinet_status_label.text.contains("[Pending]"):
+		printerr("[FAIL]: Expected cabinet_status_label to show [Pending]: " + desk.cabinet_status_label.text)
+		return false
+
+	if not FileAccess.file_exists(req_path):
+		printerr("[FAIL]: Cabinet request file not created at " + req_path)
+		return false
+
+	var req_file := FileAccess.open(req_path, FileAccess.READ)
+	var req_data = JSON.parse_string(req_file.get_as_text())
+	req_file.close()
+
+	if req_data == null or req_data.get("action") != "appoint_minister" or req_data.get("portfolio") != "Finance" or req_data.get("candidate_type") != "technocrat" or req_data.get("confirmed") != true:
+		printerr("[FAIL]: Cabinet request data mismatch: " + JSON.stringify(req_data))
+		return false
+
+	# Clean up request file
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	# Simulate technocrat appointment success from simulation backend
+	var sim_tech_res: Dictionary = {
+		"request_id": desk._active_request_id,
+		"success": true,
+		"result": "Success",
+		"message": "Cabinet appointment confirmed: Appointed Technocrat to Finance. Institutional capacity strengthened.",
+		"cabinet_summary": "Finance: Technocrat (0.90) | Interior: Vacant (0.30)",
+		"civil_service_quality": 0.90,
+		"corruption_control": 0.30
+	}
+	desk._handle_decision_result(sim_tech_res)
+	if not desk.cabinet_status_label.text.contains("[Success]"):
+		printerr("[FAIL]: Expected cabinet_status_label to show [Success]: " + desk.cabinet_status_label.text)
+		return false
+
+	# 5. Test Party Loyalist Appointment submission
+	var loyalist_res: Dictionary = desk.execute_cabinet_appointment("Finance", "loyalist", true)
+	if loyalist_res.get("result") != "Pending":
+		printerr("[FAIL]: Expected loyalist appointment result to be 'Pending', got: " + str(loyalist_res))
+		return false
+	if not desk.cabinet_status_label.text.contains("[Pending]"):
+		printerr("[FAIL]: Expected cabinet_status_label to show [Pending]: " + desk.cabinet_status_label.text)
+		return false
+
+	if not FileAccess.file_exists(req_path):
+		printerr("[FAIL]: Cabinet request file for loyalist not created at " + req_path)
+		return false
+
+	req_file = FileAccess.open(req_path, FileAccess.READ)
+	req_data = JSON.parse_string(req_file.get_as_text())
+	req_file.close()
+
+	if req_data == null or req_data.get("candidate_type") != "loyalist":
+		printerr("[FAIL]: Cabinet loyalist request data mismatch: " + JSON.stringify(req_data))
+		return false
+
+	# Clean up request file
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	# Simulate party loyalist appointment result
+	var sim_loyalist_res: Dictionary = {
+		"request_id": desk._active_request_id,
+		"success": true,
+		"result": "Success",
+		"message": "Cabinet appointment confirmed: Appointed Party Loyalist to Finance. Ruling party polling boosted, administrative capacity reduced.",
+		"cabinet_summary": "Finance: Loyalist (0.45) | Interior: Vacant (0.30)",
+		"civil_service_quality": 0.45,
+		"corruption_control": 0.30
+	}
+	desk._handle_decision_result(sim_loyalist_res)
+	if not desk.cabinet_status_label.text.contains("[Success]"):
+		printerr("[FAIL]: Expected cabinet_status_label to show [Success]: " + desk.cabinet_status_label.text)
+		return false
+
+	# Clean up temporary test files
+	if FileAccess.file_exists(temp_state_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_state_path))
+	if FileAccess.file_exists(req_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(req_path))
+
+	print("  [OK]: Test 27 Executive cabinet appointments & competence vs loyalty loop fully verified.")
+	return true
+
 
 
 

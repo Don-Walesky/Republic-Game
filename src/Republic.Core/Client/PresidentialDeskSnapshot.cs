@@ -2,6 +2,7 @@ namespace Republic.Core.Client;
 
 using System;
 using System.Text.Json.Serialization;
+using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
@@ -83,6 +84,60 @@ public sealed record PresidentialDeskSnapshot
     /// </summary>
     [JsonPropertyName("election")]
     public string Election { get; init; } = "No election";
+
+    /// <summary>
+    /// Gets the name of the sovereign opposition political party, or "None" if unestablished.
+    /// </summary>
+    [JsonPropertyName("opposition_party")]
+    public string OppositionParty { get; init; } = "None";
+
+    /// <summary>
+    /// Gets the public political support rating of the ruling party.
+    /// </summary>
+    [JsonPropertyName("polling_support")]
+    public double PollingSupport { get; init; }
+
+    /// <summary>
+    /// Gets the public political support rating of the opposition party.
+    /// </summary>
+    [JsonPropertyName("opposition_support")]
+    public double OppositionSupport { get; init; }
+
+    /// <summary>
+    /// Gets the scheduled simulation day for the next national election.
+    /// </summary>
+    [JsonPropertyName("next_election_day")]
+    public long NextElectionDay { get; init; } = 30;
+
+    /// <summary>
+    /// Gets the executive cabinet summary text showing ministerial appointments.
+    /// </summary>
+    [JsonPropertyName("cabinet_summary")]
+    public string CabinetSummary { get; init; } = "Finance: Vacant | Interior: Vacant";
+
+    /// <summary>
+    /// Gets the name of the appointed Minister of Finance, or "Vacant".
+    /// </summary>
+    [JsonPropertyName("finance_minister")]
+    public string FinanceMinister { get; init; } = "Vacant";
+
+    /// <summary>
+    /// Gets the name of the appointed Minister of the Interior, or "Vacant".
+    /// </summary>
+    [JsonPropertyName("interior_minister")]
+    public string InteriorMinister { get; init; } = "Vacant";
+
+    /// <summary>
+    /// Gets the civil service quality factor (0.0 to 1.0) governed by the Finance portfolio.
+    /// </summary>
+    [JsonPropertyName("civil_service_quality")]
+    public double CivilServiceQuality { get; init; } = 0.3;
+
+    /// <summary>
+    /// Gets the corruption control factor (0.0 to 1.0) governed by the Interior portfolio.
+    /// </summary>
+    [JsonPropertyName("corruption_control")]
+    public double CorruptionControl { get; init; } = 0.3;
 
     /// <summary>
     /// Gets the live connection status message.
@@ -179,6 +234,13 @@ public sealed record PresidentialDeskSnapshot
             rulingPartyName = "None";
         }
 
+        var oppositionPartyName = country.OppositionParty?.Name ?? "None";
+        var pollingSupport = country.RulingParty?.Support ?? 0.0;
+        var oppositionSupport = country.OppositionParty?.Support ?? 0.0;
+        long nextElectionDay = country.LastElection != null
+            ? country.LastElection.Boundary.DayNumber + 30
+            : simulationTime.DayNumber + 30;
+
         string electionText;
         if (country.LastElection != null)
         {
@@ -207,6 +269,25 @@ public sealed record PresidentialDeskSnapshot
             ? $"{activeProj.Name} (Finishes: {activeProj.FinishBoundary})"
             : "None";
 
+        var financeMinister = country.GetMinister(CabinetPortfolio.Finance);
+        var interiorMinister = country.GetMinister(CabinetPortfolio.Interior);
+
+        var financeName = financeMinister?.Name ?? "Vacant";
+        var interiorName = interiorMinister?.Name ?? "Vacant";
+
+        var financeDesc = financeMinister != null
+            ? $"{financeMinister.Name} ({financeMinister.Competence * 100:0.#}% Comp)"
+            : "Vacant (30% Cap)";
+
+        var interiorDesc = interiorMinister != null
+            ? $"{interiorMinister.Name} ({interiorMinister.Competence * 100:0.#}% Comp)"
+            : "Vacant (30% Cap)";
+
+        var cabinetSummary = $"Finance: {financeDesc} | Interior: {interiorDesc}";
+
+        var civilQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3;
+        var corrControl = country.StateCapacity?.CorruptionControl ?? 0.3;
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -227,7 +308,16 @@ public sealed record PresidentialDeskSnapshot
             SimulationTime = conciseTime,
             SimulationTimeDetailed = detailedTime,
             RulingParty = rulingPartyName,
+            OppositionParty = oppositionPartyName,
+            PollingSupport = pollingSupport,
+            OppositionSupport = oppositionSupport,
+            NextElectionDay = nextElectionDay,
             Election = electionText,
+            CabinetSummary = cabinetSummary,
+            FinanceMinister = financeName,
+            InteriorMinister = interiorName,
+            CivilServiceQuality = civilQuality,
+            CorruptionControl = corrControl,
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,

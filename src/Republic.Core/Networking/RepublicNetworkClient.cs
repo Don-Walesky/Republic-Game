@@ -236,6 +236,28 @@ public sealed class RepublicNetworkClient : IDisposable
         await SendMessageAsync(message).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Sends a national project decision request (e.g. Road program start or cancel) to the authoritative host for validation.
+    /// </summary>
+    public async Task SendProjectDecisionRequestAsync(string countryId, string projectName, bool start, string? requestId = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectName);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var message = new NetworkMessage
+        {
+            Type = "project_decision",
+            SenderId = ClientId,
+            CountryId = countryId,
+            ProjectName = projectName,
+            Action = start ? "start_project" : "cancel_project",
+            RequestId = requestId ?? Guid.NewGuid().ToString("N")
+        };
+
+        await SendMessageAsync(message).ConfigureAwait(false);
+    }
+
     private async Task SendMessageAsync(NetworkMessage message)
     {
         if (_writer == null || !IsConnected)

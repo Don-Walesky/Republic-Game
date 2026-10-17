@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
@@ -1411,6 +1412,15 @@ public static class PresidentialDeskBridge
         country.TaxPolicy.CorporateTaxRate = 0.20;
         country.TaxPolicy.ImportTariffRate = 0.10;
 
+        // Establish inaugural democratic mandate: Ruling party and Opposition party
+        country.FoundParty("Democratic Union", simTime, support: 55.0);
+        country.FoundParty("National Civic Front", simTime);
+        if (country.OppositionParty != null)
+        {
+            country.OppositionParty = country.OppositionParty with { Support = 45.0 };
+        }
+        country.HoldElection(simTime);
+
         SaveAuthoritativeState(country, simTime, 0, targetSavePath);
         ExportState(country, simTime, 0, targetStatePath, targetSavePath, latestDecisionResult: $"Successfully founded {country.Name}. Executive desk ready.");
 
@@ -1428,7 +1438,11 @@ public static class PresidentialDeskBridge
             StabilityRating = country.BaselineStability,
             PreviousStabilityRating = country.BaselineStability,
             TreasuryBalance = country.Treasury.Balance,
-            ActiveProject = "None"
+            ActiveProject = "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "National Civic Front",
+            ElectionResult = country.LastElection?.ToString() ?? string.Empty,
+            IsReelected = true
         };
 
         TryWriteResultFile(targetStatePath, result);
@@ -1513,7 +1527,11 @@ public static class PresidentialDeskBridge
             ApprovalRating = country.HappinessRating,
             StabilityRating = country.BaselineStability,
             TreasuryBalance = country.Treasury.Balance,
-            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None"
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "National Civic Front",
+            ElectionResult = country.LastElection?.ToString() ?? string.Empty,
+            IsReelected = true
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -1831,6 +1849,1076 @@ public static class PresidentialDeskBridge
         return successResult;
     }
 
+    /// <summary>
+    /// Enacts an executive campaign rally directive, allocating funds from the national treasury
+    /// to mobilize voters, increase ruling party support, and boost citizen approval.
+    /// </summary>
+    public static PresidentialActionResult ApplyCampaignRallyDecision(
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        string? snapshotCountryId = null;
+
+        string targetSavePath;
+        if (!string.IsNullOrWhiteSpace(saveFilePath))
+        {
+            targetSavePath = saveFilePath;
+        }
+        else if (targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
+        {
+            targetSavePath = targetStatePath;
+        }
+        else
+        {
+            if (!File.Exists(targetStatePath))
+            {
+                var missingResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply campaign rally decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, missingResult);
+                return missingResult;
+            }
+
+            string rawJson;
+            try
+            {
+                rawJson = File.ReadAllText(targetStatePath);
+            }
+            catch (Exception ex)
+            {
+                var ioResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply campaign rally decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, ioResult);
+                return ioResult;
+            }
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                var emptyResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply campaign rally decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, emptyResult);
+                return emptyResult;
+            }
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (JsonException)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply campaign rally decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+
+            using (doc)
+            {
+                if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+                {
+                    targetSavePath = targetStatePath;
+                }
+                else
+                {
+                    string? snapshotSavePath = null;
+                    if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
+                    {
+                        snapshotSavePath = savePathEl.GetString();
+                    }
+
+                    if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                    {
+                        snapshotCountryId = cIdEl.GetString();
+                    }
+                    if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                    {
+                        snapshotCountryId = cNameEl.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                    {
+                        targetSavePath = snapshotSavePath;
+                    }
+                    else
+                    {
+                        var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                        if (File.Exists(companion))
+                        {
+                            targetSavePath = companion;
+                        }
+                        else
+                        {
+                            var noSaveResult = new PresidentialActionResult
+                            {
+                                RequestId = requestId ?? string.Empty,
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot apply campaign rally decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, noSaveResult);
+                            return noSaveResult;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply campaign rally decision: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingSaveResult);
+            return missingSaveResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply campaign rally decision: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptSaveResult);
+            return corruptSaveResult;
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply campaign rally decision: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        country ??= envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+        var tick = envelope.State.CurrentTick;
+
+        // Ensure political parties are initialized
+        if (country.RulingParty == null)
+        {
+            country.FoundParty("Democratic Union", simTime, support: 55.0);
+        }
+        if (country.OppositionParty == null)
+        {
+            country.FoundParty("National Civic Front", simTime);
+            if (country.OppositionParty != null)
+            {
+                country.OppositionParty = country.OppositionParty with { Support = 45.0 };
+            }
+        }
+
+        const double RallyCost = 250_000.0;
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Campaign rally cancelled by executive order. Zero funds deducted.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                ElectionResult = country.LastElection?.ToString() ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        if (country.Treasury.Balance < RallyCost)
+        {
+            var noFundsResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InsufficientFunds",
+                Message = $"Insufficient sovereign treasury funds. Required: {RepuTreasury.Format(RallyCost)}, Available: {country.Treasury.FormattedBalance}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                ElectionResult = country.LastElection?.ToString() ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, noFundsResult);
+            return noFundsResult;
+        }
+
+        country.Treasury.Withdraw(RallyCost);
+
+        var newRulingSupport = Math.Clamp((country.RulingParty?.Support ?? 55.0) + 4.0, 0.0, 95.0);
+        var newOppositionSupport = Math.Clamp((country.OppositionParty?.Support ?? 45.0) - 2.0, 5.0, 95.0);
+        if (country.RulingParty != null)
+        {
+            country.RulingParty = country.RulingParty with { Support = newRulingSupport };
+        }
+        if (country.OppositionParty != null)
+        {
+            country.OppositionParty = country.OppositionParty with { Support = newOppositionSupport };
+        }
+        country.HappinessRating = Math.Clamp(country.HappinessRating + 1.5, 0.0, 100.0);
+
+        envelope.State.CurrentTick = tick + 1;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        try
+        {
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+        catch (Exception ex)
+        {
+            country.Treasury.Deposit(RallyCost);
+            var persistFailResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PersistenceFailure",
+                Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Campaign rally not recorded.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, persistFailResult);
+            return persistFailResult;
+        }
+
+        var message = $"Campaign rally successfully conducted across provinces. Deducted {RepuTreasury.Format(RallyCost)}. Ruling party support surged to {newRulingSupport:0.#}% (+4.0%), public approval at {country.HappinessRating:0.#}%.";
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, latestDecisionResult: message);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = message,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            ElectionResult = country.LastElection?.ToString() ?? string.Empty,
+            IsReelected = true
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Enacts a democratic national election decision, holding an election between the ruling party
+    /// and opposition party, factoring in citizen approval and stability, certifying the result,
+    /// and either renewing the executive mandate or enacting a peaceful transition of power.
+    /// </summary>
+    public static PresidentialActionResult ApplyElectionDecision(
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        string? snapshotCountryId = null;
+
+        string targetSavePath;
+        if (!string.IsNullOrWhiteSpace(saveFilePath))
+        {
+            targetSavePath = saveFilePath;
+        }
+        else if (targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
+        {
+            targetSavePath = targetStatePath;
+        }
+        else
+        {
+            if (!File.Exists(targetStatePath))
+            {
+                var missingResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply election decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, missingResult);
+                return missingResult;
+            }
+
+            string rawJson;
+            try
+            {
+                rawJson = File.ReadAllText(targetStatePath);
+            }
+            catch (Exception ex)
+            {
+                var ioResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply election decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, ioResult);
+                return ioResult;
+            }
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                var emptyResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply election decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, emptyResult);
+                return emptyResult;
+            }
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (JsonException)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply election decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+
+            using (doc)
+            {
+                if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+                {
+                    targetSavePath = targetStatePath;
+                }
+                else
+                {
+                    string? snapshotSavePath = null;
+                    if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
+                    {
+                        snapshotSavePath = savePathEl.GetString();
+                    }
+
+                    if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                    {
+                        snapshotCountryId = cIdEl.GetString();
+                    }
+                    if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                    {
+                        snapshotCountryId = cNameEl.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                    {
+                        targetSavePath = snapshotSavePath;
+                    }
+                    else
+                    {
+                        var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                        if (File.Exists(companion))
+                        {
+                            targetSavePath = companion;
+                        }
+                        else
+                        {
+                            var noSaveResult = new PresidentialActionResult
+                            {
+                                RequestId = requestId ?? string.Empty,
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot apply election decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, noSaveResult);
+                            return noSaveResult;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply election decision: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingSaveResult);
+            return missingSaveResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply election decision: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptSaveResult);
+            return corruptSaveResult;
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply election decision: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        country ??= envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+        var tick = envelope.State.CurrentTick;
+
+        if (country.RulingParty == null)
+        {
+            country.FoundParty("Democratic Union", simTime, support: 55.0);
+        }
+        if (country.OppositionParty == null)
+        {
+            country.FoundParty("National Civic Front", simTime);
+            if (country.OppositionParty != null)
+            {
+                country.OppositionParty = country.OppositionParty with { Support = 45.0 };
+            }
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "National election call cancelled by executive order. Current administration mandate remains intact.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                ElectionResult = country.LastElection?.ToString() ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        // Dynamically link public approval to voter sentiment
+        var approvalDelta = (country.HappinessRating - 50.0) * 0.2;
+        var effectiveRulingSupport = Math.Clamp((country.RulingParty?.Support ?? 55.0) + approvalDelta, 5.0, 95.0);
+        var effectiveOppSupport = Math.Clamp((country.OppositionParty?.Support ?? 45.0) - approvalDelta, 5.0, 95.0);
+        if (country.RulingParty != null)
+        {
+            country.RulingParty = country.RulingParty with { Support = effectiveRulingSupport };
+        }
+        if (country.OppositionParty != null)
+        {
+            country.OppositionParty = country.OppositionParty with { Support = effectiveOppSupport };
+        }
+
+        var electionBoundary = (country.LastElection != null && country.LastElection.Boundary == simTime)
+            ? simTime.Add(TimeSpan.FromDays(30))
+            : simTime;
+
+        var previousRulingName = country.RulingParty?.Name ?? string.Empty;
+        var election = country.HoldElection(electionBoundary);
+        if (election == null)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PrerequisitesNotMet",
+                Message = "Unable to hold national election. Both ruling and opposition parties must be established.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        bool isReelected = string.Equals(election.WinnerPartyName, previousRulingName, StringComparison.OrdinalIgnoreCase);
+        string outcomeMessage;
+
+        if (isReelected)
+        {
+            country.HappinessRating = Math.Clamp(country.HappinessRating + 2.5, 0.0, 100.0);
+            country.BaselineStability = Math.Clamp(country.BaselineStability + 2.0, 0.0, 100.0);
+            outcomeMessage = $"Electoral Victory: {election.WinnerPartyName} re-elected with {election.WinnerSupport:0.#}% of the national vote! Executive mandate renewed.";
+        }
+        else
+        {
+            country.BaselineStability = Math.Clamp(country.BaselineStability - 2.0, 0.0, 100.0);
+            outcomeMessage = $"Democratic Transition: {election.WinnerPartyName} won the national election with {election.WinnerSupport:0.#}% of the vote ({election.LoserPartyName}: {election.LoserSupport:0.#}%). Opposition assumes the ruling executive mandate.";
+        }
+
+        envelope.State.CurrentTick = tick + 1;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        try
+        {
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+        catch (Exception ex)
+        {
+            var persistFailResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PersistenceFailure",
+                Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Election not certified.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, persistFailResult);
+            return persistFailResult;
+        }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = PresidentialDeskSnapshot.Create(country, electionBoundary, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            ElectionResult = election.ToString(),
+            IsReelected = isReelected
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes an authoritative executive cabinet appointment decision (Technocrat vs Party Loyalist),
+    /// recalculating ministerial state capacities and applying political polling consequences.
+    /// Persists changes to the authoritative .sav file and updates the presidential desk state file.
+    /// </summary>
+    public static PresidentialActionResult ApplyCabinetAppointmentDecision(
+        string portfolioName,
+        string candidateType,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? ResolveDefaultSaveFilePath();
+        string? snapshotCountryId = null;
+
+        if (!File.Exists(targetStatePath))
+        {
+            var missingResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply cabinet appointment decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingResult);
+            return missingResult;
+        }
+
+        string rawJson;
+        try
+        {
+            rawJson = File.ReadAllText(targetStatePath);
+        }
+        catch (Exception ex)
+        {
+            var ioResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply cabinet appointment decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, ioResult);
+            return ioResult;
+        }
+
+        if (string.IsNullOrWhiteSpace(rawJson))
+        {
+            var emptyResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply cabinet appointment decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, emptyResult);
+            return emptyResult;
+        }
+
+        JsonDocument doc;
+        try
+        {
+            doc = JsonDocument.Parse(rawJson);
+        }
+        catch (JsonException)
+        {
+            var corruptResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply cabinet appointment decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptResult);
+            return corruptResult;
+        }
+
+        using (doc)
+        {
+            if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+            {
+                targetSavePath = targetStatePath;
+            }
+            else
+            {
+                string? snapshotSavePath = null;
+                if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
+                {
+                    snapshotSavePath = savePathEl.GetString();
+                }
+
+                if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                {
+                    snapshotCountryId = cIdEl.GetString();
+                }
+                if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                {
+                    snapshotCountryId = cNameEl.GetString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                {
+                    targetSavePath = snapshotSavePath;
+                }
+                else
+                {
+                    var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                    if (File.Exists(companion))
+                    {
+                        targetSavePath = companion;
+                    }
+                    else
+                    {
+                        var noSaveResult = new PresidentialActionResult
+                        {
+                            RequestId = requestId ?? string.Empty,
+                            Success = false,
+                            Result = "StateMissingOrCorrupt",
+                            Message = $"Cannot apply cabinet appointment decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. No changes enacted."
+                        };
+                        TryWriteResultFile(targetStatePath, noSaveResult);
+                        return noSaveResult;
+                    }
+                }
+            }
+        }
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply cabinet appointment decision: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingSaveResult);
+            return missingSaveResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply cabinet appointment decision: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptSaveResult);
+            return corruptSaveResult;
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply cabinet appointment decision: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        country ??= envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+        var tick = envelope.State.CurrentTick;
+
+        if (country.RulingParty == null)
+        {
+            country.FoundParty("Democratic Union", simTime, support: 55.0);
+        }
+        if (country.OppositionParty == null)
+        {
+            country.FoundParty("National Civic Front", simTime);
+            if (country.OppositionParty != null)
+            {
+                country.OppositionParty = country.OppositionParty with { Support = 45.0 };
+            }
+        }
+
+        var portfolio = CabinetPortfolio.Finance;
+        if (portfolioName != null)
+        {
+            if (portfolioName.Contains("Interior", StringComparison.OrdinalIgnoreCase))
+            {
+                portfolio = CabinetPortfolio.Interior;
+            }
+            else if (portfolioName.Contains("Infrastructure", StringComparison.OrdinalIgnoreCase) || portfolioName.Contains("Infra", StringComparison.OrdinalIgnoreCase))
+            {
+                portfolio = CabinetPortfolio.Infrastructure;
+            }
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = $"Cabinet appointment order for {portfolio} cancelled by executive order. Existing ministerial portfolio and political standing preserved.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                Portfolio = portfolio.ToString(),
+                CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+                CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        string outcomeMessage;
+        Minister? appointed = null;
+        var normalizedType = candidateType?.Trim().ToLowerInvariant() ?? "technocrat";
+
+        if (normalizedType is "technocrat" or "expert")
+        {
+            var ministerName = portfolio switch
+            {
+                CabinetPortfolio.Finance => "Dr. Elena Rostova",
+                CabinetPortfolio.Interior => "Dr. Alistair Finch",
+                _ => "Eng. Marcus Bennett"
+            };
+
+            appointed = new Minister
+            {
+                Name = ministerName,
+                Portfolio = portfolio,
+                Competence = 0.90,
+                Integrity = 0.90,
+                Loyalty = 0.50,
+                Experience = 0.85,
+                PoliticalConnections = 0.40
+            };
+
+            country.AppointMinister(appointed, portfolio);
+
+            var effRuling = Math.Clamp((country.RulingParty?.Support ?? 55.0) - 3.0, 5.0, 95.0);
+            var effOpp = Math.Clamp((country.OppositionParty?.Support ?? 45.0) + 3.0, 5.0, 95.0);
+            if (country.RulingParty != null) country.RulingParty = country.RulingParty with { Support = effRuling };
+            if (country.OppositionParty != null) country.OppositionParty = country.OppositionParty with { Support = effOpp };
+
+            country.HappinessRating = Math.Clamp(country.HappinessRating + 1.5, 0.0, 100.0);
+            outcomeMessage = $"Technocrat Appointed: {appointed.Name} commissioned as Minister of {portfolio}. Administrative competence elevated to 90%, but party loyalists are discontented (-3.0% polling support).";
+        }
+        else if (normalizedType is "loyalist" or "party_loyalist")
+        {
+            var ministerName = portfolio switch
+            {
+                CabinetPortfolio.Finance => "Senator Donald Vance",
+                CabinetPortfolio.Interior => "Party Whip Thomas Sterling",
+                _ => "Alderman Gregory Cross"
+            };
+
+            appointed = new Minister
+            {
+                Name = ministerName,
+                Portfolio = portfolio,
+                Competence = 0.45,
+                Integrity = 0.45,
+                Loyalty = 0.95,
+                Experience = 0.50,
+                PoliticalConnections = 0.90
+            };
+
+            country.AppointMinister(appointed, portfolio);
+
+            var effRuling = Math.Clamp((country.RulingParty?.Support ?? 55.0) + 3.0, 5.0, 95.0);
+            var effOpp = Math.Clamp((country.OppositionParty?.Support ?? 45.0) - 3.0, 5.0, 95.0);
+            if (country.RulingParty != null) country.RulingParty = country.RulingParty with { Support = effRuling };
+            if (country.OppositionParty != null) country.OppositionParty = country.OppositionParty with { Support = effOpp };
+
+            country.HappinessRating = Math.Clamp(country.HappinessRating - 1.5, 0.0, 100.0);
+            outcomeMessage = $"Party Loyalist Appointed: {appointed.Name} commissioned as Minister of {portfolio}. Party base rallied (+3.0% polling support), but administrative competence is compromised (45%).";
+        }
+        else if (normalizedType is "dismiss" or "vacate")
+        {
+            country.VacatePortfolio(portfolio);
+            outcomeMessage = $"Portfolio Vacated: Minister of {portfolio} dismissed. Administrative capacity reverted to emergency baseline (30%).";
+        }
+        else
+        {
+            var invalidTypeResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidInput",
+                Message = $"Cabinet appointment rejected: Unknown candidate type '{candidateType}'. Must be 'technocrat', 'loyalist', or 'dismiss'.",
+                CountryName = country.Name
+            };
+            TryWriteResultFile(targetStatePath, invalidTypeResult);
+            return invalidTypeResult;
+        }
+
+        envelope.State.CurrentTick = tick + 1;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        try
+        {
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+        catch (Exception ex)
+        {
+            var persistFailResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PersistenceFailure",
+                Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Cabinet appointment not certified.",
+                CountryName = country.Name
+            };
+            TryWriteResultFile(targetStatePath, persistFailResult);
+            return persistFailResult;
+        }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            Portfolio = portfolio.ToString(),
+            AppointedMinister = appointed?.Name ?? "Vacant",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
     private static void TryWriteResultFile(string stateOrSavePath, PresidentialActionResult result)
     {
         try
@@ -2012,6 +3100,76 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyProjectDecision(projectType, projectConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "campaign_rally" or "rally" or "campaign")
+                    {
+                        bool rallyConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var rConfEl) && (rConfEl.ValueKind == JsonValueKind.True || rConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            rallyConfirmed = rConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyCampaignRallyDecision(rallyConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "contest_election" or "hold_election" or "election")
+                    {
+                        bool electConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var eConfEl) && (eConfEl.ValueKind == JsonValueKind.True || eConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            electConfirmed = eConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyElectionDecision(electConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "appoint_minister" or "cabinet" or "cabinet_appointment")
+                    {
+                        string portfolio = "Finance";
+                        if (root.TryGetProperty("portfolio", out var pEl) && pEl.ValueKind == JsonValueKind.String)
+                        {
+                            portfolio = pEl.GetString() ?? "Finance";
+                        }
+
+                        string candidateType = "technocrat";
+                        if (root.TryGetProperty("candidate_type", out var cTypeEl) && cTypeEl.ValueKind == JsonValueKind.String)
+                        {
+                            candidateType = cTypeEl.GetString() ?? "technocrat";
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            candidateType = tEl.GetString() ?? "technocrat";
+                        }
+
+                        bool cabinetConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var cabConfEl) && (cabConfEl.ValueKind == JsonValueKind.True || cabConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            cabinetConfirmed = cabConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyCabinetAppointmentDecision(portfolio, candidateType, cabinetConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {
@@ -2379,4 +3537,31 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("treasury_balance")]
     public double TreasuryBalance { get; init; }
+
+    [JsonPropertyName("ruling_party")]
+    public string RulingParty { get; init; } = string.Empty;
+
+    [JsonPropertyName("opposition_party")]
+    public string OppositionParty { get; init; } = string.Empty;
+
+    [JsonPropertyName("election_result")]
+    public string ElectionResult { get; init; } = string.Empty;
+
+    [JsonPropertyName("is_reelected")]
+    public bool IsReelected { get; init; }
+
+    [JsonPropertyName("cabinet_summary")]
+    public string CabinetSummary { get; init; } = string.Empty;
+
+    [JsonPropertyName("appointed_minister")]
+    public string AppointedMinister { get; init; } = string.Empty;
+
+    [JsonPropertyName("portfolio")]
+    public string Portfolio { get; init; } = string.Empty;
+
+    [JsonPropertyName("civil_service_quality")]
+    public double CivilServiceQuality { get; init; }
+
+    [JsonPropertyName("corruption_control")]
+    public double CorruptionControl { get; init; }
 }

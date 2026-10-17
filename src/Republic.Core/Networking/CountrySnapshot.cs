@@ -38,6 +38,12 @@ public sealed record CountrySnapshot
     public string TaxRate { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets the active national infrastructure project name, or "None".
+    /// </summary>
+    [JsonPropertyName("active_project")]
+    public string ActiveProject { get; init; } = "None";
+
+    /// <summary>
     /// Gets the note or summary of the last AI governance decision.
     /// </summary>
     [JsonPropertyName("last_ai_decision")]

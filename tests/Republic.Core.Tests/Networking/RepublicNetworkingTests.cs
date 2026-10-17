@@ -478,5 +478,157 @@ public sealed class RepublicNetworkingTests
             }
         }
     }
+
+    [Fact]
+    public async Task AuthoritativeHost_ProjectDecision_OnlyOwnerCanStart_InsolventRejected_Deduplicated()
+    {
+        using var host = new RepublicHost(port: 0);
+        host.Start();
+
+        var hostCountry = new CountrySnapshot
+        {
+            Id = "country-host",
+            Name = "Republic of Arcadia",
+            Treasury = "R 20,000,000",
+            Approval = "70.0%",
+            TaxRate = "25.0%",
+            ActiveProject = "None"
+        };
+        host.SetHostCountry(hostCountry);
+
+        // Connect Client 1 (owner of Country Solaria)
+        using var client1 = new RepublicNetworkClient();
+        await client1.ConnectAsync("127.0.0.1", host.Port);
+
+        var solariaCountry = new CountrySnapshot
+        {
+            Id = "country-solaria",
+            Name = "Republic of Solaria",
+            Treasury = "R 1,000,000",
+            Approval = "60.0%",
+            TaxRate = "20.0%",
+            ActiveProject = "None"
+        };
+        await client1.SendCountrySnapshotAsync(solariaCountry);
+
+        // Connect Client 2 (unauthorized player)
+        using var client2 = new RepublicNetworkClient();
+        await client2.ConnectAsync("127.0.0.1", host.Port);
+
+        var norseCountry = new CountrySnapshot
+        {
+            Id = "country-norse",
+            Name = "Kingdom of Norse",
+            Treasury = "R 5,000,000",
+            Approval = "65.0%",
+            TaxRate = "22.0%",
+            ActiveProject = "None"
+        };
+        await client2.SendCountrySnapshotAsync(norseCountry);
+
+        // Test 1: Client 2 tries to start a project on Country Solaria (unauthorized)
+        var client2RejectionTcs = new TaskCompletionSource<NetworkMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        client2.OnDecisionResultReceived += res =>
+        {
+            if (res.CountryId == "country-solaria")
+            {
+                client2RejectionTcs.TrySetResult(res);
+            }
+        };
+
+        await client2.SendProjectDecisionRequestAsync("country-solaria", "High-Speed Rail", start: true);
+        var completed1 = await Task.WhenAny(client2RejectionTcs.Task, Task.Delay(4000));
+        Assert.Same(client2RejectionTcs.Task, completed1);
+
+        var rejectMsg = await client2RejectionTcs.Task;
+        Assert.False(rejectMsg.Success);
+        Assert.Equal("Rejected", rejectMsg.Result);
+
+        // Host state must remain untouched
+        Assert.Equal("None", host.KnownCountries["country-solaria"].ActiveProject);
+
+        // Direct host API verification
+        Assert.False(host.SubmitProjectDecision(client2.ClientId, "country-solaria", "High-Speed Rail", start: true));
+
+        // Test 2: Client 1 starts project with insufficient treasury (simulate insolvency)
+        var solariaTreasury = host.GetOrCreateTreasury("country-solaria");
+        solariaTreasury.Withdraw(solariaTreasury.Balance);
+        solariaTreasury.Deposit(200_000.0); // Less than 500,000 cost
+
+        Assert.False(host.SubmitProjectDecision(client1.ClientId, "country-solaria", "National Road", start: true));
+        Assert.Equal(200_000.0, solariaTreasury.Balance);
+        Assert.Equal("None", host.KnownCountries["country-solaria"].ActiveProject);
+
+        // Test 3: Client 1 starts project with sufficient treasury
+        solariaTreasury.Deposit(1_000_000.0); // Total 1,200,000
+        var reqId = "req-proj-" + Guid.NewGuid().ToString("N");
+        var client1SuccessTcs = new TaskCompletionSource<NetworkMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        client1.OnDecisionResultReceived += res =>
+        {
+            if (res.RequestId == reqId)
+            {
+                client1SuccessTcs.TrySetResult(res);
+            }
+        };
+
+        await client1.SendProjectDecisionRequestAsync("country-solaria", "National Road Network", start: true, requestId: reqId);
+        var completed2 = await Task.WhenAny(client1SuccessTcs.Task, Task.Delay(4000));
+        Assert.Same(client1SuccessTcs.Task, completed2);
+
+        var successMsg = await client1SuccessTcs.Task;
+        Assert.True(successMsg.Success);
+        Assert.Equal("Success", successMsg.Result);
+
+        // Treasury deducted by exactly 500,000 (1,200,000 - 500,000 = 700,000)
+        Assert.Equal(700_000.0, solariaTreasury.Balance);
+        Assert.Equal("National Road Network", host.KnownCountries["country-solaria"].ActiveProject);
+
+        // Test 4: Deduplication / Idempotency - send duplicate request with same RequestId
+        var duplicateResult = host.SubmitProjectDecision(client1.ClientId, "country-solaria", "National Road Network", start: true, requestId: reqId);
+        Assert.True(duplicateResult);
+        // Treasury must NOT be deducted again!
+        Assert.Equal(700_000.0, solariaTreasury.Balance);
+
+        // Test 5: Cancel project
+        var cancelResult = host.SubmitProjectDecision(client1.ClientId, "country-solaria", "National Road Network", start: false);
+        Assert.True(cancelResult);
+        Assert.Equal("None", host.KnownCountries["country-solaria"].ActiveProject);
+    }
+
+    [Fact]
+    public void PersistenceRecovery_CorruptSave_DetectedExplicitly_PreservesBackup_PreventsSilentDataLoss()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"republic_corrupt_test_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var corruptFile = Path.Combine(tempDir, "shared_world.json");
+
+        try
+        {
+            // 1. Arrange: Write malformed JSON
+            File.WriteAllText(corruptFile, "{ formatVersion: 1, countries: [ { invalid_json_syntax");
+
+            // 2. Act: Host initializes pointing to corrupt file
+            using var host = new RepublicHost(port: 0, saveFilePath: corruptFile);
+
+            // 3. Assert: Corruption is explicitly detected and made visible
+            Assert.True(host.HasCorruptSaveDetected);
+            Assert.NotNull(host.LastLoadError);
+            Assert.NotEmpty(host.LastLoadError);
+
+            // A backup of the corrupt file was created to prevent silent data loss
+            var backupFiles = Directory.GetFiles(tempDir, "*.bak");
+            Assert.Single(backupFiles);
+            Assert.Equal("{ formatVersion: 1, countries: [ { invalid_json_syntax", File.ReadAllText(backupFiles[0]));
+
+            // 4. Act: Saving world now will preserve the backup rather than destroying corrupted data blindly
+            host.SaveWorld();
+            Assert.True(File.Exists(backupFiles[0]));
+        }
+        finally
+        {
+            try { Directory.Delete(tempDir, recursive: true); } catch { }
+        }
+    }
 }
+
 

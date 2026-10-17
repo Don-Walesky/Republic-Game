@@ -103,6 +103,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Active Project: [No State Loaded]"
 
+[node name="CabinetOverviewLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cabinet: [No State Loaded]"
+
 [node name="NationalBriefingPanel" type="PanelContainer" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
@@ -281,6 +286,77 @@ theme_override_font_sizes/font_size = 13
 text = "Project Status: Ready (Select a development program to commission)"
 
 [node name="HSeparatorProjects" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="CampaignDecisionHeader" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 16
+text = "=== PRESIDENTIAL DECISION: POLITICAL CAMPAIGN & ELECTIONS ==="
+
+[node name="ElectionControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HoldCampaignRallyButton" type="Button" parent="VBoxContainer/ElectionControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Hold Campaign Rally (Cost: R250,000)"
+
+[node name="ContestElectionButton" type="Button" parent="VBoxContainer/ElectionControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Call & Contest National Election"
+
+[node name="CancelElectionActionButton" type="Button" parent="VBoxContainer/ElectionControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cancel Order"
+
+[node name="ElectionStatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Electoral Status: Ready (Campaign for public support or contest elections)"
+
+[node name="HSeparatorElections" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="CabinetDecisionHeader" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 16
+text = "=== PRESIDENTIAL DECISION: EXECUTIVE CABINET APPOINTMENTS ==="
+
+[node name="CabinetSummaryLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cabinet: Finance: Vacant (30% Cap) | Interior: Vacant (30% Cap)"
+
+[node name="CabinetControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AppointTechnocratFinanceButton" type="Button" parent="VBoxContainer/CabinetControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Appoint Technocrat Finance Minister (+Capacity, -3% Polling)"
+
+[node name="AppointLoyalistFinanceButton" type="Button" parent="VBoxContainer/CabinetControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Appoint Loyalist Finance Minister (+3% Polling, -Capacity)"
+
+[node name="CancelCabinetActionButton" type="Button" parent="VBoxContainer/CabinetControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cancel Order"
+
+[node name="CabinetStatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Cabinet Status: Ready (Appoint technocrats or party stalwarts to key ministries)"
+
+[node name="HSeparatorCabinet" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
 
 [node name="StatusHeader" type="Label" parent="VBoxContainer"]

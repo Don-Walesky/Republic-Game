@@ -87,6 +87,12 @@ public sealed record NetworkMessage
     public string? TargetCountryId { get; init; }
 
     /// <summary>
+    /// Gets the project name or identifier if enacting national infrastructure project decisions.
+    /// </summary>
+    [JsonPropertyName("project_name")]
+    public string? ProjectName { get; init; }
+
+    /// <summary>
     /// Gets a value indicating whether an authoritative action request succeeded.
     /// </summary>
     [JsonPropertyName("success")]

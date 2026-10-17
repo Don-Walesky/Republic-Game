@@ -128,6 +128,16 @@ public sealed class RepublicHost : IDisposable
     public IReadOnlyDictionary<string, string> CountryOwners => _countryOwners;
 
     /// <summary>
+    /// Gets the diagnostic error message if the last attempt to load world state failed or detected corruption.
+    /// </summary>
+    public string? LastLoadError { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether a corrupted save file was detected, preventing silent data loss.
+    /// </summary>
+    public bool HasCorruptSaveDetected { get; private set; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="RepublicHost"/> class.
     /// </summary>
     /// <param name="port">The TCP port to bind (default 7777, or 0 for dynamic ephemeral port allocation).</param>
@@ -426,6 +436,68 @@ public sealed class RepublicHost : IDisposable
             _knownCountries[countryId] = snap;
             OnCountryUpdated?.Invoke(snap);
             _ = BroadcastMessageAsync(new NetworkMessage { Type = "country", SenderId = "host", Country = snap });
+        }
+
+        SaveWorld();
+        return true;
+    }
+
+    /// <summary>
+    /// Submits and validates a national infrastructure project decision on the authoritative host.
+    /// Enforces player ownership, idempotency deduplication by request ID, solvency check,
+    /// and broadcasts the updated country state to all peers.
+    /// </summary>
+    public bool SubmitProjectDecision(string playerId, string countryId, string projectName, bool start, string? requestId = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(countryId);
+
+        // 1. Authoritative ownership check
+        if (!IsOwner(playerId, countryId))
+        {
+            return false;
+        }
+
+        // 2. Idempotency / deduplication check
+        if (!string.IsNullOrEmpty(requestId) && !_processedRequests.TryAdd(requestId, true))
+        {
+            return true;
+        }
+
+        var treasury = GetOrCreateTreasury(countryId);
+        const double projectCost = 500_000.0;
+
+        if (start)
+        {
+            if (treasury.Balance < projectCost || !treasury.TryWithdraw(projectCost))
+            {
+                return false;
+            }
+
+            if (_knownCountries.TryGetValue(countryId, out var existing))
+            {
+                var snap = existing with
+                {
+                    ActiveProject = projectName,
+                    Treasury = $"R {treasury.Balance:N0}"
+                };
+                _knownCountries[countryId] = snap;
+                OnCountryUpdated?.Invoke(snap);
+                _ = BroadcastMessageAsync(new NetworkMessage { Type = "country", SenderId = "host", Country = snap });
+            }
+        }
+        else
+        {
+            if (_knownCountries.TryGetValue(countryId, out var existing))
+            {
+                var snap = existing with
+                {
+                    ActiveProject = "None"
+                };
+                _knownCountries[countryId] = snap;
+                OnCountryUpdated?.Invoke(snap);
+                _ = BroadcastMessageAsync(new NetworkMessage { Type = "country", SenderId = "host", Country = snap });
+            }
         }
 
         SaveWorld();
@@ -739,6 +811,16 @@ public sealed class RepublicHost : IDisposable
                     Directory.CreateDirectory(dir);
                 }
 
+                if (HasCorruptSaveDetected && File.Exists(path))
+                {
+                    // Preserve corrupted file before writing, making recovery failure visible and preventing silent data destruction
+                    var backupPath = path + ".corrupted." + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".bak";
+                    if (!File.Exists(backupPath))
+                    {
+                        try { File.Copy(path, backupPath, overwrite: true); } catch { }
+                    }
+                }
+
                 var data = new SharedWorldSaveData
                 {
                     FormatVersion = 1,
@@ -762,6 +844,7 @@ public sealed class RepublicHost : IDisposable
                 var tempPath = path + ".tmp";
                 File.WriteAllText(tempPath, json);
                 File.Move(tempPath, path, overwrite: true);
+                HasCorruptSaveDetected = false;
             }
             catch (Exception ex)
             {
@@ -789,6 +872,10 @@ public sealed class RepublicHost : IDisposable
                 var data = JsonSerializer.Deserialize<SharedWorldSaveData>(json, JsonOptions);
                 if (data == null)
                 {
+                    LastLoadError = "File contents was empty or deserialized to null.";
+                    HasCorruptSaveDetected = true;
+                    var backupPath = path + ".corrupted." + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".bak";
+                    try { File.Copy(path, backupPath, overwrite: true); } catch { }
                     return false;
                 }
 
@@ -838,10 +925,16 @@ public sealed class RepublicHost : IDisposable
                     _processedRequests[reqId] = true;
                 }
 
+                LastLoadError = null;
+                HasCorruptSaveDetected = false;
                 return true;
             }
             catch (Exception ex)
             {
+                LastLoadError = ex.Message;
+                HasCorruptSaveDetected = true;
+                var backupPath = path + ".corrupted." + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".bak";
+                try { File.Copy(path, backupPath, overwrite: true); } catch { }
                 System.Diagnostics.Debug.WriteLine($"[RepublicHost] LoadWorld failed: {ex.Message}");
                 return false;
             }
@@ -1033,6 +1126,25 @@ public sealed class RepublicHost : IDisposable
                             StatusMessage = success
                                 ? $"Successfully applied: Tax rate updated to {rate * 100:0.#}%"
                                 : $"Rejected: Tax decision for '{countryId}' rejected (unauthorized or invalid)."
+                        }).ConfigureAwait(false);
+                    }
+                    else if (message.Type == "project_decision" || (message.Type == "action" && (message.Action == "project" || message.Action == "start_project" || message.Action == "cancel_project")))
+                    {
+                        var countryId = message.CountryId ?? _playerCountries.GetValueOrDefault(message.SenderId) ?? string.Empty;
+                        var projName = message.ProjectName ?? "National Infrastructure Project";
+                        var start = message.Action != "cancel_project";
+                        var success = SubmitProjectDecision(message.SenderId, countryId, projName, start, message.RequestId);
+                        await client.SendMessageAsync(new NetworkMessage
+                        {
+                            Type = "decision_result",
+                            SenderId = "host",
+                            RequestId = message.RequestId,
+                            CountryId = countryId,
+                            Success = success,
+                            Result = success ? "Success" : "Rejected",
+                            StatusMessage = success
+                                ? (start ? $"Successfully applied: Project '{projName}' initiated." : $"Successfully applied: Project cancelled.")
+                                : $"Rejected: Project decision for '{countryId}' rejected (unauthorized or insufficient treasury funds)."
                         }).ConfigureAwait(false);
                     }
                     else if (message.Type == "trade" && message.Trade != null)
