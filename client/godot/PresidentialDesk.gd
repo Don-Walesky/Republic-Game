@@ -1120,6 +1120,7 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	if status_label:
 		status_label.text = _format_status_text("Status: [Pending] Decision request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
 
+	_try_run_cli_request_processor()
 	return {
 		"success": true,
 		"result": "Pending",

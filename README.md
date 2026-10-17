@@ -136,6 +136,6 @@ dotnet test Republic.sln
 * `src/Republic.Core` — Deterministic game engine, domain models, services, and persistence.
 * `src/Republic.App` — Application bootstrapper host and dependency injection container.
 * `src/Republic.Cli` — Terminal dashboard, directive menus, and console game loop.
-* `tests/Republic.Core.Tests` — Unit and integration test suites (160+ passing tests).
+* `tests/Republic.Core.Tests` — Unit and integration test suites (760 passing tests).
 * `client/godot/` — Godot 4 executive presidential desk visual client (active presentation layer; replaces retired Unity client).
 * `Docs/` — Canonical product, design, and technical specifications.
