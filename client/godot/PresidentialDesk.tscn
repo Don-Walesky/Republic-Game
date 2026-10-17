@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://PresidentialDesk.gd" id="1_desk"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
-bg_color = Color(0.0823529, 0.113725, 0.168627, 0.85)
+bg_color = Color(0.0666667, 0.0901961, 0.137255, 0.92)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -13,10 +13,48 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-content_margin_left = 12.0
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header"]
+bg_color = Color(0.0470588, 0.0666667, 0.105882, 0.95)
+border_width_bottom = 2
+border_color = Color(0.85098, 0.678431, 0.282353, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+content_margin_left = 14.0
 content_margin_top = 8.0
-content_margin_right = 12.0
+content_margin_right = 14.0
 content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nav"]
+bg_color = Color(0.0823529, 0.113725, 0.168627, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.180392, 0.243137, 0.345098, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 6.0
+content_margin_top = 4.0
+content_margin_right = 6.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_system"]
+bg_color = Color(0.0392157, 0.054902, 0.0823529, 0.95)
+border_width_top = 1
+border_color = Color(0.180392, 0.243137, 0.345098, 1)
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
 
 [node name="PresidentialDesk" type="Control"]
 layout_mode = 3
@@ -45,597 +83,935 @@ grow_horizontal = 2
 color = Color(0.85098, 0.678431, 0.282353, 1)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_left = 40.0
-offset_top = 24.0
-offset_right = 960.0
-offset_bottom = 1950.0
-theme_override_constants/separation = 8
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 8.0
+offset_right = -16.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
 
-[node name="NationalOverviewHeader" type="Label" parent="VBoxContainer"]
+[node name="ExecutiveHeaderPanel" type="PanelContainer" parent="VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 17
-text = "=== NATIONAL DASHBOARD & TELEMETRY ==="
+theme_override_styles/panel = SubResource("StyleBoxFlat_header")
 
-[node name="CountryLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Country: [No State Loaded]"
-
-[node name="TreasuryLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Treasury: [No State Loaded]"
-
-[node name="ApprovalLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Approval: [No State Loaded]"
-
-[node name="StabilityLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Stability: [No State Loaded]"
-
-[node name="SimulationTimeLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Simulation Time: [No State Loaded]"
-
-[node name="RulingPartyLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Ruling party: [No State Loaded]"
-
-[node name="ElectionLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Election: [No State Loaded]"
-
-[node name="TaxRateLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Income Tax Rate: [No State Loaded]"
-
-[node name="ActiveProjectLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Active Project: [No State Loaded]"
-
-[node name="CabinetOverviewLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Cabinet: [No State Loaded]"
-
-[node name="NationalBriefingPanel" type="PanelContainer" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
-
-[node name="NationalBriefingVBox" type="VBoxContainer" parent="VBoxContainer/NationalBriefingPanel"]
+[node name="HeaderVBox" type="VBoxContainer" parent="VBoxContainer/ExecutiveHeaderPanel"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="BriefingHeader" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox"]
+[node name="TitleRow" type="HBoxContainer" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AppTitle" type="Label" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TitleRow"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 15
-text = "=== NATIONAL BRIEFING (SITUATION REPORT) ==="
+theme_override_font_sizes/font_size = 16
+text = "REPUBLIC — PRESIDENTIAL COMMAND DESK"
 
-[node name="BriefingGrid" type="GridContainer" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox"]
+[node name="AppSubtitle" type="Label" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TitleRow"]
 layout_mode = 2
-columns = 2
-theme_override_constants/h_separation = 24
-theme_override_constants/v_separation = 4
+theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
+theme_override_font_sizes/font_size = 12
+text = "— Sovereign Executive Office of the Head of State & Commander-in-Chief"
 
-[node name="BriefingTreasuryLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+[node name="TelemetryHBox" type="HBoxContainer" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="CountryLabel" type="Label" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TelemetryHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Country: [No State Loaded]"
+
+[node name="TreasuryLabel" type="Label" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TelemetryHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Treasury: [No State Loaded]"
 
-[node name="BriefingApprovalLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+[node name="ApprovalLabel" type="Label" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TelemetryHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Approval: [No State Loaded]"
 
-[node name="BriefingStabilityLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+[node name="StabilityLabel" type="Label" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TelemetryHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Stability: [No State Loaded]"
 
-[node name="BriefingActiveProjectLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+[node name="SimulationTimeLabel" type="Label" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TelemetryHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
-text = "Active Project: None"
+text = "Simulation Time: [No State Loaded]"
 
-[node name="BriefingLatestDecisionLabel" type="Label" parent="VBoxContainer/NationalBriefingPanel/NationalBriefingVBox"]
+[node name="NavBarPanel" type="PanelContainer" parent="VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+theme_override_styles/panel = SubResource("StyleBoxFlat_nav")
+
+[node name="NavBarHBox" type="HBoxContainer" parent="VBoxContainer/NavBarPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NavOverviewButton" type="Button" parent="VBoxContainer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 13
-text = "Latest Decision: [No decisions recorded]"
-autowrap_mode = 2
+text = "1. Overview & Setup"
 
-[node name="HSeparator0" type="HSeparator" parent="VBoxContainer"]
+[node name="NavCabinetButton" type="Button" parent="VBoxContainer/NavBarPanel/NavBarHBox"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+text = "2. Government & Cabinet"
 
-[node name="CountrySetupHeader" type="Label" parent="VBoxContainer"]
+[node name="NavEconomyButton" type="Button" parent="VBoxContainer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+text = "3. Economy & Projects"
+
+[node name="NavCampaignButton" type="Button" parent="VBoxContainer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+text = "4. Campaign & Elections"
+
+[node name="NavDiplomacyButton" type="Button" parent="VBoxContainer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+text = "5. Diplomacy & Trade"
+
+[node name="NavBriefingsButton" type="Button" parent="VBoxContainer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+text = "6. Briefings & Decrees"
+
+[node name="ContentScroll" type="ScrollContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SectionsContainer" type="VBoxContainer" parent="VBoxContainer/ContentScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="SectionOverview" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CountrySetupPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CountrySetupVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CountrySetupHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
 theme_override_font_sizes/font_size = 15
 text = "=== SOVEREIGN COUNTRY FOUNDING & SAVE MANAGEMENT ==="
 
-[node name="CountrySetupHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="CountrySetupHelpLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
+theme_override_font_sizes/font_size = 12
+text = "Found a new sovereign republic or resume an existing national save file. Newly founded nations receive an official Independence Day and a temporary Founding Period with a 10x National Yield Multiplier."
+autowrap_mode = 2
+
+[node name="CountrySetupHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="CountryNameLabel" type="Label" parent="VBoxContainer/CountrySetupHBox"]
+[node name="CountryNameLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox/CountrySetupHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Republic Name:"
 
-[node name="CountryNameLineEdit" type="LineEdit" parent="VBoxContainer/CountrySetupHBox"]
+[node name="CountryNameLineEdit" type="LineEdit" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox/CountrySetupHBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
 theme_override_font_sizes/font_size = 14
 text = "Republic of Arcadia"
 placeholder_text = "Must contain 'Republic'"
 
-[node name="FoundCountryButton" type="Button" parent="VBoxContainer/CountrySetupHBox"]
+[node name="FoundCountryButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox/CountrySetupHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Found Republic"
 
-[node name="SavePathLineEdit" type="LineEdit" parent="VBoxContainer/CountrySetupHBox"]
+[node name="SavePathLineEdit" type="LineEdit" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox/CountrySetupHBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
 theme_override_font_sizes/font_size = 14
 text = "republic_game.sav"
 placeholder_text = "republic_game.sav"
 
-[node name="ResumeSaveButton" type="Button" parent="VBoxContainer/CountrySetupHBox"]
+[node name="ResumeSaveButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox/CountrySetupHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Resume Save"
 
-[node name="CountrySetupStatusLabel" type="Label" parent="VBoxContainer"]
+[node name="CountrySetupStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/CountrySetupPanel/CountrySetupVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.439216, 0.627451, 0.815686, 1)
+theme_override_font_sizes/font_size = 12
 text = "Founder Status: Ready (Found a named Republic or resume from a save file)"
 
-[node name="HSeparator1" type="HSeparator" parent="VBoxContainer"]
+[node name="NationalOverviewPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="TaxDecisionHeader" type="Label" parent="VBoxContainer"]
+[node name="NationalOverviewVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="NationalOverviewHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 16
-text = "=== PRESIDENTIAL DECISION: TAXATION POLICY ==="
+theme_override_font_sizes/font_size = 15
+text = "=== NATIONAL DASHBOARD & TELEMETRY ==="
 
-[node name="ProposedRateHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="OverviewGrid" type="GridContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 4
+
+[node name="RulingPartyLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/OverviewGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Ruling party: [No State Loaded]"
+
+[node name="ElectionLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/OverviewGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Election: [No State Loaded]"
+
+[node name="TaxRateLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/OverviewGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Income Tax Rate: [No State Loaded]"
+
+[node name="ActiveProjectLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/OverviewGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Active Project: [No State Loaded]"
+
+[node name="CabinetOverviewLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cabinet: [No State Loaded]"
+
+[node name="QuickJumpsLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
+theme_override_font_sizes/font_size = 12
+text = "Executive Quick Navigation:"
+
+[node name="QuickJumpsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="JumpToCabinetButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/QuickJumpsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Cabinet & Ministers →"
+
+[node name="JumpToEconomyButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/QuickJumpsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Economy & Tax Policy →"
+
+[node name="JumpToCampaignButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/QuickJumpsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Campaign & Elections →"
+
+[node name="JumpToDiplomacyButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/QuickJumpsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Diplomatic Link →"
+
+[node name="JumpToBriefingsButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/NationalOverviewPanel/NationalOverviewVBox/QuickJumpsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Situation Briefing →"
+
+[node name="OverviewExplainerPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="OverviewExplainerVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/OverviewExplainerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ExplainerHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/OverviewExplainerPanel/OverviewExplainerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 13
+text = "=== EXECUTIVE OPERATIONAL BIBLE: SOVEREIGN PRINCIPLES ==="
+
+[node name="ExplainerText1" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/OverviewExplainerPanel/OverviewExplainerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.796078, 0.835294, 0.882353, 1)
+theme_override_font_sizes/font_size = 12
+text = "• Official Currency: REPU (R). REPU is the sole money of the nation, backing state expenditures and sovereign debt."
+
+[node name="ExplainerText2" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/OverviewExplainerPanel/OverviewExplainerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.796078, 0.835294, 0.882353, 1)
+theme_override_font_sizes/font_size = 12
+text = "• Global Simulation Clock: Continuously progresses in West Africa Time (WAT / UTC+1). Revenue, development, and politics continue while offline."
+
+[node name="ExplainerText3" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionOverview/OverviewExplainerPanel/OverviewExplainerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.796078, 0.835294, 0.882353, 1)
+theme_override_font_sizes/font_size = 12
+text = "• State Capacity Bottleneck: National yield efficiency is strictly bounded by the weakest institutional link: min(Civil Service, Corruption Control, Energy, Food, Infrastructure)."
+
+[node name="SectionCabinet" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CabinetTopBar" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet"]
+layout_mode = 2
+
+[node name="CabinetDecisionHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetTopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 15
+text = "=== PRESIDENTIAL DECISION: EXECUTIVE CABINET APPOINTMENTS ==="
+
+[node name="ReturnToOverviewButton_Cabinet" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetTopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "← Return to Overview"
+
+[node name="CabinetSummaryPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CabinetSummaryVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetSummaryPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CabinetSummaryLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetSummaryPanel/CabinetSummaryVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cabinet: Finance: Vacant (30% Cap) | Interior: Vacant (30% Cap)"
+
+[node name="BottleneckExplainer" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetSummaryPanel/CabinetSummaryVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
+theme_override_font_sizes/font_size = 12
+text = "Institutional Capacity Bottleneck Rule: National yield efficiency is constrained by min(Civil Service Quality, Corruption Control, Infrastructure, Energy). Technocrat ministers provide 0.90 competence lifting institutional caps, but political factions dissent (-3.0% polling). Loyalist ministers rally party support (+3.0% polling), but bottleneck capacity at 0.45."
+autowrap_mode = 2
+
+[node name="CabinetActionsPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CabinetActionsVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CabinetControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AppointTechnocratFinanceButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox/CabinetControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Appoint Technocrat Finance Minister (+Capacity, -3% Polling)"
+
+[node name="AppointLoyalistFinanceButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox/CabinetControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Appoint Loyalist Finance Minister (+3% Polling, -Capacity)"
+
+[node name="CancelCabinetActionButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox/CabinetControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Cancel Order"
+
+[node name="CabinetStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.439216, 0.627451, 0.815686, 1)
+theme_override_font_sizes/font_size = 13
+text = "Cabinet Status: Ready (Appoint technocrats or party stalwarts to key ministries)"
+
+[node name="SectionEconomy" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EconomyTopBar" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy"]
+layout_mode = 2
+
+[node name="TaxDecisionHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/EconomyTopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 15
+text = "=== PRESIDENTIAL DECISION: TAXATION & DEVELOPMENT ==="
+
+[node name="ReturnToOverviewButton_Economy" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/EconomyTopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "← Return to Overview"
+
+[node name="TaxPolicyPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="TaxPolicyVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TaxSubheader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.796078, 0.835294, 0.882353, 1)
+theme_override_font_sizes/font_size = 13
+text = "National Income Tax Policy (Constitutional Limits: 0% – 70%)"
+
+[node name="ProposedRateHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ProposedRateLabel" type="Label" parent="VBoxContainer/ProposedRateHBox"]
+[node name="ProposedRateLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox/ProposedRateHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Proposed Income Tax Rate (%): "
 
-[node name="ProposedRateSpinBox" type="SpinBox" parent="VBoxContainer/ProposedRateHBox"]
+[node name="ProposedRateSpinBox" type="SpinBox" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox/ProposedRateHBox"]
 layout_mode = 2
 min_value = 0.0
 max_value = 70.0
 step = 1.0
 value = 25.0
 
-[node name="ExpectedConsequenceLabel" type="Label" parent="VBoxContainer"]
+[node name="ExpectedConsequenceLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.376471, 0.647059, 0.980392, 1)
 theme_override_font_sizes/font_size = 14
 text = "Expected Approval Effect: No change (0.0%)"
 
-[node name="DecisionControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="DecisionControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ConfirmButton" type="Button" parent="VBoxContainer/DecisionControlsHBox"]
+[node name="ConfirmButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox/DecisionControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Confirm Decision"
 
-[node name="CancelButton" type="Button" parent="VBoxContainer/DecisionControlsHBox"]
+[node name="CancelButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox/DecisionControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Cancel"
 
-[node name="RefreshButton" type="Button" parent="VBoxContainer/DecisionControlsHBox"]
+[node name="RefreshButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox/DecisionControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Refresh / Apply Pending"
 
-[node name="DecisionResultLabel" type="Label" parent="VBoxContainer"]
+[node name="DecisionResultLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Decision Result: No decision made"
 
-[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+[node name="TaxExplainerLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
+theme_override_font_sizes/font_size = 12
+text = "Economic Trade-off: Tax increases boost Treasury revenue but reduce citizen approval (-0.5% per +1% tax hike). Tax cuts provide immediate public relief (+0.5% approval per -1% tax cut). Extreme tax rates (> 50%) provoke severe unrest and stability penalties."
+autowrap_mode = 2
 
-[node name="ProjectDecisionHeader" type="Label" parent="VBoxContainer"]
+[node name="NationalProjectsPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ProjectsVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ProjectDecisionHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel/ProjectsVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "=== PRESIDENTIAL DECISION: NATIONAL PROJECTS ==="
 
-[node name="ProjectControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="ProjectControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel/ProjectsVBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="StartRoadProjectButton" type="Button" parent="VBoxContainer/ProjectControlsHBox"]
+[node name="StartRoadProjectButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel/ProjectsVBox/ProjectControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Initiate National Road Program (Cost: R500,000)"
 
-[node name="CancelProjectButton" type="Button" parent="VBoxContainer/ProjectControlsHBox"]
+[node name="CancelProjectButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel/ProjectsVBox/ProjectControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Cancel Project Order"
 
-[node name="ProjectStatusLabel" type="Label" parent="VBoxContainer"]
+[node name="ProjectStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel/ProjectsVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.439216, 0.627451, 0.815686, 1)
 theme_override_font_sizes/font_size = 13
 text = "Project Status: Ready (Select a development program to commission)"
 
-[node name="HSeparatorProjects" type="HSeparator" parent="VBoxContainer"]
+[node name="RoadExplainerLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel/ProjectsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
+theme_override_font_sizes/font_size = 12
+text = "Infrastructure Benefits: The National Road Program upgrades inter-regional transport corridors, reducing transport costs, facilitating agricultural delivery, and creating a permanent enabling environment for commercial markets."
+autowrap_mode = 2
+
+[node name="SectionCampaign" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CampaignTopBar" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign"]
 layout_mode = 2
 
-[node name="CampaignDecisionHeader" type="Label" parent="VBoxContainer"]
+[node name="CampaignDecisionHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignTopBar"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "=== PRESIDENTIAL DECISION: POLITICAL CAMPAIGN & ELECTIONS ==="
 
-[node name="ElectionControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="ReturnToOverviewButton_Campaign" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignTopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "← Return to Overview"
+
+[node name="CampaignPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CampaignVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CampaignSubheader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.796078, 0.835294, 0.882353, 1)
+theme_override_font_sizes/font_size = 13
+text = "Democratic Mandates & Grassroots Mobilization"
+
+[node name="ElectionControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="HoldCampaignRallyButton" type="Button" parent="VBoxContainer/ElectionControlsHBox"]
+[node name="HoldCampaignRallyButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox/ElectionControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Hold Campaign Rally (Cost: R250,000)"
 
-[node name="ContestElectionButton" type="Button" parent="VBoxContainer/ElectionControlsHBox"]
+[node name="ContestElectionButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox/ElectionControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Call & Contest National Election"
 
-[node name="CancelElectionActionButton" type="Button" parent="VBoxContainer/ElectionControlsHBox"]
+[node name="CancelElectionActionButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox/ElectionControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Cancel Order"
 
-[node name="ElectionStatusLabel" type="Label" parent="VBoxContainer"]
+[node name="ElectionStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.439216, 0.627451, 0.815686, 1)
 theme_override_font_sizes/font_size = 13
 text = "Electoral Status: Ready (Campaign for public support or contest elections)"
 
-[node name="HSeparatorElections" type="HSeparator" parent="VBoxContainer"]
+[node name="CampaignExplainerLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox"]
 layout_mode = 2
-
-[node name="CabinetDecisionHeader" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 16
-text = "=== PRESIDENTIAL DECISION: EXECUTIVE CABINET APPOINTMENTS ==="
-
-[node name="CabinetSummaryLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Cabinet: Finance: Vacant (30% Cap) | Interior: Vacant (30% Cap)"
-
-[node name="CabinetControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="AppointTechnocratFinanceButton" type="Button" parent="VBoxContainer/CabinetControlsHBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Appoint Technocrat Finance Minister (+Capacity, -3% Polling)"
-
-[node name="AppointLoyalistFinanceButton" type="Button" parent="VBoxContainer/CabinetControlsHBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Appoint Loyalist Finance Minister (+3% Polling, -Capacity)"
-
-[node name="CancelCabinetActionButton" type="Button" parent="VBoxContainer/CabinetControlsHBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Cancel Order"
-
-[node name="CabinetStatusLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "Cabinet Status: Ready (Appoint technocrats or party stalwarts to key ministries)"
-
-[node name="HSeparatorCabinet" type="HSeparator" parent="VBoxContainer"]
-layout_mode = 2
-
-[node name="StatusHeader" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.376471, 0.647059, 0.980392, 1)
-theme_override_font_sizes/font_size = 15
-text = "=== SYSTEM STATUS & TELEMETRY ==="
-
-[node name="StatusLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "Status: Waiting for Republic simulation state..."
+theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
+theme_override_font_sizes/font_size = 12
+text = "Electoral Rules: Holding a campaign rally costs R250,000 from the Treasury and rallies your grassroots base (+4.0% ruling party support, -2.0% opposition, +1.5% approval). Calling a national election tallies citizen votes: winning renews your constitutional mandate (+2.5% approval, +2.0% stability); losing enacts a peaceful democratic transfer of power to the opposition."
 autowrap_mode = 2
 
-[node name="HSeparator3" type="HSeparator" parent="VBoxContainer"]
+[node name="SectionDiplomacy" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DiplomacyTopBar" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy"]
 layout_mode = 2
 
-[node name="MultiplayerHeader" type="Label" parent="VBoxContainer"]
+[node name="DiplomacyHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/DiplomacyTopBar"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
 theme_override_font_sizes/font_size = 15
+text = "=== BILATERAL DIPLOMACY & MULTIPLAYER DIPLOMATIC LINK ==="
+
+[node name="ReturnToOverviewButton_Diplomacy" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/DiplomacyTopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "← Return to Overview"
+
+[node name="MultiplayerPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="MultiplayerVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MultiplayerHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
 text = "=== MULTIPLAYER DIPLOMATIC LINK ==="
 
-[node name="MultiplayerControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="MultiplayerControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="HostButton" type="Button" parent="VBoxContainer/MultiplayerControlsHBox"]
+[node name="HostButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox/MultiplayerControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Host Game"
 
-[node name="JoinButton" type="Button" parent="VBoxContainer/MultiplayerControlsHBox"]
+[node name="JoinButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox/MultiplayerControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Join Game"
 
-[node name="AddressLabel" type="Label" parent="VBoxContainer/MultiplayerControlsHBox"]
+[node name="AddressLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox/MultiplayerControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Host Address:"
 
-[node name="AddressLineEdit" type="LineEdit" parent="VBoxContainer/MultiplayerControlsHBox"]
+[node name="AddressLineEdit" type="LineEdit" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox/MultiplayerControlsHBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
 theme_override_font_sizes/font_size = 14
 text = "127.0.0.1:7777"
 placeholder_text = "127.0.0.1:7777"
 
-[node name="DisconnectButton" type="Button" parent="VBoxContainer/MultiplayerControlsHBox"]
+[node name="DisconnectButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox/MultiplayerControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Disconnect"
 
-[node name="NetworkStatusLabel" type="Label" parent="VBoxContainer"]
+[node name="NetworkStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.439216, 0.627451, 0.815686, 1)
 theme_override_font_sizes/font_size = 13
 text = "Network: Disconnected (Single-player local mode)"
 
-[node name="ForeignCountryHeader" type="Label" parent="VBoxContainer"]
+[node name="ForeignCountryHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "--- Foreign Sovereign State (Connected Peer) ---"
 
-[node name="ForeignCountryGrid" type="HBoxContainer" parent="VBoxContainer"]
+[node name="ForeignCountryGrid" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="ForeignCountryNameLabel" type="Label" parent="VBoxContainer/ForeignCountryGrid"]
+[node name="ForeignCountryNameLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox/ForeignCountryGrid"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Peer Country: [No peer connected]"
 
-[node name="ForeignCountryTreasuryLabel" type="Label" parent="VBoxContainer/ForeignCountryGrid"]
+[node name="ForeignCountryTreasuryLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox/ForeignCountryGrid"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Peer Treasury: [No peer connected]"
 
-[node name="ForeignCountryApprovalLabel" type="Label" parent="VBoxContainer/ForeignCountryGrid"]
+[node name="ForeignCountryApprovalLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox/ForeignCountryGrid"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Peer Approval: [No peer connected]"
 
-[node name="LastAiDecisionLabel" type="Label" parent="VBoxContainer"]
+[node name="LastAiDecisionLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Last AI Decision: [No AI decisions recorded]"
 
-[node name="SharedClockLabel" type="Label" parent="VBoxContainer"]
+[node name="SharedClockLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/MultiplayerPanel/MultiplayerVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Shared World Clock: [Local Clock]"
 
-[node name="HSeparator4" type="HSeparator" parent="VBoxContainer"]
+[node name="BilateralTradePanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="DiplomacyHeader" type="Label" parent="VBoxContainer"]
+[node name="BilateralTradeVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 15
-text = "=== BILATERAL DIPLOMACY & TRADE ==="
+theme_override_constants/separation = 6
 
-[node name="DiplomacyControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="DiplomacyControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="DiplomacyStatusLabel" type="Label" parent="VBoxContainer/DiplomacyControlsHBox"]
+[node name="DiplomacyStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/DiplomacyControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Diplomatic Standing: Unrecognized"
 
-[node name="RecognizeButton" type="Button" parent="VBoxContainer/DiplomacyControlsHBox"]
+[node name="RecognizeButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/DiplomacyControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Recognize Country"
 
-[node name="MessageHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="MessageHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="MessageLabel" type="Label" parent="VBoxContainer/MessageHBox"]
+[node name="MessageLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/MessageHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Diplomatic Cable:"
 
-[node name="MessageLineEdit" type="LineEdit" parent="VBoxContainer/MessageHBox"]
+[node name="MessageLineEdit" type="LineEdit" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/MessageHBox"]
 layout_mode = 2
 custom_minimum_size = Vector2(280, 0)
 theme_override_font_sizes/font_size = 14
 placeholder_text = "Type diplomatic dispatch here..."
 
-[node name="SendMessageButton" type="Button" parent="VBoxContainer/MessageHBox"]
+[node name="SendMessageButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/MessageHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Send Cable"
 
-[node name="LatestMessageLabel" type="Label" parent="VBoxContainer"]
+[node name="LatestMessageLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Latest Dispatch: [No messages exchanged]"
 
-[node name="TradeControlsHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="TradeControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="TradeAmountLabel" type="Label" parent="VBoxContainer/TradeControlsHBox"]
+[node name="TradeAmountLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/TradeControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Trade Amount (REPU):"
 
-[node name="TradeAmountSpinBox" type="SpinBox" parent="VBoxContainer/TradeControlsHBox"]
+[node name="TradeAmountSpinBox" type="SpinBox" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/TradeControlsHBox"]
 layout_mode = 2
 min_value = 1000000.0
 max_value = 100000000000.0
 step = 100000000.0
 value = 1000000000.0
 
-[node name="ProposeTradeButton" type="Button" parent="VBoxContainer/TradeControlsHBox"]
+[node name="ProposeTradeButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/TradeControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Propose Trade"
 
-[node name="AcceptTradeButton" type="Button" parent="VBoxContainer/TradeControlsHBox"]
+[node name="AcceptTradeButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/TradeControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Accept"
 
-[node name="RejectTradeButton" type="Button" parent="VBoxContainer/TradeControlsHBox"]
+[node name="RejectTradeButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox/TradeControlsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Reject"
 
-[node name="LatestTradeStatusLabel" type="Label" parent="VBoxContainer"]
+[node name="LatestTradeStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionDiplomacy/BilateralTradePanel/BilateralTradeVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Trade Status: [No active proposal]"
 
-[node name="HSeparator5" type="HSeparator" parent="VBoxContainer"]
+[node name="SectionBriefings" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BriefingsTopBar" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings"]
 layout_mode = 2
 
-[node name="BuffsHeader" type="Label" parent="VBoxContainer"]
+[node name="BriefingHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BriefingsTopBar"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
 theme_override_font_sizes/font_size = 15
+text = "=== SITUATION BRIEFINGS & EXECUTIVE ORDERS ==="
+
+[node name="ReturnToOverviewButton_Briefings" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BriefingsTopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "← Return to Overview"
+
+[node name="NationalBriefingPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="NationalBriefingVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BriefingHeaderLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
+text = "=== NATIONAL BRIEFING (SITUATION REPORT) ==="
+
+[node name="BriefingGrid" type="GridContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 4
+
+[node name="BriefingTreasuryLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Treasury: [No State Loaded]"
+
+[node name="BriefingApprovalLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Approval: [No State Loaded]"
+
+[node name="BriefingStabilityLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Stability: [No State Loaded]"
+
+[node name="BriefingActiveProjectLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox/BriefingGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Active Project: None"
+
+[node name="BriefingLatestDecisionLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/NationalBriefingPanel/NationalBriefingVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "Latest Decision: [No decisions recorded]"
+autowrap_mode = 2
+
+[node name="BuffsPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="BuffsVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BuffsHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
 text = "=== EXECUTIVE ORDERS & TEMPORARY BUFFS ==="
 
-[node name="BuffsDescriptionLabel" type="Label" parent="VBoxContainer"]
+[node name="BuffsDescriptionLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.68, 0.78, 1)
+theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
 theme_override_font_sizes/font_size = 12
 text = "Enact temporary national executive decrees (Monetization & IAP Simulation Mode - No real payment required)"
 
-[node name="BuffsHBox" type="HBoxContainer" parent="VBoxContainer"]
+[node name="BuffsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox"]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="AdminBuffPanel" type="PanelContainer" parent="VBoxContainer/BuffsHBox"]
+[node name="AdminBuffPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="AdminBuffVBox" type="VBoxContainer" parent="VBoxContainer/BuffsHBox/AdminBuffPanel"]
+[node name="AdminBuffVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/AdminBuffPanel"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="AdminBuffTitle" type="Label" parent="VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox"]
+[node name="AdminBuffTitle" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/AdminBuffPanel/AdminBuffVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Administrative Efficiency"
 
-[node name="AdminBuffDesc" type="Label" parent="VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox"]
+[node name="AdminBuffDesc" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/AdminBuffPanel/AdminBuffVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.78, 0.88, 1)
 theme_override_font_sizes/font_size = 12
 text = "+10% National Yield Processing Speed (12h duration)"
 
-[node name="AdminBuffPrice" type="Label" parent="VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox"]
+[node name="AdminBuffPrice" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/AdminBuffPanel/AdminBuffVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 0.45, 1)
 theme_override_font_sizes/font_size = 12
 text = "Cost: $0.99 USD"
 
-[node name="BuyAdminBuffButton" type="Button" parent="VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox"]
+[node name="BuyAdminBuffButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/AdminBuffPanel/AdminBuffVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Buy Decrees ($0.99)"
 
-[node name="InvestorBuffPanel" type="PanelContainer" parent="VBoxContainer/BuffsHBox"]
+[node name="InvestorBuffPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="InvestorBuffVBox" type="VBoxContainer" parent="VBoxContainer/BuffsHBox/InvestorBuffPanel"]
+[node name="InvestorBuffVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/InvestorBuffPanel"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="InvestorBuffTitle" type="Label" parent="VBoxContainer/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox"]
+[node name="InvestorBuffTitle" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Investor Confidence"
 
-[node name="InvestorBuffDesc" type="Label" parent="VBoxContainer/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox"]
+[node name="InvestorBuffDesc" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.78, 0.88, 1)
 theme_override_font_sizes/font_size = 12
 text = "+5.0% Sovereign Stability & Approval Bonus (24h duration)"
 
-[node name="InvestorBuffPrice" type="Label" parent="VBoxContainer/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox"]
+[node name="InvestorBuffPrice" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.85, 0.45, 1)
 theme_override_font_sizes/font_size = 12
 text = "Cost: $1.99 USD"
 
-[node name="BuyInvestorBuffButton" type="Button" parent="VBoxContainer/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox"]
+[node name="BuyInvestorBuffButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox/BuffsHBox/InvestorBuffPanel/InvestorBuffVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Buy Decrees ($1.99)"
 
-[node name="BuffStatusLabel" type="Label" parent="VBoxContainer"]
+[node name="BuffStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/BuffsPanel/BuffsVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_colors/font_color = Color(0.439216, 0.627451, 0.815686, 1)
 theme_override_font_sizes/font_size = 13
 text = "Buff Status: Ready (No active purchase requests)"
 
-[node name="HSeparator6" type="HSeparator" parent="VBoxContainer"]
+[node name="AdPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="AdNoticeLabel" type="Label" parent="VBoxContainer"]
+[node name="AdVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/AdPanel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_constants/separation = 4
+
+[node name="AdNoticeLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/AdPanel/AdVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.392157, 0.454902, 0.545098, 1)
 theme_override_font_sizes/font_size = 11
 text = "SPONSORED BROADCAST (WEB AD UNIT PLACEHOLDER)"
 
-[node name="AdPlaceholder" type="ColorRect" parent="VBoxContainer"]
+[node name="AdPlaceholder" type="ColorRect" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/AdPanel/AdVBox"]
 custom_minimum_size = Vector2(728, 70)
 layout_mode = 2
 color = Color(0.101961, 0.141176, 0.207843, 1)
 
-[node name="AdPlaceholderText" type="Label" parent="VBoxContainer/AdPlaceholder"]
+[node name="AdPlaceholderText" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/AdPanel/AdVBox/AdPlaceholder"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -647,3 +1023,18 @@ theme_override_font_sizes/font_size = 13
 text = "[ Web Ad Unit Placeholder (728x70 Leaderboard) — Replace with Google AdSense in HTML5 export ]"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="BottomSystemBar" type="PanelContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_system")
+
+[node name="SystemHBox" type="HBoxContainer" parent="VBoxContainer/BottomSystemBar"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer/BottomSystemBar/SystemHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+text = "Status: Waiting for Republic simulation state..."
+autowrap_mode = 2

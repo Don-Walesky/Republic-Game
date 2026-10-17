@@ -5,6 +5,9 @@ var _warned_missing_nodes: Dictionary = {}
 ## Retrieves a required node or pushes a one-time warning to the Godot Output panel
 func _get_required_node(node_path: String) -> Node:
 	var n := get_node_or_null(node_path)
+	if n == null:
+		var node_name := node_path.get_file()
+		n = find_child(node_name, true, false)
 	if n == null and not _warned_missing_nodes.has(node_path):
 		_warned_missing_nodes[node_path] = true
 		push_warning("PresidentialDesk: Required node not found at path '%s'. Please check your scene tree." % node_path)
@@ -93,6 +96,39 @@ func _get_required_node(node_path: String) -> Node:
 @onready var buff_status_label: Label = _get_required_node("VBoxContainer/BuffStatusLabel") as Label
 @onready var ad_placeholder: ColorRect = _get_required_node("VBoxContainer/AdPlaceholder") as ColorRect
 
+## Navigation Sections
+enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS }
+var active_section: Section = Section.OVERVIEW
+
+## Navigation Tab Controls
+@onready var nav_overview_button: Button = _get_required_node("NavOverviewButton") as Button
+@onready var nav_cabinet_button: Button = _get_required_node("NavCabinetButton") as Button
+@onready var nav_economy_button: Button = _get_required_node("NavEconomyButton") as Button
+@onready var nav_campaign_button: Button = _get_required_node("NavCampaignButton") as Button
+@onready var nav_diplomacy_button: Button = _get_required_node("NavDiplomacyButton") as Button
+@onready var nav_briefings_button: Button = _get_required_node("NavBriefingsButton") as Button
+
+## Section Root Containers
+@onready var section_overview: Control = _get_required_node("SectionOverview") as Control
+@onready var section_cabinet: Control = _get_required_node("SectionCabinet") as Control
+@onready var section_economy: Control = _get_required_node("SectionEconomy") as Control
+@onready var section_campaign: Control = _get_required_node("SectionCampaign") as Control
+@onready var section_diplomacy: Control = _get_required_node("SectionDiplomacy") as Control
+@onready var section_briefings: Control = _get_required_node("SectionBriefings") as Control
+
+## Quick Jump / Return Buttons
+@onready var jump_cabinet_button: Button = _get_required_node("JumpToCabinetButton") as Button
+@onready var jump_economy_button: Button = _get_required_node("JumpToEconomyButton") as Button
+@onready var jump_campaign_button: Button = _get_required_node("JumpToCampaignButton") as Button
+@onready var jump_diplomacy_button: Button = _get_required_node("JumpToDiplomacyButton") as Button
+@onready var jump_briefings_button: Button = _get_required_node("JumpToBriefingsButton") as Button
+
+@onready var return_cabinet_button: Button = _get_required_node("ReturnToOverviewButton_Cabinet") as Button
+@onready var return_economy_button: Button = _get_required_node("ReturnToOverviewButton_Economy") as Button
+@onready var return_campaign_button: Button = _get_required_node("ReturnToOverviewButton_Campaign") as Button
+@onready var return_diplomacy_button: Button = _get_required_node("ReturnToOverviewButton_Diplomacy") as Button
+@onready var return_briefings_button: Button = _get_required_node("ReturnToOverviewButton_Briefings") as Button
+
 ## File paths scanned for authoritative Republic simulation state
 const DEFAULT_STATE_PATHS: Array[String] = [
 	"res://presidential_desk_state.json",
@@ -140,6 +176,7 @@ func _ready() -> void:
 			_local_client_id = arg.substr("--client-id=".length()).strip_edges()
 	_init_controls()
 	_wire_signals()
+	switch_to_section(Section.OVERVIEW)
 	refresh()
 
 
@@ -281,6 +318,54 @@ func _init_controls() -> void:
 	if cabinet_status_label == null:
 		cabinet_status_label = _get_required_node("VBoxContainer/CabinetStatusLabel") as Label
 
+	if nav_overview_button == null:
+		nav_overview_button = _get_required_node("NavOverviewButton") as Button
+	if nav_cabinet_button == null:
+		nav_cabinet_button = _get_required_node("NavCabinetButton") as Button
+	if nav_economy_button == null:
+		nav_economy_button = _get_required_node("NavEconomyButton") as Button
+	if nav_campaign_button == null:
+		nav_campaign_button = _get_required_node("NavCampaignButton") as Button
+	if nav_diplomacy_button == null:
+		nav_diplomacy_button = _get_required_node("NavDiplomacyButton") as Button
+	if nav_briefings_button == null:
+		nav_briefings_button = _get_required_node("NavBriefingsButton") as Button
+
+	if section_overview == null:
+		section_overview = _get_required_node("SectionOverview") as Control
+	if section_cabinet == null:
+		section_cabinet = _get_required_node("SectionCabinet") as Control
+	if section_economy == null:
+		section_economy = _get_required_node("SectionEconomy") as Control
+	if section_campaign == null:
+		section_campaign = _get_required_node("SectionCampaign") as Control
+	if section_diplomacy == null:
+		section_diplomacy = _get_required_node("SectionDiplomacy") as Control
+	if section_briefings == null:
+		section_briefings = _get_required_node("SectionBriefings") as Control
+
+	if jump_cabinet_button == null:
+		jump_cabinet_button = _get_required_node("JumpToCabinetButton") as Button
+	if jump_economy_button == null:
+		jump_economy_button = _get_required_node("JumpToEconomyButton") as Button
+	if jump_campaign_button == null:
+		jump_campaign_button = _get_required_node("JumpToCampaignButton") as Button
+	if jump_diplomacy_button == null:
+		jump_diplomacy_button = _get_required_node("JumpToDiplomacyButton") as Button
+	if jump_briefings_button == null:
+		jump_briefings_button = _get_required_node("JumpToBriefingsButton") as Button
+
+	if return_cabinet_button == null:
+		return_cabinet_button = _get_required_node("ReturnToOverviewButton_Cabinet") as Button
+	if return_economy_button == null:
+		return_economy_button = _get_required_node("ReturnToOverviewButton_Economy") as Button
+	if return_campaign_button == null:
+		return_campaign_button = _get_required_node("ReturnToOverviewButton_Campaign") as Button
+	if return_diplomacy_button == null:
+		return_diplomacy_button = _get_required_node("ReturnToOverviewButton_Diplomacy") as Button
+	if return_briefings_button == null:
+		return_briefings_button = _get_required_node("ReturnToOverviewButton_Briefings") as Button
+
 	if not _is_network_connected and not _is_network_connecting:
 		if host_button:
 			host_button.disabled = false
@@ -330,7 +415,50 @@ func _init_controls() -> void:
 		if cancel_cabinet_action_button:
 			cancel_cabinet_action_button.disabled = false
 
+	_setup_tooltips()
 	_wire_signals()
+
+
+## Configures rich, concise contextual tooltips explaining political/economic terminology, costs, and risks
+func _setup_tooltips() -> void:
+	if treasury_label:
+		treasury_label.tooltip_text = "State Treasury: Total liquid sovereign reserves in Republic Currency (REPU). Used to fund infrastructure, cabinet appointments, campaign events, and emergency decrees."
+	if approval_label:
+		approval_label.tooltip_text = "Public Approval: Overall national confidence in your administration. Drops when taxes rise or crises go unaddressed. High approval aids election victories."
+	if stability_label:
+		stability_label.tooltip_text = "National Stability: Degree of public order and constitutional resilience. High stability safeguards government functions against civil unrest."
+	if simulation_time_label:
+		simulation_time_label.tooltip_text = "Simulation Time: Universal elapsed time in days and hours, authoritatively synchronized across host and clients."
+	if ruling_party_label:
+		ruling_party_label.tooltip_text = "Political Parties: Shows current polling support between the ruling administration coalition and the parliamentary opposition."
+	if election_label:
+		election_label.tooltip_text = "Electoral Mandate: Time remaining until the next mandatory election. Rallies boost polling; contesting elections renews your democratic mandate."
+	if cabinet_summary_label:
+		cabinet_summary_label.tooltip_text = "Executive Cabinet: Balances institutional competence against political loyalty. Technocrats elevate Civil Service capacity; Loyalists rally party support."
+	if appoint_technocrat_finance_button:
+		appoint_technocrat_finance_button.tooltip_text = "Appoint Technocrat Minister:\n• Cost: Zero upfront\n• Effect: Civil Service Quality jumps to 90%, lifting national yield and policy bottlenecks\n• Risk: Minor party friction"
+	if appoint_loyalist_finance_button:
+		appoint_loyalist_finance_button.tooltip_text = "Appoint Loyalist Minister:\n• Cost: Zero upfront\n• Effect: Polling support +4.0%, consolidating legislative majority\n• Risk: Civil Service Quality capped at 30%"
+	if hold_campaign_rally_button:
+		hold_campaign_rally_button.tooltip_text = "Hold National Campaign Rally:\n• Cost: R 250,000\n• Effect: Polling support +4.0%, Approval +1.5%\n• Risk: Depletes treasury reserves if repeated excessively"
+	if contest_election_button:
+		contest_election_button.tooltip_text = "Contest Democratic Election:\n• Cost: Zero\n• Effect: Renews presidential mandate (+2.5% Approval, +2.0% Stability) if polling exceeds opposition\n• Risk: Democratic defeat if opposition leads"
+	if proposed_rate_spinbox:
+		proposed_rate_spinbox.tooltip_text = "Income Tax Rate (%):\n• Baseline: 25.0%\n• Effect: Each 1% hike generates revenue but reduces Approval by 0.5% and Stability by 0.3%"
+	if start_road_project_button:
+		start_road_project_button.tooltip_text = "Commission National Road Program:\n• Cost: R 500,000\n• Effect: Enhances logistics infrastructure, accelerates National Yield and private sector productivity"
+	if cancel_button:
+		cancel_button.tooltip_text = "Cancel Proposal: Dismisses the pending adjustment and reverts tax proposal to the current constitutional law without cost."
+	if confirm_button:
+		confirm_button.tooltip_text = "Confirm Executive Decree: Enacts the proposed income tax rate immediately into law, applying fiscal and approval consequences."
+	if buy_admin_buff_button:
+		buy_admin_buff_button.tooltip_text = "Phase 5 Sponsored Decree: Emergency administrative procurement via official commercial partners."
+	if buy_investor_buff_button:
+		buy_investor_buff_button.tooltip_text = "Phase 5 Sponsored Decree: Foreign direct investment promotion package via accredited industrial sponsors."
+	if recognize_button:
+		recognize_button.tooltip_text = "Diplomatic Recognition: Formal recognition of peer sovereign republic, establishing official embassy ties and unlocking bilateral trade."
+	if propose_trade_button:
+		propose_trade_button.tooltip_text = "Propose Bilateral Trade: Transfers REPU currency reserves to peer republic in exchange for reciprocal commodity flow."
 
 
 ## Connects interactive control signals
@@ -383,6 +511,95 @@ func _wire_signals() -> void:
 		buy_admin_buff_button.pressed.connect(_on_buy_admin_buff_pressed)
 	if buy_investor_buff_button and not buy_investor_buff_button.pressed.is_connected(_on_buy_investor_buff_pressed):
 		buy_investor_buff_button.pressed.connect(_on_buy_investor_buff_pressed)
+
+	if nav_overview_button and not nav_overview_button.pressed.is_connected(_on_nav_overview_pressed):
+		nav_overview_button.pressed.connect(_on_nav_overview_pressed)
+	if nav_cabinet_button and not nav_cabinet_button.pressed.is_connected(_on_nav_cabinet_pressed):
+		nav_cabinet_button.pressed.connect(_on_nav_cabinet_pressed)
+	if nav_economy_button and not nav_economy_button.pressed.is_connected(_on_nav_economy_pressed):
+		nav_economy_button.pressed.connect(_on_nav_economy_pressed)
+	if nav_campaign_button and not nav_campaign_button.pressed.is_connected(_on_nav_campaign_pressed):
+		nav_campaign_button.pressed.connect(_on_nav_campaign_pressed)
+	if nav_diplomacy_button and not nav_diplomacy_button.pressed.is_connected(_on_nav_diplomacy_pressed):
+		nav_diplomacy_button.pressed.connect(_on_nav_diplomacy_pressed)
+	if nav_briefings_button and not nav_briefings_button.pressed.is_connected(_on_nav_briefings_pressed):
+		nav_briefings_button.pressed.connect(_on_nav_briefings_pressed)
+
+	if jump_cabinet_button and not jump_cabinet_button.pressed.is_connected(_on_nav_cabinet_pressed):
+		jump_cabinet_button.pressed.connect(_on_nav_cabinet_pressed)
+	if jump_economy_button and not jump_economy_button.pressed.is_connected(_on_nav_economy_pressed):
+		jump_economy_button.pressed.connect(_on_nav_economy_pressed)
+	if jump_campaign_button and not jump_campaign_button.pressed.is_connected(_on_nav_campaign_pressed):
+		jump_campaign_button.pressed.connect(_on_nav_campaign_pressed)
+	if jump_diplomacy_button and not jump_diplomacy_button.pressed.is_connected(_on_nav_diplomacy_pressed):
+		jump_diplomacy_button.pressed.connect(_on_nav_diplomacy_pressed)
+	if jump_briefings_button and not jump_briefings_button.pressed.is_connected(_on_nav_briefings_pressed):
+		jump_briefings_button.pressed.connect(_on_nav_briefings_pressed)
+
+	if return_cabinet_button and not return_cabinet_button.pressed.is_connected(return_to_overview):
+		return_cabinet_button.pressed.connect(return_to_overview)
+	if return_economy_button and not return_economy_button.pressed.is_connected(return_to_overview):
+		return_economy_button.pressed.connect(return_to_overview)
+	if return_campaign_button and not return_campaign_button.pressed.is_connected(return_to_overview):
+		return_campaign_button.pressed.connect(return_to_overview)
+	if return_diplomacy_button and not return_diplomacy_button.pressed.is_connected(return_to_overview):
+		return_diplomacy_button.pressed.connect(return_to_overview)
+	if return_briefings_button and not return_briefings_button.pressed.is_connected(return_to_overview):
+		return_briefings_button.pressed.connect(return_to_overview)
+
+
+## Switches the active UI section and highlights navigation controls
+func switch_to_section(section: Section) -> void:
+	active_section = section
+	if section_overview:
+		section_overview.visible = (section == Section.OVERVIEW)
+	if section_cabinet:
+		section_cabinet.visible = (section == Section.CABINET)
+	if section_economy:
+		section_economy.visible = (section == Section.ECONOMY)
+	if section_campaign:
+		section_campaign.visible = (section == Section.CAMPAIGN)
+	if section_diplomacy:
+		section_diplomacy.visible = (section == Section.DIPLOMACY)
+	if section_briefings:
+		section_briefings.visible = (section == Section.BRIEFINGS)
+	_update_nav_button_styles()
+
+
+## Returns immediately to the main Presidential Overview section
+func return_to_overview() -> void:
+	switch_to_section(Section.OVERVIEW)
+
+
+## Updates button highlights to provide clear visual feedback of current active section
+func _update_nav_button_styles() -> void:
+	var buttons := [nav_overview_button, nav_cabinet_button, nav_economy_button, nav_campaign_button, nav_diplomacy_button, nav_briefings_button]
+	for i in range(buttons.size()):
+		var b: Button = buttons[i]
+		if b:
+			if i == active_section:
+				b.modulate = Color(1.0, 0.85, 0.3, 1.0) # Gold accent for active tab
+			else:
+				b.modulate = Color(0.85, 0.9, 0.95, 1.0)
+
+
+func _on_nav_overview_pressed() -> void:
+	switch_to_section(Section.OVERVIEW)
+
+func _on_nav_cabinet_pressed() -> void:
+	switch_to_section(Section.CABINET)
+
+func _on_nav_economy_pressed() -> void:
+	switch_to_section(Section.ECONOMY)
+
+func _on_nav_campaign_pressed() -> void:
+	switch_to_section(Section.CAMPAIGN)
+
+func _on_nav_diplomacy_pressed() -> void:
+	switch_to_section(Section.DIPLOMACY)
+
+func _on_nav_briefings_pressed() -> void:
+	switch_to_section(Section.BRIEFINGS)
 
 
 func _process(delta: float) -> void:
