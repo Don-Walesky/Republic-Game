@@ -49,11 +49,16 @@ func _get_required_node(node_path: String) -> Node:
 
 ## National Project Decision Controls
 @onready var start_road_project_button: Button = _get_required_node("VBoxContainer/ProjectControlsHBox/StartRoadProjectButton") as Button
+@onready var start_university_project_button: Button = _get_required_node("StartUniversityProjectButton") as Button
 @onready var cancel_project_button: Button = _get_required_node("VBoxContainer/ProjectControlsHBox/CancelProjectButton") as Button
 @onready var project_status_label: Label = _get_required_node("VBoxContainer/ProjectStatusLabel") as Label
+@onready var fiscal_report_label: Label = _get_required_node("FiscalReportLabel") as Label
+@onready var state_capacity_label: Label = _get_required_node("StateCapacityLabel") as Label
+@onready var gdp_label: Label = _get_required_node("GdpLabel") as Label
 
 ## Campaign & Election Decision Controls
 @onready var hold_campaign_rally_button: Button = _get_required_node("VBoxContainer/ElectionControlsHBox/HoldCampaignRallyButton") as Button
+@onready var hold_town_hall_button: Button = _get_required_node("HoldTownHallButton") as Button
 @onready var contest_election_button: Button = _get_required_node("VBoxContainer/ElectionControlsHBox/ContestElectionButton") as Button
 @onready var cancel_election_action_button: Button = _get_required_node("VBoxContainer/ElectionControlsHBox/CancelElectionActionButton") as Button
 @onready var election_status_label: Label = _get_required_node("VBoxContainer/ElectionStatusLabel") as Label
@@ -63,8 +68,15 @@ func _get_required_node(node_path: String) -> Node:
 @onready var cabinet_summary_label: Label = _get_required_node("VBoxContainer/CabinetSummaryLabel") as Label
 @onready var appoint_technocrat_finance_button: Button = _get_required_node("VBoxContainer/CabinetControlsHBox/AppointTechnocratFinanceButton") as Button
 @onready var appoint_loyalist_finance_button: Button = _get_required_node("VBoxContainer/CabinetControlsHBox/AppointLoyalistFinanceButton") as Button
+@onready var appoint_technocrat_interior_button: Button = _get_required_node("AppointTechnocratInteriorButton") as Button
+@onready var appoint_loyalist_interior_button: Button = _get_required_node("AppointLoyalistInteriorButton") as Button
 @onready var cancel_cabinet_action_button: Button = _get_required_node("VBoxContainer/CabinetControlsHBox/CancelCabinetActionButton") as Button
 @onready var cabinet_status_label: Label = _get_required_node("VBoxContainer/CabinetStatusLabel") as Label
+
+## Phase 3 Crisis & Emergency Decrees
+@onready var crisis_status_label: Label = _get_required_node("CrisisStatusLabel") as Label
+@onready var emergency_austerity_button: Button = _get_required_node("EmergencyAusterityButton") as Button
+@onready var emergency_relief_button: Button = _get_required_node("EmergencyReliefButton") as Button
 
 ## Multiplayer Networking Controls & Display
 @onready var host_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/HostButton") as Button
@@ -291,13 +303,23 @@ func _init_controls() -> void:
 
 	if start_road_project_button == null:
 		start_road_project_button = _get_required_node("VBoxContainer/ProjectControlsHBox/StartRoadProjectButton") as Button
+	if start_university_project_button == null:
+		start_university_project_button = _get_required_node("StartUniversityProjectButton") as Button
 	if cancel_project_button == null:
 		cancel_project_button = _get_required_node("VBoxContainer/ProjectControlsHBox/CancelProjectButton") as Button
 	if project_status_label == null:
 		project_status_label = _get_required_node("VBoxContainer/ProjectStatusLabel") as Label
+	if fiscal_report_label == null:
+		fiscal_report_label = _get_required_node("FiscalReportLabel") as Label
+	if state_capacity_label == null:
+		state_capacity_label = _get_required_node("StateCapacityLabel") as Label
+	if gdp_label == null:
+		gdp_label = _get_required_node("GdpLabel") as Label
 
 	if hold_campaign_rally_button == null:
 		hold_campaign_rally_button = _get_required_node("VBoxContainer/ElectionControlsHBox/HoldCampaignRallyButton") as Button
+	if hold_town_hall_button == null:
+		hold_town_hall_button = _get_required_node("HoldTownHallButton") as Button
 	if contest_election_button == null:
 		contest_election_button = _get_required_node("VBoxContainer/ElectionControlsHBox/ContestElectionButton") as Button
 	if cancel_election_action_button == null:
@@ -313,10 +335,21 @@ func _init_controls() -> void:
 		appoint_technocrat_finance_button = _get_required_node("VBoxContainer/CabinetControlsHBox/AppointTechnocratFinanceButton") as Button
 	if appoint_loyalist_finance_button == null:
 		appoint_loyalist_finance_button = _get_required_node("VBoxContainer/CabinetControlsHBox/AppointLoyalistFinanceButton") as Button
+	if appoint_technocrat_interior_button == null:
+		appoint_technocrat_interior_button = _get_required_node("AppointTechnocratInteriorButton") as Button
+	if appoint_loyalist_interior_button == null:
+		appoint_loyalist_interior_button = _get_required_node("AppointLoyalistInteriorButton") as Button
 	if cancel_cabinet_action_button == null:
 		cancel_cabinet_action_button = _get_required_node("VBoxContainer/CabinetControlsHBox/CancelCabinetActionButton") as Button
 	if cabinet_status_label == null:
 		cabinet_status_label = _get_required_node("VBoxContainer/CabinetStatusLabel") as Label
+
+	if crisis_status_label == null:
+		crisis_status_label = _get_required_node("CrisisStatusLabel") as Label
+	if emergency_austerity_button == null:
+		emergency_austerity_button = _get_required_node("EmergencyAusterityButton") as Button
+	if emergency_relief_button == null:
+		emergency_relief_button = _get_required_node("EmergencyReliefButton") as Button
 
 	if nav_overview_button == null:
 		nav_overview_button = _get_required_node("NavOverviewButton") as Button
@@ -400,10 +433,14 @@ func _init_controls() -> void:
 			resume_save_button.disabled = false
 		if start_road_project_button:
 			start_road_project_button.disabled = false
+		if start_university_project_button:
+			start_university_project_button.disabled = false
 		if cancel_project_button:
 			cancel_project_button.disabled = false
 		if hold_campaign_rally_button:
 			hold_campaign_rally_button.disabled = false
+		if hold_town_hall_button:
+			hold_town_hall_button.disabled = false
 		if contest_election_button:
 			contest_election_button.disabled = false
 		if cancel_election_action_button:
@@ -412,8 +449,16 @@ func _init_controls() -> void:
 			appoint_technocrat_finance_button.disabled = false
 		if appoint_loyalist_finance_button:
 			appoint_loyalist_finance_button.disabled = false
+		if appoint_technocrat_interior_button:
+			appoint_technocrat_interior_button.disabled = false
+		if appoint_loyalist_interior_button:
+			appoint_loyalist_interior_button.disabled = false
 		if cancel_cabinet_action_button:
 			cancel_cabinet_action_button.disabled = false
+		if emergency_austerity_button:
+			emergency_austerity_button.disabled = false
+		if emergency_relief_button:
+			emergency_relief_button.disabled = false
 
 	_setup_tooltips()
 	_wire_signals()
@@ -439,14 +484,26 @@ func _setup_tooltips() -> void:
 		appoint_technocrat_finance_button.tooltip_text = "Appoint Technocrat Minister:\n• Cost: Zero upfront\n• Effect: Civil Service Quality jumps to 90%, lifting national yield and policy bottlenecks\n• Risk: Minor party friction"
 	if appoint_loyalist_finance_button:
 		appoint_loyalist_finance_button.tooltip_text = "Appoint Loyalist Minister:\n• Cost: Zero upfront\n• Effect: Polling support +4.0%, consolidating legislative majority\n• Risk: Civil Service Quality capped at 30%"
+	if appoint_technocrat_interior_button:
+		appoint_technocrat_interior_button.tooltip_text = "Appoint Technocrat Interior Minister (Dr. Finch):\n• Cost: Zero upfront\n• Effect: Corruption Control elevated to 90%, lifting national yield bottleneck\n• Risk: Faction dissent (-3% polling)"
+	if appoint_loyalist_interior_button:
+		appoint_loyalist_interior_button.tooltip_text = "Appoint Loyalist Interior Minister (Whip Sterling):\n• Cost: Zero upfront\n• Effect: Polling support +3.0%, party cohesion\n• Risk: Corruption Control capped at 45%"
 	if hold_campaign_rally_button:
 		hold_campaign_rally_button.tooltip_text = "Hold National Campaign Rally:\n• Cost: R 250,000\n• Effect: Polling support +4.0%, Approval +1.5%\n• Risk: Depletes treasury reserves if repeated excessively"
+	if hold_town_hall_button:
+		hold_town_hall_button.tooltip_text = "Hold Citizen Town Hall:\n• Cost: R 50,000\n• Effect: Public Approval +1.0%, Stability +1.5%, Polling +1.5%\n• Risk: Modest treasury expenditure"
 	if contest_election_button:
 		contest_election_button.tooltip_text = "Contest Democratic Election:\n• Cost: Zero\n• Effect: Renews presidential mandate (+2.5% Approval, +2.0% Stability) if polling exceeds opposition\n• Risk: Democratic defeat if opposition leads"
 	if proposed_rate_spinbox:
 		proposed_rate_spinbox.tooltip_text = "Income Tax Rate (%):\n• Baseline: 25.0%\n• Effect: Each 1% hike generates revenue but reduces Approval by 0.5% and Stability by 0.3%"
 	if start_road_project_button:
 		start_road_project_button.tooltip_text = "Commission National Road Program:\n• Cost: R 500,000\n• Effect: Enhances logistics infrastructure, accelerates National Yield and private sector productivity"
+	if start_university_project_button:
+		start_university_project_button.tooltip_text = "Commission National University:\n• Cost: R 750,000\n• Effect: Elevates Human Capital, State Capacity, and scientific innovation over 48h"
+	if emergency_austerity_button:
+		emergency_austerity_button.tooltip_text = "Emergency Austerity Decree:\n• Gain: +R 500,000 reserves from spending cuts\n• Risk: Public approval drops -4.0%, stability drops -2.0%"
+	if emergency_relief_button:
+		emergency_relief_button.tooltip_text = "Civic Relief Package:\n• Cost: R 100,000 treasury stimulus\n• Effect: Approval +4.0%, Stability +3.0%\n• Use: Resolves civil unrest emergencies"
 	if cancel_button:
 		cancel_button.tooltip_text = "Cancel Proposal: Dismisses the pending adjustment and reverts tax proposal to the current constitutional law without cost."
 	if confirm_button:
@@ -477,10 +534,14 @@ func _wire_signals() -> void:
 		resume_save_button.pressed.connect(_on_resume_save_button_pressed)
 	if start_road_project_button and not start_road_project_button.pressed.is_connected(_on_start_road_project_button_pressed):
 		start_road_project_button.pressed.connect(_on_start_road_project_button_pressed)
+	if start_university_project_button and not start_university_project_button.pressed.is_connected(_on_start_university_project_button_pressed):
+		start_university_project_button.pressed.connect(_on_start_university_project_button_pressed)
 	if cancel_project_button and not cancel_project_button.pressed.is_connected(_on_cancel_project_button_pressed):
 		cancel_project_button.pressed.connect(_on_cancel_project_button_pressed)
 	if hold_campaign_rally_button and not hold_campaign_rally_button.pressed.is_connected(_on_hold_campaign_rally_button_pressed):
 		hold_campaign_rally_button.pressed.connect(_on_hold_campaign_rally_button_pressed)
+	if hold_town_hall_button and not hold_town_hall_button.pressed.is_connected(_on_hold_town_hall_button_pressed):
+		hold_town_hall_button.pressed.connect(_on_hold_town_hall_button_pressed)
 	if contest_election_button and not contest_election_button.pressed.is_connected(_on_contest_election_button_pressed):
 		contest_election_button.pressed.connect(_on_contest_election_button_pressed)
 	if cancel_election_action_button and not cancel_election_action_button.pressed.is_connected(_on_cancel_election_action_button_pressed):
@@ -489,8 +550,16 @@ func _wire_signals() -> void:
 		appoint_technocrat_finance_button.pressed.connect(_on_appoint_technocrat_finance_button_pressed)
 	if appoint_loyalist_finance_button and not appoint_loyalist_finance_button.pressed.is_connected(_on_appoint_loyalist_finance_button_pressed):
 		appoint_loyalist_finance_button.pressed.connect(_on_appoint_loyalist_finance_button_pressed)
+	if appoint_technocrat_interior_button and not appoint_technocrat_interior_button.pressed.is_connected(_on_appoint_technocrat_interior_button_pressed):
+		appoint_technocrat_interior_button.pressed.connect(_on_appoint_technocrat_interior_button_pressed)
+	if appoint_loyalist_interior_button and not appoint_loyalist_interior_button.pressed.is_connected(_on_appoint_loyalist_interior_button_pressed):
+		appoint_loyalist_interior_button.pressed.connect(_on_appoint_loyalist_interior_button_pressed)
 	if cancel_cabinet_action_button and not cancel_cabinet_action_button.pressed.is_connected(_on_cancel_cabinet_action_button_pressed):
 		cancel_cabinet_action_button.pressed.connect(_on_cancel_cabinet_action_button_pressed)
+	if emergency_austerity_button and not emergency_austerity_button.pressed.is_connected(_on_emergency_austerity_button_pressed):
+		emergency_austerity_button.pressed.connect(_on_emergency_austerity_button_pressed)
+	if emergency_relief_button and not emergency_relief_button.pressed.is_connected(_on_emergency_relief_button_pressed):
+		emergency_relief_button.pressed.connect(_on_emergency_relief_button_pressed)
 	if host_button and not host_button.pressed.is_connected(_on_host_button_pressed):
 		host_button.pressed.connect(_on_host_button_pressed)
 	if join_button and not join_button.pressed.is_connected(_on_join_button_pressed):
@@ -783,6 +852,34 @@ func apply_state(data: Dictionary) -> void:
 	var civil_quality: float = float(data.get("civil_service_quality", data.get("CivilServiceQuality", 0.3)))
 	var corr_control: float = float(data.get("corruption_control", data.get("CorruptionControl", 0.3)))
 
+	var fisc_sum: String = str(data.get("fiscal_report_summary", data.get("FiscalReportSummary", "")))
+	var fisc_def: String = str(data.get("fiscal_deficit_formatted", data.get("FiscalDeficitFormatted", "")))
+	var gdp_val: String = str(data.get("gdp_formatted", data.get("GdpFormatted", "")))
+	var cap_sum: String = str(data.get("state_capacity_summary", data.get("StateCapacitySummary", "")))
+	var crisis_val: String = str(data.get("active_crisis", data.get("ActiveCrisis", "None")))
+	var crisis_det: String = str(data.get("active_crisis_details", data.get("ActiveCrisisDetails", "National stability within safe limits")))
+
+	if fiscal_report_label:
+		if not fisc_sum.is_empty():
+			fiscal_report_label.text = "Fiscal Report: %s (%s)" % [fisc_sum, fisc_def]
+		else:
+			fiscal_report_label.text = "Fiscal Report: [No Data]"
+	if state_capacity_label:
+		if not cap_sum.is_empty():
+			state_capacity_label.text = "State Capacity: " + cap_sum
+		else:
+			state_capacity_label.text = "State Capacity: [No Data]"
+	if gdp_label:
+		if not gdp_val.is_empty():
+			gdp_label.text = "GDP: " + gdp_val
+		else:
+			gdp_label.text = "GDP: [No Data]"
+	if crisis_status_label:
+		if crisis_val != "None" and not crisis_val.is_empty():
+			crisis_status_label.text = "Active Crisis: %s — %s" % [crisis_val, crisis_det]
+		else:
+			crisis_status_label.text = "Active Crisis: None (National stability within safe limits)"
+
 	if active_project_label:
 		active_project_label.text = "Active Project: " + active_proj
 	if cabinet_overview_label:
@@ -899,6 +996,14 @@ func display_missing_state(details: String = "") -> void:
 		tax_rate_label.text = "Income Tax Rate: [No State Loaded]"
 	if active_project_label:
 		active_project_label.text = "Active Project: [No State Loaded]"
+	if fiscal_report_label:
+		fiscal_report_label.text = "Fiscal Report: [No State Loaded]"
+	if state_capacity_label:
+		state_capacity_label.text = "State Capacity: [No State Loaded]"
+	if gdp_label:
+		gdp_label.text = "GDP: [No State Loaded]"
+	if crisis_status_label:
+		crisis_status_label.text = "Active Crisis: None"
 	if cabinet_overview_label:
 		cabinet_overview_label.text = "Cabinet: [No State Loaded]"
 	if cabinet_summary_label:
@@ -957,6 +1062,14 @@ func display_error(error_msg: String) -> void:
 		tax_rate_label.text = "Income Tax Rate: [No State Loaded]"
 	if active_project_label:
 		active_project_label.text = "Active Project: [No State Loaded]"
+	if fiscal_report_label:
+		fiscal_report_label.text = "Fiscal Report: Error"
+	if state_capacity_label:
+		state_capacity_label.text = "State Capacity: Error"
+	if gdp_label:
+		gdp_label.text = "GDP: Error"
+	if crisis_status_label:
+		crisis_status_label.text = "Active Crisis: Error - " + error_msg
 	if briefing_treasury_label:
 		briefing_treasury_label.text = "Treasury: [No State Loaded]"
 	if briefing_approval_label:
@@ -1123,6 +1236,36 @@ func _on_appoint_technocrat_finance_button_pressed() -> void:
 ## Handler for appointing party loyalist finance minister
 func _on_appoint_loyalist_finance_button_pressed() -> void:
 	execute_cabinet_appointment("Finance", "loyalist", true)
+
+
+## Handler for appointing technocrat interior minister
+func _on_appoint_technocrat_interior_button_pressed() -> void:
+	execute_cabinet_appointment("Interior", "technocrat", true)
+
+
+## Handler for appointing party loyalist interior minister
+func _on_appoint_loyalist_interior_button_pressed() -> void:
+	execute_cabinet_appointment("Interior", "loyalist", true)
+
+
+## Handler for start university project button
+func _on_start_university_project_button_pressed() -> void:
+	execute_project_decision("University", true)
+
+
+## Handler for hold citizen town hall button
+func _on_hold_town_hall_button_pressed() -> void:
+	execute_town_hall(true)
+
+
+## Handler for emergency austerity decree button
+func _on_emergency_austerity_button_pressed() -> void:
+	execute_crisis_response("austerity", true)
+
+
+## Handler for civic relief package button
+func _on_emergency_relief_button_pressed() -> void:
+	execute_crisis_response("civic_relief", true)
 
 
 ## Handler for cancelling cabinet action order
@@ -1851,6 +1994,10 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 		appoint_technocrat_finance_button.disabled = true
 	if appoint_loyalist_finance_button:
 		appoint_loyalist_finance_button.disabled = true
+	if appoint_technocrat_interior_button:
+		appoint_technocrat_interior_button.disabled = true
+	if appoint_loyalist_interior_button:
+		appoint_loyalist_interior_button.disabled = true
 	if cancel_cabinet_action_button:
 		cancel_cabinet_action_button.disabled = true
 
@@ -1861,6 +2008,179 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 		cabinet_status_label.text = "Cabinet Status: [Pending] Vetting appointment..."
 	if status_label:
 		status_label.text = _format_status_text("Status: [Pending] Cabinet request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
+
+## Submits a citizen town hall campaign decision via file-based request (presidential_desk_request.json)
+func execute_town_hall(confirmed: bool) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	if not _is_connected or _latest_state.is_empty():
+		var no_state_msg := "Cannot hold town hall: No Republic simulation state loaded."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Missing or Corrupted Save - " + no_state_msg
+		if election_status_label:
+			election_status_label.text = "Electoral Status: [Rejected] " + no_state_msg
+		return {
+			"success": false,
+			"result": "StateMissingOrCorrupt",
+			"message": no_state_msg
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_th_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id if confirmed else ""
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "town_hall",
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create town hall request file: " + request_path
+		_active_request_id = ""
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Error - " + err_msg
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	if not confirmed:
+		_is_waiting_for_decision = false
+		_active_request_id = ""
+		var cancel_msg := "Town hall cancelled by executive order. Zero funds deducted."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Cancelled] " + cancel_msg
+		if election_status_label:
+			election_status_label.text = "Electoral Status: [Cancelled] Order cancelled."
+		if status_label:
+			status_label.text = _format_status_text("Status: [Cancelled] Town hall cancellation written to " + DEFAULT_REQUEST_FILENAME, "Cancelled")
+		return {
+			"success": false,
+			"result": "Cancelled",
+			"message": cancel_msg
+		}
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	if hold_town_hall_button:
+		hold_town_hall_button.disabled = true
+	if hold_campaign_rally_button:
+		hold_campaign_rally_button.disabled = true
+	if contest_election_button:
+		contest_election_button.disabled = true
+	if cancel_election_action_button:
+		cancel_election_action_button.disabled = true
+
+	var submit_msg := "Citizen Town Hall request submitted. Awaiting simulation..."
+	if decision_result_label:
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
+	if election_status_label:
+		election_status_label.text = "Electoral Status: [Pending] Convening citizens..."
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Town hall request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
+
+## Submits an emergency crisis decree decision via file-based request (presidential_desk_request.json)
+func execute_crisis_response(decree_type: String, confirmed: bool) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	if not _is_connected or _latest_state.is_empty():
+		var no_state_msg := "Cannot enact emergency decree: No Republic simulation state loaded."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Missing or Corrupted Save - " + no_state_msg
+		return {
+			"success": false,
+			"result": "StateMissingOrCorrupt",
+			"message": no_state_msg
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_crisis_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id if confirmed else ""
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "crisis_response",
+		"decree_type": decree_type,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create crisis decree request file: " + request_path
+		_active_request_id = ""
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Error - " + err_msg
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	if not confirmed:
+		_is_waiting_for_decision = false
+		_active_request_id = ""
+		var cancel_msg := "Emergency decree cancelled by presidential directive. Zero state changes enacted."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Cancelled] " + cancel_msg
+		if status_label:
+			status_label.text = _format_status_text("Status: [Cancelled] Decree cancellation written to " + DEFAULT_REQUEST_FILENAME, "Cancelled")
+		return {
+			"success": false,
+			"result": "Cancelled",
+			"message": cancel_msg
+		}
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	if emergency_austerity_button:
+		emergency_austerity_button.disabled = true
+	if emergency_relief_button:
+		emergency_relief_button.disabled = true
+
+	var submit_msg := "Emergency decree '%s' submitted. Awaiting simulation..." % decree_type
+	if decision_result_label:
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Crisis request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
 
 	_try_run_cli_request_processor()
 	return { "success": true, "result": "Pending", "message": submit_msg }
@@ -1885,10 +2205,14 @@ func _handle_decision_result(result_dict: Dictionary) -> void:
 		resume_save_button.disabled = false
 	if start_road_project_button:
 		start_road_project_button.disabled = false
+	if start_university_project_button:
+		start_university_project_button.disabled = false
 	if cancel_project_button:
 		cancel_project_button.disabled = false
 	if hold_campaign_rally_button:
 		hold_campaign_rally_button.disabled = false
+	if hold_town_hall_button:
+		hold_town_hall_button.disabled = false
 	if contest_election_button:
 		contest_election_button.disabled = false
 	if cancel_election_action_button:
@@ -1897,8 +2221,16 @@ func _handle_decision_result(result_dict: Dictionary) -> void:
 		appoint_technocrat_finance_button.disabled = false
 	if appoint_loyalist_finance_button:
 		appoint_loyalist_finance_button.disabled = false
+	if appoint_technocrat_interior_button:
+		appoint_technocrat_interior_button.disabled = false
+	if appoint_loyalist_interior_button:
+		appoint_loyalist_interior_button.disabled = false
 	if cancel_cabinet_action_button:
 		cancel_cabinet_action_button.disabled = false
+	if emergency_austerity_button:
+		emergency_austerity_button.disabled = false
+	if emergency_relief_button:
+		emergency_relief_button.disabled = false
 
 	# Clean up result file so each result is handled only once and not mistaken for future decisions
 	var res_path := _resolve_result_path(_active_state_path)

@@ -1765,6 +1765,11 @@ public static class PresidentialDeskBridge
         {
             outcome = PresidentialWorkspaceHandler.InitiatePowerPlantProject(country, simTime, confirmed: true);
         }
+        else if (string.Equals(projectType, "University", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "National University", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateUniversityProject(country, simTime, confirmed: true);
+        }
         else
         {
             // Default to Road
@@ -2187,6 +2192,653 @@ public static class PresidentialDeskBridge
     }
 
     /// <summary>
+    /// Enacts an executive town hall or public citizen address directive.
+    /// Costs R50,000 from the national treasury, boosting citizen approval (+1.0%),
+    /// baseline stability (+1.5%), and ruling party polling support (+1.5%).
+    /// </summary>
+    public static PresidentialActionResult ApplyTownHallDecision(
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        const double TownHallCost = 50_000.0;
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        string? snapshotCountryId = null;
+
+        string targetSavePath;
+        if (!string.IsNullOrWhiteSpace(saveFilePath))
+        {
+            targetSavePath = saveFilePath;
+        }
+        else if (targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
+        {
+            targetSavePath = targetStatePath;
+        }
+        else
+        {
+            if (!File.Exists(targetStatePath))
+            {
+                var missingResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply town hall decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, missingResult);
+                return missingResult;
+            }
+
+            string rawJson;
+            try
+            {
+                rawJson = File.ReadAllText(targetStatePath);
+            }
+            catch (Exception ex)
+            {
+                var ioResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply town hall decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, ioResult);
+                return ioResult;
+            }
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                var emptyResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply town hall decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, emptyResult);
+                return emptyResult;
+            }
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (JsonException)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply town hall decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+
+            using (doc)
+            {
+                if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+                {
+                    targetSavePath = targetStatePath;
+                }
+                else
+                {
+                    string? snapshotSavePath = null;
+                    if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
+                    {
+                        snapshotSavePath = savePathEl.GetString();
+                    }
+
+                    if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                    {
+                        snapshotCountryId = cIdEl.GetString();
+                    }
+                    if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                    {
+                        snapshotCountryId = cNameEl.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                    {
+                        targetSavePath = snapshotSavePath;
+                    }
+                    else
+                    {
+                        var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                        if (File.Exists(companion))
+                        {
+                            targetSavePath = companion;
+                        }
+                        else
+                        {
+                            var noSaveResult = new PresidentialActionResult
+                            {
+                                RequestId = requestId ?? string.Empty,
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot apply town hall decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, noSaveResult);
+                            return noSaveResult;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply town hall decision: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingSaveResult);
+            return missingSaveResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply town hall decision: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptSaveResult);
+            return corruptSaveResult;
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply town hall decision: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        country ??= envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+        var tick = envelope.State.CurrentTick;
+
+        if (country.RulingParty == null)
+        {
+            country.FoundParty("Democratic Union", simTime, support: 55.0);
+        }
+        if (country.OppositionParty == null)
+        {
+            country.FoundParty("National Civic Front", simTime);
+            if (country.OppositionParty != null)
+            {
+                country.OppositionParty = country.OppositionParty with { Support = 45.0 };
+            }
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Town hall assembly cancelled by presidential directive. Zero treasury funds deducted.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None"
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        if (country.Treasury.Balance < TownHallCost)
+        {
+            var fundsResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InsufficientFunds",
+                Message = $"Cannot conduct citizen town hall: Insufficient sovereign treasury funds. Required: {RepuTreasury.Format(TownHallCost)}, Available: {country.Treasury.FormattedBalance}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, fundsResult);
+            return fundsResult;
+        }
+
+        country.Treasury.Withdraw(TownHallCost);
+        var newRulingSupport = Math.Clamp((country.RulingParty?.Support ?? 55.0) + 1.5, 5.0, 95.0);
+        var newOppositionSupport = Math.Clamp((country.OppositionParty?.Support ?? 45.0) - 1.5, 5.0, 95.0);
+        if (country.RulingParty != null) country.RulingParty = country.RulingParty with { Support = newRulingSupport };
+        if (country.OppositionParty != null) country.OppositionParty = country.OppositionParty with { Support = newOppositionSupport };
+
+        country.HappinessRating = Math.Clamp(country.HappinessRating + 1.0, 0.0, 100.0);
+        country.BaselineStability = Math.Clamp(country.BaselineStability + 1.5, 0.0, 100.0);
+
+        envelope.State.CurrentTick = tick + 1;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        try
+        {
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+        catch (Exception ex)
+        {
+            country.Treasury.Deposit(TownHallCost);
+            var persistFailResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PersistenceFailure",
+                Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Town hall not recorded.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, persistFailResult);
+            return persistFailResult;
+        }
+
+        var message = $"Citizen Town Hall conducted successfully. Deducted {RepuTreasury.Format(TownHallCost)}. Public approval rose to {country.HappinessRating:0.#}%, stability to {country.BaselineStability:0.#}%, and ruling support to {newRulingSupport:0.#}%.";
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, latestDecisionResult: message);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = message,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            ElectionResult = country.LastElection?.ToString() ?? string.Empty,
+            IsReelected = true
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Enacts an emergency executive crisis decree to resolve sovereign fiscal insolvency or civil unrest.
+    /// Decree options:
+    /// - "civic_relief": Allocates R100,000 to public services, lifting approval (+4.0%) and stability (+3.0%).
+    /// - "austerity": Injects R500,000 from spending cuts, but reduces approval (-4.0%) and stability (-2.0%).
+    /// </summary>
+    public static PresidentialActionResult ApplyCrisisResponseDecision(
+        string decreeType,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        string? snapshotCountryId = null;
+
+        string targetSavePath;
+        if (!string.IsNullOrWhiteSpace(saveFilePath))
+        {
+            targetSavePath = saveFilePath;
+        }
+        else if (targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
+        {
+            targetSavePath = targetStatePath;
+        }
+        else
+        {
+            if (!File.Exists(targetStatePath))
+            {
+                var missingResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply crisis decree: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, missingResult);
+                return missingResult;
+            }
+
+            string rawJson;
+            try
+            {
+                rawJson = File.ReadAllText(targetStatePath);
+            }
+            catch (Exception ex)
+            {
+                var ioResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply crisis decree: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, ioResult);
+                return ioResult;
+            }
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                var emptyResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply crisis decree: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, emptyResult);
+                return emptyResult;
+            }
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (JsonException)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply crisis decree: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+
+            using (doc)
+            {
+                if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+                {
+                    targetSavePath = targetStatePath;
+                }
+                else
+                {
+                    string? snapshotSavePath = null;
+                    if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
+                    {
+                        snapshotSavePath = savePathEl.GetString();
+                    }
+
+                    if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                    {
+                        snapshotCountryId = cIdEl.GetString();
+                    }
+                    if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                    {
+                        snapshotCountryId = cNameEl.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                    {
+                        targetSavePath = snapshotSavePath;
+                    }
+                    else
+                    {
+                        var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                        if (File.Exists(companion))
+                        {
+                            targetSavePath = companion;
+                        }
+                        else
+                        {
+                            var noSaveResult = new PresidentialActionResult
+                            {
+                                RequestId = requestId ?? string.Empty,
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot apply crisis decree: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, noSaveResult);
+                            return noSaveResult;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply crisis decree: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingSaveResult);
+            return missingSaveResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply crisis decree: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptSaveResult);
+            return corruptSaveResult;
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply crisis decree: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        country ??= envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+        var tick = envelope.State.CurrentTick;
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Emergency decree cancelled by presidential directive. No fiscal changes enacted.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None"
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        string outcomeMessage;
+        var normalizedDecree = decreeType?.Trim().ToLowerInvariant() ?? "austerity";
+
+        if (normalizedDecree is "civic_relief" or "relief")
+        {
+            const double ReliefCost = 100_000.0;
+            if (country.Treasury.Balance < ReliefCost)
+            {
+                var fundsResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "InsufficientFunds",
+                    Message = $"Cannot enact Civic Relief Package: Insufficient treasury reserves. Required: {RepuTreasury.Format(ReliefCost)}, Available: {country.Treasury.FormattedBalance}.",
+                    CountryName = country.Name,
+                    IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                    ApprovalRating = country.HappinessRating,
+                    StabilityRating = country.BaselineStability,
+                    TreasuryBalance = country.Treasury.Balance
+                };
+                TryWriteResultFile(targetStatePath, fundsResult);
+                return fundsResult;
+            }
+
+            country.Treasury.Withdraw(ReliefCost);
+            country.HappinessRating = Math.Clamp(country.HappinessRating + 4.0, 0.0, 100.0);
+            country.BaselineStability = Math.Clamp(country.BaselineStability + 3.0, 0.0, 100.0);
+            outcomeMessage = $"Civic Relief Package enacted: Allocated {RepuTreasury.Format(ReliefCost)} to citizen emergency services. Approval lifted to {country.HappinessRating:0.#}%, stability restored to {country.BaselineStability:0.#}%.";
+        }
+        else
+        {
+            // Default: Emergency Austerity
+            const double Influx = 500_000.0;
+            country.Treasury.Deposit(Influx);
+            country.HappinessRating = Math.Clamp(country.HappinessRating - 4.0, 0.0, 100.0);
+            country.BaselineStability = Math.Clamp(country.BaselineStability - 2.0, 0.0, 100.0);
+            outcomeMessage = $"Emergency Austerity Decree enacted: Reallocated {RepuTreasury.Format(Influx)} to liquid operating reserves from ministerial reductions. Public approval adjusted to {country.HappinessRating:0.#}%, stability at {country.BaselineStability:0.#}%.";
+        }
+
+        envelope.State.CurrentTick = tick + 1;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        try
+        {
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+        catch (Exception ex)
+        {
+            var persistFailResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PersistenceFailure",
+                Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Crisis decree not recorded.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, persistFailResult);
+            return persistFailResult;
+        }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            ElectionResult = country.LastElection?.ToString() ?? string.Empty,
+            IsReelected = true
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
     /// Enacts a democratic national election decision, holding an election between the ruling party
     /// and opposition party, factoring in citizen approval and stability, certifying the result,
     /// and either renewing the executive mandate or enacting a peaceful transition of power.
@@ -2470,7 +3122,11 @@ public static class PresidentialDeskBridge
         else
         {
             country.BaselineStability = Math.Clamp(country.BaselineStability - 2.0, 0.0, 100.0);
-            outcomeMessage = $"Democratic Transition: {election.WinnerPartyName} won the national election with {election.WinnerSupport:0.#}% of the vote ({election.LoserPartyName}: {election.LoserSupport:0.#}%). Opposition assumes the ruling executive mandate.";
+            country.VacatePortfolio(CabinetPortfolio.Finance);
+            country.VacatePortfolio(CabinetPortfolio.Interior);
+            country.VacatePortfolio(CabinetPortfolio.Infrastructure);
+            country.RecalculateCabinetStateCapacity();
+            outcomeMessage = $"Democratic Transition: {election.WinnerPartyName} won the national election with {election.WinnerSupport:0.#}% of the vote ({election.LoserPartyName}: {election.LoserSupport:0.#}%). Opposition assumes the ruling executive mandate. Ministerial portfolios vacated for incoming administration.";
         }
 
         envelope.State.CurrentTick = tick + 1;
@@ -3170,6 +3826,52 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyCabinetAppointmentDecision(portfolio, candidateType, cabinetConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "town_hall" or "public_address" or "townhall")
+                    {
+                        bool townHallConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var thConfEl) && (thConfEl.ValueKind == JsonValueKind.True || thConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            townHallConfirmed = thConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyTownHallDecision(townHallConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "crisis_response" or "emergency_decree" or "crisis")
+                    {
+                        string decreeType = "austerity";
+                        if (root.TryGetProperty("decree_type", out var dTypeEl) && dTypeEl.ValueKind == JsonValueKind.String)
+                        {
+                            decreeType = dTypeEl.GetString() ?? "austerity";
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            decreeType = tEl.GetString() ?? "austerity";
+                        }
+
+                        bool crisisConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var cConfEl) && (cConfEl.ValueKind == JsonValueKind.True || cConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            crisisConfirmed = cConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyCrisisResponseDecision(decreeType, crisisConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

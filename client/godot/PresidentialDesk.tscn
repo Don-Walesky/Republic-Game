@@ -445,6 +445,20 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Cancel Order"
 
+[node name="CabinetInteriorControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AppointTechnocratInteriorButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox/CabinetInteriorControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Appoint Technocrat Interior Minister (Dr. Finch: 90% Corruption Control, -3% Polling)"
+
+[node name="AppointLoyalistInteriorButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox/CabinetInteriorControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Appoint Loyalist Interior Minister (Whip Sterling: 45% Corruption Control, +3% Polling)"
+
 [node name="CabinetStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCabinet/CabinetActionsPanel/CabinetActionsVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.439216, 0.627451, 0.815686, 1)
@@ -531,6 +545,25 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Decision Result: No decision made"
 
+[node name="FiscalDashboardHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="FiscalReportLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox/FiscalDashboardHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Fiscal Report: [No State Loaded]"
+
+[node name="StateCapacityLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox/FiscalDashboardHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "State Capacity: [No State Loaded]"
+
+[node name="GdpLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox/FiscalDashboardHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "GDP: [No State Loaded]"
+
 [node name="TaxExplainerLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/TaxPolicyPanel/TaxPolicyVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
@@ -560,6 +593,11 @@ theme_override_constants/separation = 12
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Initiate National Road Program (Cost: R500,000)"
+
+[node name="StartUniversityProjectButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel/ProjectsVBox/ProjectControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Initiate National University (Cost: R750,000)"
 
 [node name="CancelProjectButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionEconomy/NationalProjectsPanel/ProjectsVBox/ProjectControlsHBox"]
 layout_mode = 2
@@ -621,6 +659,11 @@ theme_override_constants/separation = 12
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Hold Campaign Rally (Cost: R250,000)"
+
+[node name="HoldTownHallButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox/ElectionControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Hold Citizen Town Hall (Cost: R50,000)"
 
 [node name="ContestElectionButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionCampaign/CampaignPanel/CampaignVBox/ElectionControlsHBox"]
 layout_mode = 2
@@ -899,6 +942,40 @@ theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
 theme_override_font_sizes/font_size = 13
 text = "Latest Decision: [No decisions recorded]"
 autowrap_mode = 2
+
+[node name="CrisisPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CrisisVBox" type="VBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/CrisisPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CrisisHeader" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/CrisisPanel/CrisisVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
+text = "=== NATIONAL CRISIS & EMERGENCY EXECUTIVE DECREES ==="
+
+[node name="CrisisStatusLabel" type="Label" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/CrisisPanel/CrisisVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.45, 0.45, 1)
+theme_override_font_sizes/font_size = 13
+text = "Active Crisis: None (National stability within safe limits)"
+
+[node name="CrisisControlsHBox" type="HBoxContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/CrisisPanel/CrisisVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="EmergencyAusterityButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/CrisisPanel/CrisisVBox/CrisisControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Emergency Austerity Decree (+R 500k, -4% Approval)"
+
+[node name="EmergencyReliefButton" type="Button" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings/CrisisPanel/CrisisVBox/CrisisControlsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Civic Relief Package (-R 100k, +4% Approval, +3% Stability)"
 
 [node name="BuffsPanel" type="PanelContainer" parent="VBoxContainer/ContentScroll/SectionsContainer/SectionBriefings"]
 layout_mode = 2

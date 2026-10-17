@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Republic.Core.Cabinet.Models;
 using Republic.Core.Client;
 using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Projects;
@@ -2549,6 +2550,324 @@ public sealed class PresidentialDeskBridgeTests
             Assert.Equal(0.32, reloadedSaveSnapshot.IncomeTaxRate);
             Assert.Contains("National Road Program", reloadedSaveSnapshot.ActiveProject);
             Assert.Equal(initialTreasury - 500_000.0, reloadedSaveSnapshot.TreasuryBalance);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyTownHallDecision_ValidatesCostAndBoostsApprovalAndStability()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"townhall_test_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Eldoria", time, "eldoria");
+            country.Treasury.Deposit(200_000.0);
+            var initialTreasury = country.Treasury.Balance;
+            var initialApproval = country.HappinessRating;
+            var initialStability = country.BaselineStability;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            // Execute town hall
+            var result = PresidentialDeskBridge.ApplyTownHallDecision(
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.Equal(initialTreasury - 50_000.0, result.TreasuryBalance);
+            Assert.Equal(initialApproval + 1.0, result.ApprovalRating);
+            Assert.Equal(initialStability + 1.5, result.StabilityRating);
+            Assert.Contains("Town Hall", result.Message);
+
+            // Verify live snapshot
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.Equal(initialTreasury - 50_000.0, snapshot.TreasuryBalance);
+            Assert.Equal(initialApproval + 1.0, snapshot.ApprovalRating);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyTownHallDecision_WhenInsufficientFunds_RejectsCleanly()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"townhall_nofunds_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Eldoria", time, "eldoria");
+            // Clear treasury balance
+            country.Treasury.Withdraw(country.Treasury.Balance);
+            country.Treasury.Deposit(10_000.0); // only R10k, requires R50k
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var result = PresidentialDeskBridge.ApplyTownHallDecision(
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.False(result.Success);
+            Assert.Equal("InsufficientFunds", result.Result);
+            Assert.Contains("Insufficient", result.Message);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyCabinetAppointmentDecision_InteriorTechnocrat_ElevatesCorruptionControl()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"interior_tech_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Eldoria", time, "eldoria");
+            country.FoundParty("Democratic Union", time, support: 60.0);
+            country.FoundParty("Civic Front", time, support: 40.0);
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var result = PresidentialDeskBridge.ApplyCabinetAppointmentDecision(
+                "Interior",
+                "technocrat",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.Equal(0.90, result.CorruptionControl);
+            Assert.Contains("Dr. Alistair Finch", result.AppointedMinister);
+            Assert.Contains("90%", result.Message);
+
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.Equal(0.90, snapshot.CorruptionControl);
+            Assert.Equal("Dr. Alistair Finch", snapshot.InteriorMinister);
+            Assert.Equal(57.0, snapshot.PollingSupport); // -3% polling penalty for technocrat
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyCabinetAppointmentDecision_InteriorLoyalist_SetsCorruptionControl45()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"interior_loyal_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Eldoria", time, "eldoria");
+            country.FoundParty("Democratic Union", time, support: 50.0);
+            country.FoundParty("Civic Front", time, support: 50.0);
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var result = PresidentialDeskBridge.ApplyCabinetAppointmentDecision(
+                "Interior",
+                "loyalist",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.Equal(0.45, result.CorruptionControl);
+            Assert.Contains("Thomas Sterling", result.AppointedMinister);
+
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.Equal(0.45, snapshot.CorruptionControl);
+            Assert.Equal("Party Whip Thomas Sterling", snapshot.InteriorMinister);
+            Assert.Equal(53.0, snapshot.PollingSupport); // +3% polling rally for loyalist
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyProjectDecision_NationalUniversity_DeductsCostAndSetsActive()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"univ_proj_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Eldoria", time, "eldoria");
+            country.Treasury.Deposit(1_500_000.0);
+            var initialTreasury = country.Treasury.Balance;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var result = PresidentialDeskBridge.ApplyProjectDecision(
+                "University",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.Equal("National University", result.ActiveProject);
+            Assert.Equal(initialTreasury - 750_000.0, result.TreasuryBalance);
+
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.Contains("National University", snapshot.ActiveProject);
+            Assert.Equal(initialTreasury - 750_000.0, snapshot.TreasuryBalance);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyElectionDecision_DemocraticTransition_VacatesCabinetPortfolios()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"election_trans_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Eldoria", time, "eldoria");
+            // Set up ruling party with low support and opposition with overwhelming support
+            country.FoundParty("Incumbent Party", time, support: 30.0);
+            country.FoundParty("Challenger Movement", time);
+            if (country.OppositionParty != null)
+            {
+                country.OppositionParty = country.OppositionParty with { Support = 70.0 };
+            }
+            country.HappinessRating = 25.0; // unpopular government
+
+            // Appoint Finance minister
+            country.AppointMinister(new Minister
+            {
+                Name = "Old Finance Minister",
+                Portfolio = CabinetPortfolio.Finance,
+                Competence = 0.90,
+                Integrity = 0.90
+            }, CabinetPortfolio.Finance);
+            Assert.Equal(0.90, country.StateCapacity?.CivilServiceQuality);
+
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var result = PresidentialDeskBridge.ApplyElectionDecision(
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.Contains("Democratic Transition", result.Message);
+
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.Equal("Challenger Movement", snapshot.RulingParty);
+            Assert.Equal("Incumbent Party", snapshot.OppositionParty);
+            Assert.Equal("Vacant", snapshot.FinanceMinister);
+            Assert.Equal(0.30, snapshot.CivilServiceQuality);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyCrisisResponseDecision_CivicReliefAndAusterity_ExecutesCorrectly()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"crisis_resp_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Eldoria", time, "eldoria");
+            country.Treasury.Deposit(300_000.0);
+            country.HappinessRating = 40.0;
+            country.BaselineStability = 50.0;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            // Test Civic Relief
+            var reliefResult = PresidentialDeskBridge.ApplyCrisisResponseDecision(
+                "civic_relief",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(reliefResult.Success);
+            Assert.Equal("Success", reliefResult.Result);
+            Assert.Contains("Civic Relief Package", reliefResult.Message);
+            Assert.Equal(44.0, reliefResult.ApprovalRating);
+            Assert.Equal(53.0, reliefResult.StabilityRating);
+
+            // Test Austerity
+            var austerityResult = PresidentialDeskBridge.ApplyCrisisResponseDecision(
+                "austerity",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(austerityResult.Success);
+            Assert.Equal("Success", austerityResult.Result);
+            Assert.Contains("Emergency Austerity", austerityResult.Message);
+            Assert.Equal(40.0, austerityResult.ApprovalRating);
         }
         finally
         {

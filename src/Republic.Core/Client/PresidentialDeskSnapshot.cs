@@ -212,6 +212,48 @@ public sealed record PresidentialDeskSnapshot
     public string LastAiDecision { get; init; } = "[No AI decisions recorded]";
 
     /// <summary>
+    /// Gets the formatted Gross Domestic Product (GDP) string in standard REPU notation.
+    /// </summary>
+    [JsonPropertyName("gdp_formatted")]
+    public string GdpFormatted { get; init; } = "R 10,000,000";
+
+    /// <summary>
+    /// Gets the concise summary of the latest quarterly fiscal report.
+    /// </summary>
+    [JsonPropertyName("fiscal_report_summary")]
+    public string FiscalReportSummary { get; init; } = "No quarterly fiscal reports yet recorded";
+
+    /// <summary>
+    /// Gets the formatted net surplus or deficit string in standard REPU notation.
+    /// </summary>
+    [JsonPropertyName("fiscal_deficit_formatted")]
+    public string FiscalDeficitFormatted { get; init; } = "Balanced";
+
+    /// <summary>
+    /// Gets the active emergency crisis status, or "None" if stable.
+    /// </summary>
+    [JsonPropertyName("active_crisis")]
+    public string ActiveCrisis { get; init; } = "None";
+
+    /// <summary>
+    /// Gets the explanatory situational details for the current active crisis.
+    /// </summary>
+    [JsonPropertyName("active_crisis_details")]
+    public string ActiveCrisisDetails { get; init; } = "State institutions stable. Sovereign order maintained.";
+
+    /// <summary>
+    /// Gets the summary of completed capital development projects.
+    /// </summary>
+    [JsonPropertyName("completed_projects_summary")]
+    public string CompletedProjectsSummary { get; init; } = "None";
+
+    /// <summary>
+    /// Gets the institutional state capacity breakdown summary string.
+    /// </summary>
+    [JsonPropertyName("state_capacity_summary")]
+    public string StateCapacitySummary { get; init; } = "Civil Service: 30% | Corruption Control: 30% | Infrastructure: 30%";
+
+    /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
     /// Reuses existing core models and services without duplicating domain rules.
     /// </summary>
@@ -287,6 +329,50 @@ public sealed record PresidentialDeskSnapshot
 
         var civilQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3;
         var corrControl = country.StateCapacity?.CorruptionControl ?? 0.3;
+        var infraCondition = country.StateCapacity?.InfrastructureCondition ?? 0.3;
+        var stateCapacitySummary = $"Civil Service: {civilQuality * 100:0.#}% | Corruption Control: {corrControl * 100:0.#}% | Infrastructure: {infraCondition * 100:0.#}%";
+
+        var gdpFormatted = $"R {country.GrossDomesticProduct:N0}";
+
+        string fiscalSummary;
+        string deficitFormatted;
+        if (country.LatestFiscalReport != null)
+        {
+            var r = country.LatestFiscalReport;
+            var netPrefix = r.NetSurplusOrDeficit >= 0 ? "+" : "";
+            fiscalSummary = $"Q{r.QuarterIndex}: Rev R {r.TotalTaxRevenue:N0} | Exp R {r.TotalExpenditures:N0} | Net {netPrefix}R {r.NetSurplusOrDeficit:N0}";
+            deficitFormatted = r.NetSurplusOrDeficit >= 0
+                ? $"Surplus: +R {r.NetSurplusOrDeficit:N0}"
+                : $"Deficit: -R {Math.Abs(r.NetSurplusOrDeficit):N0}";
+        }
+        else
+        {
+            fiscalSummary = "No quarterly fiscal reports yet recorded";
+            deficitFormatted = "Balanced";
+        }
+
+        string activeCrisis;
+        string activeCrisisDetails;
+        if (country.Treasury.Balance < 500_000.0)
+        {
+            activeCrisis = "Fiscal Insolvency Risk";
+            activeCrisisDetails = $"Treasury balance ({formattedTreasury}) is below the emergency operating threshold (R 500,000). Immediate fiscal stabilization required.";
+        }
+        else if (dashboard.ApprovalRating < 35.0)
+        {
+            activeCrisis = "Civil Unrest Alert";
+            activeCrisisDetails = $"Public approval ({dashboard.Approval}) has dropped below critical threshold (35%). Mass demonstrations threaten public order.";
+        }
+        else
+        {
+            activeCrisis = "None";
+            activeCrisisDetails = "State institutions stable. Sovereign order maintained.";
+        }
+
+        var completedProjects = country.Projects?.Where(p => p.Completed).ToList();
+        string completedSummary = (completedProjects != null && completedProjects.Count > 0)
+            ? string.Join(", ", completedProjects.Select(p => p.Name))
+            : "None";
 
         return new PresidentialDeskSnapshot
         {
@@ -318,6 +404,13 @@ public sealed record PresidentialDeskSnapshot
             InteriorMinister = interiorName,
             CivilServiceQuality = civilQuality,
             CorruptionControl = corrControl,
+            GdpFormatted = gdpFormatted,
+            FiscalReportSummary = fiscalSummary,
+            FiscalDeficitFormatted = deficitFormatted,
+            ActiveCrisis = activeCrisis,
+            ActiveCrisisDetails = activeCrisisDetails,
+            CompletedProjectsSummary = completedSummary,
+            StateCapacitySummary = stateCapacitySummary,
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,

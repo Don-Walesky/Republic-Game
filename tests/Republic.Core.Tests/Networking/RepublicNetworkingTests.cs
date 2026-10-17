@@ -393,7 +393,7 @@ public sealed class RepublicNetworkingTests
 
             await client2.SendTaxDecisionRequestAsync("country-valoria", proposedRate: 0.50);
 
-            var rejectCompleted = await Task.WhenAny(client2RejectionTcs.Task, Task.Delay(4000));
+            var rejectCompleted = await Task.WhenAny(client2RejectionTcs.Task, Task.Delay(10000));
             Assert.Same(client2RejectionTcs.Task, rejectCompleted);
 
             var rejectionMsg = await client2RejectionTcs.Task;

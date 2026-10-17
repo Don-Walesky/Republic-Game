@@ -159,6 +159,55 @@ public static class PresidentialWorkspaceHandler
     }
 
     /// <summary>
+    /// Initiates a National University development project for the specified sovereign country.
+    /// Validates fund availability and explicit executive confirmation before deducting treasury or mutating state.
+    /// Costs R750,000 and requires 8 six-hour boundaries (48 hours).
+    /// </summary>
+    public static ExecutiveActionOutcome InitiateUniversityProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidCountry,
+                "Cannot initiate development project: invalid or missing sovereign country.");
+        }
+
+        if (!confirmed)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.Cancelled,
+                "Project initiation cancelled by executive order. Zero funds deducted.");
+        }
+
+        if (country.Projects.OfType<NationalUniversityProject>().Any(p => p.IsActive))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.AlreadyActive,
+                "A National University is already under active construction.");
+        }
+
+        if (country.Treasury.Balance < NationalUniversityProject.StandardCost)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InsufficientFunds,
+                $"Insufficient sovereign funds. Required: {RepuTreasury.Format(NationalUniversityProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        }
+
+        var project = country.StartUniversityProject(simulationTime);
+        if (project == null)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.PrerequisitesNotMet,
+                "Unable to start National University. Verify sovereign treasury and country prerequisites.");
+        }
+
+        return new ExecutiveActionOutcome(
+            ExecutiveActionResult.Success,
+            $"National University construction commenced. Deducted {RepuTreasury.Format(project.Cost)} from sovereign treasury. Scheduled completion: {project.FinishBoundary}.",
+            project);
+    }
+
+    /// <summary>
     /// Adjusts the national taxation policy for the specified sovereign country.
     /// Validates inputs, requires explicit presidential confirmation, and evaluates citizen welfare and approval consequences.
     /// </summary>
