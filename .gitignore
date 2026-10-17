@@ -24,6 +24,7 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+!Docs/**
 x64/
 x86/
 [Ww][Ii][Nn]32/
@@ -484,8 +485,11 @@ $RECYCLE.BIN/
 # Repository outputs
 logs/
 saves/
+*.sav
 TestResults/
 coverage/
+backups/
+artifacts/
 *presidential_desk_result.json
 *presidential_desk_buff_request.json
 
@@ -493,4 +497,5 @@ coverage/
 .godot/
 *.uid
 client/godot/builds/
+
 
