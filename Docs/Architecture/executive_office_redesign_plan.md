@@ -99,8 +99,8 @@ Anchored along screen edges with high information density and semi-transparent g
 
 | Phase | Scope | Status |
 | :--- | :--- | :--- |
-| **Phase 1 (Current)** | System inspection, foundation scene architecture, decoupled visual layers (Window, Flag, Portrait, Desk), HUD docking zones, live state connector, test harness. | **Active** |
-| **Phase 2** | Interactive desk props (Hotline phone, Intelligence Dossier, Executive Inbox, National Seal). | Planned |
+| **Phase 1** | System inspection, foundation scene architecture, decoupled visual layers (Window, Flag, Portrait, Desk), HUD docking zones, live state connector, test harness. | **Completed** |
+| **Phase 2** | Functional Executive Office interface: Top resource bar live metrics (Country, Treasury, Approval, Stability, Defense, WAT), 6-section navigation tabs, Presidential Briefing modal with real state & honest disclosures, interactive office controls (Hotline phone, Inbox, Dossier, Vista, Mandate), bidirectional navigation with PresidentialDesk. | **Completed** |
 | **Phase 3** | Capital City Scenery expansion (Day/Night cycle, weather, infrastructure development overlays). | Planned |
 | **Phase 4** | Domestic Cabinet & Ministry Dock (Minister portraits, loyalty/competence trade-offs, executive orders). | Planned |
 | **Phase 5** | Geopolitics & Foreign Relations Dock (Bilateral trade routes, DEFCON posture, summit negotiation). | Planned |

@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://ExecutiveOffice.gd" id="1_office"]
 [ext_resource type="Script" path="res://CapitalWindowScenery.gd" id="2_scenery"]
@@ -122,6 +122,33 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_navbar"]
+bg_color = Color(0.0352941, 0.0509804, 0.0784314, 0.94)
+border_width_bottom = 1
+border_color = Color(0.2, 0.28, 0.4, 0.6)
+content_margin_left = 14.0
+content_margin_top = 4.0
+content_margin_right = 14.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.0470588, 0.0666667, 0.105882, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85098, 0.678431, 0.282353, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_size = 16
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+
 [node name="ExecutiveOffice" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -224,6 +251,15 @@ offset_top = -2.0
 offset_bottom = 2.0
 grow_horizontal = 2
 color = Color(0.24, 0.28, 0.35, 0.85)
+
+[node name="WindowButton" type="Button" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
 
 [node name="CountryFlag" type="Control" parent="OfficeEnvironment"]
 layout_mode = 1
@@ -337,6 +373,15 @@ theme_override_font_sizes/font_size = 9
 text = "Party: [No State Loaded]"
 horizontal_alignment = 1
 
+[node name="PortraitButton" type="Button" parent="OfficeEnvironment/PresidentialPortrait"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+
 [node name="ExecutiveDesk" type="Control" parent="OfficeEnvironment"]
 layout_mode = 1
 anchor_left = 0.16
@@ -399,6 +444,15 @@ anchor_right = 0.18
 anchor_bottom = 0.65
 theme_override_font_sizes/font_size = 11
 text = "☎ HOTLINE"
+
+[node name="IntelligenceDossierButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
+layout_mode = 1
+anchor_left = 0.64
+anchor_top = 0.25
+anchor_right = 0.76
+anchor_bottom = 0.65
+theme_override_font_sizes/font_size = 11
+text = "📁 DOSSIER"
 
 [node name="ExecutiveInboxButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
@@ -480,10 +534,59 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Detailed Desk View ->"
 
+[node name="NavBarPanel" type="PanelContainer" parent="InterfaceLayer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 46.0
+offset_bottom = 82.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_navbar")
+
+[node name="NavBarHBox" type="HBoxContainer" parent="InterfaceLayer/NavBarPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NavOverviewButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "★ 1. Executive Office"
+
+[node name="NavCabinetButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "2. Cabinet & Ministers"
+
+[node name="NavEconomyButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "3. Economy & Taxes"
+
+[node name="NavCampaignButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "4. Campaign & Elections"
+
+[node name="NavDiplomacyButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "5. Diplomacy & Trade"
+
+[node name="NavBriefingsButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "6. Presidential Briefings"
+
 [node name="LeftDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
 anchor_left = 0.01
-anchor_top = 0.08
+anchor_top = 0.088
 anchor_bottom = 0.91
 offset_right = 240.0
 grow_vertical = 2
@@ -538,10 +641,15 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "Polling: [No State Loaded]"
 
+[node name="OpenCabinetButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Manage Cabinet ->"
+
 [node name="RightDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
 anchor_left = 1.0
-anchor_top = 0.08
+anchor_top = 0.088
 anchor_right = 0.99
 anchor_bottom = 0.91
 offset_left = -240.0
@@ -593,6 +701,11 @@ theme_override_font_sizes/font_size = 11
 text = "Offline Catch-up: [No State Loaded]"
 autowrap_mode = 2
 
+[node name="OpenDiplomacyButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Manage Diplomacy & Defense ->"
+
 [node name="BottomDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
 anchors_preset = 12
@@ -619,6 +732,11 @@ theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 1)
 theme_override_font_sizes/font_size = 12
 text = "Active Project: None"
 
+[node name="OpenProjectsButton" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Manage Projects ->"
+
 [node name="StatusTickerLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -626,3 +744,251 @@ theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
 theme_override_font_sizes/font_size = 12
 text = "Executive Briefing: Awaiting sovereign state initialization from Republic.Core"
 clip_text = true
+
+[node name="ModalBackdrop" type="ColorRect" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.06, 0.75)
+
+[node name="BriefingModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -250.0
+offset_right = 340.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="BriefingVBox" type="VBoxContainer" parent="InterfaceLayer/BriefingModal"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BriefingHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/BriefingModal/BriefingVBox"]
+layout_mode = 2
+
+[node name="BriefingTitleLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
+text = "★ PRESIDENTIAL SITUATION BRIEFING ★"
+
+[node name="CloseBriefingXButton" type="Button" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "✕"
+
+[node name="BriefingScroll" type="ScrollContainer" parent="InterfaceLayer/BriefingModal/BriefingVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="BriefingContentVBox" type="VBoxContainer" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="BriefingActiveProjectLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Active Project: None"
+
+[node name="BriefingDecisionsLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Latest Decision: [No decisions recorded]"
+autowrap_mode = 2
+
+[node name="BriefingCrisisLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Crisis Status: None — State institutions stable."
+autowrap_mode = 2
+
+[node name="BriefingCapacityLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "State Capacity: Civil Service: 80% | Corruption: 30% | Infrastructure: 30%"
+
+[node name="BriefingFiscalLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Fiscal Report: No quarterly fiscal reports yet recorded"
+autowrap_mode = 2
+
+[node name="BriefingDefenseLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Defense Posture: DEFCON 5 (Peacetime Watch) | Armed Forces: 85.0% Operational"
+
+[node name="BriefingOfflineLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Offline Status: Real-time simulation aligned. Zero pending offline cycles."
+autowrap_mode = 2
+
+[node name="BriefingUnsupportedLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Global Intelligence Wire: [Live simulation feed currently offline / pending support]"
+autowrap_mode = 2
+
+[node name="BriefingActionsHBox" type="HBoxContainer" parent="InterfaceLayer/BriefingModal/BriefingVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="BriefingDeskButton" type="Button" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Open Decrees & Crisis in Desk ->"
+
+[node name="CloseBriefingButton" type="Button" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Close"
+
+[node name="HotlineModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -170.0
+offset_right = 280.0
+offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="HotlineVBox" type="VBoxContainer" parent="InterfaceLayer/HotlineModal"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HotlineHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/HotlineModal/HotlineVBox"]
+layout_mode = 2
+
+[node name="HotlineTitleLabel" type="Label" parent="InterfaceLayer/HotlineModal/HotlineVBox/HotlineHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
+text = "☎ DIPLOMATIC HOTLINE CONSOLE"
+
+[node name="CloseHotlineXButton" type="Button" parent="InterfaceLayer/HotlineModal/HotlineVBox/HotlineHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "✕"
+
+[node name="HotlineStatusLabel" type="Label" parent="InterfaceLayer/HotlineModal/HotlineVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Secure diplomatic line operational. Connects directly to foreign heads of state."
+autowrap_mode = 2
+
+[node name="HotlineStandingLabel" type="Label" parent="InterfaceLayer/HotlineModal/HotlineVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "Diplomatic Standing: Standalone simulation. Active bilateral network sessions can be established via Diplomacy & Trade."
+autowrap_mode = 2
+
+[node name="HotlineActionsHBox" type="HBoxContainer" parent="InterfaceLayer/HotlineModal/HotlineVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="HotlineDeskButton" type="Button" parent="InterfaceLayer/HotlineModal/HotlineVBox/HotlineActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Open Foreign Affairs & Diplomacy Desk ->"
+
+[node name="CloseHotlineButton" type="Button" parent="InterfaceLayer/HotlineModal/HotlineVBox/HotlineActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Hang Up"
+
+[node name="DossierModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -290.0
+offset_top = -180.0
+offset_right = 290.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="DossierVBox" type="VBoxContainer" parent="InterfaceLayer/DossierModal"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DossierHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/DossierModal/DossierVBox"]
+layout_mode = 2
+
+[node name="DossierTitleLabel" type="Label" parent="InterfaceLayer/DossierModal/DossierVBox/DossierHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
+text = "📁 NATIONAL SECURITY & INTELLIGENCE DOSSIER"
+
+[node name="CloseDossierXButton" type="Button" parent="InterfaceLayer/DossierModal/DossierVBox/DossierHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "✕"
+
+[node name="DossierDefenseLabel" type="Label" parent="InterfaceLayer/DossierModal/DossierVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Defense Readiness: DEFCON 5 (Peacetime Watch) | Armed Forces: 85.0% Operational"
+autowrap_mode = 2
+
+[node name="DossierCrisisLabel" type="Label" parent="InterfaceLayer/DossierModal/DossierVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Active National Threat: None — State institutions stable. Sovereign order maintained."
+autowrap_mode = 2
+
+[node name="DossierEspionageLabel" type="Label" parent="InterfaceLayer/DossierModal/DossierVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Covert Intelligence Operations: [Feature not yet supported by simulation engine]"
+autowrap_mode = 2
+
+[node name="DossierActionsHBox" type="HBoxContainer" parent="InterfaceLayer/DossierModal/DossierVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="DossierDeskButton" type="Button" parent="InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Open Defense & Decrees in Desk ->"
+
+[node name="CloseDossierButton" type="Button" parent="InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Close Dossier"

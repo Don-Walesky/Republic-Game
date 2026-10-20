@@ -118,6 +118,7 @@ func _get_required_node(node_path: String) -> Node:
 ## Navigation Sections
 enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS }
 var active_section: Section = Section.OVERVIEW
+static var requested_section: int = -1
 
 ## Navigation Tab Controls
 @onready var switch_to_executive_office_button: Button = _get_required_node("SwitchToExecutiveOfficeButton") as Button
@@ -196,7 +197,11 @@ func _ready() -> void:
 			_local_client_id = arg.substr("--client-id=".length()).strip_edges()
 	_init_controls()
 	_wire_signals()
-	switch_to_section(Section.OVERVIEW)
+	if requested_section >= 0:
+		switch_to_section(requested_section as Section)
+		requested_section = -1
+	else:
+		switch_to_section(Section.OVERVIEW)
 	refresh()
 
 

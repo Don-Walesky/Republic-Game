@@ -8,6 +8,10 @@ extends Control
 signal state_loaded(state: Dictionary)
 signal state_cleared()
 
+## Navigation Sections matching PresidentialDesk.Section enum
+enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS }
+var active_nav_section: Section = Section.OVERVIEW
+
 # ==============================================================================
 # 1. OFFICE ENVIRONMENT REFERENCES (DECOUPLED VISUAL LAYERS)
 # ==============================================================================
@@ -16,6 +20,7 @@ signal state_cleared()
 @onready var capital_window: Control = _get_node_safe("OfficeEnvironment/CapitalWindow") as Control
 @onready var city_scenery: Control = _get_node_safe("OfficeEnvironment/CapitalWindow/CityScenery") as Control
 @onready var window_frame: Control = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowFrame") as Control
+@onready var window_button: Button = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowButton") as Button
 
 @onready var country_flag: Control = _get_node_safe("OfficeEnvironment/CountryFlag") as Control
 @onready var flag_pole: Control = _get_node_safe("OfficeEnvironment/CountryFlag/FlagPole") as Control
@@ -27,16 +32,18 @@ signal state_cleared()
 @onready var portrait_canvas: Control = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas") as Control
 @onready var portrait_name_label: Label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/Plaque/PortraitNameLabel") as Label
 @onready var portrait_party_label: Label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/Plaque/PortraitPartyLabel") as Label
+@onready var portrait_button: Button = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitButton") as Button
 
 @onready var executive_desk: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk") as Control
 @onready var desk_surface: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskSurface") as Control
 @onready var desk_blotter: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskBlotter") as Control
 @onready var hotline_phone: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton") as Button
+@onready var intelligence_dossier: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton") as Button
 @onready var executive_inbox: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton") as Button
 @onready var presidential_seal: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/PresidentialSeal") as Control
 
 # ==============================================================================
-# 2. INTERFACE HUD DOCK REFERENCES (TOP, LEFT, RIGHT, BOTTOM)
+# 2. INTERFACE HUD DOCK REFERENCES (TOP, NAV, LEFT, RIGHT, BOTTOM)
 # ==============================================================================
 @onready var interface_layer: Control = _get_node_safe("InterfaceLayer") as Control
 
@@ -51,6 +58,15 @@ signal state_cleared()
 @onready var switch_to_desk_button: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/SwitchToDeskButton") as Button
 @onready var refresh_button: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/RefreshButton") as Button
 
+# Navigation Tab Bar
+@onready var nav_bar_panel: PanelContainer = _get_node_safe("InterfaceLayer/NavBarPanel") as PanelContainer
+@onready var nav_overview_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavOverviewButton") as Button
+@onready var nav_cabinet_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavCabinetButton") as Button
+@onready var nav_economy_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavEconomyButton") as Button
+@onready var nav_campaign_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavCampaignButton") as Button
+@onready var nav_diplomacy_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavDiplomacyButton") as Button
+@onready var nav_briefings_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavBriefingsButton") as Button
+
 # Left Dock: Domestic Governance & Cabinet
 @onready var left_dock: PanelContainer = _get_node_safe("InterfaceLayer/LeftDock") as PanelContainer
 @onready var toggle_left_dock_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockHeader/ToggleLeftDockButton") as Button
@@ -59,6 +75,7 @@ signal state_cleared()
 @onready var corruption_control_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CorruptionControlLabel") as Label
 @onready var ruling_party_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/RulingPartyLabel") as Label
 @onready var polling_support_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PollingSupportLabel") as Label
+@onready var open_cabinet_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/OpenCabinetButton") as Button
 
 # Right Dock: Foreign Affairs & Intelligence
 @onready var right_dock: PanelContainer = _get_node_safe("InterfaceLayer/RightDock") as PanelContainer
@@ -67,15 +84,53 @@ signal state_cleared()
 @onready var active_crisis_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/ActiveCrisisLabel") as Label
 @onready var gdp_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/GdpLabel") as Label
 @onready var offline_briefing_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/OfflineBriefingLabel") as Label
+@onready var open_diplomacy_button: Button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/OpenDiplomacyButton") as Button
 
 # Bottom Dock: Situation Ticker & Infrastructure Projects
 @onready var bottom_dock: PanelContainer = _get_node_safe("InterfaceLayer/BottomDock") as PanelContainer
 @onready var status_ticker_label: Label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/StatusTickerLabel") as Label
 @onready var active_project_label: Label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ActiveProjectLabel") as Label
+@onready var open_projects_button: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/OpenProjectsButton") as Button
 @onready var state_status_label: Label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/StateStatusLabel") as Label
 
 # ==============================================================================
-# 3. STATE SYNCHRONIZATION VARIABLES
+# 3. INTERACTIVE MODAL PANELS (PRESIDENTIAL BRIEFING, HOTLINE, DOSSIER)
+# ==============================================================================
+@onready var modal_backdrop: ColorRect = _get_node_safe("InterfaceLayer/ModalBackdrop") as ColorRect
+
+# Briefing Modal
+@onready var briefing_modal: PanelContainer = _get_node_safe("InterfaceLayer/BriefingModal") as PanelContainer
+@onready var close_briefing_x_button: Button = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingHeaderHBox/CloseBriefingXButton") as Button
+@onready var briefing_active_project_label: Label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingActiveProjectLabel") as Label
+@onready var briefing_decisions_label: Label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingDecisionsLabel") as Label
+@onready var briefing_crisis_label: Label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingCrisisLabel") as Label
+@onready var briefing_capacity_label: Label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingCapacityLabel") as Label
+@onready var briefing_fiscal_label: Label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingFiscalLabel") as Label
+@onready var briefing_defense_label: Label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingDefenseLabel") as Label
+@onready var briefing_offline_label: Label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingOfflineLabel") as Label
+@onready var briefing_unsupported_label: Label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingUnsupportedLabel") as Label
+@onready var briefing_desk_button: Button = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox/BriefingDeskButton") as Button
+@onready var close_briefing_button: Button = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox/CloseBriefingButton") as Button
+
+# Hotline Modal
+@onready var hotline_modal: PanelContainer = _get_node_safe("InterfaceLayer/HotlineModal") as PanelContainer
+@onready var close_hotline_x_button: Button = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineHeaderHBox/CloseHotlineXButton") as Button
+@onready var hotline_status_label: Label = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineStatusLabel") as Label
+@onready var hotline_standing_label: Label = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineStandingLabel") as Label
+@onready var hotline_desk_button: Button = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineActionsHBox/HotlineDeskButton") as Button
+@onready var close_hotline_button: Button = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineActionsHBox/CloseHotlineButton") as Button
+
+# Classified Dossier Modal
+@onready var dossier_modal: PanelContainer = _get_node_safe("InterfaceLayer/DossierModal") as PanelContainer
+@onready var close_dossier_x_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierHeaderHBox/CloseDossierXButton") as Button
+@onready var dossier_defense_label: Label = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierDefenseLabel") as Label
+@onready var dossier_crisis_label: Label = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierCrisisLabel") as Label
+@onready var dossier_espionage_label: Label = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierEspionageLabel") as Label
+@onready var dossier_desk_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/DossierDeskButton") as Button
+@onready var close_dossier_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/CloseDossierButton") as Button
+
+# ==============================================================================
+# 4. STATE SYNCHRONIZATION VARIABLES
 # ==============================================================================
 const DEFAULT_STATE_FILE := "res://presidential_desk_state.json"
 const USER_STATE_FILE := "user://presidential_desk_state.json"
@@ -103,6 +158,8 @@ func _init_controls() -> void:
 		city_scenery = _get_node_safe("OfficeEnvironment/CapitalWindow/CityScenery") as Control
 	if window_frame == null:
 		window_frame = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowFrame") as Control
+	if window_button == null:
+		window_button = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowButton") as Button
 
 	if country_flag == null:
 		country_flag = _get_node_safe("OfficeEnvironment/CountryFlag") as Control
@@ -123,6 +180,8 @@ func _init_controls() -> void:
 		portrait_name_label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/Plaque/PortraitNameLabel") as Label
 	if portrait_party_label == null:
 		portrait_party_label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/Plaque/PortraitPartyLabel") as Label
+	if portrait_button == null:
+		portrait_button = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitButton") as Button
 
 	if executive_desk == null:
 		executive_desk = _get_node_safe("OfficeEnvironment/ExecutiveDesk") as Control
@@ -132,6 +191,8 @@ func _init_controls() -> void:
 		desk_blotter = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskBlotter") as Control
 	if hotline_phone == null:
 		hotline_phone = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton") as Button
+	if intelligence_dossier == null:
+		intelligence_dossier = _get_node_safe("OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton") as Button
 	if executive_inbox == null:
 		executive_inbox = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton") as Button
 	if presidential_seal == null:
@@ -159,6 +220,21 @@ func _init_controls() -> void:
 	if refresh_button == null:
 		refresh_button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/RefreshButton") as Button
 
+	if nav_bar_panel == null:
+		nav_bar_panel = _get_node_safe("InterfaceLayer/NavBarPanel") as PanelContainer
+	if nav_overview_button == null:
+		nav_overview_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavOverviewButton") as Button
+	if nav_cabinet_button == null:
+		nav_cabinet_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavCabinetButton") as Button
+	if nav_economy_button == null:
+		nav_economy_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavEconomyButton") as Button
+	if nav_campaign_button == null:
+		nav_campaign_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavCampaignButton") as Button
+	if nav_diplomacy_button == null:
+		nav_diplomacy_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavDiplomacyButton") as Button
+	if nav_briefings_button == null:
+		nav_briefings_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavBriefingsButton") as Button
+
 	if left_dock == null:
 		left_dock = _get_node_safe("InterfaceLayer/LeftDock") as PanelContainer
 	if toggle_left_dock_button == null:
@@ -173,6 +249,8 @@ func _init_controls() -> void:
 		ruling_party_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/RulingPartyLabel") as Label
 	if polling_support_label == null:
 		polling_support_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PollingSupportLabel") as Label
+	if open_cabinet_button == null:
+		open_cabinet_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/OpenCabinetButton") as Button
 
 	if right_dock == null:
 		right_dock = _get_node_safe("InterfaceLayer/RightDock") as PanelContainer
@@ -186,6 +264,8 @@ func _init_controls() -> void:
 		gdp_label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/GdpLabel") as Label
 	if offline_briefing_label == null:
 		offline_briefing_label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/OfflineBriefingLabel") as Label
+	if open_diplomacy_button == null:
+		open_diplomacy_button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/OpenDiplomacyButton") as Button
 
 	if bottom_dock == null:
 		bottom_dock = _get_node_safe("InterfaceLayer/BottomDock") as PanelContainer
@@ -193,8 +273,104 @@ func _init_controls() -> void:
 		status_ticker_label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/StatusTickerLabel") as Label
 	if active_project_label == null:
 		active_project_label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ActiveProjectLabel") as Label
+	if open_projects_button == null:
+		open_projects_button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/OpenProjectsButton") as Button
 	if state_status_label == null:
 		state_status_label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/StateStatusLabel") as Label
+
+	if modal_backdrop == null:
+		modal_backdrop = _get_node_safe("InterfaceLayer/ModalBackdrop") as ColorRect
+	if briefing_modal == null:
+		briefing_modal = _get_node_safe("InterfaceLayer/BriefingModal") as PanelContainer
+	if close_briefing_x_button == null:
+		close_briefing_x_button = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingHeaderHBox/CloseBriefingXButton") as Button
+	if briefing_active_project_label == null:
+		briefing_active_project_label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingActiveProjectLabel") as Label
+	if briefing_decisions_label == null:
+		briefing_decisions_label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingDecisionsLabel") as Label
+	if briefing_crisis_label == null:
+		briefing_crisis_label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingCrisisLabel") as Label
+	if briefing_capacity_label == null:
+		briefing_capacity_label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingCapacityLabel") as Label
+	if briefing_fiscal_label == null:
+		briefing_fiscal_label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingFiscalLabel") as Label
+	if briefing_defense_label == null:
+		briefing_defense_label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingDefenseLabel") as Label
+	if briefing_offline_label == null:
+		briefing_offline_label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingOfflineLabel") as Label
+	if briefing_unsupported_label == null:
+		briefing_unsupported_label = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox/BriefingUnsupportedLabel") as Label
+	if briefing_desk_button == null:
+		briefing_desk_button = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox/BriefingDeskButton") as Button
+	if close_briefing_button == null:
+		close_briefing_button = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox/CloseBriefingButton") as Button
+
+	if hotline_modal == null:
+		hotline_modal = _get_node_safe("InterfaceLayer/HotlineModal") as PanelContainer
+	if close_hotline_x_button == null:
+		close_hotline_x_button = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineHeaderHBox/CloseHotlineXButton") as Button
+	if hotline_status_label == null:
+		hotline_status_label = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineStatusLabel") as Label
+	if hotline_standing_label == null:
+		hotline_standing_label = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineStandingLabel") as Label
+	if hotline_desk_button == null:
+		hotline_desk_button = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineActionsHBox/HotlineDeskButton") as Button
+	if close_hotline_button == null:
+		close_hotline_button = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineActionsHBox/CloseHotlineButton") as Button
+
+	if dossier_modal == null:
+		dossier_modal = _get_node_safe("InterfaceLayer/DossierModal") as PanelContainer
+	if close_dossier_x_button == null:
+		close_dossier_x_button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierHeaderHBox/CloseDossierXButton") as Button
+	if dossier_defense_label == null:
+		dossier_defense_label = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierDefenseLabel") as Label
+	if dossier_crisis_label == null:
+		dossier_crisis_label = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierCrisisLabel") as Label
+	if dossier_espionage_label == null:
+		dossier_espionage_label = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierEspionageLabel") as Label
+	if dossier_desk_button == null:
+		dossier_desk_button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/DossierDeskButton") as Button
+	if close_dossier_button == null:
+		close_dossier_button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/CloseDossierButton") as Button
+
+	_setup_tooltips()
+	_update_nav_button_highlights()
+
+func _setup_tooltips() -> void:
+	if country_label:
+		country_label.tooltip_text = "Country Name: Sovereign state entity registered in Republic.Core simulation."
+	if treasury_label:
+		treasury_label.tooltip_text = "State Treasury: Total liquid reserves in Republic Currency (REPU). Used to fund infrastructure, cabinet portfolios, and emergency relief."
+	if approval_label:
+		approval_label.tooltip_text = "Public Approval: Overall national confidence in your administration. Fluctuates with tax rates, crises, and campaign rallies."
+	if stability_label:
+		stability_label.tooltip_text = "National Stability: Degree of public order and constitutional resilience. High stability protects against unrest and sovereign collapse."
+	if simulation_time_label:
+		simulation_time_label.tooltip_text = "Simulation Time: Universal elapsed time in WAT (West Africa Time), synchronized authoritatively across simulation cycles."
+	if defcon_label:
+		defcon_label.tooltip_text = "Defense Readiness: Operational combat readiness and national DEFCON alert posture."
+	if hotline_phone:
+		hotline_phone.tooltip_text = "Diplomatic Hotline: Direct secure line to international leaders and trade partners."
+	if executive_inbox:
+		executive_inbox.tooltip_text = "Executive Inbox: Cabinet memoranda and daily intelligence situation reports."
+	if intelligence_dossier:
+		intelligence_dossier.tooltip_text = "Classified Dossier: National security posture, active crises, and military readiness."
+	if window_button:
+		window_button.tooltip_text = "Capital Vista: Panoramic view overlooking the governmental quarter and capital city skyline."
+	if portrait_button:
+		portrait_button.tooltip_text = "Presidential Portrait: Official portrait and democratic mandate of the Head of State."
+	if nav_overview_button:
+		nav_overview_button.tooltip_text = "1. Executive Office: Main presidential suite and visual situational workspace."
+	if nav_cabinet_button:
+		nav_cabinet_button.tooltip_text = "2. Cabinet & Ministers: Appoint technocrats or loyalists to executive ministerial portfolios."
+	if nav_economy_button:
+		nav_economy_button.tooltip_text = "3. Economy & Taxes: Adjust income tax rates and commission national infrastructure projects."
+	if nav_campaign_button:
+		nav_campaign_button.tooltip_text = "4. Campaign & Elections: Organize citizen town halls, national rallies, and contest democratic elections."
+	if nav_diplomacy_button:
+		nav_diplomacy_button.tooltip_text = "5. Diplomacy & Trade: Foreign recognition, diplomatic cables, and bilateral trade contracts."
+	if nav_briefings_button:
+		nav_briefings_button.tooltip_text = "6. Presidential Briefings: Full situational briefings, state warnings, and emergency decrees."
 
 func _ready() -> void:
 	_init_controls()
@@ -203,8 +379,13 @@ func _ready() -> void:
 	_setup_poll_timer()
 	load_live_state()
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		if is_any_modal_open():
+			close_all_modals()
+			get_viewport().set_input_as_handled()
+
 func _init_state_path() -> void:
-	# Support custom state override via environment variable or commandline args
 	var env_path := OS.get_environment("REPUBLIC_STATE_FILE")
 	if not env_path.is_empty():
 		current_state_path = env_path
@@ -232,21 +413,77 @@ func _setup_poll_timer() -> void:
 	add_child(poll_timer)
 
 func _connect_signals() -> void:
+	# Top bar
 	if switch_to_desk_button and not switch_to_desk_button.pressed.is_connected(_on_switch_to_desk_button_pressed):
 		switch_to_desk_button.pressed.connect(_on_switch_to_desk_button_pressed)
 	if refresh_button and not refresh_button.pressed.is_connected(_on_refresh_button_pressed):
 		refresh_button.pressed.connect(_on_refresh_button_pressed)
+
+	# Nav Bar
+	if nav_overview_button and not nav_overview_button.pressed.is_connected(_on_nav_overview_pressed):
+		nav_overview_button.pressed.connect(_on_nav_overview_pressed)
+	if nav_cabinet_button and not nav_cabinet_button.pressed.is_connected(_on_nav_cabinet_pressed):
+		nav_cabinet_button.pressed.connect(_on_nav_cabinet_pressed)
+	if nav_economy_button and not nav_economy_button.pressed.is_connected(_on_nav_economy_pressed):
+		nav_economy_button.pressed.connect(_on_nav_economy_pressed)
+	if nav_campaign_button and not nav_campaign_button.pressed.is_connected(_on_nav_campaign_pressed):
+		nav_campaign_button.pressed.connect(_on_nav_campaign_pressed)
+	if nav_diplomacy_button and not nav_diplomacy_button.pressed.is_connected(_on_nav_diplomacy_pressed):
+		nav_diplomacy_button.pressed.connect(_on_nav_diplomacy_pressed)
+	if nav_briefings_button and not nav_briefings_button.pressed.is_connected(_on_nav_briefings_pressed):
+		nav_briefings_button.pressed.connect(_on_nav_briefings_pressed)
+
+	# Docks
 	if toggle_left_dock_button and not toggle_left_dock_button.pressed.is_connected(_on_toggle_left_dock_pressed):
 		toggle_left_dock_button.pressed.connect(_on_toggle_left_dock_pressed)
 	if toggle_right_dock_button and not toggle_right_dock_button.pressed.is_connected(_on_toggle_right_dock_pressed):
 		toggle_right_dock_button.pressed.connect(_on_toggle_right_dock_pressed)
+	if open_cabinet_button and not open_cabinet_button.pressed.is_connected(_on_nav_cabinet_pressed):
+		open_cabinet_button.pressed.connect(_on_nav_cabinet_pressed)
+	if open_diplomacy_button and not open_diplomacy_button.pressed.is_connected(_on_nav_diplomacy_pressed):
+		open_diplomacy_button.pressed.connect(_on_nav_diplomacy_pressed)
+	if open_projects_button and not open_projects_button.pressed.is_connected(_on_nav_economy_pressed):
+		open_projects_button.pressed.connect(_on_nav_economy_pressed)
+
+	# Office Controls
 	if hotline_phone and not hotline_phone.pressed.is_connected(_on_hotline_phone_pressed):
 		hotline_phone.pressed.connect(_on_hotline_phone_pressed)
 	if executive_inbox and not executive_inbox.pressed.is_connected(_on_executive_inbox_pressed):
 		executive_inbox.pressed.connect(_on_executive_inbox_pressed)
+	if intelligence_dossier and not intelligence_dossier.pressed.is_connected(_on_intelligence_dossier_pressed):
+		intelligence_dossier.pressed.connect(_on_intelligence_dossier_pressed)
+	if window_button and not window_button.pressed.is_connected(_on_capital_window_pressed):
+		window_button.pressed.connect(_on_capital_window_pressed)
+	if portrait_button and not portrait_button.pressed.is_connected(_on_presidential_portrait_pressed):
+		portrait_button.pressed.connect(_on_presidential_portrait_pressed)
+
+	# Modals
+	if close_briefing_x_button and not close_briefing_x_button.pressed.is_connected(close_all_modals):
+		close_briefing_x_button.pressed.connect(close_all_modals)
+	if close_briefing_button and not close_briefing_button.pressed.is_connected(close_all_modals):
+		close_briefing_button.pressed.connect(close_all_modals)
+	if briefing_desk_button and not briefing_desk_button.pressed.is_connected(_on_briefing_desk_button_pressed):
+		briefing_desk_button.pressed.connect(_on_briefing_desk_button_pressed)
+
+	if close_hotline_x_button and not close_hotline_x_button.pressed.is_connected(close_all_modals):
+		close_hotline_x_button.pressed.connect(close_all_modals)
+	if close_hotline_button and not close_hotline_button.pressed.is_connected(close_all_modals):
+		close_hotline_button.pressed.connect(close_all_modals)
+	if hotline_desk_button and not hotline_desk_button.pressed.is_connected(_on_hotline_desk_button_pressed):
+		hotline_desk_button.pressed.connect(_on_hotline_desk_button_pressed)
+
+	if close_dossier_x_button and not close_dossier_x_button.pressed.is_connected(close_all_modals):
+		close_dossier_x_button.pressed.connect(close_all_modals)
+	if close_dossier_button and not close_dossier_button.pressed.is_connected(close_all_modals):
+		close_dossier_button.pressed.connect(close_all_modals)
+	if dossier_desk_button and not dossier_desk_button.pressed.is_connected(_on_dossier_desk_button_pressed):
+		dossier_desk_button.pressed.connect(_on_dossier_desk_button_pressed)
+
+	if modal_backdrop and not modal_backdrop.gui_input.is_connected(_on_modal_backdrop_gui_input):
+		modal_backdrop.gui_input.connect(_on_modal_backdrop_gui_input)
 
 # ==============================================================================
-# 4. STATE LOADING & PRESENTATION (HONEST DATA — ZERO INVENTED VALUES)
+# 5. STATE LOADING & PRESENTATION (HONEST DATA — ZERO INVENTED VALUES)
 # ==============================================================================
 func load_live_state() -> bool:
 	return load_state_from_file(current_state_path)
@@ -304,6 +541,7 @@ func display_missing_state() -> void:
 		simulation_time_label.text = "Simulation Time: [No State Loaded]"
 	if defcon_label:
 		defcon_label.text = "Defense: [No State Loaded]"
+
 	if cabinet_summary_label:
 		cabinet_summary_label.text = "Cabinet: [No State Loaded]"
 	if civil_service_label:
@@ -314,6 +552,7 @@ func display_missing_state() -> void:
 		ruling_party_label.text = "Ruling Party: [No State Loaded]"
 	if polling_support_label:
 		polling_support_label.text = "Polling: [No State Loaded]"
+
 	if military_readiness_label:
 		military_readiness_label.text = "Readiness: [No State Loaded]"
 	if active_crisis_label:
@@ -322,6 +561,7 @@ func display_missing_state() -> void:
 		gdp_label.text = "GDP: [No State Loaded]"
 	if offline_briefing_label:
 		offline_briefing_label.text = "Offline Catch-up: [No State Loaded]"
+
 	if active_project_label:
 		active_project_label.text = "Active Project: None"
 	if status_ticker_label:
@@ -332,6 +572,37 @@ func display_missing_state() -> void:
 		portrait_party_label.text = "Party: [No State Loaded]"
 	if flag_emblem_label:
 		flag_emblem_label.text = "REPUBLIC"
+
+	# Modals missing state reset
+	if briefing_active_project_label:
+		briefing_active_project_label.text = "Active Project: None"
+	if briefing_decisions_label:
+		briefing_decisions_label.text = "Latest Decision: [No State Loaded]"
+	if briefing_crisis_label:
+		briefing_crisis_label.text = "Crisis Status: [No State Loaded]"
+	if briefing_capacity_label:
+		briefing_capacity_label.text = "State Capacity: [No State Loaded]"
+	if briefing_fiscal_label:
+		briefing_fiscal_label.text = "Fiscal Report: [No State Loaded]"
+	if briefing_defense_label:
+		briefing_defense_label.text = "Defense Posture: [No State Loaded]"
+	if briefing_offline_label:
+		briefing_offline_label.text = "Offline Status: [No State Loaded]"
+	if briefing_unsupported_label:
+		briefing_unsupported_label.text = "Global Intelligence Wire: [Live simulation feed offline / pending support]"
+
+	if hotline_status_label:
+		hotline_status_label.text = "Diplomatic Line: [No State Loaded]"
+	if hotline_standing_label:
+		hotline_standing_label.text = "Diplomatic Standing: [No State Loaded]"
+
+	if dossier_defense_label:
+		dossier_defense_label.text = "Defense Readiness: [No State Loaded]"
+	if dossier_crisis_label:
+		dossier_crisis_label.text = "Active Threat: [No State Loaded]"
+	if dossier_espionage_label:
+		dossier_espionage_label.text = "Covert Intelligence: [Feature not yet supported by simulation engine]"
+
 	state_cleared.emit()
 
 func apply_state(state: Dictionary) -> void:
@@ -365,8 +636,18 @@ func apply_state(state: Dictionary) -> void:
 		simulation_time_label.text = "Simulation Time: " + stime
 
 	if defcon_label:
-		var defcon := str(state.get("defcon_level", "DEFCON 5"))
-		defcon_label.text = "Defense: " + defcon
+		var defcon := str(state.get("defcon_level", ""))
+		var mil_readiness := str(state.get("military_readiness", ""))
+		var defense_str := ""
+		if not defcon.is_empty() and not mil_readiness.is_empty():
+			defense_str = "%s | %s" % [defcon, mil_readiness]
+		elif not defcon.is_empty():
+			defense_str = defcon
+		elif not mil_readiness.is_empty():
+			defense_str = mil_readiness
+		else:
+			defense_str = "[No State Loaded]"
+		defcon_label.text = "Defense: " + defense_str
 
 	# 2. Left Dock: Domestic Governance
 	if cabinet_summary_label:
@@ -420,6 +701,45 @@ func apply_state(state: Dictionary) -> void:
 		var code := country_name.replace("Federal Republic of ", "").replace("Republic of ", "").strip_edges()
 		flag_emblem_label.text = code.to_upper() if not code.is_empty() else "REPUBLIC"
 
+	# 6. Presidential Situation Briefing Modal Updates
+	if briefing_active_project_label:
+		var proj_name := str(state.get("active_project", "None"))
+		briefing_active_project_label.text = "Active Project: " + proj_name + (" (In Progress)" if proj_name != "None" else " (Zero active infrastructure programs)")
+	if briefing_decisions_label:
+		var dec := str(state.get("latest_decision_result", ""))
+		if dec.is_empty():
+			dec = str(state.get("status_message", "No recent executive decrees issued."))
+		briefing_decisions_label.text = "Latest Decision: " + dec
+	if briefing_crisis_label:
+		var cr := str(state.get("active_crisis", "None"))
+		var cr_details := str(state.get("active_crisis_details", "State institutions stable. Sovereign order maintained."))
+		briefing_crisis_label.text = "Crisis Status: %s — %s" % [cr, cr_details]
+	if briefing_capacity_label:
+		briefing_capacity_label.text = "State Capacity: " + str(state.get("state_capacity_summary", "Civil Service: 80% | Corruption: 30% | Infrastructure: 30%"))
+	if briefing_fiscal_label:
+		var fisc := str(state.get("fiscal_report_summary", "No quarterly fiscal reports recorded"))
+		var treas := str(state.get("treasury", "[No State Loaded]"))
+		briefing_fiscal_label.text = "Fiscal Report: %s | Liquid Reserves: %s" % [fisc, treas]
+	if briefing_defense_label:
+		briefing_defense_label.text = "Defense Posture: %s | %s" % [str(state.get("defcon_level", "DEFCON 5 (Peacetime Watch)")), str(state.get("military_readiness", "Armed Forces Operational"))]
+	if briefing_offline_label:
+		briefing_offline_label.text = str(state.get("offline_briefing_summary", "Offline Status: Real-time simulation aligned. Zero pending offline cycles."))
+	if briefing_unsupported_label:
+		briefing_unsupported_label.text = "Global Intelligence Wire: [Live simulation feed offline / pending support]"
+
+	# 7. Hotline & Classified Dossier Modal Updates
+	if hotline_status_label:
+		hotline_status_label.text = "Secure diplomatic line operational. Connects directly to foreign heads of state."
+	if hotline_standing_label:
+		hotline_standing_label.text = "Diplomatic Standing: %s | Bilateral recognition & trade managed in Foreign Affairs." % str(state.get("status_message", "Connected to live simulation"))
+
+	if dossier_defense_label:
+		dossier_defense_label.text = "Defense Readiness: %s | %s" % [str(state.get("defcon_level", "DEFCON 5 (Peacetime Watch)")), str(state.get("military_readiness", "85.0% Operational"))]
+	if dossier_crisis_label:
+		dossier_crisis_label.text = "Active National Threat: %s — %s" % [str(state.get("active_crisis", "None")), str(state.get("active_crisis_details", "State institutions stable."))]
+	if dossier_espionage_label:
+		dossier_espionage_label.text = "Covert Intelligence Operations: [Feature not yet supported by simulation engine]"
+
 	state_loaded.emit(state)
 
 func _on_poll_timer_timeout() -> void:
@@ -446,7 +766,7 @@ func _format_number_commas(val: float) -> String:
 	return ("-" if is_neg else "") + formatted
 
 # ==============================================================================
-# 5. DECOUPLED VISUAL LAYER CUSTOMIZATION API
+# 6. DECOUPLED VISUAL LAYER CUSTOMIZATION API
 # ==============================================================================
 ## Updates the capital window view with custom scenery art
 func set_city_scenery_texture(texture: Texture2D) -> void:
@@ -485,13 +805,154 @@ func set_desk_style(surface_color: Color, blotter_color: Color) -> void:
 			style.bg_color = blotter_color
 
 # ==============================================================================
-# 6. INTERACTIVE DOCKS & NAVIGATION
+# 7. INTERACTIVE NAVIGATION (SIX GAME SECTIONS)
 # ==============================================================================
 func _on_switch_to_desk_button_pressed() -> void:
+	navigate_to_section(Section.OVERVIEW)
 	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
 
 func _on_refresh_button_pressed() -> void:
 	load_live_state()
+	if status_ticker_label:
+		status_ticker_label.text = "Executive Briefing: Refreshed live authoritative simulation state from disk."
+
+func _on_nav_overview_pressed() -> void:
+	navigate_to_section(Section.OVERVIEW)
+
+func _on_nav_cabinet_pressed() -> void:
+	navigate_to_section(Section.CABINET)
+
+func _on_nav_economy_pressed() -> void:
+	navigate_to_section(Section.ECONOMY)
+
+func _on_nav_campaign_pressed() -> void:
+	navigate_to_section(Section.CAMPAIGN)
+
+func _on_nav_diplomacy_pressed() -> void:
+	navigate_to_section(Section.DIPLOMACY)
+
+func _on_nav_briefings_pressed() -> void:
+	navigate_to_section(Section.BRIEFINGS)
+
+## Navigates to a specific game section reusing existing PresidentialDesk functionality
+func navigate_to_section(section: Section) -> void:
+	active_nav_section = section
+	_update_nav_button_highlights()
+
+	if section == Section.OVERVIEW:
+		close_all_modals()
+		if status_ticker_label:
+			status_ticker_label.text = "Executive Office: Main presidential workspace and situational telemetry."
+		return
+
+	if section == Section.BRIEFINGS:
+		open_briefing_modal()
+		return
+
+	# Reuses PresidentialDesk functionality without duplicating simulation logic
+	var desk_script = load("res://PresidentialDesk.gd")
+	if desk_script and "requested_section" in desk_script:
+		desk_script.requested_section = int(section)
+	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
+
+func _update_nav_button_highlights() -> void:
+	var buttons := [nav_overview_button, nav_cabinet_button, nav_economy_button, nav_campaign_button, nav_diplomacy_button, nav_briefings_button]
+	for i in range(buttons.size()):
+		var b: Button = buttons[i]
+		if b:
+			if i == int(active_nav_section):
+				b.modulate = Color(1.0, 0.85, 0.3, 1.0)
+			else:
+				b.modulate = Color(0.85, 0.9, 0.95, 1.0)
+
+# ==============================================================================
+# 8. OFFICE CONTROLS & MODAL DIALOGS
+# ==============================================================================
+func _on_hotline_phone_pressed() -> void:
+	open_hotline_modal()
+
+func _on_executive_inbox_pressed() -> void:
+	open_briefing_modal()
+
+func _on_intelligence_dossier_pressed() -> void:
+	open_dossier_modal()
+
+func _on_capital_window_pressed() -> void:
+	var time_str := str(latest_state.get("simulation_time", "Day 0, 00:00 WAT"))
+	var stab_str := str(latest_state.get("stability", "Stable"))
+	if status_ticker_label:
+		status_ticker_label.text = "Capital Vista: Overlooking Arcadia capital district. Simulation time: %s | Stability: %s." % [time_str, stab_str]
+
+func _on_presidential_portrait_pressed() -> void:
+	var party_str := str(latest_state.get("ruling_party", "Independent Sovereign"))
+	var poll_str := str(latest_state.get("polling_support", "0.0")) + "%"
+	if status_ticker_label:
+		status_ticker_label.text = "Presidential Mandate: %s | Ruling Party: %s | Polling: %s." % [portrait_name_label.text if portrait_name_label else "HEAD OF STATE", party_str, poll_str]
+
+func open_briefing_modal() -> void:
+	close_all_modals()
+	active_nav_section = Section.BRIEFINGS
+	_update_nav_button_highlights()
+	if modal_backdrop:
+		modal_backdrop.visible = true
+	if briefing_modal:
+		briefing_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Executive Briefing: Presidential situation report and active memoranda opened."
+
+func open_hotline_modal() -> void:
+	close_all_modals()
+	if modal_backdrop:
+		modal_backdrop.visible = true
+	if hotline_modal:
+		hotline_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Hotline Console: Secure diplomatic channel opened."
+
+func open_dossier_modal() -> void:
+	close_all_modals()
+	if modal_backdrop:
+		modal_backdrop.visible = true
+	if dossier_modal:
+		dossier_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Intelligence Dossier: National security posture and military readiness reviewed."
+
+func close_all_modals() -> void:
+	if modal_backdrop:
+		modal_backdrop.visible = false
+	if briefing_modal:
+		briefing_modal.visible = false
+	if hotline_modal:
+		hotline_modal.visible = false
+	if dossier_modal:
+		dossier_modal.visible = false
+	active_nav_section = Section.OVERVIEW
+	_update_nav_button_highlights()
+
+func is_any_modal_open() -> bool:
+	return (briefing_modal and briefing_modal.visible) or (hotline_modal and hotline_modal.visible) or (dossier_modal and dossier_modal.visible)
+
+func _on_modal_backdrop_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		close_all_modals()
+
+func _on_briefing_desk_button_pressed() -> void:
+	navigate_to_section(Section.BRIEFINGS)
+	var desk_script = load("res://PresidentialDesk.gd")
+	if desk_script and "requested_section" in desk_script:
+		desk_script.requested_section = int(Section.BRIEFINGS)
+	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
+
+func _on_hotline_desk_button_pressed() -> void:
+	navigate_to_section(Section.DIPLOMACY)
+
+func _on_dossier_desk_button_pressed() -> void:
+	navigate_to_section(Section.BRIEFINGS)
+	var desk_script = load("res://PresidentialDesk.gd")
+	if desk_script and "requested_section" in desk_script:
+		desk_script.requested_section = int(Section.BRIEFINGS)
+	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
 
 func _on_toggle_left_dock_pressed() -> void:
 	if left_dock:
@@ -508,11 +969,3 @@ func _on_toggle_right_dock_pressed() -> void:
 			content.visible = not content.visible
 			if toggle_right_dock_button:
 				toggle_right_dock_button.text = "▲" if content.visible else "▼"
-
-func _on_hotline_phone_pressed() -> void:
-	if status_ticker_label:
-		status_ticker_label.text = "Hotline Console: Secure line operational. Awaiting international diplomatic calls."
-
-func _on_executive_inbox_pressed() -> void:
-	if status_ticker_label:
-		status_ticker_label.text = "Executive Inbox: Cabinet memoranda and daily intelligence briefings filed."
