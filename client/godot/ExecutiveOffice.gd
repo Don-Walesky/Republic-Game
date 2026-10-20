@@ -68,9 +68,16 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var presidential_chair: PanelContainer = _get_node_safe("OfficeEnvironment/ExecutiveDesk/PresidentialChair") as PanelContainer
 @onready var desk_surface: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskSurface") as Control
 @onready var desk_blotter: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskBlotter") as Control
+@onready var blotter_button: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskBlotter/BlotterButton") as Button
 @onready var hotline_phone: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton") as Button
+@onready var hotline_badge: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton/HotlineNotificationBadge") as Control
+@onready var hotline_badge_label: Label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton/HotlineNotificationBadge/HotlineBadgeLabel") as Label
 @onready var intelligence_dossier: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton") as Button
+@onready var dossier_badge: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton/DossierNotificationBadge") as Control
+@onready var dossier_badge_label: Label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton/DossierNotificationBadge/DossierBadgeLabel") as Label
 @onready var executive_inbox: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton") as Button
+@onready var inbox_badge: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge") as Control
+@onready var inbox_badge_label: Label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge/InboxBadgeLabel") as Label
 @onready var presidential_seal: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/PresidentialSeal") as Control
 
 # ==============================================================================
@@ -124,6 +131,13 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var active_project_label: Label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ActiveProjectLabel") as Label
 @onready var open_projects_button: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/OpenProjectsButton") as Button
 @onready var state_status_label: Label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/StateStatusLabel") as Label
+
+# Session Briefing Toast
+@onready var session_briefing_toast: PanelContainer = _get_node_safe("InterfaceLayer/SessionBriefingToast") as PanelContainer
+@onready var session_briefing_title: Label = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/ToastHeader/SessionBriefingTitle") as Label
+@onready var dismiss_briefing_toast_button: Button = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/ToastHeader/DismissBriefingToastButton") as Button
+@onready var session_briefing_metrics_label: Label = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/SessionBriefingMetricsLabel") as Label
+@onready var session_briefing_status_label: Label = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/SessionBriefingStatusLabel") as Label
 
 # ==============================================================================
 # 3. INTERACTIVE MODAL PANELS (BRIEFING, HOTLINE, DOSSIER, CUSTOMISATION)
@@ -206,6 +220,22 @@ var active_customization: Dictionary = {}
 var current_customization_category: String = "portraits"
 var pending_purchase_item: Dictionary = {}
 var custom_save_path: String = ""
+
+# Living Feedback & Notification State
+var hotline_badge_dismissed: bool = false
+var dossier_badge_dismissed: bool = false
+var inbox_badge_dismissed: bool = false
+
+var flag_sway_time: float = 0.0
+var flag_sway_amplitude: float = 1.2
+var flag_sway_frequency: float = 1.5
+
+var left_dock_pinned: bool = false
+var right_dock_pinned: bool = false
+
+var session_briefing_timer: Timer = null
+var dock_flash_timer: Timer = null
+var flashing_dock: PanelContainer = null
 
 func _get_node_safe(path: String) -> Node:
 	var n := get_node_or_null(path)
@@ -303,12 +333,26 @@ func _init_controls() -> void:
 		desk_surface = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskSurface") as Control
 	if desk_blotter == null:
 		desk_blotter = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskBlotter") as Control
+	if blotter_button == null:
+		blotter_button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskBlotter/BlotterButton") as Button
 	if hotline_phone == null:
 		hotline_phone = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton") as Button
+	if hotline_badge == null:
+		hotline_badge = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton/HotlineNotificationBadge") as Control
+	if hotline_badge_label == null:
+		hotline_badge_label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton/HotlineNotificationBadge/HotlineBadgeLabel") as Label
 	if intelligence_dossier == null:
 		intelligence_dossier = _get_node_safe("OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton") as Button
+	if dossier_badge == null:
+		dossier_badge = _get_node_safe("OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton/DossierNotificationBadge") as Control
+	if dossier_badge_label == null:
+		dossier_badge_label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton/DossierNotificationBadge/DossierBadgeLabel") as Label
 	if executive_inbox == null:
 		executive_inbox = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton") as Button
+	if inbox_badge == null:
+		inbox_badge = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge") as Control
+	if inbox_badge_label == null:
+		inbox_badge_label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge/InboxBadgeLabel") as Label
 	if presidential_seal == null:
 		presidential_seal = _get_node_safe("OfficeEnvironment/ExecutiveDesk/PresidentialSeal") as Control
 
@@ -501,6 +545,17 @@ func _init_controls() -> void:
 	if cancel_purchase_button == null:
 		cancel_purchase_button = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox/CancelPurchaseButton") as Button
 
+	if session_briefing_toast == null:
+		session_briefing_toast = _get_node_safe("InterfaceLayer/SessionBriefingToast") as PanelContainer
+	if session_briefing_title == null:
+		session_briefing_title = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/ToastHeader/SessionBriefingTitle") as Label
+	if dismiss_briefing_toast_button == null:
+		dismiss_briefing_toast_button = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/ToastHeader/DismissBriefingToastButton") as Button
+	if session_briefing_metrics_label == null:
+		session_briefing_metrics_label = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/SessionBriefingMetricsLabel") as Label
+	if session_briefing_status_label == null:
+		session_briefing_status_label = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/SessionBriefingStatusLabel") as Label
+
 func _ready() -> void:
 	_init_controls()
 	_connect_signals()
@@ -517,7 +572,39 @@ func _ready() -> void:
 	poll_timer.timeout.connect(_on_poll_timer_timeout)
 	add_child(poll_timer)
 
+	# Session Briefing Timer
+	session_briefing_timer = Timer.new()
+	session_briefing_timer.wait_time = 5.0
+	session_briefing_timer.one_shot = true
+	session_briefing_timer.timeout.connect(dismiss_session_briefing)
+	add_child(session_briefing_timer)
+
+	# Dock Alert Flash Timer
+	dock_flash_timer = Timer.new()
+	dock_flash_timer.wait_time = 2.5
+	dock_flash_timer.one_shot = true
+	dock_flash_timer.timeout.connect(_on_dock_flash_timeout)
+	add_child(dock_flash_timer)
+
+	# Progressive Disclosure: Start docks collapsed
+	collapse_all_docks()
+
 	load_live_state()
+
+func _process(delta: float) -> void:
+	# 1. Subtle flag flutter / sway reacting to national stability
+	if flag_banner:
+		flag_sway_time += delta * flag_sway_frequency
+		flag_banner.rotation_degrees = sin(flag_sway_time) * flag_sway_amplitude
+
+	# 2. Subtle pulse on active desk notification badges
+	var pulse := 0.70 + 0.30 * sin(Time.get_ticks_msec() * 0.006)
+	if hotline_badge and hotline_badge.visible:
+		hotline_badge.modulate.a = pulse
+	if inbox_badge and inbox_badge.visible:
+		inbox_badge.modulate.a = pulse
+	if dossier_badge and dossier_badge.visible:
+		dossier_badge.modulate.a = pulse
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -558,10 +645,26 @@ func _connect_signals() -> void:
 		intelligence_dossier.pressed.connect(_on_intelligence_dossier_pressed)
 	if executive_inbox and not executive_inbox.pressed.is_connected(_on_executive_inbox_pressed):
 		executive_inbox.pressed.connect(_on_executive_inbox_pressed)
+	if blotter_button and not blotter_button.pressed.is_connected(_on_blotter_button_pressed):
+		blotter_button.pressed.connect(_on_blotter_button_pressed)
 	if window_button and not window_button.pressed.is_connected(_on_capital_window_pressed):
 		window_button.pressed.connect(_on_capital_window_pressed)
 	if portrait_button and not portrait_button.pressed.is_connected(_on_presidential_portrait_pressed):
 		portrait_button.pressed.connect(_on_presidential_portrait_pressed)
+
+	if dismiss_briefing_toast_button and not dismiss_briefing_toast_button.pressed.is_connected(dismiss_session_briefing):
+		dismiss_briefing_toast_button.pressed.connect(dismiss_session_briefing)
+	if session_briefing_toast and not session_briefing_toast.gui_input.is_connected(_on_session_briefing_toast_gui_input):
+		session_briefing_toast.gui_input.connect(_on_session_briefing_toast_gui_input)
+
+	if left_dock and not left_dock.mouse_entered.is_connected(_on_left_dock_mouse_entered):
+		left_dock.mouse_entered.connect(_on_left_dock_mouse_entered)
+	if left_dock and not left_dock.mouse_exited.is_connected(_on_left_dock_mouse_exited):
+		left_dock.mouse_exited.connect(_on_left_dock_mouse_exited)
+	if right_dock and not right_dock.mouse_entered.is_connected(_on_right_dock_mouse_entered):
+		right_dock.mouse_entered.connect(_on_right_dock_mouse_entered)
+	if right_dock and not right_dock.mouse_exited.is_connected(_on_right_dock_mouse_exited):
+		right_dock.mouse_exited.connect(_on_right_dock_mouse_exited)
 
 	if toggle_left_dock_button and not toggle_left_dock_button.pressed.is_connected(_on_toggle_left_dock_pressed):
 		toggle_left_dock_button.pressed.connect(_on_toggle_left_dock_pressed)
@@ -640,6 +743,8 @@ func _apply_tooltips() -> void:
 		intelligence_dossier.tooltip_text = "Classified Dossier: Review defense readiness and sovereign threats."
 	if executive_inbox:
 		executive_inbox.tooltip_text = "Executive Memoranda: Review comprehensive presidential situation briefing."
+	if blotter_button:
+		blotter_button.tooltip_text = "Executive Blotter: Click to inspect presidential briefing or daily schedule."
 	if nav_customise_button:
 		nav_customise_button.tooltip_text = "Office Décor: Customise presidential portrait, flag, furniture, and interior architecture."
 
@@ -748,6 +853,16 @@ func display_missing_state() -> void:
 		portrait_party_label.text = "Party: [No State Loaded]"
 	if flag_emblem_label:
 		flag_emblem_label.text = "REPUBLIC"
+
+	# Scenery and living visual feedback resets
+	if city_scenery and city_scenery.has_method("set_state_metrics"):
+		city_scenery.set_state_metrics(50.0, 50.0, "None", "None")
+	update_portrait_state_feedback(50.0, 50.0, false)
+	update_flag_state_feedback(50.0, false)
+	set_hotline_badge(false)
+	set_dossier_badge(false)
+	set_inbox_badge(false)
+	dismiss_session_briefing()
 
 	state_cleared.emit()
 
@@ -897,6 +1012,54 @@ func apply_state(state: Dictionary) -> void:
 		dossier_crisis_label.text = "Active National Threat: %s — %s" % [str(state.get("active_crisis", "None")), str(state.get("active_crisis_details", "State institutions stable."))]
 	if dossier_espionage_label:
 		dossier_espionage_label.text = "Covert Intelligence Operations: [Feature not yet supported by simulation engine]"
+
+	# 8. Living Capital Window Scenery: state-driven skyline reaction
+	if city_scenery and city_scenery.has_method("set_state_metrics"):
+		var app_val := float(state.get("approval_rating", 68.5))
+		var stab_val := float(state.get("stability_rating", 85.0))
+		var act_proj := str(state.get("active_project", "None"))
+		var act_crisis := str(state.get("active_crisis", "None"))
+		city_scenery.set_state_metrics(app_val, stab_val, act_proj, act_crisis)
+
+	# 9. Soft Identity Feedback (Portrait Frame Glow & Flag Dynamic Sway)
+	var appr_num := float(state.get("approval_rating", 68.5))
+	var stab_num := float(state.get("stability_rating", 85.0))
+	var cr_name := str(state.get("active_crisis", "None"))
+	var has_crisis := (not cr_name.is_empty() and cr_name != "None" and cr_name != "[No State Loaded]")
+	update_portrait_state_feedback(appr_num, stab_num, has_crisis)
+	update_flag_state_feedback(stab_num, has_crisis)
+
+	# 10. Desk Notification Badges
+	var defcon := str(state.get("defcon_level", "DEFCON 5"))
+	var mil_threat := (not defcon.begins_with("DEFCON 5") and not defcon.is_empty() and defcon != "[No State Loaded]")
+	if has_crisis:
+		if not hotline_badge_dismissed:
+			set_hotline_badge(true, "!")
+	else:
+		set_hotline_badge(false)
+
+	if mil_threat or has_crisis:
+		if not dossier_badge_dismissed:
+			set_dossier_badge(true, "!")
+	else:
+		set_dossier_badge(false)
+
+	var dec_res := str(state.get("latest_decision_result", ""))
+	var has_pending := dec_res.contains("Pending") or state.has("pending_decision")
+	if has_pending:
+		if not inbox_badge_dismissed:
+			set_inbox_badge(true, "1")
+	else:
+		set_inbox_badge(false)
+
+	# 11. Session Briefing Toast Update
+	update_session_briefing(state)
+	if session_briefing_toast and not session_briefing_toast.visible:
+		show_session_briefing(true)
+
+	# 12. Critical Alert Trigger
+	if has_crisis:
+		trigger_dock_alert("right")
 
 	state_loaded.emit(state)
 
@@ -1371,13 +1534,30 @@ func _update_nav_button_highlights() -> void:
 # 9. OFFICE CONTROLS & MODAL DIALOGS
 # ==============================================================================
 func _on_hotline_phone_pressed() -> void:
+	set_hotline_badge(false)
+	hotline_badge_dismissed = true
 	open_hotline_modal()
 
 func _on_executive_inbox_pressed() -> void:
+	set_inbox_badge(false)
+	inbox_badge_dismissed = true
 	open_briefing_modal()
 
 func _on_intelligence_dossier_pressed() -> void:
+	set_dossier_badge(false)
+	dossier_badge_dismissed = true
 	open_dossier_modal()
+
+func _on_blotter_button_pressed() -> void:
+	if is_session_briefing_visible():
+		dismiss_session_briefing()
+	else:
+		if latest_state.is_empty():
+			load_live_state()
+		update_session_briefing(latest_state)
+		show_session_briefing(false)
+	if status_ticker_label:
+		status_ticker_label.text = "Executive Desk: Presidential blotter and schedule reviewed."
 
 func _on_capital_window_pressed() -> void:
 	var time_str := str(latest_state.get("simulation_time", "Day 0, 00:00 WAT"))
@@ -1487,20 +1667,214 @@ func _on_dossier_desk_button_pressed() -> void:
 	navigate_to_section(Section.BRIEFINGS)
 
 func _on_toggle_left_dock_pressed() -> void:
+	var now_expanded := not is_left_dock_expanded()
+	set_left_dock_expanded(now_expanded)
+	left_dock_pinned = now_expanded
+
+func _on_toggle_right_dock_pressed() -> void:
+	var now_expanded := not is_right_dock_expanded()
+	set_right_dock_expanded(now_expanded)
+	right_dock_pinned = now_expanded
+
+func _on_left_dock_mouse_entered() -> void:
+	set_left_dock_expanded(true)
+
+func _on_left_dock_mouse_exited() -> void:
+	if not left_dock_pinned:
+		set_left_dock_expanded(false)
+
+func _on_right_dock_mouse_entered() -> void:
+	set_right_dock_expanded(true)
+
+func _on_right_dock_mouse_exited() -> void:
+	if not right_dock_pinned:
+		set_right_dock_expanded(false)
+
+# ==============================================================================
+# PROGRESSIVE DISCLOSURE & DOCK MANAGEMENT
+# ==============================================================================
+func collapse_all_docks() -> void:
+	set_left_dock_expanded(false)
+	set_right_dock_expanded(false)
+
+func set_left_dock_expanded(expanded: bool) -> void:
 	if left_dock:
 		var content := left_dock.find_child("LeftDockContent", true, false) as Control
 		if content:
-			content.visible = not content.visible
-			if toggle_left_dock_button:
-				toggle_left_dock_button.text = "▲" if content.visible else "▼"
+			content.visible = expanded
+		if toggle_left_dock_button:
+			toggle_left_dock_button.text = "▲" if expanded else "▼"
 
-func _on_toggle_right_dock_pressed() -> void:
+func set_right_dock_expanded(expanded: bool) -> void:
 	if right_dock:
 		var content := right_dock.find_child("RightDockContent", true, false) as Control
 		if content:
-			content.visible = not content.visible
-			if toggle_right_dock_button:
-				toggle_right_dock_button.text = "▲" if content.visible else "▼"
+			content.visible = expanded
+		if toggle_right_dock_button:
+			toggle_right_dock_button.text = "▲" if expanded else "▼"
+
+func is_left_dock_expanded() -> bool:
+	if left_dock:
+		var content := left_dock.find_child("LeftDockContent", true, false) as Control
+		return content.visible if content else false
+	return false
+
+func is_right_dock_expanded() -> bool:
+	if right_dock:
+		var content := right_dock.find_child("RightDockContent", true, false) as Control
+		return content.visible if content else false
+	return false
+
+func trigger_dock_alert(dock_id: String) -> void:
+	var target: PanelContainer = null
+	if dock_id == "left" or dock_id == "domestic":
+		set_left_dock_expanded(true)
+		target = left_dock
+	elif dock_id == "right" or dock_id == "foreign" or dock_id == "crisis":
+		set_right_dock_expanded(true)
+		target = right_dock
+	elif dock_id == "bottom" or dock_id == "project":
+		target = bottom_dock
+
+	if target:
+		flashing_dock = target
+		var s := target.get_theme_stylebox("panel")
+		var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+		new_s.border_color = Color(0.95, 0.75, 0.2, 0.95)
+		target.add_theme_stylebox_override("panel", new_s)
+		if dock_flash_timer:
+			dock_flash_timer.start(2.5)
+
+func _on_dock_flash_timeout() -> void:
+	if flashing_dock:
+		var s := flashing_dock.get_theme_stylebox("panel")
+		var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+		new_s.border_color = Color(0.2, 0.28, 0.4, 0.7)
+		flashing_dock.add_theme_stylebox_override("panel", new_s)
+		flashing_dock = null
+
+# ==============================================================================
+# DESK NOTIFICATION BADGES API
+# ==============================================================================
+func set_hotline_badge(visible_state: bool, badge_text: String = "!") -> void:
+	if hotline_badge:
+		hotline_badge.visible = visible_state
+	if hotline_badge_label and not badge_text.is_empty():
+		hotline_badge_label.text = badge_text
+
+func set_dossier_badge(visible_state: bool, badge_text: String = "!") -> void:
+	if dossier_badge:
+		dossier_badge.visible = visible_state
+	if dossier_badge_label and not badge_text.is_empty():
+		dossier_badge_label.text = badge_text
+
+func set_inbox_badge(visible_state: bool, badge_text: String = "1") -> void:
+	if inbox_badge:
+		inbox_badge.visible = visible_state
+	if inbox_badge_label and not badge_text.is_empty():
+		inbox_badge_label.text = badge_text
+
+func is_hotline_badge_visible() -> bool:
+	return hotline_badge != null and hotline_badge.visible
+
+func is_dossier_badge_visible() -> bool:
+	return dossier_badge != null and dossier_badge.visible
+
+func is_inbox_badge_visible() -> bool:
+	return inbox_badge != null and inbox_badge.visible
+
+# ==============================================================================
+# SOFT IDENTITY FEEDBACK (PORTRAIT & FLAG)
+# ==============================================================================
+func update_portrait_state_feedback(approval: float, stability: float, has_crisis: bool = false) -> void:
+	if portrait_frame:
+		var s := portrait_frame.get_theme_stylebox("panel")
+		var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+		if not has_crisis and approval >= 65.0 and stability >= 60.0:
+			new_s.border_color = Color(0.95, 0.80, 0.25, 0.95) # warm radiant gold
+			new_s.shadow_color = Color(0.85, 0.65, 0.15, 0.45)
+			new_s.shadow_size = 8
+			if portrait_canvas:
+				portrait_canvas.modulate = Color(1.05, 1.02, 0.98, 1.0)
+		elif not has_crisis and approval >= 45.0 and stability >= 45.0:
+			new_s.border_color = Color(0.50, 0.58, 0.70, 0.85) # slate neutral
+			new_s.shadow_color = Color(0.1, 0.15, 0.25, 0.3)
+			new_s.shadow_size = 4
+			if portrait_canvas:
+				portrait_canvas.modulate = Color(0.92, 0.92, 0.95, 1.0)
+		else:
+			new_s.border_color = Color(0.38, 0.32, 0.32, 0.75) # dimmed somber charcoal
+			new_s.shadow_color = Color(0.0, 0.0, 0.0, 0.0)
+			new_s.shadow_size = 0
+			if portrait_canvas:
+				portrait_canvas.modulate = Color(0.68, 0.68, 0.72, 1.0) # desaturated/shadowed
+		portrait_frame.add_theme_stylebox_override("panel", new_s)
+
+func update_flag_state_feedback(stability: float, has_crisis: bool = false) -> void:
+	if flag_banner:
+		if not has_crisis and stability >= 70.0:
+			flag_banner.modulate = Color(1.05, 1.05, 1.05, 1.0)
+			flag_sway_amplitude = 1.2
+			flag_sway_frequency = 1.5
+		elif not has_crisis and stability >= 45.0:
+			flag_banner.modulate = Color(0.88, 0.88, 0.90, 1.0)
+			flag_sway_amplitude = 1.8
+			flag_sway_frequency = 2.0
+		else:
+			flag_banner.modulate = Color(0.68, 0.65, 0.70, 1.0)
+			flag_sway_amplitude = 2.6
+			flag_sway_frequency = 2.8
+
+# ==============================================================================
+# SESSION BRIEFING TOAST API
+# ==============================================================================
+func update_session_briefing(state: Dictionary) -> void:
+	if session_briefing_metrics_label:
+		var c_name := str(state.get("country_name", "Republic"))
+		var treas := str(state.get("treasury", ""))
+		if treas.is_empty() and state.has("treasury_balance"):
+			treas = "R " + _format_number_commas(float(state.get("treasury_balance", 0.0)))
+		var appr := str(state.get("approval", ""))
+		if appr.is_empty() and state.has("approval_rating"):
+			appr = str(state.get("approval_rating", 0.0)) + "%"
+		var stab := str(state.get("stability", ""))
+		if stab.is_empty() and state.has("stability_rating"):
+			stab = str(state.get("stability_rating", 0.0)) + "%"
+		
+		session_briefing_metrics_label.text = "%s | Liquid Reserves: %s | Approval: %s | Stability: %s" % [
+			c_name,
+			(treas if not treas.is_empty() else "[No State Loaded]"),
+			(appr if not appr.is_empty() else "[No State Loaded]"),
+			(stab if not stab.is_empty() else "[No State Loaded]")
+		]
+
+	if session_briefing_status_label:
+		var proj := str(state.get("active_project", "None"))
+		var cr := str(state.get("active_crisis", "None"))
+		var msg := str(state.get("latest_decision_result", ""))
+		if msg.is_empty():
+			msg = str(state.get("status_message", "Executive office online."))
+		session_briefing_status_label.text = "Active Program: %s | Crisis Posture: %s | Status: %s" % [proj, cr, msg]
+
+func show_session_briefing(auto_dismiss: bool = true) -> void:
+	if session_briefing_toast:
+		session_briefing_toast.visible = true
+	if auto_dismiss:
+		if session_briefing_timer:
+			session_briefing_timer.start(5.0)
+
+func dismiss_session_briefing() -> void:
+	if session_briefing_toast:
+		session_briefing_toast.visible = false
+	if session_briefing_timer and not session_briefing_timer.is_stopped():
+		session_briefing_timer.stop()
+
+func is_session_briefing_visible() -> bool:
+	return session_briefing_toast != null and session_briefing_toast.visible
+
+func _on_session_briefing_toast_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		dismiss_session_briefing()
 
 # ==============================================================================
 # 10. CATALOG VIEW POPULATION & USER ACTIONS

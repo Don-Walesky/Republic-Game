@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://ExecutiveOffice.gd" id="1_office"]
 [ext_resource type="Script" path="res://CapitalWindowScenery.gd" id="2_scenery"]
@@ -204,6 +204,36 @@ content_margin_left = 12.0
 content_margin_top = 10.0
 content_margin_right = 12.0
 content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
+bg_color = Color(0.04, 0.06, 0.1, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.68, 0.28, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 12
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+bg_color = Color(0.85, 0.15, 0.15, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.85, 0.85, 0.9)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
 
 [node name="ExecutiveOffice" type="Control"]
 layout_mode = 3
@@ -655,6 +685,16 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_deskblotter")
 
+[node name="BlotterButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk/DeskBlotter"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
+mouse_default_cursor_shape = 2
+
 [node name="PresidentialSeal" type="Control" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
 anchor_left = 0.5
@@ -690,6 +730,30 @@ anchor_bottom = 0.65
 theme_override_font_sizes/font_size = 11
 text = "☎ HOTLINE"
 
+[node name="HotlineNotificationBadge" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -10.0
+offset_top = -6.0
+offset_right = 8.0
+offset_bottom = 12.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="HotlineBadgeLabel" type="Label" parent="OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton/HotlineNotificationBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="IntelligenceDossierButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
 anchor_left = 0.64
@@ -699,6 +763,30 @@ anchor_bottom = 0.65
 theme_override_font_sizes/font_size = 11
 text = "📁 DOSSIER"
 
+[node name="DossierNotificationBadge" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -10.0
+offset_top = -6.0
+offset_right = 8.0
+offset_bottom = 12.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="DossierBadgeLabel" type="Label" parent="OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton/DossierNotificationBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="ExecutiveInboxButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
 anchor_left = 0.82
@@ -707,6 +795,30 @@ anchor_right = 0.92
 anchor_bottom = 0.65
 theme_override_font_sizes/font_size = 11
 text = "✉ INBOX"
+
+[node name="InboxNotificationBadge" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -10.0
+offset_top = -6.0
+offset_right = 8.0
+offset_bottom = 12.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="InboxBadgeLabel" type="Label" parent="OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="InterfaceLayer" type="Control" parent="."]
 layout_mode = 1
@@ -1014,6 +1126,51 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 10
 text = "Status: Waiting for state file"
+
+[node name="SessionBriefingToast" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 88.0
+offset_right = 280.0
+offset_bottom = 176.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_toast")
+
+[node name="ToastVBox" type="VBoxContainer" parent="InterfaceLayer/SessionBriefingToast"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ToastHeader" type="HBoxContainer" parent="InterfaceLayer/SessionBriefingToast/ToastVBox"]
+layout_mode = 2
+
+[node name="SessionBriefingTitle" type="Label" parent="InterfaceLayer/SessionBriefingToast/ToastVBox/ToastHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.72, 0.15, 1)
+theme_override_font_sizes/font_size = 11
+text = "📋 EXECUTIVE NATIONAL BRIEFING"
+
+[node name="DismissBriefingToastButton" type="Button" parent="InterfaceLayer/SessionBriefingToast/ToastVBox/ToastHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "✕"
+
+[node name="SessionBriefingMetricsLabel" type="Label" parent="InterfaceLayer/SessionBriefingToast/ToastVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Republic of Arcadia | Treasury: R 15,000,000,000 | Approval: 68.5% | Stability: 85.0%"
+autowrap_mode = 2
+
+[node name="SessionBriefingStatusLabel" type="Label" parent="InterfaceLayer/SessionBriefingToast/ToastVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.8, 0.95, 1)
+theme_override_font_sizes/font_size = 9
+text = "Executive Office synchronized. Zero critical emergencies."
+autowrap_mode = 2
 
 [node name="ModalBackdrop" type="ColorRect" parent="InterfaceLayer"]
 visible = false
