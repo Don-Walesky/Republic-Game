@@ -101,6 +101,7 @@ Anchored along screen edges with high information density and semi-transparent g
 | :--- | :--- | :--- |
 | **Phase 1** | System inspection, foundation scene architecture, decoupled visual layers (Window, Flag, Portrait, Desk), HUD docking zones, live state connector, test harness. | **Completed** |
 | **Phase 2** | Functional Executive Office interface: Top resource bar live metrics (Country, Treasury, Approval, Stability, Defense, WAT), 6-section navigation tabs, Presidential Briefing modal with real state & honest disclosures, interactive office controls (Hotline phone, Inbox, Dossier, Vista, Mandate), bidirectional navigation with PresidentialDesk. | **Completed** |
-| **Phase 3** | Capital City Scenery expansion (Day/Night cycle, weather, infrastructure development overlays). | Planned |
+| **Phase 3** | Personalised Presidential Office & Modular Customisation: 8 selectable presidential portraits (5 male, 3 female), sovereign country flag & heraldry, 6 modular furniture categories (desks & chairs, visitor seating, walls & flooring, carpets & lighting, bookshelves & decor, artwork & gifts), authoritative REPU pricing & purchasing validation, facilities/interior approvals, country-isolated persistent storage, and customisation modal UX. | **Completed** |
 | **Phase 4** | Domestic Cabinet & Ministry Dock (Minister portraits, loyalty/competence trade-offs, executive orders). | Planned |
 | **Phase 5** | Geopolitics & Foreign Relations Dock (Bilateral trade routes, DEFCON posture, summit negotiation). | Planned |
+| **Phase 6** | Capital City Scenery expansion (Day/Night cycle, weather, infrastructure development overlays). | Planned |

@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://ExecutiveOffice.gd" id="1_office"]
 [ext_resource type="Script" path="res://CapitalWindowScenery.gd" id="2_scenery"]
@@ -149,6 +149,62 @@ content_margin_top = 16.0
 content_margin_right = 18.0
 content_margin_bottom = 16.0
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_carpet"]
+bg_color = Color(0.42, 0.1, 0.12, 0.85)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.85, 0.68, 0.28, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chair"]
+bg_color = Color(0.28, 0.1, 0.08, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.68, 0.28, 0.9)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_decor"]
+bg_color = Color(0.08, 0.1, 0.14, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.4, 0.5, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.06, 0.08, 0.12, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.35, 0.5, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+
 [node name="ExecutiveOffice" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -176,6 +232,34 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.06, 0.075, 0.105, 1)
 
+[node name="WallBackdrop" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.65
+grow_horizontal = 2
+color = Color(0.08, 0.11, 0.16, 1)
+
+[node name="MoldingStrip" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.648
+anchor_right = 1.0
+anchor_bottom = 0.654
+grow_horizontal = 2
+color = Color(0.85098, 0.678431, 0.282353, 0.75)
+
+[node name="FloorBackdrop" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.654
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.24, 0.16, 0.10, 1)
+
 [node name="WoodPanelingTop" type="ColorRect" parent="OfficeEnvironment"]
 layout_mode = 1
 anchors_preset = 10
@@ -192,6 +276,158 @@ offset_top = 54.0
 offset_bottom = 56.0
 grow_horizontal = 2
 color = Color(0.85098, 0.678431, 0.282353, 0.75)
+
+[node name="OfficeCarpet" type="PanelContainer" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.20
+anchor_top = 0.60
+anchor_right = 0.80
+anchor_bottom = 0.95
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_carpet")
+
+[node name="CeilingLighting" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.40
+anchor_top = 0.035
+anchor_right = 0.60
+anchor_bottom = 0.11
+grow_horizontal = 2
+
+[node name="ChandelierLabel" type="Label" parent="OfficeEnvironment/CeilingLighting"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.65, 0.9)
+theme_override_font_sizes/font_size = 18
+text = "✨ ═══ 🕯 ═══ ✨"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BookshelvesAndDecor" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.015
+anchor_top = 0.13
+anchor_right = 0.13
+anchor_bottom = 0.58
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BookshelfVisual" type="PanelContainer" parent="OfficeEnvironment/BookshelvesAndDecor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
+
+[node name="BookshelfVBox" type="VBoxContainer" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual"]
+layout_mode = 2
+alignment = 1
+
+[node name="BookshelfIconLabel" type="Label" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "📚"
+horizontal_alignment = 1
+
+[node name="BookshelfLabel" type="Label" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.80, 0.70, 1)
+theme_override_font_sizes/font_size = 9
+text = "CONSTITUTIONAL\nARCHIVES"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ArtworkAndGifts" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.83
+anchor_top = 0.13
+anchor_right = 0.97
+anchor_bottom = 0.52
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ArtworkVisual" type="PanelContainer" parent="OfficeEnvironment/ArtworkAndGifts"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
+
+[node name="ArtworkVBox" type="VBoxContainer" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual"]
+layout_mode = 2
+alignment = 1
+
+[node name="ArtworkIconLabel" type="Label" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "📜"
+horizontal_alignment = 1
+
+[node name="ArtworkLabel" type="Label" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 9
+text = "FOUNDING\nCHARTER"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="VisitorSeating" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.02
+anchor_top = 0.65
+anchor_right = 0.18
+anchor_bottom = 0.88
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VisitorTable" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
+layout_mode = 1
+anchor_left = 0.28
+anchor_top = 0.20
+anchor_right = 0.72
+anchor_bottom = 0.80
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
+
+[node name="VisitorChair1" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
+layout_mode = 1
+anchor_left = 0.02
+anchor_top = 0.15
+anchor_right = 0.26
+anchor_bottom = 0.85
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chair")
+
+[node name="VisitorChair2" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
+layout_mode = 1
+anchor_left = 0.74
+anchor_top = 0.15
+anchor_right = 0.98
+anchor_bottom = 0.85
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chair")
+
+[node name="VisitorLabel" type="Label" parent="OfficeEnvironment/VisitorSeating"]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.88
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 8
+text = "VISITOR LOUNGE"
+horizontal_alignment = 1
 
 [node name="CapitalWindow" type="Control" parent="OfficeEnvironment"]
 layout_mode = 1
@@ -337,14 +573,14 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
 theme_override_font_sizes/font_size = 32
-text = "⚖"
+text = "🏛"
 horizontal_alignment = 1
 
 [node name="PortraitPlaceholderLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
 theme_override_font_sizes/font_size = 10
-text = "HEAD OF STATE"
+text = "THE STATESMAN"
 horizontal_alignment = 1
 
 [node name="Plaque" type="PanelContainer" parent="OfficeEnvironment/PresidentialPortrait"]
@@ -363,7 +599,7 @@ theme_override_constants/separation = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 0.45, 1)
 theme_override_font_sizes/font_size = 10
-text = "PRESIDENT OF THE REPUBLIC"
+text = "PRES. ALEXANDER VANCE"
 horizontal_alignment = 1
 
 [node name="PortraitPartyLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/Plaque/PlaqueVBox"]
@@ -390,6 +626,15 @@ anchor_right = 0.84
 anchor_bottom = 0.92
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="PresidentialChair" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk"]
+layout_mode = 1
+anchor_left = 0.42
+anchor_top = -0.30
+anchor_right = 0.58
+anchor_bottom = 0.15
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chair")
 
 [node name="DeskSurface" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
@@ -482,57 +727,64 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
 
 [node name="TopBarHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar"]
 layout_mode = 2
-theme_override_constants/separation = 14
-
-[node name="BrandLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 14
-text = "REPUBLIC — EXECUTIVE OFFICE"
+theme_override_constants/separation = 16
 
 [node name="CountryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
 text = "Country: [No State Loaded]"
 
-[node name="SimulationTimeLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+[node name="VSeparator1" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "Simulation Time: [No State Loaded]"
 
 [node name="TreasuryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "Treasury: [No State Loaded]"
+
+[node name="VSeparator2" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
 
 [node name="ApprovalLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "Approval: [No State Loaded]"
+
+[node name="VSeparator3" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
 
 [node name="StabilityLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "Stability: [No State Loaded]"
+
+[node name="VSeparator4" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
 
 [node name="DefconLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "Defense: [No State Loaded]"
 
-[node name="Spacer" type="Control" parent="InterfaceLayer/TopBar/TopBarHBox"]
+[node name="VSeparator5" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+
+[node name="SimulationTimeLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Simulation Time: [No State Loaded]"
 
 [node name="RefreshButton" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Refresh"
+theme_override_font_sizes/font_size = 11
+text = "⟳ Refresh"
 
 [node name="SwitchToDeskButton" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Detailed Desk View ->"
+theme_override_font_sizes/font_size = 11
+text = "Cabinet Data Desk ->"
 
 [node name="NavBarPanel" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
@@ -583,6 +835,12 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 12
 text = "6. Presidential Briefings"
 
+[node name="NavCustomiseButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "🏛 7. Office Décor"
+
 [node name="LeftDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
 anchor_left = 0.01
@@ -599,12 +857,12 @@ theme_override_constants/separation = 8
 [node name="LeftDockHeader" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox"]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockHeader"]
+[node name="LeftDockTitle" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 1)
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
 theme_override_font_sizes/font_size = 12
-text = "DOMESTIC & CABINET"
+text = "🏛 DOMESTIC GOVERNANCE"
 
 [node name="ToggleLeftDockButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockHeader"]
 layout_mode = 2
@@ -618,28 +876,34 @@ theme_override_constants/separation = 6
 [node name="CabinetSummaryLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Cabinet: [No State Loaded]"
+text = "Finance: Vacant | Interior: Vacant"
 autowrap_mode = 2
+
+[node name="HSeparator1" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
 
 [node name="CivilServiceLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Civil Service: [No State Loaded]"
+text = "Civil Service Merit: [No State Loaded]"
 
 [node name="CorruptionControlLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "Corruption Control: [No State Loaded]"
 
+[node name="HSeparator2" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+
 [node name="RulingPartyLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Ruling Party: [No State Loaded]"
+text = "Ruling Party: None"
 
 [node name="PollingSupportLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Polling: [No State Loaded]"
+text = "National Polling: 0.0%"
 
 [node name="OpenCabinetButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
@@ -648,11 +912,10 @@ text = "Manage Cabinet ->"
 
 [node name="RightDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
-anchor_left = 1.0
+anchor_left = 0.875
 anchor_top = 0.088
 anchor_right = 0.99
 anchor_bottom = 0.91
-offset_left = -240.0
 grow_horizontal = 0
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
@@ -664,12 +927,12 @@ theme_override_constants/separation = 8
 [node name="RightDockHeader" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox"]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockHeader"]
+[node name="RightDockTitle" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 1)
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
 theme_override_font_sizes/font_size = 12
-text = "GEOPOLITICS & SECURITY"
+text = "🌐 FOREIGN AFFAIRS"
 
 [node name="ToggleRightDockButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockHeader"]
 layout_mode = 2
@@ -683,28 +946,33 @@ theme_override_constants/separation = 6
 [node name="MilitaryReadinessLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Readiness: [No State Loaded]"
+text = "Readiness: Armed Forces Operational"
+autowrap_mode = 2
+
+[node name="HSeparator3" type="HSeparator" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
 
 [node name="ActiveCrisisLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Active Crisis: [No State Loaded]"
+text = "Active Crisis: None"
+autowrap_mode = 2
 
 [node name="GdpLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "GDP: [No State Loaded]"
+text = "GDP: R 450B"
 
 [node name="OfflineBriefingLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Offline Catch-up: [No State Loaded]"
+text = "Simulation: Real-time aligned"
 autowrap_mode = 2
 
 [node name="OpenDiplomacyButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Manage Diplomacy & Defense ->"
+text = "Diplomacy Console ->"
 
 [node name="BottomDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
@@ -712,7 +980,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -42.0
+offset_top = -38.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_bottomdock")
@@ -721,29 +989,31 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_bottomdock")
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="StateStatusLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Status: [No State Loaded]"
-
 [node name="ActiveProjectLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 11
 text = "Active Project: None"
 
 [node name="OpenProjectsButton" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
-text = "Manage Projects ->"
+theme_override_font_sizes/font_size = 10
+text = "View Projects ->"
+
+[node name="VSeparator6" type="VSeparator" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
 
 [node name="StatusTickerLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
-theme_override_font_sizes/font_size = 12
-text = "Executive Briefing: Awaiting sovereign state initialization from Republic.Core"
-clip_text = true
+theme_override_font_sizes/font_size = 11
+text = "Executive Briefing: Presidential executive office online."
+
+[node name="StateStatusLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 10
+text = "Status: Waiting for state file"
 
 [node name="ModalBackdrop" type="ColorRect" parent="InterfaceLayer"]
 visible = false
@@ -753,7 +1023,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.02, 0.03, 0.06, 0.75)
+color = Color(0, 0, 0, 0.65)
 
 [node name="BriefingModal" type="PanelContainer" parent="InterfaceLayer"]
 visible = false
@@ -764,9 +1034,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -340.0
-offset_top = -250.0
+offset_top = -240.0
 offset_right = 340.0
-offset_bottom = 250.0
+offset_bottom = 240.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
@@ -782,8 +1052,8 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 14
-text = "★ PRESIDENTIAL SITUATION BRIEFING ★"
+theme_override_font_sizes/font_size = 15
+text = "✉ PRESIDENTIAL SITUATION BRIEFING & MEMORANDA"
 
 [node name="CloseBriefingXButton" type="Button" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingHeaderHBox"]
 layout_mode = 2
@@ -793,7 +1063,6 @@ text = "✕"
 [node name="BriefingScroll" type="ScrollContainer" parent="InterfaceLayer/BriefingModal/BriefingVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-horizontal_scroll_mode = 0
 
 [node name="BriefingContentVBox" type="VBoxContainer" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll"]
 layout_mode = 2
@@ -804,46 +1073,49 @@ theme_override_constants/separation = 8
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Active Project: None"
+autowrap_mode = 2
 
 [node name="BriefingDecisionsLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Latest Decision: [No decisions recorded]"
+text = "Latest Decisions: None"
 autowrap_mode = 2
 
 [node name="BriefingCrisisLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Crisis Status: None — State institutions stable."
+text = "National Crises: None"
 autowrap_mode = 2
 
 [node name="BriefingCapacityLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "State Capacity: Civil Service: 80% | Corruption: 30% | Infrastructure: 30%"
+text = "State Capacity: Civil Service 80% | Corruption 30%"
+autowrap_mode = 2
 
 [node name="BriefingFiscalLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Fiscal Report: No quarterly fiscal reports yet recorded"
+text = "Fiscal Report: Balanced"
 autowrap_mode = 2
 
 [node name="BriefingDefenseLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Defense Posture: DEFCON 5 (Peacetime Watch) | Armed Forces: 85.0% Operational"
+text = "Defense Posture: DEFCON 5 (Peacetime Watch)"
+autowrap_mode = 2
 
 [node name="BriefingOfflineLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Offline Status: Real-time simulation aligned. Zero pending offline cycles."
+text = "Offline Progression: Real-time simulation aligned"
 autowrap_mode = 2
 
 [node name="BriefingUnsupportedLabel" type="Label" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 11
-text = "Global Intelligence Wire: [Live simulation feed currently offline / pending support]"
+text = "Global Intelligence Wire: [Live simulation feed offline / pending support]"
 autowrap_mode = 2
 
 [node name="BriefingActionsHBox" type="HBoxContainer" parent="InterfaceLayer/BriefingModal/BriefingVBox"]
@@ -854,12 +1126,12 @@ alignment = 2
 [node name="BriefingDeskButton" type="Button" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Open Decrees & Crisis in Desk ->"
+text = "View Full Briefing in Desk ->"
 
 [node name="CloseBriefingButton" type="Button" parent="InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Close"
+text = "Dismiss Briefing"
 
 [node name="HotlineModal" type="PanelContainer" parent="InterfaceLayer"]
 visible = false
@@ -869,10 +1141,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -280.0
-offset_top = -170.0
-offset_right = 280.0
-offset_bottom = 170.0
+offset_left = -260.0
+offset_top = -140.0
+offset_right = 260.0
+offset_bottom = 140.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
@@ -889,7 +1161,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
 theme_override_font_sizes/font_size = 14
-text = "☎ DIPLOMATIC HOTLINE CONSOLE"
+text = "☎ SECURE PRESIDENTIAL HOTLINE"
 
 [node name="CloseHotlineXButton" type="Button" parent="InterfaceLayer/HotlineModal/HotlineVBox/HotlineHeaderHBox"]
 layout_mode = 2
@@ -992,3 +1264,209 @@ text = "Open Defense & Decrees in Desk ->"
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Close Dossier"
+
+[node name="CustomisationModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -440.0
+offset_top = -270.0
+offset_right = 440.0
+offset_bottom = 270.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="CustomisationVBox" type="VBoxContainer" parent="InterfaceLayer/CustomisationModal"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CustomisationHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/CustomisationModal/CustomisationVBox"]
+layout_mode = 2
+
+[node name="CustomisationTitleLabel" type="Label" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 15
+text = "🏛 EXECUTIVE OFFICE CUSTOMISATION"
+
+[node name="CustomisationTreasuryLabel" type="Label" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 12
+text = "Available Treasury: [No State Loaded]"
+
+[node name="CloseCustomisationXButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "✕"
+
+[node name="CategoryTabBarScroll" type="ScrollContainer" parent="InterfaceLayer/CustomisationModal/CustomisationVBox"]
+layout_mode = 2
+horizontal_scroll_mode = 1
+vertical_scroll_mode = 0
+
+[node name="CategoryTabBarHBox" type="HBoxContainer" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TabPortraitsButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "👑 Portraits & Flag"
+
+[node name="TabDesksButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🪑 Desks & Chairs"
+
+[node name="TabSeatingButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🛋 Visitor Seating"
+
+[node name="TabWallsButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🧱 Walls & Floors"
+
+[node name="TabCarpetsButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "💡 Carpets & Lighting"
+
+[node name="TabBookshelvesButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "📚 Bookshelves & Decor"
+
+[node name="TabArtworkButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🖼 Artwork & Gifts"
+
+[node name="CatalogScroll" type="ScrollContainer" parent="InterfaceLayer/CustomisationModal/CustomisationVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CatalogGrid" type="VBoxContainer" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CatalogScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="CustomisationFooterHBox" type="HBoxContainer" parent="InterfaceLayer/CustomisationModal/CustomisationVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CustomisationStatusLabel" type="Label" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 11
+text = "Select items to preview or install. Purchases verify against authoritative treasury reserves."
+autowrap_mode = 2
+
+[node name="SaveCustomisationButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "💾 Save Choices"
+
+[node name="ResetCustomisationButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "↺ Reset Defaults"
+
+[node name="CloseCustomisationButton" type="Button" parent="InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Done / Close"
+
+[node name="PurchaseConfirmModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -160.0
+offset_right = 280.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="PurchaseConfirmVBox" type="VBoxContainer" parent="InterfaceLayer/PurchaseConfirmModal"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PurchaseConfirmHeaderLabel" type="Label" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 13
+text = "CONFIRM EXECUTIVE OFFICE PROCUREMENT"
+
+[node name="PurchaseItemNameLabel" type="Label" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Item: Heritage Oak & Velvet Chair"
+
+[node name="PurchaseItemDescLabel" type="Label" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 11
+text = "Description..."
+autowrap_mode = 2
+
+[node name="HSeparatorP1" type="HSeparator" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+
+[node name="PurchasePriceLabel" type="Label" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "REPU Cost: R 750,000"
+
+[node name="PurchaseApprovalLabel" type="Label" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Approval: Ministry of Interior Cleared"
+
+[node name="PurchaseInstallTimeLabel" type="Label" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Installation Time: 1 Simulation Day"
+
+[node name="PurchaseTreasuryImpactLabel" type="Label" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 11
+text = "Current: R 15,000,000,000 | After: R 14,999,250,000"
+
+[node name="PurchaseNoticeLabel" type="Label" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 10
+text = "Notice: Writes formal procurement order to simulation request pipeline."
+autowrap_mode = 2
+
+[node name="PurchaseActionsHBox" type="HBoxContainer" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="ConfirmPurchaseButton" type="Button" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Confirm & Acquire"
+
+[node name="CancelPurchaseButton" type="Button" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Cancel"

@@ -1,15 +1,20 @@
 extends Control
 
+const ExecutiveOfficeCatalog = preload("res://ExecutiveOfficeCatalog.gd")
+
 ## ExecutiveOffice.gd
 ## Controller for the rich, interactive Executive Presidential Office main screen in Republic.
-## Provides decoupled visual office environment layers (Window, Flag, Portrait, Desk)
-## and four-edge interface HUD docking spaces connected directly to authoritative Republic.Core state.
+## Provides decoupled visual office environment layers (Window, Flag, Portrait, Desk, Decor,
+## Lighting, Seating, Carpets) and four-edge interface HUD docking spaces connected directly
+## to authoritative Republic.Core state and persistent player office customisation.
 
 signal state_loaded(state: Dictionary)
 signal state_cleared()
+signal customization_applied(customization: Dictionary)
+signal customization_saved(customization: Dictionary)
 
 ## Navigation Sections matching PresidentialDesk.Section enum
-enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS }
+enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS, CUSTOMISE }
 var active_nav_section: Section = Section.OVERVIEW
 
 # ==============================================================================
@@ -17,6 +22,29 @@ var active_nav_section: Section = Section.OVERVIEW
 # ==============================================================================
 @onready var office_environment: Control = _get_node_safe("OfficeEnvironment") as Control
 @onready var room_backdrop: Control = _get_node_safe("OfficeEnvironment/RoomBackdrop") as Control
+@onready var wall_backdrop: ColorRect = _get_node_safe("OfficeEnvironment/RoomBackdrop/WallBackdrop") as ColorRect
+@onready var molding_strip: ColorRect = _get_node_safe("OfficeEnvironment/RoomBackdrop/MoldingStrip") as ColorRect
+@onready var floor_backdrop: ColorRect = _get_node_safe("OfficeEnvironment/RoomBackdrop/FloorBackdrop") as ColorRect
+
+@onready var office_carpet: PanelContainer = _get_node_safe("OfficeEnvironment/OfficeCarpet") as PanelContainer
+@onready var ceiling_lighting: Control = _get_node_safe("OfficeEnvironment/CeilingLighting") as Control
+@onready var chandelier_label: Label = _get_node_safe("OfficeEnvironment/CeilingLighting/ChandelierLabel") as Label
+
+@onready var bookshelves_and_decor: Control = _get_node_safe("OfficeEnvironment/BookshelvesAndDecor") as Control
+@onready var bookshelf_visual: PanelContainer = _get_node_safe("OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual") as PanelContainer
+@onready var bookshelf_icon_label: Label = _get_node_safe("OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox/BookshelfIconLabel") as Label
+@onready var bookshelf_label: Label = _get_node_safe("OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox/BookshelfLabel") as Label
+
+@onready var artwork_and_gifts: Control = _get_node_safe("OfficeEnvironment/ArtworkAndGifts") as Control
+@onready var artwork_visual: PanelContainer = _get_node_safe("OfficeEnvironment/ArtworkAndGifts/ArtworkVisual") as PanelContainer
+@onready var artwork_icon_label: Label = _get_node_safe("OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox/ArtworkIconLabel") as Label
+@onready var artwork_label: Label = _get_node_safe("OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox/ArtworkLabel") as Label
+
+@onready var visitor_seating: Control = _get_node_safe("OfficeEnvironment/VisitorSeating") as Control
+@onready var visitor_table: PanelContainer = _get_node_safe("OfficeEnvironment/VisitorSeating/VisitorTable") as PanelContainer
+@onready var visitor_chair1: PanelContainer = _get_node_safe("OfficeEnvironment/VisitorSeating/VisitorChair1") as PanelContainer
+@onready var visitor_chair2: PanelContainer = _get_node_safe("OfficeEnvironment/VisitorSeating/VisitorChair2") as PanelContainer
+
 @onready var capital_window: Control = _get_node_safe("OfficeEnvironment/CapitalWindow") as Control
 @onready var city_scenery: Control = _get_node_safe("OfficeEnvironment/CapitalWindow/CityScenery") as Control
 @onready var window_frame: Control = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowFrame") as Control
@@ -24,17 +52,20 @@ var active_nav_section: Section = Section.OVERVIEW
 
 @onready var country_flag: Control = _get_node_safe("OfficeEnvironment/CountryFlag") as Control
 @onready var flag_pole: Control = _get_node_safe("OfficeEnvironment/CountryFlag/FlagPole") as Control
-@onready var flag_banner: Control = _get_node_safe("OfficeEnvironment/CountryFlag/FlagBanner") as Control
+@onready var flag_banner: PanelContainer = _get_node_safe("OfficeEnvironment/CountryFlag/FlagBanner") as PanelContainer
 @onready var flag_emblem_label: Label = _get_node_safe("OfficeEnvironment/CountryFlag/FlagBanner/FlagEmblemLabel") as Label
 
 @onready var presidential_portrait: Control = _get_node_safe("OfficeEnvironment/PresidentialPortrait") as Control
 @onready var portrait_frame: Control = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame") as Control
 @onready var portrait_canvas: Control = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas") as Control
+@onready var portrait_icon_label: Label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox/PortraitIconLabel") as Label
+@onready var portrait_placeholder_label: Label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox/PortraitPlaceholderLabel") as Label
 @onready var portrait_name_label: Label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/Plaque/PortraitNameLabel") as Label
 @onready var portrait_party_label: Label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/Plaque/PortraitPartyLabel") as Label
 @onready var portrait_button: Button = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitButton") as Button
 
 @onready var executive_desk: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk") as Control
+@onready var presidential_chair: PanelContainer = _get_node_safe("OfficeEnvironment/ExecutiveDesk/PresidentialChair") as PanelContainer
 @onready var desk_surface: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskSurface") as Control
 @onready var desk_blotter: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskBlotter") as Control
 @onready var hotline_phone: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton") as Button
@@ -66,6 +97,7 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var nav_campaign_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavCampaignButton") as Button
 @onready var nav_diplomacy_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavDiplomacyButton") as Button
 @onready var nav_briefings_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavBriefingsButton") as Button
+@onready var nav_customise_button: Button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavCustomiseButton") as Button
 
 # Left Dock: Domestic Governance & Cabinet
 @onready var left_dock: PanelContainer = _get_node_safe("InterfaceLayer/LeftDock") as PanelContainer
@@ -94,7 +126,7 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var state_status_label: Label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/StateStatusLabel") as Label
 
 # ==============================================================================
-# 3. INTERACTIVE MODAL PANELS (PRESIDENTIAL BRIEFING, HOTLINE, DOSSIER)
+# 3. INTERACTIVE MODAL PANELS (BRIEFING, HOTLINE, DOSSIER, CUSTOMISATION)
 # ==============================================================================
 @onready var modal_backdrop: ColorRect = _get_node_safe("InterfaceLayer/ModalBackdrop") as ColorRect
 
@@ -129,8 +161,37 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var dossier_desk_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/DossierDeskButton") as Button
 @onready var close_dossier_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/CloseDossierButton") as Button
 
+# Phase 3 Customisation Modal
+@onready var customisation_modal: PanelContainer = _get_node_safe("InterfaceLayer/CustomisationModal") as PanelContainer
+@onready var close_customisation_x_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationHeaderHBox/CloseCustomisationXButton") as Button
+@onready var customisation_treasury_label: Label = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationHeaderHBox/CustomisationTreasuryLabel") as Label
+@onready var tab_portraits_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabPortraitsButton") as Button
+@onready var tab_desks_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabDesksButton") as Button
+@onready var tab_seating_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabSeatingButton") as Button
+@onready var tab_walls_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabWallsButton") as Button
+@onready var tab_carpets_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabCarpetsButton") as Button
+@onready var tab_bookshelves_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabBookshelvesButton") as Button
+@onready var tab_artwork_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabArtworkButton") as Button
+@onready var catalog_grid: VBoxContainer = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CatalogScroll/CatalogGrid") as VBoxContainer
+@onready var customisation_status_label: Label = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox/CustomisationStatusLabel") as Label
+@onready var save_customisation_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox/SaveCustomisationButton") as Button
+@onready var reset_customisation_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox/ResetCustomisationButton") as Button
+@onready var close_customisation_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox/CloseCustomisationButton") as Button
+
+# Phase 3 Purchase Confirmation Modal
+@onready var purchase_confirm_modal: PanelContainer = _get_node_safe("InterfaceLayer/PurchaseConfirmModal") as PanelContainer
+@onready var purchase_item_name_label: Label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseItemNameLabel") as Label
+@onready var purchase_item_desc_label: Label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseItemDescLabel") as Label
+@onready var purchase_price_label: Label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchasePriceLabel") as Label
+@onready var purchase_approval_label: Label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseApprovalLabel") as Label
+@onready var purchase_install_time_label: Label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseInstallTimeLabel") as Label
+@onready var purchase_treasury_impact_label: Label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseTreasuryImpactLabel") as Label
+@onready var purchase_notice_label: Label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseNoticeLabel") as Label
+@onready var confirm_purchase_button: Button = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox/ConfirmPurchaseButton") as Button
+@onready var cancel_purchase_button: Button = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox/CancelPurchaseButton") as Button
+
 # ==============================================================================
-# 4. STATE SYNCHRONIZATION VARIABLES
+# 4. STATE & PERSISTENCE VARIABLES
 # ==============================================================================
 const DEFAULT_STATE_FILE := "res://presidential_desk_state.json"
 const USER_STATE_FILE := "user://presidential_desk_state.json"
@@ -139,6 +200,12 @@ var current_state_path: String = DEFAULT_STATE_FILE
 var latest_state: Dictionary = {}
 var last_modified_time: int = 0
 var poll_timer: Timer
+
+# Phase 3 Customisation Tracking
+var active_customization: Dictionary = {}
+var current_customization_category: String = "portraits"
+var pending_purchase_item: Dictionary = {}
+var custom_save_path: String = ""
 
 func _get_node_safe(path: String) -> Node:
 	var n := get_node_or_null(path)
@@ -152,6 +219,47 @@ func _init_controls() -> void:
 		office_environment = _get_node_safe("OfficeEnvironment") as Control
 	if room_backdrop == null:
 		room_backdrop = _get_node_safe("OfficeEnvironment/RoomBackdrop") as Control
+	if wall_backdrop == null:
+		wall_backdrop = _get_node_safe("OfficeEnvironment/RoomBackdrop/WallBackdrop") as ColorRect
+	if molding_strip == null:
+		molding_strip = _get_node_safe("OfficeEnvironment/RoomBackdrop/MoldingStrip") as ColorRect
+	if floor_backdrop == null:
+		floor_backdrop = _get_node_safe("OfficeEnvironment/RoomBackdrop/FloorBackdrop") as ColorRect
+
+	if office_carpet == null:
+		office_carpet = _get_node_safe("OfficeEnvironment/OfficeCarpet") as PanelContainer
+	if ceiling_lighting == null:
+		ceiling_lighting = _get_node_safe("OfficeEnvironment/CeilingLighting") as Control
+	if chandelier_label == null:
+		chandelier_label = _get_node_safe("OfficeEnvironment/CeilingLighting/ChandelierLabel") as Label
+
+	if bookshelves_and_decor == null:
+		bookshelves_and_decor = _get_node_safe("OfficeEnvironment/BookshelvesAndDecor") as Control
+	if bookshelf_visual == null:
+		bookshelf_visual = _get_node_safe("OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual") as PanelContainer
+	if bookshelf_icon_label == null:
+		bookshelf_icon_label = _get_node_safe("OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox/BookshelfIconLabel") as Label
+	if bookshelf_label == null:
+		bookshelf_label = _get_node_safe("OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox/BookshelfLabel") as Label
+
+	if artwork_and_gifts == null:
+		artwork_and_gifts = _get_node_safe("OfficeEnvironment/ArtworkAndGifts") as Control
+	if artwork_visual == null:
+		artwork_visual = _get_node_safe("OfficeEnvironment/ArtworkAndGifts/ArtworkVisual") as PanelContainer
+	if artwork_icon_label == null:
+		artwork_icon_label = _get_node_safe("OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox/ArtworkIconLabel") as Label
+	if artwork_label == null:
+		artwork_label = _get_node_safe("OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox/ArtworkLabel") as Label
+
+	if visitor_seating == null:
+		visitor_seating = _get_node_safe("OfficeEnvironment/VisitorSeating") as Control
+	if visitor_table == null:
+		visitor_table = _get_node_safe("OfficeEnvironment/VisitorSeating/VisitorTable") as PanelContainer
+	if visitor_chair1 == null:
+		visitor_chair1 = _get_node_safe("OfficeEnvironment/VisitorSeating/VisitorChair1") as PanelContainer
+	if visitor_chair2 == null:
+		visitor_chair2 = _get_node_safe("OfficeEnvironment/VisitorSeating/VisitorChair2") as PanelContainer
+
 	if capital_window == null:
 		capital_window = _get_node_safe("OfficeEnvironment/CapitalWindow") as Control
 	if city_scenery == null:
@@ -166,7 +274,7 @@ func _init_controls() -> void:
 	if flag_pole == null:
 		flag_pole = _get_node_safe("OfficeEnvironment/CountryFlag/FlagPole") as Control
 	if flag_banner == null:
-		flag_banner = _get_node_safe("OfficeEnvironment/CountryFlag/FlagBanner") as Control
+		flag_banner = _get_node_safe("OfficeEnvironment/CountryFlag/FlagBanner") as PanelContainer
 	if flag_emblem_label == null:
 		flag_emblem_label = _get_node_safe("OfficeEnvironment/CountryFlag/FlagBanner/FlagEmblemLabel") as Label
 
@@ -176,6 +284,10 @@ func _init_controls() -> void:
 		portrait_frame = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame") as Control
 	if portrait_canvas == null:
 		portrait_canvas = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas") as Control
+	if portrait_icon_label == null:
+		portrait_icon_label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox/PortraitIconLabel") as Label
+	if portrait_placeholder_label == null:
+		portrait_placeholder_label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox/PortraitPlaceholderLabel") as Label
 	if portrait_name_label == null:
 		portrait_name_label = _get_node_safe("OfficeEnvironment/PresidentialPortrait/Plaque/PortraitNameLabel") as Label
 	if portrait_party_label == null:
@@ -185,6 +297,8 @@ func _init_controls() -> void:
 
 	if executive_desk == null:
 		executive_desk = _get_node_safe("OfficeEnvironment/ExecutiveDesk") as Control
+	if presidential_chair == null:
+		presidential_chair = _get_node_safe("OfficeEnvironment/ExecutiveDesk/PresidentialChair") as PanelContainer
 	if desk_surface == null:
 		desk_surface = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DeskSurface") as Control
 	if desk_blotter == null:
@@ -234,6 +348,8 @@ func _init_controls() -> void:
 		nav_diplomacy_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavDiplomacyButton") as Button
 	if nav_briefings_button == null:
 		nav_briefings_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavBriefingsButton") as Button
+	if nav_customise_button == null:
+		nav_customise_button = _get_node_safe("InterfaceLayer/NavBarPanel/NavBarHBox/NavCustomiseButton") as Button
 
 	if left_dock == null:
 		left_dock = _get_node_safe("InterfaceLayer/LeftDock") as PanelContainer
@@ -333,93 +449,94 @@ func _init_controls() -> void:
 	if close_dossier_button == null:
 		close_dossier_button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/CloseDossierButton") as Button
 
-	_setup_tooltips()
-	_update_nav_button_highlights()
+	if customisation_modal == null:
+		customisation_modal = _get_node_safe("InterfaceLayer/CustomisationModal") as PanelContainer
+	if close_customisation_x_button == null:
+		close_customisation_x_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationHeaderHBox/CloseCustomisationXButton") as Button
+	if customisation_treasury_label == null:
+		customisation_treasury_label = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationHeaderHBox/CustomisationTreasuryLabel") as Label
+	if tab_portraits_button == null:
+		tab_portraits_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabPortraitsButton") as Button
+	if tab_desks_button == null:
+		tab_desks_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabDesksButton") as Button
+	if tab_seating_button == null:
+		tab_seating_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabSeatingButton") as Button
+	if tab_walls_button == null:
+		tab_walls_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabWallsButton") as Button
+	if tab_carpets_button == null:
+		tab_carpets_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabCarpetsButton") as Button
+	if tab_bookshelves_button == null:
+		tab_bookshelves_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabBookshelvesButton") as Button
+	if tab_artwork_button == null:
+		tab_artwork_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CategoryTabBarScroll/CategoryTabBarHBox/TabArtworkButton") as Button
+	if catalog_grid == null:
+		catalog_grid = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CatalogScroll/CatalogGrid") as VBoxContainer
+	if customisation_status_label == null:
+		customisation_status_label = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox/CustomisationStatusLabel") as Label
+	if save_customisation_button == null:
+		save_customisation_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox/SaveCustomisationButton") as Button
+	if reset_customisation_button == null:
+		reset_customisation_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox/ResetCustomisationButton") as Button
+	if close_customisation_button == null:
+		close_customisation_button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationFooterHBox/CloseCustomisationButton") as Button
 
-func _setup_tooltips() -> void:
-	if country_label:
-		country_label.tooltip_text = "Country Name: Sovereign state entity registered in Republic.Core simulation."
-	if treasury_label:
-		treasury_label.tooltip_text = "State Treasury: Total liquid reserves in Republic Currency (REPU). Used to fund infrastructure, cabinet portfolios, and emergency relief."
-	if approval_label:
-		approval_label.tooltip_text = "Public Approval: Overall national confidence in your administration. Fluctuates with tax rates, crises, and campaign rallies."
-	if stability_label:
-		stability_label.tooltip_text = "National Stability: Degree of public order and constitutional resilience. High stability protects against unrest and sovereign collapse."
-	if simulation_time_label:
-		simulation_time_label.tooltip_text = "Simulation Time: Universal elapsed time in WAT (West Africa Time), synchronized authoritatively across simulation cycles."
-	if defcon_label:
-		defcon_label.tooltip_text = "Defense Readiness: Operational combat readiness and national DEFCON alert posture."
-	if hotline_phone:
-		hotline_phone.tooltip_text = "Diplomatic Hotline: Direct secure line to international leaders and trade partners."
-	if executive_inbox:
-		executive_inbox.tooltip_text = "Executive Inbox: Cabinet memoranda and daily intelligence situation reports."
-	if intelligence_dossier:
-		intelligence_dossier.tooltip_text = "Classified Dossier: National security posture, active crises, and military readiness."
-	if window_button:
-		window_button.tooltip_text = "Capital Vista: Panoramic view overlooking the governmental quarter and capital city skyline."
-	if portrait_button:
-		portrait_button.tooltip_text = "Presidential Portrait: Official portrait and democratic mandate of the Head of State."
-	if nav_overview_button:
-		nav_overview_button.tooltip_text = "1. Executive Office: Main presidential suite and visual situational workspace."
-	if nav_cabinet_button:
-		nav_cabinet_button.tooltip_text = "2. Cabinet & Ministers: Appoint technocrats or loyalists to executive ministerial portfolios."
-	if nav_economy_button:
-		nav_economy_button.tooltip_text = "3. Economy & Taxes: Adjust income tax rates and commission national infrastructure projects."
-	if nav_campaign_button:
-		nav_campaign_button.tooltip_text = "4. Campaign & Elections: Organize citizen town halls, national rallies, and contest democratic elections."
-	if nav_diplomacy_button:
-		nav_diplomacy_button.tooltip_text = "5. Diplomacy & Trade: Foreign recognition, diplomatic cables, and bilateral trade contracts."
-	if nav_briefings_button:
-		nav_briefings_button.tooltip_text = "6. Presidential Briefings: Full situational briefings, state warnings, and emergency decrees."
+	if purchase_confirm_modal == null:
+		purchase_confirm_modal = _get_node_safe("InterfaceLayer/PurchaseConfirmModal") as PanelContainer
+	if purchase_item_name_label == null:
+		purchase_item_name_label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseItemNameLabel") as Label
+	if purchase_item_desc_label == null:
+		purchase_item_desc_label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseItemDescLabel") as Label
+	if purchase_price_label == null:
+		purchase_price_label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchasePriceLabel") as Label
+	if purchase_approval_label == null:
+		purchase_approval_label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseApprovalLabel") as Label
+	if purchase_install_time_label == null:
+		purchase_install_time_label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseInstallTimeLabel") as Label
+	if purchase_treasury_impact_label == null:
+		purchase_treasury_impact_label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseTreasuryImpactLabel") as Label
+	if purchase_notice_label == null:
+		purchase_notice_label = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseNoticeLabel") as Label
+	if confirm_purchase_button == null:
+		confirm_purchase_button = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox/ConfirmPurchaseButton") as Button
+	if cancel_purchase_button == null:
+		cancel_purchase_button = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox/CancelPurchaseButton") as Button
 
 func _ready() -> void:
 	_init_controls()
-	_init_state_path()
 	_connect_signals()
-	_setup_poll_timer()
+	_apply_tooltips()
+
+	# Customisation initialization
+	load_saved_customization()
+	apply_customization(active_customization)
+
+	# Setup 0.5s state polling
+	poll_timer = Timer.new()
+	poll_timer.wait_time = 0.5
+	poll_timer.autostart = true
+	poll_timer.timeout.connect(_on_poll_timer_timeout)
+	add_child(poll_timer)
+
 	load_live_state()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		if is_any_modal_open():
+		if purchase_confirm_modal and purchase_confirm_modal.visible:
+			_close_purchase_confirm_modal()
+			get_viewport().set_input_as_handled()
+		elif customisation_modal and customisation_modal.visible:
+			close_customisation_modal()
+			get_viewport().set_input_as_handled()
+		elif is_any_modal_open():
 			close_all_modals()
 			get_viewport().set_input_as_handled()
 
-func _init_state_path() -> void:
-	var env_path := OS.get_environment("REPUBLIC_STATE_FILE")
-	if not env_path.is_empty():
-		current_state_path = env_path
-		return
-
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--state-file="):
-			current_state_path = arg.substr("--state-file=".length())
-			return
-
-	if FileAccess.file_exists(DEFAULT_STATE_FILE):
-		current_state_path = DEFAULT_STATE_FILE
-	elif FileAccess.file_exists(USER_STATE_FILE):
-		current_state_path = USER_STATE_FILE
-	else:
-		current_state_path = DEFAULT_STATE_FILE
-
-func _setup_poll_timer() -> void:
-	poll_timer = Timer.new()
-	poll_timer.name = "StatePollTimer"
-	poll_timer.wait_time = 0.5
-	poll_timer.autostart = true
-	poll_timer.one_shot = false
-	poll_timer.timeout.connect(_on_poll_timer_timeout)
-	add_child(poll_timer)
-
 func _connect_signals() -> void:
-	# Top bar
 	if switch_to_desk_button and not switch_to_desk_button.pressed.is_connected(_on_switch_to_desk_button_pressed):
 		switch_to_desk_button.pressed.connect(_on_switch_to_desk_button_pressed)
 	if refresh_button and not refresh_button.pressed.is_connected(_on_refresh_button_pressed):
 		refresh_button.pressed.connect(_on_refresh_button_pressed)
 
-	# Nav Bar
 	if nav_overview_button and not nav_overview_button.pressed.is_connected(_on_nav_overview_pressed):
 		nav_overview_button.pressed.connect(_on_nav_overview_pressed)
 	if nav_cabinet_button and not nav_cabinet_button.pressed.is_connected(_on_nav_cabinet_pressed):
@@ -432,8 +549,20 @@ func _connect_signals() -> void:
 		nav_diplomacy_button.pressed.connect(_on_nav_diplomacy_pressed)
 	if nav_briefings_button and not nav_briefings_button.pressed.is_connected(_on_nav_briefings_pressed):
 		nav_briefings_button.pressed.connect(_on_nav_briefings_pressed)
+	if nav_customise_button and not nav_customise_button.pressed.is_connected(_on_nav_customise_pressed):
+		nav_customise_button.pressed.connect(_on_nav_customise_pressed)
 
-	# Docks
+	if hotline_phone and not hotline_phone.pressed.is_connected(_on_hotline_phone_pressed):
+		hotline_phone.pressed.connect(_on_hotline_phone_pressed)
+	if intelligence_dossier and not intelligence_dossier.pressed.is_connected(_on_intelligence_dossier_pressed):
+		intelligence_dossier.pressed.connect(_on_intelligence_dossier_pressed)
+	if executive_inbox and not executive_inbox.pressed.is_connected(_on_executive_inbox_pressed):
+		executive_inbox.pressed.connect(_on_executive_inbox_pressed)
+	if window_button and not window_button.pressed.is_connected(_on_capital_window_pressed):
+		window_button.pressed.connect(_on_capital_window_pressed)
+	if portrait_button and not portrait_button.pressed.is_connected(_on_presidential_portrait_pressed):
+		portrait_button.pressed.connect(_on_presidential_portrait_pressed)
+
 	if toggle_left_dock_button and not toggle_left_dock_button.pressed.is_connected(_on_toggle_left_dock_pressed):
 		toggle_left_dock_button.pressed.connect(_on_toggle_left_dock_pressed)
 	if toggle_right_dock_button and not toggle_right_dock_button.pressed.is_connected(_on_toggle_right_dock_pressed):
@@ -445,19 +574,9 @@ func _connect_signals() -> void:
 	if open_projects_button and not open_projects_button.pressed.is_connected(_on_nav_economy_pressed):
 		open_projects_button.pressed.connect(_on_nav_economy_pressed)
 
-	# Office Controls
-	if hotline_phone and not hotline_phone.pressed.is_connected(_on_hotline_phone_pressed):
-		hotline_phone.pressed.connect(_on_hotline_phone_pressed)
-	if executive_inbox and not executive_inbox.pressed.is_connected(_on_executive_inbox_pressed):
-		executive_inbox.pressed.connect(_on_executive_inbox_pressed)
-	if intelligence_dossier and not intelligence_dossier.pressed.is_connected(_on_intelligence_dossier_pressed):
-		intelligence_dossier.pressed.connect(_on_intelligence_dossier_pressed)
-	if window_button and not window_button.pressed.is_connected(_on_capital_window_pressed):
-		window_button.pressed.connect(_on_capital_window_pressed)
-	if portrait_button and not portrait_button.pressed.is_connected(_on_presidential_portrait_pressed):
-		portrait_button.pressed.connect(_on_presidential_portrait_pressed)
+	if modal_backdrop and not modal_backdrop.gui_input.is_connected(_on_modal_backdrop_gui_input):
+		modal_backdrop.gui_input.connect(_on_modal_backdrop_gui_input)
 
-	# Modals
 	if close_briefing_x_button and not close_briefing_x_button.pressed.is_connected(close_all_modals):
 		close_briefing_x_button.pressed.connect(close_all_modals)
 	if close_briefing_button and not close_briefing_button.pressed.is_connected(close_all_modals):
@@ -479,55 +598,103 @@ func _connect_signals() -> void:
 	if dossier_desk_button and not dossier_desk_button.pressed.is_connected(_on_dossier_desk_button_pressed):
 		dossier_desk_button.pressed.connect(_on_dossier_desk_button_pressed)
 
-	if modal_backdrop and not modal_backdrop.gui_input.is_connected(_on_modal_backdrop_gui_input):
-		modal_backdrop.gui_input.connect(_on_modal_backdrop_gui_input)
+	# Customisation Modal Signals
+	if close_customisation_x_button and not close_customisation_x_button.pressed.is_connected(close_customisation_modal):
+		close_customisation_x_button.pressed.connect(close_customisation_modal)
+	if close_customisation_button and not close_customisation_button.pressed.is_connected(close_customisation_modal):
+		close_customisation_button.pressed.connect(close_customisation_modal)
+	if save_customisation_button and not save_customisation_button.pressed.is_connected(save_current_customization):
+		save_customisation_button.pressed.connect(save_current_customization)
+	if reset_customisation_button and not reset_customisation_button.pressed.is_connected(reset_customization_to_default):
+		reset_customisation_button.pressed.connect(reset_customization_to_default)
+
+	if tab_portraits_button and not tab_portraits_button.pressed.is_connected(_on_tab_portraits_pressed):
+		tab_portraits_button.pressed.connect(_on_tab_portraits_pressed)
+	if tab_desks_button and not tab_desks_button.pressed.is_connected(_on_tab_desks_pressed):
+		tab_desks_button.pressed.connect(_on_tab_desks_pressed)
+	if tab_seating_button and not tab_seating_button.pressed.is_connected(_on_tab_seating_pressed):
+		tab_seating_button.pressed.connect(_on_tab_seating_pressed)
+	if tab_walls_button and not tab_walls_button.pressed.is_connected(_on_tab_walls_pressed):
+		tab_walls_button.pressed.connect(_on_tab_walls_pressed)
+	if tab_carpets_button and not tab_carpets_button.pressed.is_connected(_on_tab_carpets_pressed):
+		tab_carpets_button.pressed.connect(_on_tab_carpets_pressed)
+	if tab_bookshelves_button and not tab_bookshelves_button.pressed.is_connected(_on_tab_bookshelves_pressed):
+		tab_bookshelves_button.pressed.connect(_on_tab_bookshelves_pressed)
+	if tab_artwork_button and not tab_artwork_button.pressed.is_connected(_on_tab_artwork_pressed):
+		tab_artwork_button.pressed.connect(_on_tab_artwork_pressed)
+
+	# Purchase Modal Signals
+	if confirm_purchase_button and not confirm_purchase_button.pressed.is_connected(confirm_purchase_pending_item):
+		confirm_purchase_button.pressed.connect(confirm_purchase_pending_item)
+	if cancel_purchase_button and not cancel_purchase_button.pressed.is_connected(_close_purchase_confirm_modal):
+		cancel_purchase_button.pressed.connect(_close_purchase_confirm_modal)
+
+func _apply_tooltips() -> void:
+	if window_button:
+		window_button.tooltip_text = "Capital Vista: Inspect current capital development and atmospheric lighting."
+	if portrait_button:
+		portrait_button.tooltip_text = "Presidential Portrait: View executive mandate and customize presidential portrait & flag."
+	if hotline_phone:
+		hotline_phone.tooltip_text = "Presidential Hotline: Access secure diplomatic lines to foreign heads of state."
+	if intelligence_dossier:
+		intelligence_dossier.tooltip_text = "Classified Dossier: Review defense readiness and sovereign threats."
+	if executive_inbox:
+		executive_inbox.tooltip_text = "Executive Memoranda: Review comprehensive presidential situation briefing."
+	if nav_customise_button:
+		nav_customise_button.tooltip_text = "Office Décor: Customise presidential portrait, flag, furniture, and interior architecture."
 
 # ==============================================================================
-# 5. STATE LOADING & PRESENTATION (HONEST DATA — ZERO INVENTED VALUES)
+# 5. STATE CONNECTOR & SYNCHRONIZATION
 # ==============================================================================
 func load_live_state() -> bool:
-	return load_state_from_file(current_state_path)
+	var path_to_load := DEFAULT_STATE_FILE
+	var cl_args := OS.get_cmdline_args()
+	for arg in cl_args:
+		if arg.begins_with("--state-file="):
+			path_to_load = arg.split("=")[1].strip_edges()
+			break
+
+	var env_path := OS.get_environment("REPUBLIC_STATE_FILE")
+	if not env_path.is_empty():
+		path_to_load = env_path
+
+	if not FileAccess.file_exists(path_to_load) and FileAccess.file_exists(USER_STATE_FILE):
+		path_to_load = USER_STATE_FILE
+
+	return load_state_from_file(path_to_load)
 
 func load_state_from_file(file_path: String) -> bool:
-	_init_controls()
+	current_state_path = file_path
 	if not FileAccess.file_exists(file_path):
 		display_missing_state()
-		if state_status_label:
-			state_status_label.text = "Status: [No State Loaded] — Missing state file: %s" % file_path
 		return false
 
-	var fa := FileAccess.open(file_path, FileAccess.READ)
-	if fa == null:
-		var err := FileAccess.get_open_error()
+	var file := FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
 		display_missing_state()
-		if state_status_label:
-			state_status_label.text = "Status: [Error] — Cannot open state file (Error %d)" % err
 		return false
 
-	var content := fa.get_as_text()
-	fa.close()
+	var text := file.get_as_text()
+	file.close()
 
-	var json := JSON.new()
-	var parse_err := json.parse(content)
-	if parse_err != OK:
+	if text.strip_edges().is_empty():
 		display_missing_state()
-		if state_status_label:
-			state_status_label.text = "Status: [Error] — Corrupt state JSON (Line %d)" % json.get_error_line()
 		return false
 
-	var data = json.get_data()
-	if typeof(data) != TYPE_DICTIONARY:
+	var json_res: Variant = JSON.parse_string(text)
+	if not (json_res is Dictionary):
+		display_corrupted_state()
+		return false
+
+	var state: Dictionary = json_res
+	if state.is_empty():
 		display_missing_state()
-		if state_status_label:
-			state_status_label.text = "Status: [Error] — Invalid state payload format"
 		return false
 
-	last_modified_time = FileAccess.get_modified_time(file_path)
-	apply_state(data as Dictionary)
+	apply_state(state)
 	return true
 
 func display_missing_state() -> void:
-	_init_controls()
 	latest_state = {}
 	if country_label:
 		country_label.text = "Country: [No State Loaded]"
@@ -537,78 +704,64 @@ func display_missing_state() -> void:
 		approval_label.text = "Approval: [No State Loaded]"
 	if stability_label:
 		stability_label.text = "Stability: [No State Loaded]"
-	if simulation_time_label:
-		simulation_time_label.text = "Simulation Time: [No State Loaded]"
 	if defcon_label:
 		defcon_label.text = "Defense: [No State Loaded]"
+	if simulation_time_label:
+		simulation_time_label.text = "Simulation Time: [No State Loaded]"
 
 	if cabinet_summary_label:
 		cabinet_summary_label.text = "Cabinet: [No State Loaded]"
 	if civil_service_label:
-		civil_service_label.text = "Civil Service: [No State Loaded]"
+		civil_service_label.text = "Civil Service Merit: [No State Loaded]"
 	if corruption_control_label:
 		corruption_control_label.text = "Corruption Control: [No State Loaded]"
 	if ruling_party_label:
 		ruling_party_label.text = "Ruling Party: [No State Loaded]"
 	if polling_support_label:
-		polling_support_label.text = "Polling: [No State Loaded]"
+		polling_support_label.text = "National Polling: [No State Loaded]"
 
 	if military_readiness_label:
 		military_readiness_label.text = "Readiness: [No State Loaded]"
 	if active_crisis_label:
-		active_crisis_label.text = "Crisis Status: [No State Loaded]"
+		active_crisis_label.text = "Active Crisis: [No State Loaded]"
 	if gdp_label:
 		gdp_label.text = "GDP: [No State Loaded]"
 	if offline_briefing_label:
-		offline_briefing_label.text = "Offline Catch-up: [No State Loaded]"
+		offline_briefing_label.text = "Simulation: [No State Loaded]"
 
 	if active_project_label:
 		active_project_label.text = "Active Project: None"
 	if status_ticker_label:
-		status_ticker_label.text = "Executive Briefing: Awaiting sovereign state initialization from Republic.Core"
+		status_ticker_label.text = "Executive Briefing: No Republic state loaded. Launch simulation watcher daemon."
+	if state_status_label:
+		state_status_label.text = "Status: [No State Loaded]"
+
+	if customisation_treasury_label:
+		customisation_treasury_label.text = "Available Treasury: [No State Loaded]"
+
+	# Ensure decor plaque indicates uninitialized state
 	if portrait_name_label:
-		portrait_name_label.text = "HEAD OF STATE: [Unassigned]"
+		var p_id: String = str(active_customization.get("selected_portrait_id", "portrait_m1"))
+		var p: Dictionary = ExecutiveOfficeCatalog.get_portrait(p_id)
+		portrait_name_label.text = "PRES. " + str(p.get("name", "ALEXANDER VANCE")).to_upper()
 	if portrait_party_label:
 		portrait_party_label.text = "Party: [No State Loaded]"
 	if flag_emblem_label:
 		flag_emblem_label.text = "REPUBLIC"
 
-	# Modals missing state reset
-	if briefing_active_project_label:
-		briefing_active_project_label.text = "Active Project: None"
-	if briefing_decisions_label:
-		briefing_decisions_label.text = "Latest Decision: [No State Loaded]"
-	if briefing_crisis_label:
-		briefing_crisis_label.text = "Crisis Status: [No State Loaded]"
-	if briefing_capacity_label:
-		briefing_capacity_label.text = "State Capacity: [No State Loaded]"
-	if briefing_fiscal_label:
-		briefing_fiscal_label.text = "Fiscal Report: [No State Loaded]"
-	if briefing_defense_label:
-		briefing_defense_label.text = "Defense Posture: [No State Loaded]"
-	if briefing_offline_label:
-		briefing_offline_label.text = "Offline Status: [No State Loaded]"
-	if briefing_unsupported_label:
-		briefing_unsupported_label.text = "Global Intelligence Wire: [Live simulation feed offline / pending support]"
-
-	if hotline_status_label:
-		hotline_status_label.text = "Diplomatic Line: [No State Loaded]"
-	if hotline_standing_label:
-		hotline_standing_label.text = "Diplomatic Standing: [No State Loaded]"
-
-	if dossier_defense_label:
-		dossier_defense_label.text = "Defense Readiness: [No State Loaded]"
-	if dossier_crisis_label:
-		dossier_crisis_label.text = "Active Threat: [No State Loaded]"
-	if dossier_espionage_label:
-		dossier_espionage_label.text = "Covert Intelligence: [Feature not yet supported by simulation engine]"
-
 	state_cleared.emit()
+
+func display_corrupted_state() -> void:
+	display_missing_state()
+	if status_ticker_label:
+		status_ticker_label.text = "Executive Warning: Corrupted JSON encountered in simulation state file."
+	if state_status_label:
+		state_status_label.text = "Status: Corrupt State JSON"
 
 func apply_state(state: Dictionary) -> void:
 	latest_state = state
 
-	# 1. Top HUD Bar Metrics
+	# 1. Top HUD Bar: Live authoritatively connected values
 	var country_name := str(state.get("country_name", "[No State Loaded]"))
 	if country_label:
 		country_label.text = "Country: " + country_name
@@ -616,8 +769,15 @@ func apply_state(state: Dictionary) -> void:
 	if treasury_label:
 		var treas := str(state.get("treasury", ""))
 		if treas.is_empty() and state.has("treasury_balance"):
-			treas = "R " + _format_number_commas(float(state.get("treasury_balance", 0.0)))
+			var bal: float = float(state.get("treasury_balance", 0.0))
+			treas = "R " + _format_number_commas(bal)
 		treasury_label.text = "Treasury: " + (treas if not treas.is_empty() else "[No State Loaded]")
+
+	if customisation_treasury_label:
+		var treas_val := str(state.get("treasury", ""))
+		if treas_val.is_empty() and state.has("treasury_balance"):
+			treas_val = "R " + _format_number_commas(float(state.get("treasury_balance", 0.0)))
+		customisation_treasury_label.text = "Available Treasury: " + (treas_val if not treas_val.is_empty() else "[No State Loaded]")
 
 	if approval_label:
 		var appr := str(state.get("approval", ""))
@@ -687,14 +847,12 @@ func apply_state(state: Dictionary) -> void:
 	if state_status_label:
 		state_status_label.text = "Status: Connected to live Republic simulation state"
 
-	# 5. Environment Decor Dynamic Updates
+	# 5. Environment Decor Dynamic Updates (Respecting selected portrait & flag)
 	if portrait_name_label:
-		var fin_min := str(state.get("finance_minister", ""))
-		var pres_title := "HEAD OF STATE: " + country_name
-		if not fin_min.is_empty() and fin_min != "Vacant":
-			portrait_name_label.text = "PRESIDENT OF THE REPUBLIC"
-		else:
-			portrait_name_label.text = pres_title
+		var p_id: String = str(active_customization.get("selected_portrait_id", "portrait_m1"))
+		var p: Dictionary = ExecutiveOfficeCatalog.get_portrait(p_id)
+		var p_name: String = str(p.get("name", "Alexander Vance")).to_upper()
+		portrait_name_label.text = "PRES. " + p_name
 	if portrait_party_label:
 		portrait_party_label.text = "Party: " + str(state.get("ruling_party", "Independent Sovereign"))
 	if flag_emblem_label:
@@ -766,7 +924,344 @@ func _format_number_commas(val: float) -> String:
 	return ("-" if is_neg else "") + formatted
 
 # ==============================================================================
-# 6. DECOUPLED VISUAL LAYER CUSTOMIZATION API
+# 6. PHASE 3 CUSTOMISATION & PERSISTENCE API
+# ==============================================================================
+
+## Loads saved customisation for the active country/session from persistent disk
+func load_saved_customization(target_country_id: String = "") -> void:
+	var c_id := target_country_id
+	if c_id.is_empty():
+		c_id = str(latest_state.get("country_id", "player-country"))
+	active_customization = ExecutiveOfficeCatalog.load_customization(custom_save_path, c_id)
+	apply_customization(active_customization)
+
+## Saves current customisation choices to disk persistently
+func save_current_customization() -> bool:
+	var c_id := str(latest_state.get("country_id", "player-country"))
+	var success := ExecutiveOfficeCatalog.save_customization(active_customization, custom_save_path, c_id)
+	if success:
+		if customisation_status_label:
+			customisation_status_label.text = "Office Décor Saved: Design and portraits safely persisted to disk."
+		if status_ticker_label:
+			status_ticker_label.text = "Executive Office: Customised presidential office saved successfully."
+		customization_saved.emit(active_customization)
+	else:
+		if customisation_status_label:
+			customisation_status_label.text = "Save Error: Unable to write customisation file to disk."
+	return success
+
+## Applies an entire customisation dictionary to the decoupled visual layers
+func apply_customization(custom_data: Dictionary) -> void:
+	active_customization = custom_data
+
+	# 1. Portrait
+	var portrait_id: String = str(custom_data.get("selected_portrait_id", "portrait_m1"))
+	set_portrait_by_id(portrait_id)
+
+	# 2. Flag
+	var flag_id: String = str(custom_data.get("selected_flag_id", "flag_navy_gold"))
+	set_flag_by_id(flag_id)
+
+	# 3. Furniture Categories
+	var installed: Dictionary = custom_data.get("installed_items", {})
+	for cat in installed.keys():
+		var item_id: String = installed[cat]
+		_apply_item_visuals(item_id)
+
+	customization_applied.emit(active_customization)
+
+## Updates the office with a specific presidential portrait by catalogue ID (5 male, 3 female)
+func set_portrait_by_id(portrait_id: String) -> void:
+	var p: Dictionary = ExecutiveOfficeCatalog.get_portrait(portrait_id)
+	if p.is_empty():
+		return
+
+	active_customization["selected_portrait_id"] = portrait_id
+
+	if portrait_name_label:
+		portrait_name_label.text = "PRES. " + str(p.get("name", "")).to_upper()
+	if portrait_placeholder_label:
+		portrait_placeholder_label.text = str(p.get("archetype", "")).to_upper()
+	if portrait_icon_label:
+		portrait_icon_label.text = str(p.get("icon", ""))
+
+	if portrait_canvas:
+		var s := portrait_canvas.get_theme_stylebox("panel")
+		var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+		new_s.bg_color = Color(p.get("accent_color", Color(0.15, 0.22, 0.36, 1.0)))
+		portrait_canvas.add_theme_stylebox_override("panel", new_s)
+
+## Updates the country flag using a catalogue flag ID
+func set_flag_by_id(flag_id: String) -> void:
+	var f: Dictionary = ExecutiveOfficeCatalog.get_flag(flag_id)
+	if f.is_empty():
+		return
+
+	active_customization["selected_flag_id"] = flag_id
+
+	if flag_banner:
+		var s := flag_banner.get_theme_stylebox("panel")
+		var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+		new_s.bg_color = Color(f.get("banner_color", Color(0.12, 0.22, 0.38, 1.0)))
+		flag_banner.add_theme_stylebox_override("panel", new_s)
+
+	if flag_emblem_label:
+		var c_name := str(latest_state.get("country_name", "REPUBLIC"))
+		var code := c_name.replace("Federal Republic of ", "").replace("Republic of ", "").strip_edges()
+		flag_emblem_label.text = code.to_upper() if not code.is_empty() and code != "[No State Loaded]" else "REPUBLIC"
+
+## Applies an item to the visual room layers
+func _apply_item_visuals(item_id: String) -> void:
+	var item: Dictionary = ExecutiveOfficeCatalog.get_item(item_id)
+	if item.is_empty():
+		return
+
+	var cat: String = str(item.get("category", ""))
+	match cat:
+		"desk_and_chair":
+			if desk_surface and item.has("surface_color"):
+				var s := desk_surface.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.surface_color
+				desk_surface.add_theme_stylebox_override("panel", new_s)
+			if desk_blotter and item.has("blotter_color"):
+				var s := desk_blotter.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.blotter_color
+				desk_blotter.add_theme_stylebox_override("panel", new_s)
+			if presidential_chair and item.has("chair_color"):
+				var s := presidential_chair.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.chair_color
+				presidential_chair.add_theme_stylebox_override("panel", new_s)
+
+		"visitor_seating":
+			if visitor_table and item.has("table_color"):
+				var s := visitor_table.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.table_color
+				visitor_table.add_theme_stylebox_override("panel", new_s)
+			if visitor_chair1 and item.has("seating_color"):
+				var s := visitor_chair1.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.seating_color
+				visitor_chair1.add_theme_stylebox_override("panel", new_s)
+			if visitor_chair2 and item.has("seating_color"):
+				var s := visitor_chair2.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.seating_color
+				visitor_chair2.add_theme_stylebox_override("panel", new_s)
+
+		"wall_and_flooring":
+			if wall_backdrop and item.has("wall_color"):
+				wall_backdrop.color = item.wall_color
+			if floor_backdrop and item.has("floor_color"):
+				floor_backdrop.color = item.floor_color
+
+		"carpets_and_lighting":
+			if office_carpet and item.has("carpet_color"):
+				var s := office_carpet.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.carpet_color
+				office_carpet.add_theme_stylebox_override("panel", new_s)
+			if chandelier_label and item.has("light_color"):
+				chandelier_label.set("theme_override_colors/font_color", item.light_color)
+
+		"bookshelves_and_decor":
+			if bookshelf_visual and item.has("decor_color"):
+				var s := bookshelf_visual.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.decor_color
+				bookshelf_visual.add_theme_stylebox_override("panel", new_s)
+			if bookshelf_icon_label and item.has("decor_symbol"):
+				bookshelf_icon_label.text = item.decor_symbol
+			if bookshelf_label and item.has("decor_title"):
+				bookshelf_label.text = item.decor_title
+
+		"artwork_and_gifts":
+			if artwork_visual and item.has("art_color"):
+				var s := artwork_visual.get_theme_stylebox("panel")
+				var new_s := (s.duplicate() if s else StyleBoxFlat.new()) as StyleBoxFlat
+				new_s.bg_color = item.art_color
+				artwork_visual.add_theme_stylebox_override("panel", new_s)
+			if artwork_icon_label and item.has("art_symbol"):
+				artwork_icon_label.text = item.art_symbol
+			if artwork_label and item.has("art_title"):
+				artwork_label.text = item.art_title
+
+## Temporarily previews an item in the office without saving
+func preview_furniture_item(item_id: String) -> void:
+	_apply_item_visuals(item_id)
+	var item: Dictionary = ExecutiveOfficeCatalog.get_item(item_id)
+	var name_str := str(item.get("name", item_id))
+	if customisation_status_label:
+		customisation_status_label.text = "Previewing: %s. Click Install/Equip to apply." % name_str
+	if status_ticker_label:
+		status_ticker_label.text = "Office Décor Preview: Previewing %s." % name_str
+
+## Temporarily previews a portrait
+func preview_portrait(portrait_id: String) -> void:
+	set_portrait_by_id(portrait_id)
+	var p: Dictionary = ExecutiveOfficeCatalog.get_portrait(portrait_id)
+	var name_str := str(p.get("name", portrait_id))
+	if customisation_status_label:
+		customisation_status_label.text = "Previewing Portrait: Pres. %s (%s)." % [name_str, p.get("archetype", "Leader")]
+	if status_ticker_label:
+		status_ticker_label.text = "Office Décor Preview: Previewing Pres. %s." % name_str
+
+## Temporarily previews a flag
+func preview_flag(flag_id: String) -> void:
+	set_flag_by_id(flag_id)
+	var f: Dictionary = ExecutiveOfficeCatalog.get_flag(flag_id)
+	var name_str := str(f.get("name", flag_id))
+	if customisation_status_label:
+		customisation_status_label.text = "Previewing Flag: %s." % name_str
+	if status_ticker_label:
+		status_ticker_label.text = "Office Décor Preview: Previewing %s." % name_str
+
+## Selects, equips, and persists an item
+func select_and_install_item(item_id: String) -> void:
+	var item: Dictionary = ExecutiveOfficeCatalog.get_item(item_id)
+	if item.is_empty():
+		return
+
+	var cat: String = str(item.get("category", ""))
+	var installed: Dictionary = active_customization.get("installed_items", {})
+	installed[cat] = item_id
+	active_customization["installed_items"] = installed
+
+	_apply_item_visuals(item_id)
+	save_current_customization()
+
+	if customisation_status_label:
+		customisation_status_label.text = "Installed: '%s' is now equipped in the presidential office." % str(item.get("name", item_id))
+	if status_ticker_label:
+		status_ticker_label.text = "Office Décor: Equipped %s." % str(item.get("name", item_id))
+
+	_populate_catalog_category(current_customization_category)
+
+## Selects, equips, and persists a portrait
+func select_and_install_portrait(portrait_id: String) -> void:
+	set_portrait_by_id(portrait_id)
+	save_current_customization()
+	var p: Dictionary = ExecutiveOfficeCatalog.get_portrait(portrait_id)
+	if customisation_status_label:
+		customisation_status_label.text = "Installed: Pres. %s is now displayed in the office." % str(p.get("name", portrait_id))
+	if status_ticker_label:
+		status_ticker_label.text = "Office Décor: Displaying portrait of Pres. %s." % str(p.get("name", portrait_id))
+	_populate_catalog_category("portraits")
+
+## Selects, equips, and persists a flag
+func select_and_install_flag(flag_id: String) -> void:
+	set_flag_by_id(flag_id)
+	save_current_customization()
+	var f: Dictionary = ExecutiveOfficeCatalog.get_flag(flag_id)
+	if customisation_status_label:
+		customisation_status_label.text = "Installed: Flag '%s' is now displayed on the stanchion." % f.name
+	if status_ticker_label:
+		status_ticker_label.text = "Office Décor: National flag updated to %s." % f.name
+	_populate_catalog_category("portraits")
+
+## Prompts purchase confirmation modal for an unowned item
+func prompt_purchase_item(item: Dictionary) -> void:
+	pending_purchase_item = item
+
+	var price: int = int(item.get("price_repu", 0))
+	var treas_val: float = float(latest_state.get("treasury_balance", 0.0))
+	var remaining: float = treas_val - float(price)
+
+	if purchase_item_name_label:
+		purchase_item_name_label.text = "Item: " + str(item.get("name", "Unknown Item"))
+	if purchase_item_desc_label:
+		purchase_item_desc_label.text = str(item.get("description", ""))
+	if purchase_price_label:
+		purchase_price_label.text = "REPU Price: R " + _format_number_commas(price)
+	if purchase_approval_label:
+		purchase_approval_label.text = "Approval: " + str(item.get("approval_required", "Presidential Facilities Cleared"))
+	if purchase_install_time_label:
+		purchase_install_time_label.text = "Installation Time: " + str(item.get("install_time_wat", "Immediate"))
+	if purchase_treasury_impact_label:
+		purchase_treasury_impact_label.text = "Treasury: R %s | Projected: R %s" % [_format_number_commas(int(treas_val)), _format_number_commas(int(remaining))]
+
+	if purchase_notice_label:
+		purchase_notice_label.text = "Authoritative Accounting: Submits formal procurement order. Real simulation balance verified."
+
+	if purchase_confirm_modal:
+		purchase_confirm_modal.visible = true
+
+func _close_purchase_confirm_modal() -> void:
+	pending_purchase_item = {}
+	if purchase_confirm_modal:
+		purchase_confirm_modal.visible = false
+
+## Executes purchase confirmation using authoritative economy validation
+func confirm_purchase_pending_item() -> Dictionary:
+	if pending_purchase_item.is_empty():
+		return { "success": false, "message": "No pending purchase item selected." }
+
+	var item := pending_purchase_item
+	var owned: Array = active_customization.get("owned_items", [])
+	var check := ExecutiveOfficeCatalog.check_item_availability(item, latest_state, owned)
+
+	if not check.can_purchase and not check.can_install:
+		if customisation_status_label:
+			customisation_status_label.text = "Purchase Rejected: " + check.reason
+		_close_purchase_confirm_modal()
+		return { "success": false, "message": check.reason }
+
+	# 1. Write authoritative request file to simulation pipeline
+	var req_path := DEFAULT_STATE_FILE.replace("presidential_desk_state.json", "presidential_desk_request.json")
+	var req_id := "req_furniture_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var item_id_str: String = str(item.get("id", ""))
+	var item_cat_str: String = str(item.get("category", ""))
+	var item_price_val: int = int(item.get("price_repu", 0))
+	var item_name_str: String = str(item.get("name", "Unknown Item"))
+
+	var request_data := {
+		"request_id": req_id,
+		"action": "purchase_furniture",
+		"item_id": item_id_str,
+		"category": item_cat_str,
+		"price_repu": item_price_val,
+		"country_name": latest_state.get("country_name", ""),
+		"timestamp": Time.get_datetime_string_from_system(true)
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file:
+		req_file.store_string(JSON.stringify(request_data, "\t"))
+		req_file.close()
+
+	# 2. Add to player's persistent owned items
+	if not owned.has(item_id_str):
+		owned.append(item_id_str)
+		active_customization["owned_items"] = owned
+
+	# 3. Install item and save
+	_close_purchase_confirm_modal()
+	select_and_install_item(item_id_str)
+
+	var success_msg := "Procurement Order Confirmed: Acquired '%s' for R %s." % [item_name_str, _format_number_commas(item_price_val)]
+	if customisation_status_label:
+		customisation_status_label.text = success_msg
+	if status_ticker_label:
+		status_ticker_label.text = "Office Décor: " + success_msg
+
+	return { "success": true, "message": success_msg }
+
+## Resets all office customisation to default
+func reset_customization_to_default() -> void:
+	var def := ExecutiveOfficeCatalog.get_default_customization()
+	apply_customization(def)
+	save_current_customization()
+	if customisation_status_label:
+		customisation_status_label.text = "Office Décor: Reset to standard presidential office specifications."
+	if status_ticker_label:
+		status_ticker_label.text = "Executive Office: Reset office customisation to default."
+	_populate_catalog_category(current_customization_category)
+
+# ==============================================================================
+# 7. DECOUPLED VISUAL LAYER CUSTOMIZATION API (PRESERVED)
 # ==============================================================================
 ## Updates the capital window view with custom scenery art
 func set_city_scenery_texture(texture: Texture2D) -> void:
@@ -805,7 +1300,7 @@ func set_desk_style(surface_color: Color, blotter_color: Color) -> void:
 			style.bg_color = blotter_color
 
 # ==============================================================================
-# 7. INTERACTIVE NAVIGATION (SIX GAME SECTIONS)
+# 8. INTERACTIVE NAVIGATION (GAME SECTIONS)
 # ==============================================================================
 func _on_switch_to_desk_button_pressed() -> void:
 	navigate_to_section(Section.OVERVIEW)
@@ -834,6 +1329,9 @@ func _on_nav_diplomacy_pressed() -> void:
 func _on_nav_briefings_pressed() -> void:
 	navigate_to_section(Section.BRIEFINGS)
 
+func _on_nav_customise_pressed() -> void:
+	open_customisation_modal("portraits")
+
 ## Navigates to a specific game section reusing existing PresidentialDesk functionality
 func navigate_to_section(section: Section) -> void:
 	active_nav_section = section
@@ -849,6 +1347,10 @@ func navigate_to_section(section: Section) -> void:
 		open_briefing_modal()
 		return
 
+	if section == Section.CUSTOMISE:
+		open_customisation_modal()
+		return
+
 	# Reuses PresidentialDesk functionality without duplicating simulation logic
 	var desk_script = load("res://PresidentialDesk.gd")
 	if desk_script and "requested_section" in desk_script:
@@ -856,7 +1358,7 @@ func navigate_to_section(section: Section) -> void:
 	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
 
 func _update_nav_button_highlights() -> void:
-	var buttons := [nav_overview_button, nav_cabinet_button, nav_economy_button, nav_campaign_button, nav_diplomacy_button, nav_briefings_button]
+	var buttons := [nav_overview_button, nav_cabinet_button, nav_economy_button, nav_campaign_button, nav_diplomacy_button, nav_briefings_button, nav_customise_button]
 	for i in range(buttons.size()):
 		var b: Button = buttons[i]
 		if b:
@@ -866,7 +1368,7 @@ func _update_nav_button_highlights() -> void:
 				b.modulate = Color(0.85, 0.9, 0.95, 1.0)
 
 # ==============================================================================
-# 8. OFFICE CONTROLS & MODAL DIALOGS
+# 9. OFFICE CONTROLS & MODAL DIALOGS
 # ==============================================================================
 func _on_hotline_phone_pressed() -> void:
 	open_hotline_modal()
@@ -884,10 +1386,9 @@ func _on_capital_window_pressed() -> void:
 		status_ticker_label.text = "Capital Vista: Overlooking Arcadia capital district. Simulation time: %s | Stability: %s." % [time_str, stab_str]
 
 func _on_presidential_portrait_pressed() -> void:
-	var party_str := str(latest_state.get("ruling_party", "Independent Sovereign"))
-	var poll_str := str(latest_state.get("polling_support", "0.0")) + "%"
 	if status_ticker_label:
-		status_ticker_label.text = "Presidential Mandate: %s | Ruling Party: %s | Polling: %s." % [portrait_name_label.text if portrait_name_label else "HEAD OF STATE", party_str, poll_str]
+		status_ticker_label.text = "Presidential Mandate: Viewing head of state executive portrait and office customisation."
+	open_customisation_modal("portraits")
 
 func open_briefing_modal() -> void:
 	close_all_modals()
@@ -918,6 +1419,34 @@ func open_dossier_modal() -> void:
 	if status_ticker_label:
 		status_ticker_label.text = "Intelligence Dossier: National security posture and military readiness reviewed."
 
+func open_customisation_modal(category_id: String = "portraits") -> void:
+	close_all_modals()
+	active_nav_section = Section.CUSTOMISE
+	_update_nav_button_highlights()
+	if modal_backdrop:
+		modal_backdrop.visible = true
+	if customisation_modal:
+		customisation_modal.visible = true
+
+	# Update live treasury balance display in modal header
+	if customisation_treasury_label:
+		var treas := str(latest_state.get("treasury", ""))
+		if treas.is_empty() and latest_state.has("treasury_balance"):
+			treas = "R " + _format_number_commas(float(latest_state.get("treasury_balance", 0.0)))
+		customisation_treasury_label.text = "Available Treasury: " + (treas if not treas.is_empty() else "[No State Loaded]")
+
+	_populate_catalog_category(category_id)
+
+func close_customisation_modal() -> void:
+	if customisation_modal:
+		customisation_modal.visible = false
+	if purchase_confirm_modal:
+		purchase_confirm_modal.visible = false
+	if modal_backdrop:
+		modal_backdrop.visible = false
+	active_nav_section = Section.OVERVIEW
+	_update_nav_button_highlights()
+
 func close_all_modals() -> void:
 	if modal_backdrop:
 		modal_backdrop.visible = false
@@ -927,32 +1456,35 @@ func close_all_modals() -> void:
 		hotline_modal.visible = false
 	if dossier_modal:
 		dossier_modal.visible = false
+	if customisation_modal:
+		customisation_modal.visible = false
+	if purchase_confirm_modal:
+		purchase_confirm_modal.visible = false
 	active_nav_section = Section.OVERVIEW
 	_update_nav_button_highlights()
 
 func is_any_modal_open() -> bool:
-	return (briefing_modal and briefing_modal.visible) or (hotline_modal and hotline_modal.visible) or (dossier_modal and dossier_modal.visible)
+	return (briefing_modal and briefing_modal.visible) or \
+		(hotline_modal and hotline_modal.visible) or \
+		(dossier_modal and dossier_modal.visible) or \
+		(customisation_modal and customisation_modal.visible) or \
+		(purchase_confirm_modal and purchase_confirm_modal.visible)
 
 func _on_modal_backdrop_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		close_all_modals()
+		if purchase_confirm_modal and purchase_confirm_modal.visible:
+			_close_purchase_confirm_modal()
+		else:
+			close_all_modals()
 
 func _on_briefing_desk_button_pressed() -> void:
 	navigate_to_section(Section.BRIEFINGS)
-	var desk_script = load("res://PresidentialDesk.gd")
-	if desk_script and "requested_section" in desk_script:
-		desk_script.requested_section = int(Section.BRIEFINGS)
-	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
 
 func _on_hotline_desk_button_pressed() -> void:
 	navigate_to_section(Section.DIPLOMACY)
 
 func _on_dossier_desk_button_pressed() -> void:
 	navigate_to_section(Section.BRIEFINGS)
-	var desk_script = load("res://PresidentialDesk.gd")
-	if desk_script and "requested_section" in desk_script:
-		desk_script.requested_section = int(Section.BRIEFINGS)
-	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
 
 func _on_toggle_left_dock_pressed() -> void:
 	if left_dock:
@@ -969,3 +1501,313 @@ func _on_toggle_right_dock_pressed() -> void:
 			content.visible = not content.visible
 			if toggle_right_dock_button:
 				toggle_right_dock_button.text = "▲" if content.visible else "▼"
+
+# ==============================================================================
+# 10. CATALOG VIEW POPULATION & USER ACTIONS
+# ==============================================================================
+func _on_tab_portraits_pressed() -> void:
+	_populate_catalog_category("portraits")
+
+func _on_tab_desks_pressed() -> void:
+	_populate_catalog_category("desk_and_chair")
+
+func _on_tab_seating_pressed() -> void:
+	_populate_catalog_category("visitor_seating")
+
+func _on_tab_walls_pressed() -> void:
+	_populate_catalog_category("wall_and_flooring")
+
+func _on_tab_carpets_pressed() -> void:
+	_populate_catalog_category("carpets_and_lighting")
+
+func _on_tab_bookshelves_pressed() -> void:
+	_populate_catalog_category("bookshelves_and_decor")
+
+func _on_tab_artwork_pressed() -> void:
+	_populate_catalog_category("artwork_and_gifts")
+
+func _update_tab_button_highlights(selected_cat: String) -> void:
+	var tabs := {
+		"portraits": tab_portraits_button,
+		"desk_and_chair": tab_desks_button,
+		"visitor_seating": tab_seating_button,
+		"wall_and_flooring": tab_walls_button,
+		"carpets_and_lighting": tab_carpets_button,
+		"bookshelves_and_decor": tab_bookshelves_button,
+		"artwork_and_gifts": tab_artwork_button
+	}
+	for cat_key in tabs.keys():
+		var b: Button = tabs[cat_key]
+		if b:
+			if cat_key == selected_cat:
+				b.modulate = Color(1.0, 0.85, 0.3, 1.0)
+			else:
+				b.modulate = Color(0.85, 0.9, 0.95, 1.0)
+
+func _populate_catalog_category(category_id: String) -> void:
+	current_customization_category = category_id
+	_update_tab_button_highlights(category_id)
+
+	if catalog_grid == null:
+		return
+
+	# Clear previous children
+	for child in catalog_grid.get_children():
+		child.queue_free()
+
+	if category_id == "portraits":
+		_populate_portraits_and_flags()
+		return
+
+	var items: Array = ExecutiveOfficeCatalog.get_items_by_category(category_id)
+	var owned: Array = active_customization.get("owned_items", [])
+	var installed: Dictionary = active_customization.get("installed_items", {})
+	var currently_installed: String = installed.get(category_id, "")
+
+	for it in items:
+		var card := _create_furniture_card(it, currently_installed, owned)
+		catalog_grid.add_child(card)
+
+func _populate_portraits_and_flags() -> void:
+	var portraits: Array = ExecutiveOfficeCatalog.get_portraits()
+	var selected_p_id: String = str(active_customization.get("selected_portrait_id", "portrait_m1"))
+
+	# Section Header: Selectable Presidential Portraits (5 male, 3 female)
+	var p_hdr := Label.new()
+	p_hdr.text = "👑 SELECTABLE PRESIDENTIAL PORTRAITS (5 MALE, 3 FEMALE)"
+	p_hdr.set("theme_override_colors/font_color", Color(0.92, 0.70, 0.03, 1.0))
+	p_hdr.set("theme_override_font_sizes/font_size", 12)
+	catalog_grid.add_child(p_hdr)
+
+	for p in portraits:
+		var p_card := _create_portrait_card(p, selected_p_id)
+		catalog_grid.add_child(p_card)
+
+	# Section Header: National Flags
+	var f_sep := HSeparator.new()
+	catalog_grid.add_child(f_sep)
+
+	var f_hdr := Label.new()
+	f_hdr.text = "🚩 NATIONAL FLAGS & HERALDRY"
+	f_hdr.set("theme_override_colors/font_color", Color(0.92, 0.70, 0.03, 1.0))
+	f_hdr.set("theme_override_font_sizes/font_size", 12)
+	catalog_grid.add_child(f_hdr)
+
+	var flags: Array = ExecutiveOfficeCatalog.get_flags()
+	var selected_f_id: String = str(active_customization.get("selected_flag_id", "flag_navy_gold"))
+	for f in flags:
+		var f_card := _create_flag_card(f, selected_f_id)
+		catalog_grid.add_child(f_card)
+
+func _create_card_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.08, 0.12, 0.92)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = Color(0.25, 0.35, 0.5, 0.7)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_right = 6
+	style.corner_radius_bottom_left = 6
+	style.content_margin_left = 12.0
+	style.content_margin_top = 8.0
+	style.content_margin_right = 12.0
+	style.content_margin_bottom = 8.0
+	return style
+
+func _create_furniture_card(item: Dictionary, installed_id: String, owned: Array) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", _create_card_style())
+
+	var hbox := HBoxContainer.new()
+	hbox.set("theme_override_constants/separation", 14)
+	card.add_child(hbox)
+
+	# Info VBox
+	var info_vbox := VBoxContainer.new()
+	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_vbox.set("theme_override_constants/separation", 3)
+	hbox.add_child(info_vbox)
+
+	var title_lbl := Label.new()
+	title_lbl.text = item.name
+	title_lbl.set("theme_override_font_sizes/font_size", 12)
+	title_lbl.set("theme_override_colors/font_color", Color(0.95, 0.88, 0.75, 1.0))
+	info_vbox.add_child(title_lbl)
+
+	var desc_lbl := Label.new()
+	desc_lbl.text = item.description
+	desc_lbl.set("theme_override_font_sizes/font_size", 10)
+	desc_lbl.set("theme_override_colors/font_color", Color(0.7, 0.75, 0.85, 1.0))
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info_vbox.add_child(desc_lbl)
+
+	var meta_lbl := Label.new()
+	var price_val: int = int(item.get("price_repu", 0))
+	var price_str := "Price: FREE (Default)" if price_val == 0 else ("Price: R " + _format_number_commas(price_val) + " REPU")
+	var req_appr: String = item.get("approval_required", "None")
+	meta_lbl.text = "%s | Approval: %s | Time: %s" % [price_str, req_appr, item.get("install_time_wat", "Immediate")]
+	meta_lbl.set("theme_override_font_sizes/font_size", 10)
+	meta_lbl.set("theme_override_colors/font_color", Color(0.85, 0.70, 0.35, 1.0))
+	info_vbox.add_child(meta_lbl)
+
+	# Actions VBox
+	var act_vbox := VBoxContainer.new()
+	act_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	act_vbox.set("theme_override_constants/separation", 4)
+	hbox.add_child(act_vbox)
+
+	var is_installed: bool = (str(item.get("id", "")) == installed_id)
+	var is_owned: bool = owned.has(str(item.get("id", ""))) or price_val == 0
+	var check: Dictionary = ExecutiveOfficeCatalog.check_item_availability(item, latest_state, owned)
+
+	var preview_btn := Button.new()
+	preview_btn.text = "👁 Preview"
+	preview_btn.set("theme_override_font_sizes/font_size", 10)
+	var item_id_copy: String = str(item.get("id", ""))
+	preview_btn.pressed.connect(func(): preview_furniture_item(item_id_copy))
+	act_vbox.add_child(preview_btn)
+
+	var main_btn := Button.new()
+	main_btn.set("theme_override_font_sizes/font_size", 11)
+
+	if is_installed:
+		main_btn.text = "✔ Equipped"
+		main_btn.disabled = true
+		main_btn.modulate = Color(0.6, 0.9, 0.6, 1.0)
+	elif is_owned:
+		main_btn.text = "Equip / Install"
+		main_btn.pressed.connect(func(): select_and_install_item(item_id_copy))
+	elif check.can_purchase:
+		main_btn.text = "Acquire (R %s)" % _format_number_commas(price_val)
+		main_btn.pressed.connect(func(): prompt_purchase_item(item))
+	else:
+		main_btn.text = "🔒 Locked"
+		main_btn.disabled = true
+		main_btn.tooltip_text = check.reason
+
+	act_vbox.add_child(main_btn)
+	return card
+
+func _create_portrait_card(p: Dictionary, selected_id: String) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", _create_card_style())
+
+	var hbox := HBoxContainer.new()
+	hbox.set("theme_override_constants/separation", 14)
+	card.add_child(hbox)
+
+	var icon_lbl := Label.new()
+	icon_lbl.text = str(p.get("icon", "👤"))
+	icon_lbl.set("theme_override_font_sizes/font_size", 28)
+	hbox.add_child(icon_lbl)
+
+	var info_vbox := VBoxContainer.new()
+	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_vbox.set("theme_override_constants/separation", 2)
+	hbox.add_child(info_vbox)
+
+	var p_name: String = str(p.get("name", "President"))
+	var p_gender: String = str(p.get("gender", "")).capitalize()
+	var p_archetype: String = str(p.get("archetype", ""))
+	var p_desc: String = str(p.get("description", ""))
+	var p_id: String = str(p.get("id", ""))
+
+	var title_lbl := Label.new()
+	title_lbl.text = "Pres. %s (%s) — %s" % [p_name, p_gender, p_archetype]
+	title_lbl.set("theme_override_font_sizes/font_size", 12)
+	title_lbl.set("theme_override_colors/font_color", Color(0.95, 0.88, 0.75, 1.0))
+	info_vbox.add_child(title_lbl)
+
+	var desc_lbl := Label.new()
+	desc_lbl.text = p_desc
+	desc_lbl.set("theme_override_font_sizes/font_size", 10)
+	desc_lbl.set("theme_override_colors/font_color", Color(0.7, 0.75, 0.85, 1.0))
+	desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info_vbox.add_child(desc_lbl)
+
+	var act_vbox := VBoxContainer.new()
+	act_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	act_vbox.set("theme_override_constants/separation", 4)
+	hbox.add_child(act_vbox)
+
+	var preview_btn := Button.new()
+	preview_btn.text = "👁 Preview"
+	preview_btn.set("theme_override_font_sizes/font_size", 10)
+	var p_id_copy: String = p_id
+	preview_btn.pressed.connect(func(): preview_portrait(p_id_copy))
+	act_vbox.add_child(preview_btn)
+
+	var select_btn := Button.new()
+	select_btn.set("theme_override_font_sizes/font_size", 11)
+	if p_id == selected_id:
+		select_btn.text = "✔ Selected"
+		select_btn.disabled = true
+		select_btn.modulate = Color(0.6, 0.9, 0.6, 1.0)
+	else:
+		select_btn.text = "Select Portrait"
+		select_btn.pressed.connect(func(): select_and_install_portrait(p_id_copy))
+	act_vbox.add_child(select_btn)
+
+	return card
+
+func _create_flag_card(f: Dictionary, selected_id: String) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", _create_card_style())
+
+	var hbox := HBoxContainer.new()
+	hbox.set("theme_override_constants/separation", 14)
+	card.add_child(hbox)
+
+	var swatch := ColorRect.new()
+	swatch.custom_minimum_size = Vector2(36, 24)
+	swatch.color = f.get("banner_color", Color.WHITE)
+	hbox.add_child(swatch)
+
+	var info_vbox := VBoxContainer.new()
+	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_vbox.set("theme_override_constants/separation", 2)
+	hbox.add_child(info_vbox)
+
+	var f_name: String = str(f.get("name", "Flag"))
+	var f_id: String = str(f.get("id", ""))
+
+	var title_lbl := Label.new()
+	title_lbl.text = f_name
+	title_lbl.set("theme_override_font_sizes/font_size", 12)
+	title_lbl.set("theme_override_colors/font_color", Color(0.95, 0.88, 0.75, 1.0))
+	info_vbox.add_child(title_lbl)
+
+	var c_name := str(latest_state.get("country_name", "Republic"))
+	var desc_lbl := Label.new()
+	desc_lbl.text = "Banners emblazoned with sovereign country identity [%s]." % c_name
+	desc_lbl.set("theme_override_font_sizes/font_size", 10)
+	desc_lbl.set("theme_override_colors/font_color", Color(0.7, 0.75, 0.85, 1.0))
+	info_vbox.add_child(desc_lbl)
+
+	var act_vbox := VBoxContainer.new()
+	act_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	act_vbox.set("theme_override_constants/separation", 4)
+	hbox.add_child(act_vbox)
+
+	var preview_btn := Button.new()
+	preview_btn.text = "👁 Preview"
+	preview_btn.set("theme_override_font_sizes/font_size", 10)
+	var f_id_copy: String = f_id
+	preview_btn.pressed.connect(func(): preview_flag(f_id_copy))
+	act_vbox.add_child(preview_btn)
+
+	var select_btn := Button.new()
+	select_btn.set("theme_override_font_sizes/font_size", 11)
+	if f_id == selected_id:
+		select_btn.text = "✔ Selected"
+		select_btn.disabled = true
+		select_btn.modulate = Color(0.6, 0.9, 0.6, 1.0)
+	else:
+		select_btn.text = "Select Flag"
+		select_btn.pressed.connect(func(): select_and_install_flag(f_id_copy))
+	act_vbox.add_child(select_btn)
+
+	return card
