@@ -88,6 +88,7 @@ func _get_required_node(node_path: String) -> Node:
 @onready var address_line_edit: LineEdit = _get_required_node("VBoxContainer/MultiplayerControlsHBox/AddressLineEdit") as LineEdit
 @onready var disconnect_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/DisconnectButton") as Button
 @onready var network_status_label: Label = _get_required_node("VBoxContainer/NetworkStatusLabel") as Label
+@onready var multiplayer_status_label: Label = _get_required_node("VBoxContainer/NetworkStatusLabel") as Label
 @onready var foreign_country_name_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryNameLabel") as Label
 @onready var foreign_country_treasury_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryTreasuryLabel") as Label
 @onready var foreign_country_approval_label: Label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryApprovalLabel") as Label
@@ -106,6 +107,7 @@ func _get_required_node(node_path: String) -> Node:
 @onready var reject_trade_button: Button = _get_required_node("VBoxContainer/TradeControlsHBox/RejectTradeButton") as Button
 @onready var latest_trade_status_label: Label = _get_required_node("VBoxContainer/LatestTradeStatusLabel") as Label
 @onready var trade_lifecycle_stage_label: Label = _get_required_node("TradeLifecycleStageLabel") as Label
+@onready var trade_recipient_input: LineEdit = _get_required_node("TradeRecipientInput") as LineEdit
 
 ## Phase 5 Monetization & Ad Placeholders
 @onready var buy_admin_buff_button: Button = _get_required_node("VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox/BuyAdminBuffButton") as Button
@@ -118,6 +120,7 @@ enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS }
 var active_section: Section = Section.OVERVIEW
 
 ## Navigation Tab Controls
+@onready var switch_to_executive_office_button: Button = _get_required_node("SwitchToExecutiveOfficeButton") as Button
 @onready var nav_overview_button: Button = _get_required_node("NavOverviewButton") as Button
 @onready var nav_cabinet_button: Button = _get_required_node("NavCabinetButton") as Button
 @onready var nav_economy_button: Button = _get_required_node("NavEconomyButton") as Button
@@ -241,6 +244,8 @@ func _init_controls() -> void:
 		disconnect_button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/DisconnectButton") as Button
 	if network_status_label == null:
 		network_status_label = _get_required_node("VBoxContainer/NetworkStatusLabel") as Label
+	if multiplayer_status_label == null:
+		multiplayer_status_label = network_status_label
 	if foreign_country_name_label == null:
 		foreign_country_name_label = _get_required_node("VBoxContainer/ForeignCountryGrid/ForeignCountryNameLabel") as Label
 	if foreign_country_treasury_label == null:
@@ -274,6 +279,10 @@ func _init_controls() -> void:
 		latest_trade_status_label = _get_required_node("VBoxContainer/LatestTradeStatusLabel") as Label
 	if trade_lifecycle_stage_label == null:
 		trade_lifecycle_stage_label = _get_required_node("TradeLifecycleStageLabel") as Label
+	if trade_recipient_input == null:
+		trade_recipient_input = _get_required_node("TradeRecipientInput") as LineEdit
+	if trade_recipient_input == null:
+		trade_recipient_input = LineEdit.new()
 	if defense_readiness_label == null:
 		defense_readiness_label = _get_required_node("DefenseReadinessLabel") as Label
 	if offline_briefing_label == null:
@@ -362,6 +371,8 @@ func _init_controls() -> void:
 	if emergency_relief_button == null:
 		emergency_relief_button = _get_required_node("EmergencyReliefButton") as Button
 
+	if switch_to_executive_office_button == null:
+		switch_to_executive_office_button = _get_required_node("SwitchToExecutiveOfficeButton") as Button
 	if nav_overview_button == null:
 		nav_overview_button = _get_required_node("NavOverviewButton") as Button
 	if nav_cabinet_button == null:
@@ -628,6 +639,12 @@ func _wire_signals() -> void:
 		return_diplomacy_button.pressed.connect(return_to_overview)
 	if return_briefings_button and not return_briefings_button.pressed.is_connected(return_to_overview):
 		return_briefings_button.pressed.connect(return_to_overview)
+	if switch_to_executive_office_button and not switch_to_executive_office_button.pressed.is_connected(_on_switch_to_executive_office_button_pressed):
+		switch_to_executive_office_button.pressed.connect(_on_switch_to_executive_office_button_pressed)
+
+
+func _on_switch_to_executive_office_button_pressed() -> void:
+	get_tree().change_scene_to_file("res://ExecutiveOffice.tscn")
 
 
 ## Switches the active UI section and highlights navigation controls
@@ -2739,7 +2756,10 @@ func _handle_network_message(msg: Dictionary) -> void:
 			decision_result_label.text = "Decision Result: [%s] %s" % [result, status_msg]
 		if status_label and not status_msg.is_empty():
 			status_label.text = _format_status_text("Host Result: " + status_msg, "None")
-		_update_network_status_display()
+		if multiplayer_status_label and not status_msg.is_empty():
+			multiplayer_status_label.text = "Network: " + status_msg
+		else:
+			_update_network_status_display()
 
 
 func _on_recognize_button_pressed() -> void:
@@ -2794,6 +2814,8 @@ func _on_propose_trade_button_pressed() -> void:
 	if trade_amount_spinbox:
 		amount = trade_amount_spinbox.value
 	var peer_id := _peer_country_id if not _peer_country_id.is_empty() else "peer"
+	if trade_recipient_input and not trade_recipient_input.text.is_empty():
+		peer_id = trade_recipient_input.text
 	var trade_id := "tr_" + str(Time.get_ticks_msec())
 	var trade_payload := {
 		"id": trade_id,

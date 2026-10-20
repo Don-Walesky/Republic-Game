@@ -74,6 +74,10 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0431373, 0.0588235, 0.0901961, 1)
 
+[node name="TradeRecipientInput" type="LineEdit" parent="."]
+visible = false
+layout_mode = 0
+
 [node name="ExecutiveTopBorder" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 10
@@ -118,6 +122,15 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.580392, 0.639216, 0.721569, 1)
 theme_override_font_sizes/font_size = 12
 text = "— Sovereign Executive Office of the Head of State & Commander-in-Chief"
+
+[node name="TitleSpacer" type="Control" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SwitchToExecutiveOfficeButton" type="Button" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TitleRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "★ Executive Office View"
 
 [node name="TelemetryHBox" type="HBoxContainer" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox"]
 layout_mode = 2

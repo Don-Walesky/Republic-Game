@@ -1,0 +1,628 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://ExecutiveOffice.gd" id="1_office"]
+[ext_resource type="Script" path="res://CapitalWindowScenery.gd" id="2_scenery"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+bg_color = Color(0.0470588, 0.0666667, 0.105882, 0.96)
+border_width_bottom = 2
+border_color = Color(0.85098, 0.678431, 0.282353, 1)
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glassdock"]
+bg_color = Color(0.054902, 0.0784314, 0.121569, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.28, 0.4, 0.7)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bottomdock"]
+bg_color = Color(0.0392157, 0.054902, 0.0823529, 0.94)
+border_width_top = 1
+border_color = Color(0.85098, 0.678431, 0.282353, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_windowframe"]
+bg_color = Color(0.02, 0.03, 0.05, 0.3)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.24, 0.28, 0.35, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portraitframe"]
+bg_color = Color(0.1, 0.08, 0.05, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.85, 0.68, 0.28, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portraitcanvas"]
+bg_color = Color(0.12, 0.16, 0.22, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_plaque"]
+bg_color = Color(0.18, 0.14, 0.08, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.68, 0.28, 0.9)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_flagbanner"]
+bg_color = Color(0.15, 0.35, 0.65, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 3
+border_color = Color(0.85, 0.68, 0.28, 1)
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 8.0
+content_margin_top = 12.0
+content_margin_right = 8.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_desksurface"]
+bg_color = Color(0.14, 0.09, 0.06, 1)
+border_width_left = 2
+border_width_top = 3
+border_width_right = 2
+border_width_bottom = 1
+border_color = Color(0.35, 0.24, 0.16, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_deskblotter"]
+bg_color = Color(0.06, 0.08, 0.09, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.75, 0.6, 0.25, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="ExecutiveOffice" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_office")
+
+[node name="OfficeEnvironment" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RoomBackdrop" type="ColorRect" parent="OfficeEnvironment"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.06, 0.075, 0.105, 1)
+
+[node name="WoodPanelingTop" type="ColorRect" parent="OfficeEnvironment"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 54.0
+grow_horizontal = 2
+color = Color(0.16, 0.11, 0.08, 0.95)
+
+[node name="BrassMolding" type="ColorRect" parent="OfficeEnvironment"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 54.0
+offset_bottom = 56.0
+grow_horizontal = 2
+color = Color(0.85098, 0.678431, 0.282353, 0.75)
+
+[node name="CapitalWindow" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.24
+anchor_top = 0.11
+anchor_right = 0.66
+anchor_bottom = 0.58
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="WindowBackdrop" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.12, 0.18, 1)
+
+[node name="CityScenery" type="Control" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_scenery")
+
+[node name="WindowFrame" type="PanelContainer" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_windowframe")
+
+[node name="VerticalMullion" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -2.0
+offset_right = 2.0
+grow_vertical = 2
+color = Color(0.24, 0.28, 0.35, 0.85)
+
+[node name="HorizontalMullion" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.45
+anchor_right = 1.0
+anchor_bottom = 0.45
+offset_top = -2.0
+offset_bottom = 2.0
+grow_horizontal = 2
+color = Color(0.24, 0.28, 0.35, 0.85)
+
+[node name="CountryFlag" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.14
+anchor_top = 0.12
+anchor_right = 0.22
+anchor_bottom = 0.62
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="FlagPole" type="ColorRect" parent="OfficeEnvironment/CountryFlag"]
+layout_mode = 1
+anchor_left = 0.1
+anchor_top = 0.0
+anchor_right = 0.1
+anchor_bottom = 1.0
+offset_left = -3.0
+offset_right = 3.0
+grow_vertical = 2
+color = Color(0.85, 0.68, 0.28, 1)
+
+[node name="FlagFinial" type="ColorRect" parent="OfficeEnvironment/CountryFlag"]
+layout_mode = 1
+anchor_left = 0.1
+anchor_top = 0.0
+anchor_right = 0.1
+anchor_bottom = 0.0
+offset_left = -6.0
+offset_top = -10.0
+offset_right = 6.0
+color = Color(0.95, 0.8, 0.35, 1)
+
+[node name="FlagBanner" type="PanelContainer" parent="OfficeEnvironment/CountryFlag"]
+layout_mode = 1
+anchor_left = 0.1
+anchor_top = 0.04
+anchor_right = 0.95
+anchor_bottom = 0.72
+theme_override_styles/panel = SubResource("StyleBoxFlat_flagbanner")
+
+[node name="FlagEmblemLabel" type="Label" parent="OfficeEnvironment/CountryFlag/FlagBanner"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "REPUBLIC"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PresidentialPortrait" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.68
+anchor_top = 0.13
+anchor_right = 0.80
+anchor_bottom = 0.48
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PortraitFrame" type="PanelContainer" parent="OfficeEnvironment/PresidentialPortrait"]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.78
+theme_override_styles/panel = SubResource("StyleBoxFlat_portraitframe")
+
+[node name="PortraitCanvas" type="PanelContainer" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_portraitcanvas")
+
+[node name="PortraitVBox" type="VBoxContainer" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas"]
+layout_mode = 2
+alignment = 1
+
+[node name="PortraitIconLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 32
+text = "⚖"
+horizontal_alignment = 1
+
+[node name="PortraitPlaceholderLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 10
+text = "HEAD OF STATE"
+horizontal_alignment = 1
+
+[node name="Plaque" type="PanelContainer" parent="OfficeEnvironment/PresidentialPortrait"]
+layout_mode = 1
+anchor_left = 0.05
+anchor_top = 0.80
+anchor_right = 0.95
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_plaque")
+
+[node name="PlaqueVBox" type="VBoxContainer" parent="OfficeEnvironment/PresidentialPortrait/Plaque"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="PortraitNameLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/Plaque/PlaqueVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 10
+text = "PRESIDENT OF THE REPUBLIC"
+horizontal_alignment = 1
+
+[node name="PortraitPartyLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/Plaque/PlaqueVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+theme_override_font_sizes/font_size = 9
+text = "Party: [No State Loaded]"
+horizontal_alignment = 1
+
+[node name="ExecutiveDesk" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.16
+anchor_top = 0.52
+anchor_right = 0.84
+anchor_bottom = 0.92
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DeskSurface" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_desksurface")
+
+[node name="DeskBlotter" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk"]
+layout_mode = 1
+anchor_left = 0.22
+anchor_top = 0.18
+anchor_right = 0.78
+anchor_bottom = 0.82
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_deskblotter")
+
+[node name="PresidentialSeal" type="Control" parent="OfficeEnvironment/ExecutiveDesk"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -28.0
+offset_right = 28.0
+offset_bottom = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SealLabel" type="Label" parent="OfficeEnvironment/ExecutiveDesk/PresidentialSeal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 0.6)
+theme_override_font_sizes/font_size = 32
+text = "★"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HotlinePhoneButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
+layout_mode = 1
+anchor_left = 0.08
+anchor_top = 0.25
+anchor_right = 0.18
+anchor_bottom = 0.65
+theme_override_font_sizes/font_size = 11
+text = "☎ HOTLINE"
+
+[node name="ExecutiveInboxButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
+layout_mode = 1
+anchor_left = 0.82
+anchor_top = 0.25
+anchor_right = 0.92
+anchor_bottom = 0.65
+theme_override_font_sizes/font_size = 11
+text = "✉ INBOX"
+
+[node name="InterfaceLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopBar" type="PanelContainer" parent="InterfaceLayer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 44.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
+
+[node name="TopBarHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="BrandLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
+text = "REPUBLIC — EXECUTIVE OFFICE"
+
+[node name="CountryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Country: [No State Loaded]"
+
+[node name="SimulationTimeLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Simulation Time: [No State Loaded]"
+
+[node name="TreasuryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Treasury: [No State Loaded]"
+
+[node name="ApprovalLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Approval: [No State Loaded]"
+
+[node name="StabilityLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Stability: [No State Loaded]"
+
+[node name="DefconLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Defense: [No State Loaded]"
+
+[node name="Spacer" type="Control" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RefreshButton" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Refresh"
+
+[node name="SwitchToDeskButton" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Detailed Desk View ->"
+
+[node name="LeftDock" type="PanelContainer" parent="InterfaceLayer"]
+layout_mode = 1
+anchor_left = 0.01
+anchor_top = 0.08
+anchor_bottom = 0.91
+offset_right = 240.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
+
+[node name="LeftDockVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LeftDockHeader" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 1)
+theme_override_font_sizes/font_size = 12
+text = "DOMESTIC & CABINET"
+
+[node name="ToggleLeftDockButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "▲"
+
+[node name="LeftDockContent" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CabinetSummaryLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Cabinet: [No State Loaded]"
+autowrap_mode = 2
+
+[node name="CivilServiceLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Civil Service: [No State Loaded]"
+
+[node name="CorruptionControlLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Corruption Control: [No State Loaded]"
+
+[node name="RulingPartyLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Ruling Party: [No State Loaded]"
+
+[node name="PollingSupportLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Polling: [No State Loaded]"
+
+[node name="RightDock" type="PanelContainer" parent="InterfaceLayer"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.08
+anchor_right = 0.99
+anchor_bottom = 0.91
+offset_left = -240.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
+
+[node name="RightDockVBox" type="VBoxContainer" parent="InterfaceLayer/RightDock"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RightDockHeader" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 1)
+theme_override_font_sizes/font_size = 12
+text = "GEOPOLITICS & SECURITY"
+
+[node name="ToggleRightDockButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "▲"
+
+[node name="RightDockContent" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MilitaryReadinessLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Readiness: [No State Loaded]"
+
+[node name="ActiveCrisisLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Active Crisis: [No State Loaded]"
+
+[node name="GdpLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "GDP: [No State Loaded]"
+
+[node name="OfflineBriefingLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Offline Catch-up: [No State Loaded]"
+autowrap_mode = 2
+
+[node name="BottomDock" type="PanelContainer" parent="InterfaceLayer"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -42.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_bottomdock")
+
+[node name="BottomDockHBox" type="HBoxContainer" parent="InterfaceLayer/BottomDock"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="StateStatusLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Status: [No State Loaded]"
+
+[node name="ActiveProjectLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 1)
+theme_override_font_sizes/font_size = 12
+text = "Active Project: None"
+
+[node name="StatusTickerLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "Executive Briefing: Awaiting sovereign state initialization from Republic.Core"
+clip_text = true
