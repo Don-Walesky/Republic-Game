@@ -99,9 +99,38 @@ Anchored along screen edges with high information density and semi-transparent g
 
 | Phase | Scope | Status |
 | :--- | :--- | :--- |
-| **Phase 1** | System inspection, foundation scene architecture, decoupled visual layers (Window, Flag, Portrait, Desk), HUD docking zones, live state connector, test harness. | **Completed** |
-| **Phase 2** | Functional Executive Office interface: Top resource bar live metrics (Country, Treasury, Approval, Stability, Defense, WAT), 6-section navigation tabs, Presidential Briefing modal with real state & honest disclosures, interactive office controls (Hotline phone, Inbox, Dossier, Vista, Mandate), bidirectional navigation with PresidentialDesk. | **Completed** |
-| **Phase 3** | Personalised Presidential Office & Modular Customisation: 8 selectable presidential portraits (5 male, 3 female), sovereign country flag & heraldry, 6 modular furniture categories (desks & chairs, visitor seating, walls & flooring, carpets & lighting, bookshelves & decor, artwork & gifts), authoritative REPU pricing & purchasing validation, facilities/interior approvals, country-isolated persistent storage, and customisation modal UX. | **Completed** |
+| **Phase 1** | System inspection, foundation scene architecture, decoupled visual layers (Window, Flag, Portrait, Desk), HUD docking zones, live state connector, test harness. | **Verified** |
+| **Phase 2** | Functional Executive Office interface: Top resource bar live metrics (Country, Treasury, Approval, Stability, Defense, WAT), 6-section navigation tabs, Presidential Briefing modal with real state & honest disclosures, interactive office controls (Hotline phone, Inbox, Dossier, Vista, Mandate), bidirectional navigation with PresidentialDesk. | **Verified** |
+| **Phase 3** | Personalised Presidential Office & Modular Customisation: 8 selectable presidential portraits (5 male, 3 female), sovereign country flag & heraldry, 6 modular furniture categories (desks & chairs, visitor seating, walls & flooring, carpets & lighting, bookshelves & decor, artwork & gifts), authoritative REPU pricing & purchasing validation, facilities/interior approvals, country-isolated persistent storage, and customisation modal UX. | **Verified** |
+| **Living Scenery & Desk Interactivity** | State-driven capital window feedback (prosperity, construction cranes, civil unrest, atmospheric crisis haze), interactive desk controls with notification badges, progressive dock disclosure, soft portrait/flag mood reactivity, and session briefing toast. | **Verified** |
 | **Phase 4** | Domestic Cabinet & Ministry Dock (Minister portraits, loyalty/competence trade-offs, executive orders). | Planned |
 | **Phase 5** | Geopolitics & Foreign Relations Dock (Bilateral trade routes, DEFCON posture, summit negotiation). | Planned |
 | **Phase 6** | Capital City Scenery expansion (Day/Night cycle, weather, infrastructure development overlays). | Planned |
+
+---
+
+## 5. Verification Checkpoint Audit & Test Registry
+
+All automated suites were executed against the Godot 4.7.2 engine and .NET 8 test runner:
+
+| Test Suite | Command | Total Checks | Result | Exit Code |
+| :--- | :--- | :--- | :--- | :--- |
+| `test_executive_office.gd` | `godot --headless --path client/godot -s test_executive_office.gd` | 8 | **PASS** (8/8) | 0 |
+| `test_executive_office_phase2.gd` | `godot --headless --path client/godot -s test_executive_office_phase2.gd` | 7 | **PASS** (7/7) | 0 |
+| `test_executive_office_phase3.gd` | `godot --headless --path client/godot -s test_executive_office_phase3.gd` | 6 | **PASS** (6/6) | 0 |
+| `test_executive_office_living_feedback.gd` | `godot --headless --path client/godot -s test_executive_office_living_feedback.gd` | 5 | **PASS** (5/5) | 0 |
+| `test_presidential_desk.gd` | `godot --headless --path client/godot -s test_presidential_desk.gd` | 28 | **PASS** (28/28) | 0 |
+| `test_first_playable_loop.gd` | `godot --headless --path client/godot -s test_first_playable_loop.gd` | 8 | **PASS** (8/8) | 0 |
+| `test_phase3_governance_loop.gd` | `godot --headless --path client/godot -s test_phase3_governance_loop.gd` | 7 | **PASS** (7/7) | 0 |
+| `test_mvp_multiplayer_simulation.gd` | `godot --headless --path client/godot -s test_mvp_multiplayer_simulation.gd` | 3 | **PASS** (3/3) | 0 |
+| `Republic.Core.Tests` | `dotnet test --nologo` | 772 | **PASS** (772/772) | 0 |
+| **Total** | | **844** | **100% PASS** | **0** |
+
+### Launch Behaviour Analysis (`project.godot`)
+- **Current Main Scene**: `res://PresidentialDesk.tscn`
+- **Confirmation of Intent**: Intentionally preserved. `PresidentialDesk.tscn` houses the full feature-complete gameplay and decision loops (cabinet appointments, economic projects, campaign rallies, diplomacy, and multiplayer).
+- **Bidirectional Bridge**: Both scenes are tightly integrated:
+  - `PresidentialDesk.tscn` provides a title button (`SwitchToExecutiveOfficeButton`) to enter the Executive Office.
+  - `ExecutiveOffice.tscn` provides direct navigation (`SwitchToDeskButton` / section tabs) to seamlessly jump into specific tabs of `PresidentialDesk.tscn` via `PresidentialDesk.requested_section`.
+- **Verdict**: Retaining `PresidentialDesk.tscn` as the launch scene guarantees stability and regression safety until user sign-off authorizes making `ExecutiveOffice.tscn` the primary entrypoint.
+
