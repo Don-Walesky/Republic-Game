@@ -134,3 +134,85 @@ All automated suites were executed against the Godot 4.7.2 engine and .NET 8 tes
   - `ExecutiveOffice.tscn` provides direct navigation (`SwitchToDeskButton` / section tabs) to seamlessly jump into specific tabs of `PresidentialDesk.tscn` via `PresidentialDesk.requested_section`.
 - **Verdict**: Retaining `PresidentialDesk.tscn` as the launch scene guarantees stability and regression safety until user sign-off authorizes making `ExecutiveOffice.tscn` the primary entrypoint.
 
+---
+
+## 6. Phase 4 Architecture & Audit Specification: Domestic Cabinet & Ministry Dock
+
+### 6.1 Audit of Existing Systems & Files
+
+| Component / Layer | Relevant Files & Services | Current Implementation State |
+| :--- | :--- | :--- |
+| **Domain Models** | [`src/Republic.Core/Cabinet/Models/CabinetPortfolio.cs`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Cabinet/Models/CabinetPortfolio.cs)<br>[`src/Republic.Core/Cabinet/Models/Minister.cs`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Cabinet/Models/Minister.cs) | **Authoritative & Fully Implemented**.<br>Defines 6 portfolios (`Finance`, `Defense`, `ForeignAffairs`, `Interior`, `Health`, `Infrastructure`). Models 5 normalized ratings: `Competence` (0–1), `Loyalty` (0–1), `Integrity` (0–1), `Experience` (0–1), `PoliticalConnections` (0–1), plus `MonthlySalary` and `IsAppointed`. |
+| **State Capacity & Country Logic** | [`src/Republic.Core/World/Models/Country.cs`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/World/Models/Country.cs) (`RecalculateCabinetStateCapacity()`, `AppointMinister()`, `VacatePortfolio()`) | **Authoritative & Fully Implemented**.<br>- Finance (`Competence` & `Integrity`) sets `StateCapacity.CivilServiceQuality` (or 0.3 if vacant).<br>- Interior (`Competence` & `Integrity`) sets `StateCapacity.CorruptionControl` (or 0.3 if vacant).<br>- Infrastructure (`Competence` & `Experience`) sets `StateCapacity.InfrastructureCondition` (or 0.3 if vacant).<br>- *Note*: Loyalty and political connections deliberately do not elevate state capacity. |
+| **Decision Bridge & Request Processing** | [`src/Republic.Core/Client/PresidentialDeskBridge.cs`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Client/PresidentialDeskBridge.cs) (`ApplyCabinetAppointmentDecision()`, `ApplyCrisisResponseDecision()`) | **Authoritative & Fully Implemented**.<br>- Action `appoint_minister` handles `portfolio` (`Finance`, `Interior`, `Infrastructure`) with candidates: `technocrat`, `loyalist`, or `dismiss`.<br>- Technocrat appointment: sets competence/integrity to 0.90, loyalty to 0.50; approval +1.5%, party polling support -3.0%.<br>- Loyalist appointment: sets competence/integrity to 0.45, loyalty to 0.95; approval -1.5%, party polling support +3.0%.<br>- Action `crisis_response` handles `civic_relief` (costs R100k; approval +4.0%, stability +3.0%) and `austerity` (+R500k treasury; approval -4.0%, stability -2.0%). |
+| **State Export & Telemetry** | [`src/Republic.Core/Client/PresidentialDeskSnapshot.cs`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/src/Republic.Core/Client/PresidentialDeskSnapshot.cs)<br>[`client/godot/presidential_desk_state.json`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/client/godot/presidential_desk_state.json) | **Partially Implemented in Snapshot**.<br>Exports `cabinet_summary`, `finance_minister`, `interior_minister`, `civil_service_quality`, `corruption_control`, and `state_capacity_summary`. Detailed candidate roster and other 4 portfolios are currently not expanded in the flat JSON snapshot. |
+| **Legacy Desk UI & Controls** | [`client/godot/PresidentialDesk.gd`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/client/godot/PresidentialDesk.gd)<br>[`client/godot/PresidentialDesk.tscn`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/client/godot/PresidentialDesk.tscn) | **Working & Fully Tested**.<br>Contains `appoint_technocrat_finance_button`, `appoint_loyalist_finance_button`, `appoint_technocrat_interior_button`, `appoint_loyalist_interior_button`, `cancel_cabinet_action_button`, `emergency_austerity_button`, `emergency_relief_button`. |
+| **Executive Office Scene** | [`client/godot/ExecutiveOffice.tscn`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/client/godot/ExecutiveOffice.tscn)<br>[`client/godot/ExecutiveOffice.gd`](file:///c:/Users/WALE/Republic%20-%20Game/Republic-Game/client/godot/ExecutiveOffice.gd) | **Foundation Implemented; In-Office Dock Missing**.<br>`LeftDock` currently displays read-only metrics (`CabinetSummaryLabel`, `CivilServiceLabel`, `CorruptionControlLabel`, `RulingPartyLabel`, `PollingSupportLabel`) and an `OpenCabinetButton`. Clicking `OpenCabinetButton` or `NavCabinetButton` currently switches the entire scene back to `PresidentialDesk.tscn`. |
+
+---
+
+### 6.2 Intended Cabinet Dock Specification
+
+The Cabinet Dock inside the Executive Office will provide a rich in-office domestic governance interface:
+1. **Ministerial Portfolios Roster**:
+   - Tabbed/card overview of key ministries: **Finance** (Civil Service), **Interior** (Corruption Control), **Infrastructure** (Public Works), and **Defense** (Readiness).
+   - Shows current appointee, status (`Appointed` vs `Vacant`), and monthly ministerial salary.
+2. **Minister Profile & Trait Inspection**:
+   - Visual breakdown of the minister's normalized attributes: Competence, Loyalty, Integrity, Experience, and Political Connections.
+   - Narrative background, strengths, and weaknesses (e.g. "Tenured Economist: High fiscal discipline, aloof towards parliamentary whips").
+3. **Transparent Trade-off Communication**:
+   - **Technocrat vs. Loyalist Matrix**:
+     - *Technocrat*: High competence & integrity (elevates State Capacity to 90%, +1.5% public approval), but lower political loyalty (party base feels alienated, -3.0% polling support).
+     - *Loyalist*: High loyalty & connections (rallies party base, +3.0% polling support), but compromised administrative competence (State Capacity capped at 45%, -1.5% public approval).
+     - *Vacant*: Institutional capacity drops to emergency baseline (30%).
+4. **Authoritative Action Pipeline**:
+   - Selecting a candidate opens a vetting/confirmation card displaying projected delta consequences.
+   - Confirming generates a standard `appoint_minister` request to `presidential_desk_request.json` with `portfolio`, `candidate_type`, and `confirmed: true`.
+   - Results are processed by `Republic.Cli` / `PresidentialDeskBridge`, updating the authoritative `.sav` and refreshing the UI.
+5. **Executive Orders & Emergency Decrees Surface**:
+   - Dedicated tab within the Cabinet Dock for presidential decrees:
+     - **Civic Relief Package**: Allocates R100,000 liquid funds to citizen emergency services; restores +4.0% approval, +3.0% stability. Validates treasury balance before submission.
+     - **Emergency Austerity Decree**: Reallocates +R500,000 into liquid treasury from ministerial operational reductions; causes -4.0% approval, -2.0% stability.
+     - **Citizen Town Hall / Public Address**: Direct citizen engagement directive (R50,000 cost; +1.0% approval, +1.5% stability, +1.5% polling support).
+
+---
+
+### 6.3 Implementation Plan (Phased Subtasks)
+
+To ensure zero risk to existing gameplay and regression suites, Phase 4 will be implemented in small, verifiable steps:
+
+1. **Subtask 4.1: Snapshot Telemetry & Catalog Expansion**
+   - Enhance snapshot serialization in `PresidentialDeskSnapshot.cs` (or create a dedicated GDScript catalog helper `CabinetMinisterCatalog.gd`) defining candidate biographies, traits, portraits, and projected impacts for all portfolios.
+   - Maintain 100% backward compatibility with `presidential_desk_state.json`.
+
+2. **Subtask 4.2: In-Office Cabinet Dock UI Surface**
+   - Expand `LeftDock` in `ExecutiveOffice.tscn` to include:
+     - Ministry selector tab bar (Finance, Interior, Infrastructure, Defense).
+     - Minister dossier card with attribute gauges (Competence, Loyalty, Integrity).
+     - Interactive candidate vetting slots (Technocrat option, Party Loyalist option, Vacate/Dismiss option).
+     - Dedicated Executive Orders sub-panel with live cost validation.
+   - Style to seamlessly match the modern presidential glassmorphic aesthetic (`StyleBoxFlat_glassdock`).
+
+3. **Subtask 4.3: Interactive Controller & Request Integration**
+   - Connect `ExecutiveOffice.gd` controls to write standard `presidential_desk_request.json` actions (`appoint_minister`, `crisis_response`, `town_hall`).
+   - Implement client-side confirmation modals and real-time validation (e.g., preventing Civic Relief submission if treasury < R100,000).
+   - Display pending spinner, status feedback, and ticker updates.
+
+4. **Subtask 4.4: Headless Automated Acceptance Suite**
+   - Create `test_executive_office_phase4_cabinet.gd` validating:
+     - Dock expansion and ministry selection.
+     - Telemetry inspection and vacant baseline display.
+     - Candidate selection and trade-off preview calculation.
+     - Confirmed Technocrat and Loyalist request generation.
+     - Executive order eligibility and treasury deduction validation.
+     - Bidirectional consistency with `PresidentialDesk.gd`.
+
+---
+
+### 6.4 Safety Protections & Non-Goals
+- **No Simulation Core Forking**: All state modifications route through `PresidentialDeskBridge` and `Country.cs`. No duplicate C# services or parallel simulations will be created.
+- **Save/Load Integrity**: All state persists to the authoritative `.sav` envelope. Country isolation is preserved via `country_id`.
+- **Default Launch Scene**: `project.godot` retains `run/main_scene="res://PresidentialDesk.tscn"`.
+- **Strict Boundaries**: National Buff Office, purchasable buffs, and military command centers remain excluded.
+
+
