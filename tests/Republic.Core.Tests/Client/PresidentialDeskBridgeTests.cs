@@ -2877,6 +2877,265 @@ public sealed class PresidentialDeskBridgeTests
             }
         }
     }
+
+    [Fact]
+    public void CreateSnapshot_ExportsStructuredCabinetWithAuthoritativeValues()
+    {
+        // Arrange
+        var time = CreateTime(5);
+        var country = Country.Found("Republic of Valoria", time, "valoria");
+
+        var financeMinister = new Minister
+        {
+            Name = "Dr. Elena Rostova",
+            Portfolio = CabinetPortfolio.Finance,
+            Competence = 0.92,
+            Integrity = 0.88,
+            Loyalty = 0.75,
+            Experience = 0.80,
+            PoliticalConnections = 0.40,
+            MonthlySalary = 180_000.0,
+            FactionAlignmentId = "technocrat_caucus"
+        };
+        country.AppointMinister(financeMinister, CabinetPortfolio.Finance);
+
+        var interiorMinister = new Minister
+        {
+            Name = "Dr. Alistair Finch",
+            Portfolio = CabinetPortfolio.Interior,
+            Competence = 0.85,
+            Integrity = 0.85,
+            Loyalty = 0.60,
+            Experience = 0.70,
+            PoliticalConnections = 0.50,
+            MonthlySalary = 175_000.0,
+            FactionAlignmentId = "civil_service"
+        };
+        country.AppointMinister(interiorMinister, CabinetPortfolio.Interior);
+
+        var infraMinister = new Minister
+        {
+            Name = "Eng. Marcus Bennett",
+            Portfolio = CabinetPortfolio.Infrastructure,
+            Competence = 0.90,
+            Integrity = 0.80,
+            Loyalty = 0.70,
+            Experience = 0.95,
+            PoliticalConnections = 0.35,
+            MonthlySalary = 160_000.0,
+            FactionAlignmentId = "engineering_corps"
+        };
+        country.AppointMinister(infraMinister, CabinetPortfolio.Infrastructure);
+
+        // Act
+        var snapshot = PresidentialDeskSnapshot.Create(country, time, 10);
+
+        // Assert - Top-level properties preserved and expanded
+        Assert.Equal("Dr. Elena Rostova", snapshot.FinanceMinister);
+        Assert.Equal("Dr. Alistair Finch", snapshot.InteriorMinister);
+        Assert.Equal("Eng. Marcus Bennett", snapshot.InfrastructureMinister);
+        Assert.Equal("Vacant", snapshot.DefenseMinister);
+        Assert.Equal(0.88, snapshot.CivilServiceQuality);
+        Assert.Equal(0.85, snapshot.CorruptionControl);
+        Assert.Equal(0.90, snapshot.InfrastructureCondition);
+        Assert.Contains("Dr. Elena Rostova", snapshot.CabinetSummary);
+
+        // Assert - Structured Cabinet Collection contains all 6 constitutional portfolios
+        Assert.NotNull(snapshot.Cabinet);
+        Assert.Equal(6, snapshot.Cabinet.Count);
+
+        // Finance (Appointed)
+        var finSnap = snapshot.Cabinet.FirstOrDefault(c => c.Portfolio == "Finance");
+        Assert.NotNull(finSnap);
+        Assert.True(finSnap.IsAppointed);
+        Assert.Equal("Appointed", finSnap.Status);
+        Assert.Equal("Dr. Elena Rostova", finSnap.MinisterName);
+        Assert.Equal(0.92, finSnap.Competence);
+        Assert.Equal(0.75, finSnap.Loyalty);
+        Assert.Equal(0.88, finSnap.Integrity);
+        Assert.Equal(0.80, finSnap.Experience);
+        Assert.Equal(0.40, finSnap.PoliticalConnections);
+        Assert.Equal(180_000.0, finSnap.MonthlySalary);
+        Assert.Equal("technocrat_caucus", finSnap.FactionAlignmentId);
+        Assert.Equal("Civil Service Quality", finSnap.StateCapacityMetric);
+        Assert.Equal(0.88, finSnap.StateCapacityValue);
+
+        // Interior (Appointed)
+        var intSnap = snapshot.Cabinet.FirstOrDefault(c => c.Portfolio == "Interior");
+        Assert.NotNull(intSnap);
+        Assert.True(intSnap.IsAppointed);
+        Assert.Equal("Dr. Alistair Finch", intSnap.MinisterName);
+        Assert.Equal("Corruption Control", intSnap.StateCapacityMetric);
+        Assert.Equal(0.85, intSnap.StateCapacityValue);
+
+        // Infrastructure (Appointed)
+        var infSnap = snapshot.Cabinet.FirstOrDefault(c => c.Portfolio == "Infrastructure");
+        Assert.NotNull(infSnap);
+        Assert.True(infSnap.IsAppointed);
+        Assert.Equal("Eng. Marcus Bennett", infSnap.MinisterName);
+        Assert.Equal("Infrastructure Condition", infSnap.StateCapacityMetric);
+        Assert.Equal(0.90, infSnap.StateCapacityValue);
+
+        // Defense (Vacant)
+        var defSnap = snapshot.Cabinet.FirstOrDefault(c => c.Portfolio == "Defense");
+        Assert.NotNull(defSnap);
+        Assert.False(defSnap.IsAppointed);
+        Assert.Equal("Vacant", defSnap.Status);
+        Assert.Equal("Vacant", defSnap.MinisterName);
+        Assert.Equal(0.0, defSnap.Competence);
+        Assert.Equal(0.0, defSnap.Loyalty);
+        Assert.Equal(0.0, defSnap.MonthlySalary);
+        Assert.Null(defSnap.StateCapacityMetric);
+        Assert.Null(defSnap.StateCapacityValue);
+
+        // ForeignAffairs (Vacant)
+        var faSnap = snapshot.Cabinet.FirstOrDefault(c => c.Portfolio == "ForeignAffairs");
+        Assert.NotNull(faSnap);
+        Assert.False(faSnap.IsAppointed);
+        Assert.Equal("Vacant", faSnap.Status);
+
+        // Health (Vacant)
+        var hlthSnap = snapshot.Cabinet.FirstOrDefault(c => c.Portfolio == "Health");
+        Assert.NotNull(hlthSnap);
+        Assert.False(hlthSnap.IsAppointed);
+        Assert.Equal("Vacant", hlthSnap.Status);
+    }
+
+    [Fact]
+    public void SerializeAndDeserialize_ExpandedCabinetDataPreservedInJsonRoundTrip()
+    {
+        // Arrange
+        var time = CreateTime(3);
+        var country = Country.Found("Republic of Valoria", time, "valoria");
+        country.AppointMinister(new Minister
+        {
+            Name = "Dr. Elena Rostova",
+            Portfolio = CabinetPortfolio.Finance,
+            Competence = 0.90,
+            Integrity = 0.90,
+            Loyalty = 0.50,
+            Experience = 0.85,
+            PoliticalConnections = 0.40,
+            MonthlySalary = 150_000.0
+        }, CabinetPortfolio.Finance);
+
+        var original = PresidentialDeskSnapshot.Create(country, time, 50);
+
+        // Act
+        var json = PresidentialDeskBridge.Serialize(original);
+        var deserialized = PresidentialDeskBridge.Deserialize(json);
+
+        // Assert - JSON string properties presence
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        Assert.True(root.TryGetProperty("cabinet", out var cabinetProp));
+        Assert.Equal(System.Text.Json.JsonValueKind.Array, cabinetProp.ValueKind);
+        Assert.Equal(6, cabinetProp.GetArrayLength());
+
+        Assert.True(root.TryGetProperty("infrastructure_condition", out var infraCondProp));
+        Assert.Equal(0.3, infraCondProp.GetDouble());
+
+        Assert.True(root.TryGetProperty("infrastructure_minister", out var infraMinProp));
+        Assert.Equal("Vacant", infraMinProp.GetString());
+
+        Assert.True(root.TryGetProperty("defense_minister", out var defMinProp));
+        Assert.Equal("Vacant", defMinProp.GetString());
+
+        // Existing properties preserved
+        Assert.True(root.TryGetProperty("cabinet_summary", out _));
+        Assert.True(root.TryGetProperty("finance_minister", out _));
+        Assert.True(root.TryGetProperty("interior_minister", out _));
+        Assert.True(root.TryGetProperty("civil_service_quality", out _));
+        Assert.True(root.TryGetProperty("corruption_control", out _));
+
+        // Deserialized round-trip fidelity
+        Assert.NotNull(deserialized);
+        Assert.Equal(original.FinanceMinister, deserialized.FinanceMinister);
+        Assert.Equal(original.InfrastructureMinister, deserialized.InfrastructureMinister);
+        Assert.Equal(original.DefenseMinister, deserialized.DefenseMinister);
+        Assert.Equal(original.InfrastructureCondition, deserialized.InfrastructureCondition);
+        Assert.NotNull(deserialized.Cabinet);
+        Assert.Equal(6, deserialized.Cabinet.Count);
+
+        var deserializedFinance = deserialized.Cabinet.First(c => c.Portfolio == "Finance");
+        Assert.True(deserializedFinance.IsAppointed);
+        Assert.Equal("Dr. Elena Rostova", deserializedFinance.MinisterName);
+        Assert.Equal(0.90, deserializedFinance.Competence);
+        Assert.Equal(0.50, deserializedFinance.Loyalty);
+        Assert.Equal(150_000.0, deserializedFinance.MonthlySalary);
+        Assert.Equal("Civil Service Quality", deserializedFinance.StateCapacityMetric);
+        Assert.Equal(0.90, deserializedFinance.StateCapacityValue);
+
+        var deserializedDefense = deserialized.Cabinet.First(c => c.Portfolio == "Defense");
+        Assert.False(deserializedDefense.IsAppointed);
+        Assert.Equal("Vacant", deserializedDefense.MinisterName);
+    }
+
+    [Fact]
+    public void ApplyCabinetAppointmentDecision_AppointsAndUpdatesStructuredCabinetSnapshot()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"cab_snap_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Valoria", time, "valoria");
+            country.FoundParty("Democratic Union", time, support: 55.0);
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            // Act 1: Appoint Technocrat to Finance
+            var appointResult = PresidentialDeskBridge.ApplyCabinetAppointmentDecision(
+                "Finance",
+                "technocrat",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(appointResult.Success);
+            var snapshot1 = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot1);
+            Assert.NotNull(snapshot1.Cabinet);
+
+            var financeSlot = snapshot1.Cabinet.FirstOrDefault(c => c.Portfolio == "Finance");
+            Assert.NotNull(financeSlot);
+            Assert.True(financeSlot.IsAppointed);
+            Assert.Equal("Dr. Elena Rostova", financeSlot.MinisterName);
+            Assert.Equal(0.90, financeSlot.Competence);
+            Assert.Equal(0.90, financeSlot.Integrity);
+            Assert.Equal(0.50, financeSlot.Loyalty);
+            Assert.Equal(0.90, snapshot1.CivilServiceQuality);
+
+            // Act 2: Dismiss Finance Minister
+            var dismissResult = PresidentialDeskBridge.ApplyCabinetAppointmentDecision(
+                "Finance",
+                "dismiss",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(dismissResult.Success);
+            var snapshot2 = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot2);
+
+            var financeSlotAfterDismiss = snapshot2.Cabinet.FirstOrDefault(c => c.Portfolio == "Finance");
+            Assert.NotNull(financeSlotAfterDismiss);
+            Assert.False(financeSlotAfterDismiss.IsAppointed);
+            Assert.Equal("Vacant", financeSlotAfterDismiss.Status);
+            Assert.Equal("Vacant", financeSlotAfterDismiss.MinisterName);
+            Assert.Equal(0.30, snapshot2.CivilServiceQuality);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
 }
+
 
 

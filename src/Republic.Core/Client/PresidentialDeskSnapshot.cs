@@ -1,6 +1,7 @@
 namespace Republic.Core.Client;
 
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Treasury;
@@ -128,6 +129,18 @@ public sealed record PresidentialDeskSnapshot
     public string InteriorMinister { get; init; } = "Vacant";
 
     /// <summary>
+    /// Gets the name of the appointed Minister of Infrastructure, or "Vacant".
+    /// </summary>
+    [JsonPropertyName("infrastructure_minister")]
+    public string InfrastructureMinister { get; init; } = "Vacant";
+
+    /// <summary>
+    /// Gets the name of the appointed Minister of Defense, or "Vacant".
+    /// </summary>
+    [JsonPropertyName("defense_minister")]
+    public string DefenseMinister { get; init; } = "Vacant";
+
+    /// <summary>
     /// Gets the civil service quality factor (0.0 to 1.0) governed by the Finance portfolio.
     /// </summary>
     [JsonPropertyName("civil_service_quality")]
@@ -138,6 +151,18 @@ public sealed record PresidentialDeskSnapshot
     /// </summary>
     [JsonPropertyName("corruption_control")]
     public double CorruptionControl { get; init; } = 0.3;
+
+    /// <summary>
+    /// Gets the infrastructure condition factor (0.0 to 1.0) governed by the Infrastructure portfolio.
+    /// </summary>
+    [JsonPropertyName("infrastructure_condition")]
+    public double InfrastructureCondition { get; init; } = 0.3;
+
+    /// <summary>
+    /// Gets the structured collection of cabinet portfolios and appointed minister states.
+    /// </summary>
+    [JsonPropertyName("cabinet")]
+    public IReadOnlyList<CabinetMinisterSnapshot> Cabinet { get; init; } = Array.Empty<CabinetMinisterSnapshot>();
 
     /// <summary>
     /// Gets the live connection status message.
@@ -331,9 +356,13 @@ public sealed record PresidentialDeskSnapshot
 
         var financeMinister = country.GetMinister(CabinetPortfolio.Finance);
         var interiorMinister = country.GetMinister(CabinetPortfolio.Interior);
+        var infraMinister = country.GetMinister(CabinetPortfolio.Infrastructure);
+        var defenseMinister = country.GetMinister(CabinetPortfolio.Defense);
 
         var financeName = financeMinister?.Name ?? "Vacant";
         var interiorName = interiorMinister?.Name ?? "Vacant";
+        var infraName = infraMinister?.Name ?? "Vacant";
+        var defenseName = defenseMinister?.Name ?? "Vacant";
 
         var financeDesc = financeMinister != null
             ? $"{financeMinister.Name} ({financeMinister.Competence * 100:0.#}% Comp)"
@@ -349,6 +378,48 @@ public sealed record PresidentialDeskSnapshot
         var corrControl = country.StateCapacity?.CorruptionControl ?? 0.3;
         var infraCondition = country.StateCapacity?.InfrastructureCondition ?? 0.3;
         var stateCapacitySummary = $"Civil Service: {civilQuality * 100:0.#}% | Corruption Control: {corrControl * 100:0.#}% | Infrastructure: {infraCondition * 100:0.#}%";
+
+        var cabinetList = new List<CabinetMinisterSnapshot>();
+        foreach (var p in Enum.GetValues<CabinetPortfolio>())
+        {
+            var m = country.GetMinister(p);
+            string? capMetric = null;
+            double? capValue = null;
+
+            switch (p)
+            {
+                case CabinetPortfolio.Finance:
+                    capMetric = "Civil Service Quality";
+                    capValue = civilQuality;
+                    break;
+                case CabinetPortfolio.Interior:
+                    capMetric = "Corruption Control";
+                    capValue = corrControl;
+                    break;
+                case CabinetPortfolio.Infrastructure:
+                    capMetric = "Infrastructure Condition";
+                    capValue = infraCondition;
+                    break;
+            }
+
+            cabinetList.Add(new CabinetMinisterSnapshot
+            {
+                Portfolio = p.ToString(),
+                IsAppointed = m != null,
+                Status = m != null ? "Appointed" : "Vacant",
+                MinisterId = m?.Id ?? string.Empty,
+                MinisterName = m?.Name ?? "Vacant",
+                Competence = m?.Competence ?? 0.0,
+                Loyalty = m?.Loyalty ?? 0.0,
+                Integrity = m?.Integrity ?? 0.0,
+                Experience = m?.Experience ?? 0.0,
+                PoliticalConnections = m?.PoliticalConnections ?? 0.0,
+                MonthlySalary = m?.MonthlySalary ?? 0.0,
+                FactionAlignmentId = m?.FactionAlignmentId ?? string.Empty,
+                StateCapacityMetric = capMetric,
+                StateCapacityValue = capValue
+            });
+        }
 
         var gdpFormatted = $"R {country.GrossDomesticProduct:N0}";
 
@@ -420,8 +491,12 @@ public sealed record PresidentialDeskSnapshot
             CabinetSummary = cabinetSummary,
             FinanceMinister = financeName,
             InteriorMinister = interiorName,
+            InfrastructureMinister = infraName,
+            DefenseMinister = defenseName,
             CivilServiceQuality = civilQuality,
             CorruptionControl = corrControl,
+            InfrastructureCondition = infraCondition,
+            Cabinet = cabinetList.AsReadOnly(),
             GdpFormatted = gdpFormatted,
             FiscalReportSummary = fiscalSummary,
             FiscalDeficitFormatted = deficitFormatted,
