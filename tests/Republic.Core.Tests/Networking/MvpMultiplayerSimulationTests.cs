@@ -140,8 +140,19 @@ public sealed class MvpMultiplayerSimulationTests
             Approval = "60.0%",
             TaxRate = "20.0%"
         };
+        var initialJoinTcs = new TaskCompletionSource<CountrySnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnInitialCountryUpdated(CountrySnapshot c)
+        {
+            if (c.Id == "country-solaria")
+            {
+                initialJoinTcs.TrySetResult(c);
+            }
+        }
+        host.OnCountryUpdated += OnInitialCountryUpdated;
+
         await client.SendCountrySnapshotAsync(legitimateCountry);
-        await Task.Delay(100);
+        await Task.WhenAny(initialJoinTcs.Task, Task.Delay(2000));
+        host.OnCountryUpdated -= OnInitialCountryUpdated;
 
         var authTreasury = host.GetOrCreateTreasury("country-solaria");
         Assert.Equal(1_000_000.0, authTreasury.Balance);

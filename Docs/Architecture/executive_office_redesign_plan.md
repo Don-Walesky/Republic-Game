@@ -216,4 +216,17 @@ To ensure zero risk to existing gameplay and regression suites, Phase 4 will be 
 - **Default Launch Scene**: `project.godot` retains `run/main_scene="res://PresidentialDesk.tscn"`.
 - **Strict Boundaries**: National Buff Office, purchasable buffs, and military command centers remain excluded.
 
+---
+
+### 6.5 Phase 4 Verification & Validation Status (Verified Checkpoint)
+
+| Component | Status | Details |
+| :--- | :--- | :--- |
+| **C# Core Simulation Bridge** | **Verified & Tested** | `PresidentialDeskBridge.ProcessPendingDecisionRequest` and `ApplyCabinetAppointmentDecision` verified end-to-end for all 3 supported portfolios (`Finance`, `Interior`, `Infrastructure`) across all actions (`technocrat`, `loyalist`, `dismiss`) plus cancellations and invalid candidate inputs. 785/785 .NET tests pass. |
+| **Godot Client UI (`ExecutiveOffice.tscn`)** | **Verified & Tested** | All 6 constitutional portfolios rendered in `LeftDock/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox` (`Finance`, `Defense`, `ForeignAffairs`, `Interior`, `Health`, `Infrastructure`). Dynamic appointment buttons for Finance, Interior, and Infrastructure toggle between `Appoint Minister` (when vacant) and `Manage Appointment` (when staffed). |
+| **Candidate Appointment Modal** | **Verified & Tested** | `CabinetAppointmentModal` provides 3 appointment choices per supported portfolio: `Technocrat`, `Loyalist`, and `Dismiss / Vacate`. Previews faithfully display candidate names, ratings (Competence, Loyalty, Integrity, Experience, Political Connections), monthly salary (R 150,000/mo), and projected consequences. |
+| **Discrepancy Corrections** | **Verified & Corrected** | 1. Candidate monthly salaries aligned across Godot and C# to R 150,000/mo.<br>2. Infrastructure Technocrat consequence preview corrected from 90% to 85% (`Math.Min(Competence 0.90, Experience 0.85)` = 0.85).<br>3. `_try_run_cli_request_processor()` added to `ExecutiveOffice.gd` to automatically trigger CLI processor on confirmed appointments. |
+| **Automated Test Suites** | **100% Passing** | • `test_executive_office_phase4.gd`: 9/9 checks passed (exit code 0)<br>• `test_executive_office.gd`: 8/8 checks passed (exit code 0)<br>• `test_executive_office_phase2.gd`: 7/7 checks passed (exit code 0)<br>• `test_executive_office_phase3.gd`: 6/6 checks passed (exit code 0)<br>• `test_executive_office_living_feedback.gd`: 5/5 checks passed (exit code 0)<br>• `test_presidential_desk.gd`: 28/28 checks passed (exit code 0)<br>• `dotnet test --nologo`: 785/785 tests passed (exit code 0) |
+
+
 

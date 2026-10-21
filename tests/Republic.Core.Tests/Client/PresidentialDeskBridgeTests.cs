@@ -3135,7 +3135,261 @@ public sealed class PresidentialDeskBridgeTests
             }
         }
     }
+
+    [Theory]
+    [InlineData("Finance", "technocrat", "Dr. Elena Rostova", 0.90, 0.90, 0.50, 1.5, -3.0)]
+    [InlineData("Finance", "loyalist", "Senator Donald Vance", 0.45, 0.45, 0.95, -1.5, 3.0)]
+    [InlineData("Interior", "technocrat", "Dr. Alistair Finch", 0.90, 0.90, 0.50, 1.5, -3.0)]
+    [InlineData("Interior", "loyalist", "Party Whip Thomas Sterling", 0.45, 0.45, 0.95, -1.5, 3.0)]
+    [InlineData("Infrastructure", "technocrat", "Eng. Marcus Bennett", 0.90, 0.90, 0.50, 1.5, -3.0)]
+    [InlineData("Infrastructure", "loyalist", "Alderman Gregory Cross", 0.45, 0.45, 0.95, -1.5, 3.0)]
+    public void ProcessPendingDecisionRequest_CabinetAppointment_AllPortfoliosAndCandidateTypes_EndToEnd(
+        string portfolio,
+        string candidateType,
+        string expectedMinisterName,
+        double expectedComp,
+        double expectedInteg,
+        double expectedLoy,
+        double expectedApprovalDelta,
+        double expectedPollingDelta)
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"cab_proc_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "presidential_desk_state.json");
+        var tempSaveFile = Path.Combine(tempDir, "presidential_desk_state.sav");
+        var tempReqFile = Path.Combine(tempDir, "presidential_desk_request.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Valoria", time, "valoria");
+            country.HappinessRating = 60.0;
+            country.FoundParty("Democratic Union", time, support: 55.0);
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var initialSnapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(initialSnapshot);
+            var initialApproval = initialSnapshot.ApprovalRating;
+            var initialPolling = initialSnapshot.PollingSupport;
+
+            // Write request file as Godot client would
+            var requestJson = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+            {
+                ["request_id"] = "req_cab_test_123",
+                ["action"] = "appoint_minister",
+                ["portfolio"] = portfolio,
+                ["candidate_type"] = candidateType,
+                ["confirmed"] = true
+            });
+            File.WriteAllText(tempReqFile, requestJson);
+
+            // Act: Process request through bridge
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(tempStateFile, tempSaveFile, tempReqFile);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.False(File.Exists(tempReqFile), "Request file should have been cleaned up after processing.");
+
+            // Verify updated snapshot
+            var updatedSnapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(updatedSnapshot);
+            Assert.NotNull(updatedSnapshot.Cabinet);
+
+            var slot = updatedSnapshot.Cabinet.FirstOrDefault(c => c.Portfolio.Equals(portfolio, StringComparison.OrdinalIgnoreCase));
+            Assert.NotNull(slot);
+            Assert.True(slot.IsAppointed);
+            Assert.Equal(expectedMinisterName, slot.MinisterName);
+            Assert.Equal(expectedComp, slot.Competence);
+            Assert.Equal(expectedInteg, slot.Integrity);
+            Assert.Equal(expectedLoy, slot.Loyalty);
+            Assert.Equal(150_000.0, slot.MonthlySalary);
+
+            // Verify approval and polling changes
+            Assert.Equal(initialApproval + expectedApprovalDelta, updatedSnapshot.ApprovalRating, 2);
+            Assert.Equal(initialPolling + expectedPollingDelta, updatedSnapshot.PollingSupport, 2);
+
+            // Verify capacity metric reflects minister stats
+            if (portfolio == "Finance")
+            {
+                Assert.Equal(expectedComp, updatedSnapshot.CivilServiceQuality, 2);
+            }
+            else if (portfolio == "Interior")
+            {
+                Assert.Equal(expectedComp, updatedSnapshot.CorruptionControl, 2);
+            }
+            else if (portfolio == "Infrastructure")
+            {
+                // InfrastructureCondition = Math.Min(Competence, Experience)
+                // For technocrat: Math.Min(0.90, 0.85) = 0.85
+                // For loyalist: Math.Min(0.45, 0.50) = 0.45
+                var expectedCondition = candidateType == "technocrat" ? 0.85 : 0.45;
+                Assert.Equal(expectedCondition, updatedSnapshot.InfrastructureCondition, 2);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("Finance")]
+    [InlineData("Interior")]
+    [InlineData("Infrastructure")]
+    public void ProcessPendingDecisionRequest_CabinetDismiss_VacatesPortfolioAndRevertsCapacity(string portfolio)
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"cab_dism_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "presidential_desk_state.json");
+        var tempSaveFile = Path.Combine(tempDir, "presidential_desk_state.sav");
+        var tempReqFile = Path.Combine(tempDir, "presidential_desk_request.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Valoria", time, "valoria");
+            country.HappinessRating = 60.0;
+            country.FoundParty("Democratic Union", time, support: 55.0);
+
+            // First appoint technocrat
+            var minister = new Minister
+            {
+                Name = "Temporary Minister",
+                Portfolio = Enum.Parse<CabinetPortfolio>(portfolio),
+                Competence = 0.90,
+                Integrity = 0.90,
+                Loyalty = 0.50,
+                Experience = 0.85,
+                PoliticalConnections = 0.40
+            };
+            country.AppointMinister(minister, Enum.Parse<CabinetPortfolio>(portfolio));
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            // Act: Submit dismiss request
+            var requestJson = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+            {
+                ["request_id"] = "req_cab_dismiss_123",
+                ["action"] = "appoint_minister",
+                ["portfolio"] = portfolio,
+                ["candidate_type"] = "dismiss",
+                ["confirmed"] = true
+            });
+            File.WriteAllText(tempReqFile, requestJson);
+
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(tempStateFile, tempSaveFile, tempReqFile);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.False(File.Exists(tempReqFile));
+
+            var updatedSnapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(updatedSnapshot);
+            Assert.NotNull(updatedSnapshot.Cabinet);
+
+            var slot = updatedSnapshot.Cabinet.FirstOrDefault(c => c.Portfolio.Equals(portfolio, StringComparison.OrdinalIgnoreCase));
+            Assert.NotNull(slot);
+            Assert.False(slot.IsAppointed);
+            Assert.Equal("Vacant", slot.Status);
+            Assert.Equal("Vacant", slot.MinisterName);
+            Assert.Equal(0.0, slot.MonthlySalary);
+
+            // Capacity reverts to 0.30 baseline
+            if (portfolio == "Finance")
+            {
+                Assert.Equal(0.30, updatedSnapshot.CivilServiceQuality, 2);
+            }
+            else if (portfolio == "Interior")
+            {
+                Assert.Equal(0.30, updatedSnapshot.CorruptionControl, 2);
+            }
+            else if (portfolio == "Infrastructure")
+            {
+                Assert.Equal(0.30, updatedSnapshot.InfrastructureCondition, 2);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ProcessPendingDecisionRequest_CabinetAppointment_CancellationAndInvalidInput_SafeRejection()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"cab_edge_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "presidential_desk_state.json");
+        var tempSaveFile = Path.Combine(tempDir, "presidential_desk_state.sav");
+        var tempReqFile = Path.Combine(tempDir, "presidential_desk_request.json");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Valoria", time, "valoria");
+            country.HappinessRating = 60.0;
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            // Case 1: Confirmed = false (Cancelled)
+            var cancelReq = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+            {
+                ["request_id"] = "req_cancel_1",
+                ["action"] = "appoint_minister",
+                ["portfolio"] = "Finance",
+                ["candidate_type"] = "technocrat",
+                ["confirmed"] = false
+            });
+            File.WriteAllText(tempReqFile, cancelReq);
+
+            var cancelResult = PresidentialDeskBridge.ProcessPendingDecisionRequest(tempStateFile, tempSaveFile, tempReqFile);
+            Assert.NotNull(cancelResult);
+            Assert.False(cancelResult.Success);
+            Assert.Equal("Cancelled", cancelResult.Result);
+            Assert.False(File.Exists(tempReqFile));
+
+            // State unchanged
+            var snapshotAfterCancel = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshotAfterCancel);
+            Assert.Equal(60.0, snapshotAfterCancel.ApprovalRating);
+
+            // Case 2: Invalid candidate type
+            var invalidReq = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+            {
+                ["request_id"] = "req_invalid_1",
+                ["action"] = "appoint_minister",
+                ["portfolio"] = "Finance",
+                ["candidate_type"] = "alien_overlord",
+                ["confirmed"] = true
+            });
+            File.WriteAllText(tempReqFile, invalidReq);
+
+            var invalidResult = PresidentialDeskBridge.ProcessPendingDecisionRequest(tempStateFile, tempSaveFile, tempReqFile);
+            Assert.NotNull(invalidResult);
+            Assert.False(invalidResult.Success);
+            Assert.Equal("InvalidInput", invalidResult.Result);
+            Assert.False(File.Exists(tempReqFile));
+
+            var snapshotAfterInvalid = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshotAfterInvalid);
+            Assert.Equal(60.0, snapshotAfterInvalid.ApprovalRating);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
 }
+
 
 
 

@@ -59,11 +59,15 @@ func _init() -> void:
 	# Check 8: Navigation Integration
 	all_passed = test_navigation_integration(office) and all_passed
 
+	# Check 9: End-to-End Appointment Lifecycle & UI State Reloading
+	all_passed = test_real_appointment_execution_and_reload(office) and all_passed
+
 	office.queue_free()
 
 	# Clean up any test artifacts
 	var temp_files := [
 		"res://temp_phase4_request.json",
+		"res://temp_phase4_state.json",
 		"res://presidential_desk_request.json"
 	]
 	for tf in temp_files:
@@ -72,7 +76,7 @@ func _init() -> void:
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 8 PHASE 4 CABINET VERIFICATION CHECKS PASSED!    ")
+		print(" [PASS]: ALL 9 PHASE 4 CABINET VERIFICATION CHECKS PASSED!    ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -204,7 +208,7 @@ func test_authoritative_state_loading(office: Node) -> bool:
 				"competence": 0.88,
 				"loyalty": 0.55,
 				"integrity": 0.92,
-				"monthly_salary": 140000.0,
+				"monthly_salary": 150000.0,
 				"state_capacity_metric": "Corruption Control",
 				"state_capacity_value": 0.85
 			},
@@ -216,7 +220,7 @@ func test_authoritative_state_loading(office: Node) -> bool:
 				"competence": 0.90,
 				"loyalty": 0.60,
 				"integrity": 0.85,
-				"monthly_salary": 145000.0,
+				"monthly_salary": 150000.0,
 				"state_capacity_metric": "Infrastructure Condition",
 				"state_capacity_value": 0.88
 			}
@@ -419,11 +423,39 @@ func test_appointment_modal_and_previews(office: Node) -> bool:
 	if not office.candidate_preview_name_label.text.contains("Dr. Alistair Finch"):
 		printerr("  [FAIL]: Interior technocrat should be Alistair Finch, got: %s" % office.candidate_preview_name_label.text)
 		return false
+	if not office.candidate_preview_salary_label.text.contains("150,000"):
+		printerr("  [FAIL]: Interior technocrat salary should be 150,000, got: %s" % office.candidate_preview_salary_label.text)
+		return false
+	if not office.candidate_preview_consequences_label.text.contains("Corruption Control: 90%"):
+		printerr("  [FAIL]: Interior technocrat consequences should mention Corruption Control: 90%, got: %s" % office.candidate_preview_consequences_label.text)
+		return false
+
+	office._on_candidate_loyalist_pressed()
+	if not office.candidate_preview_name_label.text.contains("Thomas Sterling"):
+		printerr("  [FAIL]: Interior loyalist should be Thomas Sterling, got: %s" % office.candidate_preview_name_label.text)
+		return false
+	if not office.candidate_preview_salary_label.text.contains("150,000"):
+		printerr("  [FAIL]: Interior loyalist salary should be 150,000, got: %s" % office.candidate_preview_salary_label.text)
+		return false
 
 	# 5. Check Infrastructure modal
 	office.open_appointment_modal("Infrastructure")
 	if not office.candidate_preview_name_label.text.contains("Marcus Bennett"):
 		printerr("  [FAIL]: Infrastructure technocrat should be Marcus Bennett, got: %s" % office.candidate_preview_name_label.text)
+		return false
+	if not office.candidate_preview_salary_label.text.contains("150,000"):
+		printerr("  [FAIL]: Infrastructure technocrat salary should be 150,000, got: %s" % office.candidate_preview_salary_label.text)
+		return false
+	if not office.candidate_preview_consequences_label.text.contains("85% (Competence 90%, Experience 85%)"):
+		printerr("  [FAIL]: Infrastructure technocrat should mention 85% condition, got: %s" % office.candidate_preview_consequences_label.text)
+		return false
+
+	office._on_candidate_loyalist_pressed()
+	if not office.candidate_preview_name_label.text.contains("Gregory Cross"):
+		printerr("  [FAIL]: Infrastructure loyalist should be Gregory Cross, got: %s" % office.candidate_preview_name_label.text)
+		return false
+	if not office.candidate_preview_salary_label.text.contains("150,000"):
+		printerr("  [FAIL]: Infrastructure loyalist salary should be 150,000, got: %s" % office.candidate_preview_salary_label.text)
 		return false
 
 	office.close_all_modals()
@@ -515,3 +547,147 @@ func test_navigation_integration(office: Node) -> bool:
 
 	print("  [OK]: Navigation to PresidentialDesk cabinet section preserved and verified.")
 	return true
+
+# ------------------------------------------------------------------------------
+# Check 9: End-to-End Appointment Lifecycle & UI State Reloading
+# ------------------------------------------------------------------------------
+func test_real_appointment_execution_and_reload(office: Node) -> bool:
+	print("\n--- Check 9: End-to-End Appointment Lifecycle & UI State Reloading ---")
+
+	var temp_req_path := "res://temp_phase4_request.json"
+	var temp_state_path := "res://temp_phase4_state.json"
+	office.request_file_override = temp_req_path
+
+	# Initial base state with vacant portfolios
+	var base_state: Dictionary = {
+		"country_name": "Federal Republic of Testland",
+		"treasury_balance": 5000000.0,
+		"approval_rating": 70.0,
+		"civil_service_quality": 0.30,
+		"corruption_control": 0.30,
+		"infrastructure_condition": 0.30,
+		"cabinet": [
+			{ "portfolio": "Finance", "is_appointed": false, "status": "Vacant", "minister_name": "Vacant" },
+			{ "portfolio": "Interior", "is_appointed": false, "status": "Vacant", "minister_name": "Vacant" },
+			{ "portfolio": "Infrastructure", "is_appointed": false, "status": "Vacant", "minister_name": "Vacant" }
+		]
+	}
+
+	# Write base state to disk
+	var state_file := FileAccess.open(temp_state_path, FileAccess.WRITE)
+	if state_file == null:
+		printerr("  [FAIL]: Could not write temp_phase4_state.json")
+		return false
+	state_file.store_string(JSON.stringify(base_state, "\t"))
+	state_file.close()
+
+	# Load state from file
+	var load_ok: bool = office.load_state_from_file(temp_state_path)
+	if not load_ok:
+		printerr("  [FAIL]: Failed to load state from file: %s" % temp_state_path)
+		return false
+
+	# 1. Test appointment request generation for all 3 portfolios x 3 actions
+	var portfolios := ["Finance", "Interior", "Infrastructure"]
+	var actions := ["technocrat", "loyalist", "dismiss"]
+
+	for p in portfolios:
+		for act in actions:
+			var res: Dictionary = office.execute_cabinet_appointment(p, act, true)
+			if not res.get("success", false):
+				printerr("  [FAIL]: Failed to submit appointment for %s as %s" % [p, act])
+				return false
+			if not FileAccess.file_exists(temp_req_path):
+				printerr("  [FAIL]: Expected request file on disk for %s/%s" % [p, act])
+				return false
+
+			var req_f := FileAccess.open(temp_req_path, FileAccess.READ)
+			var req_dict: Dictionary = JSON.parse_string(req_f.get_as_text())
+			req_f.close()
+
+			if req_dict.get("action") != "appoint_minister":
+				printerr("  [FAIL]: Request action should be appoint_minister, got: %s" % req_dict.get("action"))
+				return false
+			if req_dict.get("portfolio") != p:
+				printerr("  [FAIL]: Request portfolio should be %s, got: %s" % [p, req_dict.get("portfolio")])
+				return false
+			if req_dict.get("candidate_type") != act:
+				printerr("  [FAIL]: Request candidate_type should be %s, got: %s" % [act, req_dict.get("candidate_type")])
+				return false
+			if not req_dict.get("confirmed", false):
+				printerr("  [FAIL]: Request confirmed should be true")
+				return false
+
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+
+	# 2. Test cancellation request generation
+	var cancel_res: Dictionary = office.execute_cabinet_appointment("Finance", "technocrat", false)
+	if not cancel_res.get("success", false):
+		printerr("  [FAIL]: Cancel request should succeed in submitting request structure.")
+		return false
+
+	var cancel_f := FileAccess.open(temp_req_path, FileAccess.READ)
+	var cancel_dict: Dictionary = JSON.parse_string(cancel_f.get_as_text())
+	cancel_f.close()
+	if cancel_dict.get("confirmed") != false:
+		printerr("  [FAIL]: Cancel request confirmed should be false.")
+		return false
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+
+	# 3. Simulate backend snapshot export after technocrat appointment to Finance and reload
+	var updated_state: Dictionary = {
+		"country_name": "Federal Republic of Testland",
+		"treasury_balance": 5000000.0,
+		"approval_rating": 71.5,
+		"civil_service_quality": 0.90,
+		"corruption_control": 0.30,
+		"infrastructure_condition": 0.30,
+		"cabinet": [
+			{
+				"portfolio": "Finance",
+				"is_appointed": true,
+				"status": "Appointed",
+				"minister_name": "Dr. Elena Rostova",
+				"competence": 0.90,
+				"loyalty": 0.50,
+				"integrity": 0.90,
+				"monthly_salary": 150000.0,
+				"state_capacity_metric": "Civil Service Quality",
+				"state_capacity_value": 0.90
+			},
+			{ "portfolio": "Interior", "is_appointed": false, "status": "Vacant", "minister_name": "Vacant" },
+			{ "portfolio": "Infrastructure", "is_appointed": false, "status": "Vacant", "minister_name": "Vacant" }
+		]
+	}
+
+	state_file = FileAccess.open(temp_state_path, FileAccess.WRITE)
+	state_file.store_string(JSON.stringify(updated_state, "\t"))
+	state_file.close()
+
+	office.load_state_from_file(temp_state_path)
+
+	# Verify Finance card updated dynamically
+	if office.finance_status_label.text != "Appointed (Active)":
+		printerr("  [FAIL]: Reloaded Finance status expected 'Appointed (Active)', got: %s" % office.finance_status_label.text)
+		return false
+	if not office.finance_minister_label.text.contains("Dr. Elena Rostova"):
+		printerr("  [FAIL]: Reloaded Finance minister expected 'Dr. Elena Rostova', got: %s" % office.finance_minister_label.text)
+		return false
+	if not office.finance_effect_label.text.contains("Civil Service Quality: 90.0%"):
+		printerr("  [FAIL]: Reloaded Finance effect expected 90.0%, got: %s" % office.finance_effect_label.text)
+		return false
+	if office.appoint_finance_button.text != "Manage Appointment":
+		printerr("  [FAIL]: Appoint button text expected 'Manage Appointment', got: %s" % office.appoint_finance_button.text)
+		return false
+
+	# Clean up temporary test files
+	if FileAccess.file_exists(temp_state_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_state_path))
+	if FileAccess.file_exists(temp_req_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
+
+	office.request_file_override = ""
+
+	print("  [OK]: End-to-end appointment requests generated, confirmed/cancelled logic verified, and UI state reload confirmed across all portfolios.")
+	return true
+

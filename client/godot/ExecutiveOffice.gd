@@ -346,7 +346,7 @@ const CANDIDATE_DEFINITIONS := {
 			"loyalty": 0.50,
 			"experience": 0.85,
 			"connections": 0.40,
-			"salary": 140000,
+			"salary": 150000,
 			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0% (Discontented party base)\n• Corruption Control: 90%\n• Strict rule of law enforcement with lower political deference."
 		},
 		"loyalist": {
@@ -356,7 +356,7 @@ const CANDIDATE_DEFINITIONS := {
 			"loyalty": 0.95,
 			"experience": 0.50,
 			"connections": 0.90,
-			"salary": 140000,
+			"salary": 150000,
 			"consequences": "• Public Approval: -1.5%\n• Ruling Party Polling: +3.0% (Rallied party base)\n• Corruption Control: Capped at 45%\n• High domestic security loyalty with compromised anti-corruption enforcement."
 		},
 		"dismiss": {
@@ -379,8 +379,8 @@ const CANDIDATE_DEFINITIONS := {
 			"loyalty": 0.50,
 			"experience": 0.85,
 			"connections": 0.40,
-			"salary": 145000,
-			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0% (Discontented party base)\n• Infrastructure Condition: 90%\n• Expert engineering oversight with lower political patronage."
+			"salary": 150000,
+			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0% (Discontented party base)\n• Infrastructure Condition: 85% (Competence 90%, Experience 85%)\n• Expert engineering oversight with lower political patronage."
 		},
 		"loyalist": {
 			"name": "Alderman Gregory Cross",
@@ -389,7 +389,7 @@ const CANDIDATE_DEFINITIONS := {
 			"loyalty": 0.95,
 			"experience": 0.50,
 			"connections": 0.90,
-			"salary": 145000,
+			"salary": 150000,
 			"consequences": "• Public Approval: -1.5%\n• Ruling Party Polling: +3.0% (Rallied party base)\n• Infrastructure Condition: Capped at 45%\n• High political patronage with compromised engineering standards."
 		},
 		"dismiss": {
@@ -2872,7 +2872,41 @@ func _on_confirm_appointment_pressed() -> void:
 func _resolve_request_path() -> String:
 	if request_file_override != "":
 		return request_file_override
-	return DEFAULT_STATE_FILE.replace("presidential_desk_state.json", "presidential_desk_request.json")
+	var base_path: String = current_state_path if not current_state_path.is_empty() else DEFAULT_STATE_FILE
+	return base_path.replace("presidential_desk_state.json", "presidential_desk_request.json")
+
+## Attempts non-blocking execution of the CLI request processor if DLL or project is present
+func _try_run_cli_request_processor() -> void:
+	var candidates: Array[String] = [
+		ProjectSettings.globalize_path("res://../../src/Republic.Cli/bin/Debug/net8.0/Republic.Cli.dll"),
+		ProjectSettings.globalize_path("res://../../src/Republic.Cli/bin/Release/net8.0/Republic.Cli.dll"),
+		"src/Republic.Cli/bin/Debug/net8.0/Republic.Cli.dll",
+		"src/Republic.Cli/bin/Release/net8.0/Republic.Cli.dll"
+	]
+	var cli_dll := ""
+	for c in candidates:
+		if FileAccess.file_exists(c):
+			cli_dll = c
+			break
+
+	var state_path := current_state_path
+	if not cli_dll.is_empty():
+		var args: PackedStringArray = [cli_dll, "--process-request"]
+		if not state_path.is_empty():
+			args.append("--state-file=" + ProjectSettings.globalize_path(state_path))
+		OS.create_process("dotnet", args)
+	else:
+		var proj_candidates: Array[String] = [
+			ProjectSettings.globalize_path("res://../../src/Republic.Cli/Republic.Cli.csproj"),
+			"src/Republic.Cli/Republic.Cli.csproj"
+		]
+		for proj in proj_candidates:
+			if FileAccess.file_exists(proj):
+				var args: PackedStringArray = ["run", "--project", proj, "--no-build", "--", "--process-request"]
+				if not state_path.is_empty():
+					args.append("--state-file=" + ProjectSettings.globalize_path(state_path))
+				OS.create_process("dotnet", args)
+				break
 
 func execute_cabinet_appointment(portfolio: String, candidate_type: String, confirmed: bool = true) -> Dictionary:
 	if latest_state.is_empty():
@@ -2903,6 +2937,9 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 	req_file.store_string(JSON.stringify(request_dict, "\t"))
 	req_file.close()
 
+	if confirmed:
+		_try_run_cli_request_processor()
+
 	var success_msg := "Executive Appointment Submitted: %s for %s." % [candidate_type.capitalize(), portfolio]
 	if status_ticker_label:
 		status_ticker_label.text = "Cabinet Order: " + success_msg
@@ -2913,4 +2950,5 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 		"request_id": req_id,
 		"request_path": req_path
 	}
+
 
