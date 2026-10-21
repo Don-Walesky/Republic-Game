@@ -958,7 +958,7 @@ layout_mode = 1
 anchor_left = 0.01
 anchor_top = 0.088
 anchor_bottom = 0.91
-offset_right = 240.0
+offset_right = 260.0
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
 
@@ -1017,10 +1017,300 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "National Polling: 0.0%"
 
+[node name="HSeparator3" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+
+[node name="CabinetPortfoliosHeaderLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏛 MINISTERIAL PORTFOLIOS (6)"
+
+[node name="CabinetScroll" type="ScrollContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CabinetPortfoliosVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="PortfolioCard_Finance" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="FinanceVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="FinanceHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox"]
+layout_mode = 2
+
+[node name="FinanceTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "💰 Finance"
+
+[node name="FinanceStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="FinanceMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="FinanceRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="FinanceEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "Civil Service: 30% (Baseline)"
+autowrap_mode = 2
+
+[node name="AppointFinanceButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Appoint / Reassign ->"
+
+[node name="PortfolioCard_Defense" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="DefenseVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="DefenseHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox"]
+layout_mode = 2
+
+[node name="DefenseTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🛡️ Defense"
+
+[node name="DefenseStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="DefenseMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="DefenseRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="DefenseEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "State Capacity: None"
+autowrap_mode = 2
+
+[node name="PortfolioCard_ForeignAffairs" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ForeignAffairsVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ForeignAffairsHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox"]
+layout_mode = 2
+
+[node name="ForeignAffairsTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🌐 Foreign Affairs"
+
+[node name="ForeignAffairsStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="ForeignAffairsMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="ForeignAffairsRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="ForeignAffairsEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "State Capacity: None"
+autowrap_mode = 2
+
+[node name="PortfolioCard_Interior" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="InteriorVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="InteriorHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox"]
+layout_mode = 2
+
+[node name="InteriorTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "⚖️ Interior"
+
+[node name="InteriorStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="InteriorMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="InteriorRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="InteriorEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "Corruption Control: 30% (Baseline)"
+autowrap_mode = 2
+
+[node name="AppointInteriorButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Appoint / Reassign ->"
+
+[node name="PortfolioCard_Health" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="HealthVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="HealthHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox"]
+layout_mode = 2
+
+[node name="HealthTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏥 Health"
+
+[node name="HealthStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="HealthMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="HealthRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="HealthEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "State Capacity: None"
+autowrap_mode = 2
+
+[node name="PortfolioCard_Infrastructure" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="InfrastructureVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="InfrastructureHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox"]
+layout_mode = 2
+
+[node name="InfrastructureTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏗️ Infrastructure"
+
+[node name="InfrastructureStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="InfrastructureMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="InfrastructureRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="InfrastructureEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "Infrastructure: 30% (Baseline)"
+autowrap_mode = 2
+
+[node name="AppointInfrastructureButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Appoint / Reassign ->"
+
+[node name="HSeparator4" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+
 [node name="OpenCabinetButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Manage Cabinet ->"
+text = "Full Cabinet in Desk ->"
 
 [node name="RightDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
@@ -1624,6 +1914,138 @@ theme_override_font_sizes/font_size = 12
 text = "Confirm & Acquire"
 
 [node name="CancelPurchaseButton" type="Button" parent="InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Cancel"
+
+[node name="CabinetAppointmentModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -330.0
+offset_top = -240.0
+offset_right = 330.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="CabinetAppointmentVBox" type="VBoxContainer" parent="InterfaceLayer/CabinetAppointmentModal"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CabinetAppointmentHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox"]
+layout_mode = 2
+
+[node name="CabinetAppointmentTitleLabel" type="Label" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 14
+text = "🏛 COMMISSION CABINET APPOINTMENT"
+
+[node name="CloseCabinetAppointmentXButton" type="Button" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "✕"
+
+[node name="CabinetAppointmentPortfolioLabel" type="Label" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "Portfolio: Ministry of Finance"
+
+[node name="CabinetAppointmentCurrentMinisterLabel" type="Label" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.8, 0.95, 1)
+theme_override_font_sizes/font_size = 11
+text = "Current Minister: Dr. Elena Rostova | Status: Appointed"
+autowrap_mode = 2
+
+[node name="HSeparatorA1" type="HSeparator" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox"]
+layout_mode = 2
+
+[node name="CabinetCandidateChoiceHBox" type="HBoxContainer" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CandidateTechnocratButton" type="Button" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "🔬 Technocrat"
+
+[node name="CandidateLoyalistButton" type="Button" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "🤝 Party Loyalist"
+
+[node name="CandidateDismissButton" type="Button" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "🚪 Dismiss / Vacate"
+
+[node name="CandidatePreviewCard" type="PanelContainer" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="CandidatePreviewVBox" type="VBoxContainer" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CandidatePreviewNameLabel" type="Label" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.88, 0.5, 1)
+theme_override_font_sizes/font_size = 13
+text = "Candidate: Dr. Elena Rostova"
+
+[node name="CandidatePreviewRatingsLabel" type="Label" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Competence: 90% | Integrity: 90% | Loyalty: 50% | Experience: 85% | Connections: 40%"
+
+[node name="CandidatePreviewSalaryLabel" type="Label" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 11
+text = "Monthly Salary: R 150,000"
+
+[node name="HSeparatorA2" type="HSeparator" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox"]
+layout_mode = 2
+
+[node name="CandidatePreviewConsequencesLabel" type="Label" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.65, 0.8, 0.95, 1)
+theme_override_font_sizes/font_size = 11
+text = "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0% (Discontented party base)\n• Institutional Capacity: Elevated to 90% (Civil Service Quality)\n• High administrative rigor with reduced factional loyalty."
+autowrap_mode = 2
+
+[node name="CabinetAppointmentStatusLabel" type="Label" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+text = "Select candidate and confirm decree to submit to simulation pipeline."
+autowrap_mode = 2
+
+[node name="CabinetAppointmentActionsHBox" type="HBoxContainer" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="ConfirmAppointmentButton" type="Button" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Confirm & Enact Decree"
+
+[node name="CancelAppointmentButton" type="Button" parent="InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Cancel"

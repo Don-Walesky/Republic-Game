@@ -103,7 +103,7 @@ Anchored along screen edges with high information density and semi-transparent g
 | **Phase 2** | Functional Executive Office interface: Top resource bar live metrics (Country, Treasury, Approval, Stability, Defense, WAT), 6-section navigation tabs, Presidential Briefing modal with real state & honest disclosures, interactive office controls (Hotline phone, Inbox, Dossier, Vista, Mandate), bidirectional navigation with PresidentialDesk. | **Verified** |
 | **Phase 3** | Personalised Presidential Office & Modular Customisation: 8 selectable presidential portraits (5 male, 3 female), sovereign country flag & heraldry, 6 modular furniture categories (desks & chairs, visitor seating, walls & flooring, carpets & lighting, bookshelves & decor, artwork & gifts), authoritative REPU pricing & purchasing validation, facilities/interior approvals, country-isolated persistent storage, and customisation modal UX. | **Verified** |
 | **Living Scenery & Desk Interactivity** | State-driven capital window feedback (prosperity, construction cranes, civil unrest, atmospheric crisis haze), interactive desk controls with notification badges, progressive dock disclosure, soft portrait/flag mood reactivity, and session briefing toast. | **Verified** |
-| **Phase 4** | Domestic Cabinet & Ministry Dock (Minister portraits, loyalty/competence trade-offs, executive orders). | Planned |
+| **Phase 4** | Domestic Cabinet & Ministry Dock: Left Dock cabinet panel with all 6 constitutional portfolios (Finance, Defense, ForeignAffairs, Interior, Health, Infrastructure), minister appointment cards with competence, loyalty, and integrity ratings, honest state capacity effects (Civil Service Quality, Corruption Control, Infrastructure Condition), appointment modal for supported portfolios with Technocrat, Loyalist, and Dismiss choices, core rules consequence previews, and file-based appointment action pipeline (`presidential_desk_request.json`). | **Verified** |
 | **Phase 5** | Geopolitics & Foreign Relations Dock (Bilateral trade routes, DEFCON posture, summit negotiation). | Planned |
 | **Phase 6** | Capital City Scenery expansion (Day/Night cycle, weather, infrastructure development overlays). | Planned |
 
@@ -119,12 +119,13 @@ All automated suites were executed against the Godot 4.7.2 engine and .NET 8 tes
 | `test_executive_office_phase2.gd` | `godot --headless --path client/godot -s test_executive_office_phase2.gd` | 7 | **PASS** (7/7) | 0 |
 | `test_executive_office_phase3.gd` | `godot --headless --path client/godot -s test_executive_office_phase3.gd` | 6 | **PASS** (6/6) | 0 |
 | `test_executive_office_living_feedback.gd` | `godot --headless --path client/godot -s test_executive_office_living_feedback.gd` | 5 | **PASS** (5/5) | 0 |
+| `test_executive_office_phase4.gd` | `godot --headless --path client/godot -s test_executive_office_phase4.gd` | 8 | **PASS** (8/8) | 0 |
 | `test_presidential_desk.gd` | `godot --headless --path client/godot -s test_presidential_desk.gd` | 28 | **PASS** (28/28) | 0 |
 | `test_first_playable_loop.gd` | `godot --headless --path client/godot -s test_first_playable_loop.gd` | 8 | **PASS** (8/8) | 0 |
 | `test_phase3_governance_loop.gd` | `godot --headless --path client/godot -s test_phase3_governance_loop.gd` | 7 | **PASS** (7/7) | 0 |
 | `test_mvp_multiplayer_simulation.gd` | `godot --headless --path client/godot -s test_mvp_multiplayer_simulation.gd` | 3 | **PASS** (3/3) | 0 |
-| `Republic.Core.Tests` | `dotnet test --nologo` | 772 | **PASS** (772/772) | 0 |
-| **Total** | | **844** | **100% PASS** | **0** |
+| `Republic.Core.Tests` | `dotnet test --nologo` | 775 | **PASS** (775/775) | 0 |
+| **Total** | | **855** | **100% PASS** | **0** |
 
 ### Launch Behaviour Analysis (`project.godot`)
 - **Current Main Scene**: `res://PresidentialDesk.tscn`

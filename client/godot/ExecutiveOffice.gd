@@ -116,6 +116,55 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var polling_support_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PollingSupportLabel") as Label
 @onready var open_cabinet_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/OpenCabinetButton") as Button
 
+# Phase 4 Cabinet & Ministries Dock References
+@onready var cabinet_scroll: ScrollContainer = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll") as ScrollContainer
+@onready var cabinet_portfolios_vbox: VBoxContainer = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox") as VBoxContainer
+
+# Finance Portfolio Card
+@onready var finance_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance") as Control
+@onready var finance_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox/FinanceStatusLabel") as Label
+@onready var finance_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceMinisterLabel") as Label
+@onready var finance_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceRatingsLabel") as Label
+@onready var finance_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceEffectLabel") as Label
+@onready var appoint_finance_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/AppointFinanceButton") as Button
+
+# Defense Portfolio Card
+@onready var defense_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense") as Control
+@onready var defense_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseHeaderHBox/DefenseStatusLabel") as Label
+@onready var defense_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseMinisterLabel") as Label
+@onready var defense_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseRatingsLabel") as Label
+@onready var defense_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseEffectLabel") as Label
+
+# Foreign Affairs Portfolio Card
+@onready var foreign_affairs_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs") as Control
+@onready var foreign_affairs_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsHeaderHBox/ForeignAffairsStatusLabel") as Label
+@onready var foreign_affairs_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsMinisterLabel") as Label
+@onready var foreign_affairs_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsRatingsLabel") as Label
+@onready var foreign_affairs_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsEffectLabel") as Label
+
+# Interior Portfolio Card
+@onready var interior_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior") as Control
+@onready var interior_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorHeaderHBox/InteriorStatusLabel") as Label
+@onready var interior_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorMinisterLabel") as Label
+@onready var interior_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorRatingsLabel") as Label
+@onready var interior_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorEffectLabel") as Label
+@onready var appoint_interior_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/AppointInteriorButton") as Button
+
+# Health Portfolio Card
+@onready var health_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health") as Control
+@onready var health_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthHeaderHBox/HealthStatusLabel") as Label
+@onready var health_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthMinisterLabel") as Label
+@onready var health_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthRatingsLabel") as Label
+@onready var health_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthEffectLabel") as Label
+
+# Infrastructure Portfolio Card
+@onready var infrastructure_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure") as Control
+@onready var infrastructure_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureHeaderHBox/InfrastructureStatusLabel") as Label
+@onready var infrastructure_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureMinisterLabel") as Label
+@onready var infrastructure_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureRatingsLabel") as Label
+@onready var infrastructure_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureEffectLabel") as Label
+@onready var appoint_infrastructure_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/AppointInfrastructureButton") as Button
+
 # Right Dock: Foreign Affairs & Intelligence
 @onready var right_dock: PanelContainer = _get_node_safe("InterfaceLayer/RightDock") as PanelContainer
 @onready var toggle_right_dock_button: Button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockHeader/ToggleRightDockButton") as Button
@@ -204,6 +253,22 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var confirm_purchase_button: Button = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox/ConfirmPurchaseButton") as Button
 @onready var cancel_purchase_button: Button = _get_node_safe("InterfaceLayer/PurchaseConfirmModal/PurchaseConfirmVBox/PurchaseActionsHBox/CancelPurchaseButton") as Button
 
+# Phase 4 Cabinet Appointment Modal References
+@onready var cabinet_appointment_modal: PanelContainer = _get_node_safe("InterfaceLayer/CabinetAppointmentModal") as PanelContainer
+@onready var close_cabinet_appointment_x_button: Button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentHeaderHBox/CloseCabinetAppointmentXButton") as Button
+@onready var appointment_portfolio_label: Label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentPortfolioLabel") as Label
+@onready var appointment_current_minister_label: Label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentCurrentMinisterLabel") as Label
+@onready var candidate_technocrat_button: Button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox/CandidateTechnocratButton") as Button
+@onready var candidate_loyalist_button: Button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox/CandidateLoyalistButton") as Button
+@onready var candidate_dismiss_button: Button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox/CandidateDismissButton") as Button
+@onready var candidate_preview_name_label: Label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox/CandidatePreviewNameLabel") as Label
+@onready var candidate_preview_ratings_label: Label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox/CandidatePreviewRatingsLabel") as Label
+@onready var candidate_preview_salary_label: Label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox/CandidatePreviewSalaryLabel") as Label
+@onready var candidate_preview_consequences_label: Label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox/CandidatePreviewConsequencesLabel") as Label
+@onready var appointment_status_label: Label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentStatusLabel") as Label
+@onready var confirm_appointment_button: Button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox/ConfirmAppointmentButton") as Button
+@onready var cancel_appointment_button: Button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox/CancelAppointmentButton") as Button
+
 # ==============================================================================
 # 4. STATE & PERSISTENCE VARIABLES
 # ==============================================================================
@@ -232,6 +297,113 @@ var flag_sway_frequency: float = 1.5
 
 var left_dock_pinned: bool = false
 var right_dock_pinned: bool = false
+
+# Phase 4 Cabinet Appointment Tracking & Honest Simulation Rules
+var current_appointment_portfolio: String = "Finance"
+var selected_candidate_type: String = "technocrat"
+var request_file_override: String = ""
+
+const CANDIDATE_DEFINITIONS := {
+	"Finance": {
+		"capacity_metric": "Civil Service Quality",
+		"technocrat": {
+			"name": "Dr. Elena Rostova",
+			"competence": 0.90,
+			"integrity": 0.90,
+			"loyalty": 0.50,
+			"experience": 0.85,
+			"connections": 0.40,
+			"salary": 150000,
+			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0% (Discontented party base)\n• Civil Service Quality: 90%\n• High fiscal discipline with reduced factional loyalty."
+		},
+		"loyalist": {
+			"name": "Senator Donald Vance",
+			"competence": 0.45,
+			"integrity": 0.45,
+			"loyalty": 0.95,
+			"experience": 0.50,
+			"connections": 0.90,
+			"salary": 150000,
+			"consequences": "• Public Approval: -1.5%\n• Ruling Party Polling: +3.0% (Rallied party base)\n• Civil Service Quality: Capped at 45%\n• Strong legislative loyalty with compromised administrative rigor."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Civil Service Quality: Reverts to emergency baseline (30%)\n• Ministerial salary removed (R 0/mo)\n• Public Approval & Polling: No immediate delta."
+		}
+	},
+	"Interior": {
+		"capacity_metric": "Corruption Control",
+		"technocrat": {
+			"name": "Dr. Alistair Finch",
+			"competence": 0.90,
+			"integrity": 0.90,
+			"loyalty": 0.50,
+			"experience": 0.85,
+			"connections": 0.40,
+			"salary": 140000,
+			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0% (Discontented party base)\n• Corruption Control: 90%\n• Strict rule of law enforcement with lower political deference."
+		},
+		"loyalist": {
+			"name": "Party Whip Thomas Sterling",
+			"competence": 0.45,
+			"integrity": 0.45,
+			"loyalty": 0.95,
+			"experience": 0.50,
+			"connections": 0.90,
+			"salary": 140000,
+			"consequences": "• Public Approval: -1.5%\n• Ruling Party Polling: +3.0% (Rallied party base)\n• Corruption Control: Capped at 45%\n• High domestic security loyalty with compromised anti-corruption enforcement."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Corruption Control: Reverts to emergency baseline (30%)\n• Ministerial salary removed (R 0/mo)\n• Public Approval & Polling: No immediate delta."
+		}
+	},
+	"Infrastructure": {
+		"capacity_metric": "Infrastructure Condition",
+		"technocrat": {
+			"name": "Eng. Marcus Bennett",
+			"competence": 0.90,
+			"integrity": 0.90,
+			"loyalty": 0.50,
+			"experience": 0.85,
+			"connections": 0.40,
+			"salary": 145000,
+			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0% (Discontented party base)\n• Infrastructure Condition: 90%\n• Expert engineering oversight with lower political patronage."
+		},
+		"loyalist": {
+			"name": "Alderman Gregory Cross",
+			"competence": 0.45,
+			"integrity": 0.45,
+			"loyalty": 0.95,
+			"experience": 0.50,
+			"connections": 0.90,
+			"salary": 145000,
+			"consequences": "• Public Approval: -1.5%\n• Ruling Party Polling: +3.0% (Rallied party base)\n• Infrastructure Condition: Capped at 45%\n• High political patronage with compromised engineering standards."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Infrastructure Condition: Reverts to emergency baseline (30%)\n• Ministerial salary removed (R 0/mo)\n• Public Approval & Polling: No immediate delta."
+		}
+	}
+}
 
 var session_briefing_timer: Timer = null
 var dock_flash_timer: Timer = null
@@ -556,6 +728,120 @@ func _init_controls() -> void:
 	if session_briefing_status_label == null:
 		session_briefing_status_label = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/SessionBriefingStatusLabel") as Label
 
+	# Phase 4 Left Dock Portfolio Lookups
+	if cabinet_scroll == null:
+		cabinet_scroll = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll") as ScrollContainer
+	if cabinet_portfolios_vbox == null:
+		cabinet_portfolios_vbox = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox") as VBoxContainer
+
+	# Finance
+	if finance_card == null:
+		finance_card = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance") as Control
+	if finance_status_label == null:
+		finance_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox/FinanceStatusLabel") as Label
+	if finance_minister_label == null:
+		finance_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceMinisterLabel") as Label
+	if finance_ratings_label == null:
+		finance_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceRatingsLabel") as Label
+	if finance_effect_label == null:
+		finance_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceEffectLabel") as Label
+	if appoint_finance_button == null:
+		appoint_finance_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/AppointFinanceButton") as Button
+
+	# Defense
+	if defense_card == null:
+		defense_card = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense") as Control
+	if defense_status_label == null:
+		defense_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseHeaderHBox/DefenseStatusLabel") as Label
+	if defense_minister_label == null:
+		defense_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseMinisterLabel") as Label
+	if defense_ratings_label == null:
+		defense_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseRatingsLabel") as Label
+	if defense_effect_label == null:
+		defense_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseEffectLabel") as Label
+
+	# Foreign Affairs
+	if foreign_affairs_card == null:
+		foreign_affairs_card = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs") as Control
+	if foreign_affairs_status_label == null:
+		foreign_affairs_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsHeaderHBox/ForeignAffairsStatusLabel") as Label
+	if foreign_affairs_minister_label == null:
+		foreign_affairs_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsMinisterLabel") as Label
+	if foreign_affairs_ratings_label == null:
+		foreign_affairs_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsRatingsLabel") as Label
+	if foreign_affairs_effect_label == null:
+		foreign_affairs_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsEffectLabel") as Label
+
+	# Interior
+	if interior_card == null:
+		interior_card = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior") as Control
+	if interior_status_label == null:
+		interior_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorHeaderHBox/InteriorStatusLabel") as Label
+	if interior_minister_label == null:
+		interior_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorMinisterLabel") as Label
+	if interior_ratings_label == null:
+		interior_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorRatingsLabel") as Label
+	if interior_effect_label == null:
+		interior_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorEffectLabel") as Label
+	if appoint_interior_button == null:
+		appoint_interior_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/AppointInteriorButton") as Button
+
+	# Health
+	if health_card == null:
+		health_card = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health") as Control
+	if health_status_label == null:
+		health_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthHeaderHBox/HealthStatusLabel") as Label
+	if health_minister_label == null:
+		health_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthMinisterLabel") as Label
+	if health_ratings_label == null:
+		health_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthRatingsLabel") as Label
+	if health_effect_label == null:
+		health_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthEffectLabel") as Label
+
+	# Infrastructure
+	if infrastructure_card == null:
+		infrastructure_card = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure") as Control
+	if infrastructure_status_label == null:
+		infrastructure_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureHeaderHBox/InfrastructureStatusLabel") as Label
+	if infrastructure_minister_label == null:
+		infrastructure_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureMinisterLabel") as Label
+	if infrastructure_ratings_label == null:
+		infrastructure_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureRatingsLabel") as Label
+	if infrastructure_effect_label == null:
+		infrastructure_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureEffectLabel") as Label
+	if appoint_infrastructure_button == null:
+		appoint_infrastructure_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/AppointInfrastructureButton") as Button
+
+	# Phase 4 Cabinet Appointment Modal Lookups
+	if cabinet_appointment_modal == null:
+		cabinet_appointment_modal = _get_node_safe("InterfaceLayer/CabinetAppointmentModal") as PanelContainer
+	if close_cabinet_appointment_x_button == null:
+		close_cabinet_appointment_x_button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentHeaderHBox/CloseCabinetAppointmentXButton") as Button
+	if appointment_portfolio_label == null:
+		appointment_portfolio_label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentPortfolioLabel") as Label
+	if appointment_current_minister_label == null:
+		appointment_current_minister_label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentCurrentMinisterLabel") as Label
+	if candidate_technocrat_button == null:
+		candidate_technocrat_button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox/CandidateTechnocratButton") as Button
+	if candidate_loyalist_button == null:
+		candidate_loyalist_button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox/CandidateLoyalistButton") as Button
+	if candidate_dismiss_button == null:
+		candidate_dismiss_button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetCandidateChoiceHBox/CandidateDismissButton") as Button
+	if candidate_preview_name_label == null:
+		candidate_preview_name_label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox/CandidatePreviewNameLabel") as Label
+	if candidate_preview_ratings_label == null:
+		candidate_preview_ratings_label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox/CandidatePreviewRatingsLabel") as Label
+	if candidate_preview_salary_label == null:
+		candidate_preview_salary_label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox/CandidatePreviewSalaryLabel") as Label
+	if candidate_preview_consequences_label == null:
+		candidate_preview_consequences_label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CandidatePreviewCard/CandidatePreviewVBox/CandidatePreviewConsequencesLabel") as Label
+	if appointment_status_label == null:
+		appointment_status_label = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentStatusLabel") as Label
+	if confirm_appointment_button == null:
+		confirm_appointment_button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox/ConfirmAppointmentButton") as Button
+	if cancel_appointment_button == null:
+		cancel_appointment_button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox/CancelAppointmentButton") as Button
+
 func _ready() -> void:
 	_init_controls()
 	_connect_signals()
@@ -732,6 +1018,28 @@ func _connect_signals() -> void:
 	if cancel_purchase_button and not cancel_purchase_button.pressed.is_connected(_close_purchase_confirm_modal):
 		cancel_purchase_button.pressed.connect(_close_purchase_confirm_modal)
 
+	# Phase 4 Cabinet Signals
+	if appoint_finance_button and not appoint_finance_button.pressed.is_connected(_on_appoint_finance_pressed):
+		appoint_finance_button.pressed.connect(_on_appoint_finance_pressed)
+	if appoint_interior_button and not appoint_interior_button.pressed.is_connected(_on_appoint_interior_pressed):
+		appoint_interior_button.pressed.connect(_on_appoint_interior_pressed)
+	if appoint_infrastructure_button and not appoint_infrastructure_button.pressed.is_connected(_on_appoint_infrastructure_pressed):
+		appoint_infrastructure_button.pressed.connect(_on_appoint_infrastructure_pressed)
+
+	if close_cabinet_appointment_x_button and not close_cabinet_appointment_x_button.pressed.is_connected(close_all_modals):
+		close_cabinet_appointment_x_button.pressed.connect(close_all_modals)
+	if cancel_appointment_button and not cancel_appointment_button.pressed.is_connected(close_all_modals):
+		cancel_appointment_button.pressed.connect(close_all_modals)
+	if confirm_appointment_button and not confirm_appointment_button.pressed.is_connected(_on_confirm_appointment_pressed):
+		confirm_appointment_button.pressed.connect(_on_confirm_appointment_pressed)
+
+	if candidate_technocrat_button and not candidate_technocrat_button.pressed.is_connected(_on_candidate_technocrat_pressed):
+		candidate_technocrat_button.pressed.connect(_on_candidate_technocrat_pressed)
+	if candidate_loyalist_button and not candidate_loyalist_button.pressed.is_connected(_on_candidate_loyalist_pressed):
+		candidate_loyalist_button.pressed.connect(_on_candidate_loyalist_pressed)
+	if candidate_dismiss_button and not candidate_dismiss_button.pressed.is_connected(_on_candidate_dismiss_pressed):
+		candidate_dismiss_button.pressed.connect(_on_candidate_dismiss_pressed)
+
 func _apply_tooltips() -> void:
 	if window_button:
 		window_button.tooltip_text = "Capital Vista: Inspect current capital development and atmospheric lighting."
@@ -824,6 +1132,8 @@ func display_missing_state() -> void:
 		ruling_party_label.text = "Ruling Party: [No State Loaded]"
 	if polling_support_label:
 		polling_support_label.text = "National Polling: [No State Loaded]"
+
+	_clear_cabinet_portfolios_ui()
 
 	if military_readiness_label:
 		military_readiness_label.text = "Readiness: [No State Loaded]"
@@ -938,6 +1248,8 @@ func apply_state(state: Dictionary) -> void:
 	if polling_support_label:
 		var poll_val := float(state.get("polling_support", 0.0))
 		polling_support_label.text = "National Polling: %0.1f%%" % poll_val
+
+	_update_cabinet_portfolios_ui(state)
 
 	# 3. Right Dock: Geopolitics & Foreign Affairs
 	if military_readiness_label:
@@ -1640,6 +1952,8 @@ func close_all_modals() -> void:
 		customisation_modal.visible = false
 	if purchase_confirm_modal:
 		purchase_confirm_modal.visible = false
+	if cabinet_appointment_modal:
+		cabinet_appointment_modal.visible = false
 	active_nav_section = Section.OVERVIEW
 	_update_nav_button_highlights()
 
@@ -1648,7 +1962,8 @@ func is_any_modal_open() -> bool:
 		(hotline_modal and hotline_modal.visible) or \
 		(dossier_modal and dossier_modal.visible) or \
 		(customisation_modal and customisation_modal.visible) or \
-		(purchase_confirm_modal and purchase_confirm_modal.visible)
+		(purchase_confirm_modal and purchase_confirm_modal.visible) or \
+		(cabinet_appointment_modal and cabinet_appointment_modal.visible)
 
 func _on_modal_backdrop_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -2185,3 +2500,417 @@ func _create_flag_card(f: Dictionary, selected_id: String) -> PanelContainer:
 	act_vbox.add_child(select_btn)
 
 	return card
+
+# ==============================================================================
+# PHASE 4: DOMESTIC CABINET & MINISTRIES DOCK METHODS
+# ==============================================================================
+
+func _clear_cabinet_portfolios_ui() -> void:
+	# Finance
+	if finance_status_label:
+		finance_status_label.text = "Vacant (Unassigned)"
+	if finance_minister_label:
+		finance_minister_label.text = "Minister: [Vacant]"
+	if finance_ratings_label:
+		finance_ratings_label.text = "Ratings: --"
+	if finance_effect_label:
+		finance_effect_label.text = "State Capacity Effect: Civil Service Quality reverts to baseline 30.0%"
+	if appoint_finance_button:
+		appoint_finance_button.disabled = false
+		appoint_finance_button.text = "Appoint Minister"
+
+	# Defense
+	if defense_status_label:
+		defense_status_label.text = "Vacant (Unassigned)"
+	if defense_minister_label:
+		defense_minister_label.text = "Minister: [Vacant]"
+	if defense_ratings_label:
+		defense_ratings_label.text = "Ratings: --"
+	if defense_effect_label:
+		defense_effect_label.text = "State Capacity Effect: Armed Forces coordination inactive"
+
+	# Foreign Affairs
+	if foreign_affairs_status_label:
+		foreign_affairs_status_label.text = "Vacant (Unassigned)"
+	if foreign_affairs_minister_label:
+		foreign_affairs_minister_label.text = "Minister: [Vacant]"
+	if foreign_affairs_ratings_label:
+		foreign_affairs_ratings_label.text = "Ratings: --"
+	if foreign_affairs_effect_label:
+		foreign_affairs_effect_label.text = "State Capacity Effect: Sovereign diplomatic missions unassigned"
+
+	# Interior
+	if interior_status_label:
+		interior_status_label.text = "Vacant (Unassigned)"
+	if interior_minister_label:
+		interior_minister_label.text = "Minister: [Vacant]"
+	if interior_ratings_label:
+		interior_ratings_label.text = "Ratings: --"
+	if interior_effect_label:
+		interior_effect_label.text = "State Capacity Effect: Corruption Control reverts to baseline 30.0%"
+	if appoint_interior_button:
+		appoint_interior_button.disabled = false
+		appoint_interior_button.text = "Appoint Minister"
+
+	# Health
+	if health_status_label:
+		health_status_label.text = "Vacant (Unassigned)"
+	if health_minister_label:
+		health_minister_label.text = "Minister: [Vacant]"
+	if health_ratings_label:
+		health_ratings_label.text = "Ratings: --"
+	if health_effect_label:
+		health_effect_label.text = "State Capacity Effect: Healthcare infrastructure oversight unassigned"
+
+	# Infrastructure
+	if infrastructure_status_label:
+		infrastructure_status_label.text = "Vacant (Unassigned)"
+	if infrastructure_minister_label:
+		infrastructure_minister_label.text = "Minister: [Vacant]"
+	if infrastructure_ratings_label:
+		infrastructure_ratings_label.text = "Ratings: --"
+	if infrastructure_effect_label:
+		infrastructure_effect_label.text = "State Capacity Effect: Infrastructure Condition reverts to baseline 30.0%"
+	if appoint_infrastructure_button:
+		appoint_infrastructure_button.disabled = false
+		appoint_infrastructure_button.text = "Appoint Minister"
+
+func _update_cabinet_portfolios_ui(state: Dictionary) -> void:
+	if state.is_empty():
+		_clear_cabinet_portfolios_ui()
+		return
+
+	var portfolios := ["Finance", "Defense", "ForeignAffairs", "Interior", "Health", "Infrastructure"]
+	for p in portfolios:
+		var p_data := _resolve_portfolio_display_data(p, state)
+		_apply_portfolio_card_data(p, p_data)
+
+func _resolve_portfolio_display_data(portfolio: String, state: Dictionary) -> Dictionary:
+	var cabinet_list = state.get("cabinet", null)
+	var found_entry: Dictionary = {}
+	if cabinet_list is Array:
+		for entry in cabinet_list:
+			if entry is Dictionary and str(entry.get("portfolio", "")) == portfolio:
+				found_entry = entry
+				break
+
+	if not found_entry.is_empty():
+		var is_appointed: bool = bool(found_entry.get("is_appointed", false))
+		var min_name: String = str(found_entry.get("minister_name", "Vacant"))
+		if min_name == "" or min_name.to_lower() == "vacant" or min_name == "[No State Loaded]":
+			is_appointed = false
+
+		if is_appointed:
+			var comp: float = float(found_entry.get("competence", 0.0))
+			var loy: float = float(found_entry.get("loyalty", 0.0))
+			var integ: float = float(found_entry.get("integrity", 0.0))
+			var metric_name: String = str(found_entry.get("state_capacity_metric", ""))
+			var cap_val = found_entry.get("state_capacity_value")
+			var effect_text := ""
+			if metric_name != "" and cap_val != null:
+				effect_text = "State Capacity: %s: %0.1f%%" % [metric_name, float(cap_val) * 100.0]
+			else:
+				effect_text = _get_appointed_effect_string(portfolio, state)
+
+			return {
+				"is_appointed": true,
+				"status": "Appointed (Active)",
+				"minister_name": min_name,
+				"ratings": "Ratings: Comp %d%% | Loy %d%% | Int %d%%" % [int(round(comp * 100.0)), int(round(loy * 100.0)), int(round(integ * 100.0))],
+				"effect": effect_text
+			}
+		else:
+			return {
+				"is_appointed": false,
+				"status": "Vacant (Unassigned)",
+				"minister_name": "Minister: [Vacant]",
+				"ratings": "Ratings: --",
+				"effect": _get_vacant_effect_string(portfolio, state)
+			}
+
+	# Fallback to top-level fields
+	var top_level_name := ""
+	match portfolio:
+		"Finance":
+			top_level_name = str(state.get("finance_minister", "Vacant"))
+		"Interior":
+			top_level_name = str(state.get("interior_minister", "Vacant"))
+		"Infrastructure":
+			top_level_name = str(state.get("infrastructure_minister", "Vacant"))
+		"Defense":
+			top_level_name = str(state.get("defense_minister", "Vacant"))
+		"ForeignAffairs":
+			top_level_name = str(state.get("foreign_affairs_minister", "Vacant"))
+		"Health":
+			top_level_name = str(state.get("health_minister", "Vacant"))
+
+	if top_level_name != "" and top_level_name.to_lower() != "vacant" and top_level_name != "[No State Loaded]":
+		var effect_text := _get_appointed_effect_string(portfolio, state)
+		return {
+			"is_appointed": true,
+			"status": "Appointed (Active)",
+			"minister_name": top_level_name,
+			"ratings": "Ratings: Appointed Minister",
+			"effect": effect_text
+		}
+
+	return {
+		"is_appointed": false,
+		"status": "Vacant (Unassigned)",
+		"minister_name": "Minister: [Vacant]",
+		"ratings": "Ratings: --",
+		"effect": _get_vacant_effect_string(portfolio, state)
+	}
+
+func _get_vacant_effect_string(portfolio: String, state: Dictionary) -> String:
+	match portfolio:
+		"Finance":
+			var val := float(state.get("civil_service_quality", 0.3)) * 100.0
+			return "State Capacity Effect: Civil Service Quality at %0.1f%%" % val
+		"Interior":
+			var val := float(state.get("corruption_control", 0.3)) * 100.0
+			return "State Capacity Effect: Corruption Control at %0.1f%%" % val
+		"Infrastructure":
+			var val := float(state.get("infrastructure_condition", 0.3)) * 100.0
+			return "State Capacity Effect: Infrastructure Condition at %0.1f%%" % val
+		"Defense":
+			return "State Capacity Effect: Armed Forces coordination inactive"
+		"ForeignAffairs":
+			return "State Capacity Effect: Sovereign diplomatic missions unassigned"
+		"Health":
+			return "State Capacity Effect: Healthcare infrastructure oversight unassigned"
+		_:
+			return "State Capacity Effect: Baseline administration"
+
+func _get_appointed_effect_string(portfolio: String, state: Dictionary) -> String:
+	match portfolio:
+		"Finance":
+			var val := float(state.get("civil_service_quality", 0.9)) * 100.0
+			return "State Capacity: Civil Service Quality: %0.1f%%" % val
+		"Interior":
+			var val := float(state.get("corruption_control", 0.9)) * 100.0
+			return "State Capacity: Corruption Control: %0.1f%%" % val
+		"Infrastructure":
+			var val := float(state.get("infrastructure_condition", 0.9)) * 100.0
+			return "State Capacity: Infrastructure Condition: %0.1f%%" % val
+		"Defense":
+			return "Armed Forces: Military readiness coordination active"
+		"ForeignAffairs":
+			return "Diplomacy: Sovereign diplomatic missions active"
+		"Health":
+			return "Public Health: Healthcare delivery active"
+		_:
+			return "Portfolio administration active"
+
+func _apply_portfolio_card_data(portfolio: String, data: Dictionary) -> void:
+	var is_app: bool = data.get("is_appointed", false)
+	var status_str: String = data.get("status", "Vacant (Unassigned)")
+	var min_name: String = data.get("minister_name", "[Vacant]")
+	var ratings_str: String = data.get("ratings", "--")
+	var effect_str: String = data.get("effect", "")
+
+	match portfolio:
+		"Finance":
+			if finance_status_label:
+				finance_status_label.text = status_str
+			if finance_minister_label:
+				finance_minister_label.text = "Minister: " + min_name if not min_name.begins_with("Minister:") else min_name
+			if finance_ratings_label:
+				finance_ratings_label.text = ratings_str
+			if finance_effect_label:
+				finance_effect_label.text = effect_str
+			if appoint_finance_button:
+				appoint_finance_button.text = "Manage Appointment" if is_app else "Appoint Minister"
+		"Defense":
+			if defense_status_label:
+				defense_status_label.text = status_str
+			if defense_minister_label:
+				defense_minister_label.text = "Minister: " + min_name if not min_name.begins_with("Minister:") else min_name
+			if defense_ratings_label:
+				defense_ratings_label.text = ratings_str
+			if defense_effect_label:
+				defense_effect_label.text = effect_str
+		"ForeignAffairs":
+			if foreign_affairs_status_label:
+				foreign_affairs_status_label.text = status_str
+			if foreign_affairs_minister_label:
+				foreign_affairs_minister_label.text = "Minister: " + min_name if not min_name.begins_with("Minister:") else min_name
+			if foreign_affairs_ratings_label:
+				foreign_affairs_ratings_label.text = ratings_str
+			if foreign_affairs_effect_label:
+				foreign_affairs_effect_label.text = effect_str
+		"Interior":
+			if interior_status_label:
+				interior_status_label.text = status_str
+			if interior_minister_label:
+				interior_minister_label.text = "Minister: " + min_name if not min_name.begins_with("Minister:") else min_name
+			if interior_ratings_label:
+				interior_ratings_label.text = ratings_str
+			if interior_effect_label:
+				interior_effect_label.text = effect_str
+			if appoint_interior_button:
+				appoint_interior_button.text = "Manage Appointment" if is_app else "Appoint Minister"
+		"Health":
+			if health_status_label:
+				health_status_label.text = status_str
+			if health_minister_label:
+				health_minister_label.text = "Minister: " + min_name if not min_name.begins_with("Minister:") else min_name
+			if health_ratings_label:
+				health_ratings_label.text = ratings_str
+			if health_effect_label:
+				health_effect_label.text = effect_str
+		"Infrastructure":
+			if infrastructure_status_label:
+				infrastructure_status_label.text = status_str
+			if infrastructure_minister_label:
+				infrastructure_minister_label.text = "Minister: " + min_name if not min_name.begins_with("Minister:") else min_name
+			if infrastructure_ratings_label:
+				infrastructure_ratings_label.text = ratings_str
+			if infrastructure_effect_label:
+				infrastructure_effect_label.text = effect_str
+			if appoint_infrastructure_button:
+				appoint_infrastructure_button.text = "Manage Appointment" if is_app else "Appoint Minister"
+
+# ==============================================================================
+# PHASE 4: CABINET APPOINTMENT MODAL & REQUEST FLOW
+# ==============================================================================
+
+func open_appointment_modal(portfolio: String) -> void:
+	if not CANDIDATE_DEFINITIONS.has(portfolio):
+		if appointment_status_label:
+			appointment_status_label.text = "Portfolio '%s' does not currently support candidate commissioning." % portfolio
+		return
+
+	current_appointment_portfolio = portfolio
+	selected_candidate_type = "technocrat"
+
+	close_all_modals()
+	if modal_backdrop:
+		modal_backdrop.visible = true
+	if cabinet_appointment_modal:
+		cabinet_appointment_modal.visible = true
+
+	_update_appointment_modal_content()
+
+func _update_appointment_modal_content() -> void:
+	if appointment_portfolio_label:
+		appointment_portfolio_label.text = "Portfolio: Ministry of %s" % current_appointment_portfolio
+
+	var p_data := _resolve_portfolio_display_data(current_appointment_portfolio, latest_state)
+	var current_name: String = p_data.get("minister_name", "[Vacant]")
+	var current_status: String = p_data.get("status", "Vacant (Unassigned)")
+	if appointment_current_minister_label:
+		appointment_current_minister_label.text = "Current Status: %s | %s" % [current_status, current_name]
+
+	# Update candidate buttons styling / selection
+	if candidate_technocrat_button:
+		candidate_technocrat_button.text = "▶ Technocrat Candidate" if selected_candidate_type == "technocrat" else "Technocrat Candidate"
+	if candidate_loyalist_button:
+		candidate_loyalist_button.text = "▶ Loyalist Candidate" if selected_candidate_type == "loyalist" else "Loyalist Candidate"
+	if candidate_dismiss_button:
+		candidate_dismiss_button.text = "▶ Dismiss / Vacate" if selected_candidate_type == "dismiss" else "Dismiss / Vacate"
+
+	var p_defs: Dictionary = CANDIDATE_DEFINITIONS.get(current_appointment_portfolio, {})
+	var c_def: Dictionary = p_defs.get(selected_candidate_type, {})
+	var c_name: String = str(c_def.get("name", "Unknown Candidate"))
+	var comp: float = float(c_def.get("competence", 0.0))
+	var loy: float = float(c_def.get("loyalty", 0.0))
+	var integ: float = float(c_def.get("integrity", 0.0))
+	var exp: float = float(c_def.get("experience", 0.0))
+	var conn: float = float(c_def.get("connections", 0.0))
+	var salary: int = int(c_def.get("salary", 0))
+	var consequences: String = str(c_def.get("consequences", "No consequences detailed."))
+
+	if candidate_preview_name_label:
+		candidate_preview_name_label.text = "Candidate: " + c_name
+	if candidate_preview_ratings_label:
+		if selected_candidate_type == "dismiss":
+			candidate_preview_ratings_label.text = "Ratings: Vacant position (portfolio unstaffed)"
+		else:
+			candidate_preview_ratings_label.text = "Competence: %d%% | Loyalty: %d%% | Integrity: %d%%\nExperience: %d%% | Political Connections: %d%%" % [
+				int(round(comp * 100.0)), int(round(loy * 100.0)), int(round(integ * 100.0)), int(round(exp * 100.0)), int(round(conn * 100.0))
+			]
+	if candidate_preview_salary_label:
+		candidate_preview_salary_label.text = "Monthly Ministerial Salary: R %s" % _format_number_commas(salary)
+	if candidate_preview_consequences_label:
+		candidate_preview_consequences_label.text = consequences
+
+	if appointment_status_label:
+		appointment_status_label.text = "Ready to commission %s candidate for Ministry of %s." % [selected_candidate_type.capitalize(), current_appointment_portfolio]
+
+func _on_appoint_finance_pressed() -> void:
+	open_appointment_modal("Finance")
+
+func _on_appoint_interior_pressed() -> void:
+	open_appointment_modal("Interior")
+
+func _on_appoint_infrastructure_pressed() -> void:
+	open_appointment_modal("Infrastructure")
+
+func _on_candidate_technocrat_pressed() -> void:
+	selected_candidate_type = "technocrat"
+	_update_appointment_modal_content()
+
+func _on_candidate_loyalist_pressed() -> void:
+	selected_candidate_type = "loyalist"
+	_update_appointment_modal_content()
+
+func _on_candidate_dismiss_pressed() -> void:
+	selected_candidate_type = "dismiss"
+	_update_appointment_modal_content()
+
+func _on_confirm_appointment_pressed() -> void:
+	var result := execute_cabinet_appointment(current_appointment_portfolio, selected_candidate_type, true)
+	if result.get("success", false):
+		if appointment_status_label:
+			appointment_status_label.text = result.get("message", "Appointment order submitted.")
+		close_all_modals()
+	else:
+		if appointment_status_label:
+			appointment_status_label.text = "Error: " + result.get("message", "Failed to submit appointment.")
+
+func _resolve_request_path() -> String:
+	if request_file_override != "":
+		return request_file_override
+	return DEFAULT_STATE_FILE.replace("presidential_desk_state.json", "presidential_desk_request.json")
+
+func execute_cabinet_appointment(portfolio: String, candidate_type: String, confirmed: bool = true) -> Dictionary:
+	if latest_state.is_empty():
+		var err_msg := "Cannot submit cabinet appointment: No Republic simulation state loaded."
+		if appointment_status_label:
+			appointment_status_label.text = "Appointment Rejected: " + err_msg
+		return { "success": false, "message": err_msg }
+
+	var req_path := _resolve_request_path()
+	var req_id := "req_cab_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var timestamp_str := Time.get_datetime_string_from_system()
+
+	var request_dict := {
+		"request_id": req_id,
+		"action": "appoint_minister",
+		"portfolio": portfolio,
+		"candidate_type": candidate_type,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to open request file for writing: " + req_path
+		return { "success": false, "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	var success_msg := "Executive Appointment Submitted: %s for %s." % [candidate_type.capitalize(), portfolio]
+	if status_ticker_label:
+		status_ticker_label.text = "Cabinet Order: " + success_msg
+
+	return {
+		"success": true,
+		"message": success_msg,
+		"request_id": req_id,
+		"request_path": req_path
+	}
+
