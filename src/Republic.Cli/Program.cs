@@ -210,8 +210,9 @@ public static class Program
         {
             string? customStatePath = args.FirstOrDefault(a => a.StartsWith("--state-file="))?.Split('=', 2)[1].Trim();
             string? customSavePath = args.FirstOrDefault(a => a.StartsWith("--save-file="))?.Split('=', 2)[1].Trim();
+            string? customRequestPath = args.FirstOrDefault(a => a.StartsWith("--request-file="))?.Split('=', 2)[1].Trim();
 
-            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(customStatePath, customSavePath);
+            var result = PresidentialDeskBridge.ProcessPendingDecisionRequest(customStatePath, customSavePath, customRequestPath);
             if (result != null)
             {
                 Console.WriteLine($"[PRESIDENTIAL ACTION]: Result={result.Result}, Success={result.Success}, Country={result.CountryName}, TaxRate={result.IncomeTaxRate * 100:0.#}%, ActiveProject={result.ActiveProject}, Message=\"{result.Message}\"");

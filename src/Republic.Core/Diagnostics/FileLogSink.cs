@@ -25,8 +25,26 @@ public sealed class FileLogSink : ILogSink
 
         lock (_syncRoot)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            File.AppendAllText(_path, LogFormatter.Format(entry, structured) + Environment.NewLine);
+            try
+            {
+                var dir = Path.GetDirectoryName(_path);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                using var stream = new FileStream(_path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                using var writer = new StreamWriter(stream);
+                writer.WriteLine(LogFormatter.Format(entry, structured));
+            }
+            catch (IOException)
+            {
+                // Fallback: Concurrent process holding file lock should not crash simulation
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Fallback: Permission restriction should not crash simulation
+            }
         }
     }
 }

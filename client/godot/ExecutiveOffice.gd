@@ -1376,6 +1376,8 @@ func apply_state(state: Dictionary) -> void:
 	state_loaded.emit(state)
 
 func _on_poll_timer_timeout() -> void:
+	check_for_decision_results()
+
 	if not FileAccess.file_exists(current_state_path):
 		return
 	var mtime := FileAccess.get_modified_time(current_state_path)
@@ -2869,14 +2871,30 @@ func _on_confirm_appointment_pressed() -> void:
 		if appointment_status_label:
 			appointment_status_label.text = "Error: " + result.get("message", "Failed to submit appointment.")
 
+var cli_processor_override: String = ""
+
 func _resolve_request_path() -> String:
 	if request_file_override != "":
 		return request_file_override
 	var base_path: String = current_state_path if not current_state_path.is_empty() else DEFAULT_STATE_FILE
-	return base_path.replace("presidential_desk_state.json", "presidential_desk_request.json")
+	var dir := base_path.get_base_dir()
+	return dir.path_join("presidential_desk_request.json")
 
-## Attempts non-blocking execution of the CLI request processor if DLL or project is present
-func _try_run_cli_request_processor() -> void:
+func _resolve_result_path() -> String:
+	var base_path: String = current_state_path if not current_state_path.is_empty() else DEFAULT_STATE_FILE
+	var dir := base_path.get_base_dir()
+	return dir.path_join("presidential_desk_result.json")
+
+## Attempts execution of the CLI request processor if DLL or project is present
+## Returns Dictionary: { "success": bool, "pid": int, "message": String }
+func _try_run_cli_request_processor() -> Dictionary:
+	if cli_processor_override == "none" or cli_processor_override == "missing":
+		return {
+			"success": false,
+			"pid": -1,
+			"message": "Simulation processor executable not found."
+		}
+
 	var candidates: Array[String] = [
 		ProjectSettings.globalize_path("res://../../src/Republic.Cli/bin/Debug/net8.0/Republic.Cli.dll"),
 		ProjectSettings.globalize_path("res://../../src/Republic.Cli/bin/Release/net8.0/Republic.Cli.dll"),
@@ -2884,17 +2902,59 @@ func _try_run_cli_request_processor() -> void:
 		"src/Republic.Cli/bin/Release/net8.0/Republic.Cli.dll"
 	]
 	var cli_dll := ""
-	for c in candidates:
-		if FileAccess.file_exists(c):
-			cli_dll = c
-			break
+	if cli_processor_override != "":
+		if FileAccess.file_exists(cli_processor_override):
+			cli_dll = cli_processor_override
+		else:
+			return {
+				"success": false,
+				"pid": -1,
+				"message": "Custom simulation processor not found: " + cli_processor_override
+			}
+	else:
+		for c in candidates:
+			var simp := c.simplify_path()
+			if FileAccess.file_exists(simp):
+				cli_dll = simp
+				break
+			elif FileAccess.file_exists(c):
+				cli_dll = c
+				break
 
 	var state_path := current_state_path
+	var req_path := _resolve_request_path()
+
 	if not cli_dll.is_empty():
-		var args: PackedStringArray = [cli_dll, "--process-request"]
+		var norm_dll := cli_dll.simplify_path()
+		var norm_state := ProjectSettings.globalize_path(state_path).simplify_path()
+		var norm_req := ProjectSettings.globalize_path(req_path).simplify_path()
+		if OS.get_name() == "Windows":
+			norm_dll = norm_dll.replace("/", "\\")
+			norm_state = norm_state.replace("/", "\\")
+			norm_req = norm_req.replace("/", "\\")
+
+		var args: PackedStringArray = [norm_dll, "--process-request"]
 		if not state_path.is_empty():
-			args.append("--state-file=" + ProjectSettings.globalize_path(state_path))
-		OS.create_process("dotnet", args)
+			args.append("--state-file=" + norm_state)
+		if not req_path.is_empty():
+			args.append("--request-file=" + norm_req)
+		if not custom_save_path.is_empty():
+			var norm_save := ProjectSettings.globalize_path(custom_save_path).simplify_path()
+			if OS.get_name() == "Windows":
+				norm_save = norm_save.replace("/", "\\")
+			args.append("--save-file=" + norm_save)
+		var pid := OS.create_process("dotnet", args)
+		if pid < 0:
+			return {
+				"success": false,
+				"pid": pid,
+				"message": "Failed to launch simulation processor process."
+			}
+		return {
+			"success": true,
+			"pid": pid,
+			"message": "Simulation processor launched successfully."
+		}
 	else:
 		var proj_candidates: Array[String] = [
 			ProjectSettings.globalize_path("res://../../src/Republic.Cli/Republic.Cli.csproj"),
@@ -2905,8 +2965,90 @@ func _try_run_cli_request_processor() -> void:
 				var args: PackedStringArray = ["run", "--project", proj, "--no-build", "--", "--process-request"]
 				if not state_path.is_empty():
 					args.append("--state-file=" + ProjectSettings.globalize_path(state_path))
-				OS.create_process("dotnet", args)
-				break
+				if not req_path.is_empty():
+					args.append("--request-file=" + ProjectSettings.globalize_path(req_path))
+				if not custom_save_path.is_empty():
+					args.append("--save-file=" + ProjectSettings.globalize_path(custom_save_path))
+				var pid := OS.create_process("dotnet", args)
+				if pid < 0:
+					return {
+						"success": false,
+						"pid": pid,
+						"message": "Failed to launch simulation processor project."
+					}
+				return {
+					"success": true,
+					"pid": pid,
+					"message": "Simulation processor launched via dotnet run."
+				}
+		return {
+			"success": false,
+			"pid": -1,
+			"message": "Simulation processor executable not found."
+		}
+
+## Synchronously executes the CLI request processor and reloads state upon completion
+func run_cli_request_processor_sync(timeout_msec: int = 8000) -> Dictionary:
+	var proc := _try_run_cli_request_processor()
+	if not proc.get("success", false):
+		return proc
+	var pid: int = proc.get("pid", -1)
+	if pid <= 0:
+		return proc
+
+	var start_t := Time.get_ticks_msec()
+	while OS.is_process_running(pid):
+		OS.delay_msec(25)
+		if Time.get_ticks_msec() - start_t > timeout_msec:
+			return {
+				"success": false,
+				"message": "CLI processor timed out after %d ms." % timeout_msec,
+				"pid": pid
+			}
+
+	check_for_decision_results()
+	return {
+		"success": true,
+		"message": "CLI processor completed successfully.",
+		"pid": pid
+	}
+
+## Checks for and applies structured presidential decision results exported by C# core
+func check_for_decision_results() -> bool:
+	var res_path := _resolve_result_path()
+	if not FileAccess.file_exists(res_path):
+		return false
+
+	var f := FileAccess.open(res_path, FileAccess.READ)
+	if f == null:
+		return false
+	var text := f.get_as_text()
+	f.close()
+
+	var parsed: Variant = JSON.parse_string(text)
+	if not (parsed is Dictionary) or parsed.is_empty():
+		return false
+
+	var res_dict: Dictionary = parsed
+	var success: bool = bool(res_dict.get("success", false))
+	var msg: String = str(res_dict.get("message", ""))
+	var result_code: String = str(res_dict.get("result", ""))
+
+	if appointment_status_label:
+		if success:
+			appointment_status_label.text = "Certified: " + msg
+		else:
+			appointment_status_label.text = "[Rejected] " + msg
+
+	if status_ticker_label:
+		status_ticker_label.text = "Cabinet Result: " + msg
+
+	# Reload the state to show the updated minister and capacities
+	load_state_from_file(current_state_path)
+
+	# Clean up processed result file
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(res_path))
+	return true
 
 func execute_cabinet_appointment(portfolio: String, candidate_type: String, confirmed: bool = true) -> Dictionary:
 	if latest_state.is_empty():
@@ -2916,6 +3058,10 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 		return { "success": false, "message": err_msg }
 
 	var req_path := _resolve_request_path()
+	var req_dir := req_path.get_base_dir()
+	if not req_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
+
 	var req_id := "req_cab_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
 	var timestamp_str := Time.get_datetime_string_from_system()
 
@@ -2937,15 +3083,33 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 	req_file.store_string(JSON.stringify(request_dict, "\t"))
 	req_file.close()
 
+	var proc_res := { "success": true, "message": "" }
 	if confirmed:
-		_try_run_cli_request_processor()
+		proc_res = _try_run_cli_request_processor()
+
+	if confirmed and not proc_res.get("success", true):
+		var fail_msg: String = "Order written, but simulation processor failed: " + str(proc_res.get("message", "Processor unavailable."))
+		if appointment_status_label:
+			appointment_status_label.text = fail_msg
+		if status_ticker_label:
+			status_ticker_label.text = "Cabinet Order Warning: " + fail_msg
+		return {
+			"success": false,
+			"processor_launched": false,
+			"message": fail_msg,
+			"request_id": req_id,
+			"request_path": req_path
+		}
 
 	var success_msg := "Executive Appointment Submitted: %s for %s." % [candidate_type.capitalize(), portfolio]
+	if appointment_status_label:
+		appointment_status_label.text = success_msg
 	if status_ticker_label:
 		status_ticker_label.text = "Cabinet Order: " + success_msg
 
 	return {
 		"success": true,
+		"processor_launched": proc_res.get("success", false),
 		"message": success_msg,
 		"request_id": req_id,
 		"request_path": req_path
