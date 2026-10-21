@@ -286,6 +286,10 @@ var current_customization_category: String = "portraits"
 var pending_purchase_item: Dictionary = {}
 var custom_save_path: String = ""
 
+# Phase 4 Cabinet Appointment Tracking
+var pending_appointment_request_id: String = ""
+var pending_appointment_request_time: int = 0
+
 # Living Feedback & Notification State
 var hotline_badge_dismissed: bool = false
 var dossier_badge_dismissed: bool = false
@@ -1377,6 +1381,15 @@ func apply_state(state: Dictionary) -> void:
 
 func _on_poll_timer_timeout() -> void:
 	check_for_decision_results()
+
+	if not pending_appointment_request_id.is_empty():
+		if Time.get_ticks_msec() - pending_appointment_request_time > 15000:
+			var timeout_msg := "Order Warning: Cabinet appointment request timed out without response from simulation processor."
+			if appointment_status_label:
+				appointment_status_label.text = timeout_msg
+			if status_ticker_label:
+				status_ticker_label.text = timeout_msg
+			pending_appointment_request_id = ""
 
 	if not FileAccess.file_exists(current_state_path):
 		return
@@ -3000,20 +3013,43 @@ func run_cli_request_processor_sync(timeout_msec: int = 8000) -> Dictionary:
 	while OS.is_process_running(pid):
 		OS.delay_msec(25)
 		if Time.get_ticks_msec() - start_t > timeout_msec:
+			pending_appointment_request_id = ""
+			var timeout_msg := "CLI processor timed out after %d ms." % timeout_msec
+			if appointment_status_label:
+				appointment_status_label.text = "Order Warning: " + timeout_msg
 			return {
 				"success": false,
-				"message": "CLI processor timed out after %d ms." % timeout_msec,
+				"message": timeout_msg,
 				"pid": pid
 			}
 
-	check_for_decision_results()
+	var handled := check_for_decision_results()
+	if not handled:
+		var res_path := _resolve_result_path()
+		if FileAccess.file_exists(res_path):
+			return {
+				"success": false,
+				"message": "Decision result arrived, but its request ID did not match the pending appointment.",
+				"pid": pid
+			}
+		else:
+			var no_res_msg := "No decision result produced by simulation processor."
+			if appointment_status_label:
+				appointment_status_label.text = "Order Warning: " + no_res_msg
+			return {
+				"success": false,
+				"message": no_res_msg,
+				"pid": pid
+			}
+
 	return {
 		"success": true,
-		"message": "CLI processor completed successfully.",
+		"message": "CLI processor completed successfully and matching result applied.",
 		"pid": pid
 	}
 
-## Checks for and applies structured presidential decision results exported by C# core
+## Checks for and applies structured presidential decision results exported by C# core.
+## Only accepts results matching the currently pending request ID.
 func check_for_decision_results() -> bool:
 	var res_path := _resolve_result_path()
 	if not FileAccess.file_exists(res_path):
@@ -3030,6 +3066,18 @@ func check_for_decision_results() -> bool:
 		return false
 
 	var res_dict: Dictionary = parsed
+	var res_req_id: String = str(res_dict.get("request_id", res_dict.get("RequestId", "")))
+
+	# Enforce request/result ID matching: reject mismatched or stale results
+	if not pending_appointment_request_id.is_empty() and res_req_id != pending_appointment_request_id:
+		var warn_msg := "[Mismatched Result] Ignored unrelated result for ID: " + res_req_id
+		if appointment_status_label:
+			appointment_status_label.text = warn_msg
+		if status_ticker_label:
+			status_ticker_label.text = "Cabinet Warning: " + warn_msg
+		# Do NOT reload state, do NOT delete unrelated result file, do NOT clear pending_appointment_request_id
+		return false
+
 	var success: bool = bool(res_dict.get("success", false))
 	var msg: String = str(res_dict.get("message", ""))
 	var result_code: String = str(res_dict.get("result", ""))
@@ -3037,6 +3085,8 @@ func check_for_decision_results() -> bool:
 	if appointment_status_label:
 		if success:
 			appointment_status_label.text = "Certified: " + msg
+		elif result_code == "Cancelled":
+			appointment_status_label.text = "[Cancelled] " + msg
 		else:
 			appointment_status_label.text = "[Rejected] " + msg
 
@@ -3046,7 +3096,8 @@ func check_for_decision_results() -> bool:
 	# Reload the state to show the updated minister and capacities
 	load_state_from_file(current_state_path)
 
-	# Clean up processed result file
+	# Clean up processed matching result file and reset pending ID
+	pending_appointment_request_id = ""
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(res_path))
 	return true
 
@@ -3062,8 +3113,16 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 	if not req_dir.is_empty():
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
 
+	# Clear any stale result file for this path before writing new request
+	var stale_res_path := _resolve_result_path()
+	if FileAccess.file_exists(stale_res_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_res_path))
+
 	var req_id := "req_cab_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
 	var timestamp_str := Time.get_datetime_string_from_system()
+
+	pending_appointment_request_id = req_id
+	pending_appointment_request_time = Time.get_ticks_msec()
 
 	var request_dict := {
 		"request_id": req_id,
@@ -3077,6 +3136,7 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 
 	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
 	if req_file == null:
+		pending_appointment_request_id = ""
 		var err_msg := "Failed to open request file for writing: " + req_path
 		return { "success": false, "message": err_msg }
 
@@ -3088,6 +3148,7 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 		proc_res = _try_run_cli_request_processor()
 
 	if confirmed and not proc_res.get("success", true):
+		pending_appointment_request_id = ""
 		var fail_msg: String = "Order written, but simulation processor failed: " + str(proc_res.get("message", "Processor unavailable."))
 		if appointment_status_label:
 			appointment_status_label.text = fail_msg

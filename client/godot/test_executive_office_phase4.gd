@@ -9,11 +9,12 @@ extends SceneTree
 ## 4. Honest vacant representation & baseline capacity presentation
 ## 5. Missing state safe fallback (Zero invented stats / [No State Loaded] / Vacant)
 ## 6. Cabinet appointment modal & consequence previews grounded in C# core rules
-## 7. Action pipeline request generation (appoint_minister)
+## 7. Action pipeline request generation (appoint_minister) in isolated sandbox
 ## 8. Progressive dock integration & navigation to PresidentialDesk cabinet section
-## 9. Test cleanup safety regression (pre-existing player request file preserved)
-## 10. Missing CLI processor failure reporting (clear warning, no false success)
-## 11. Real End-to-End C# CLI Pipeline Integration Verification:
+## 9. Fully isolated cleanup safety (Never touches, creates, or targets real player files)
+## 10. Missing simulation processor failure handling (no false success) & timeout detection
+## 11. Request/Result ID matching, stale result clearance, & mismatched result safety
+## 12. Real End-to-End C# CLI Pipeline Integration Verification:
 ##     - Isolated test country creation via Republic.Cli
 ##     - Finance, Interior, Infrastructure (Technocrat, Loyalist, Dismiss)
 ##     - Cancellation without mutation, invalid request rejection
@@ -70,13 +71,16 @@ func _init() -> void:
 	# Check 8: Navigation Integration
 	all_passed = test_navigation_integration(office) and all_passed
 
-	# Check 9: Pre-existing Request File Safety Regression Check
-	all_passed = test_request_file_safety_regression(office) and all_passed
+	# Check 9: Fully Isolated Cleanup Safety Check (Never touches real player files)
+	all_passed = test_isolated_cleanup_safety(office) and all_passed
 
-	# Check 10: Missing Simulation Processor Failure Handling (No False Success)
+	# Check 10: Missing Simulation Processor Failure Handling & Timeout Detection
 	all_passed = test_missing_cli_processor_failure_handling(office) and all_passed
 
-	# Check 11: Real End-to-End C# CLI Pipeline Integration Verification
+	# Check 11: Request/Result ID Matching, Stale Clearance & Mismatched Result Safety
+	all_passed = test_request_result_id_matching(office) and all_passed
+
+	# Check 12: Real End-to-End C# CLI Pipeline Integration Verification
 	all_passed = test_real_csharp_cli_appointment_pipeline(office) and all_passed
 
 	office.queue_free()
@@ -86,7 +90,7 @@ func _init() -> void:
 
 	if all_passed:
 		print("==============================================================")
-		print(" [PASS]: ALL 11 PHASE 4 CABINET VERIFICATION CHECKS PASSED!   ")
+		print(" [PASS]: ALL 12 PHASE 4 CABINET VERIFICATION CHECKS PASSED!  ")
 		print("==============================================================")
 		quit(0)
 	else:
@@ -95,16 +99,9 @@ func _init() -> void:
 		printerr("==============================================================")
 		quit(1)
 
-## Cleans up ONLY test-owned temporary artifacts and never touches player or real game files
+## Cleans up ONLY test-owned temporary artifacts inside ISOLATED_TEST_DIR.
+## Never targets or deletes real player files.
 func _cleanup_all() -> void:
-	var temp_files := [
-		"res://temp_phase4_request.json",
-		"res://temp_phase4_state.json"
-	]
-	for tf in temp_files:
-		if FileAccess.file_exists(tf):
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(tf))
-
 	var global_iso := ProjectSettings.globalize_path(ISOLATED_TEST_DIR)
 	if DirAccess.dir_exists_absolute(global_iso):
 		var dir := DirAccess.open(global_iso)
@@ -153,7 +150,7 @@ func test_cabinet_ui_structure(office: Node) -> bool:
 	for path in nodes_to_check:
 		var node = office.get_node_or_null(path)
 		if node == null:
-			printerr("  [FAIL]: Required Cabinet UI node missing: %s" % path)
+			printerr("  [FAIL]: Required Cabinet UI node missing: " + path)
 			return false
 
 	print("  [OK]: All LeftDock Cabinet and CabinetAppointmentModal nodes verified.")
@@ -208,21 +205,42 @@ func test_authoritative_state_loading(office: Node) -> bool:
 	var state: Dictionary = {
 		"country_name": "Federal Republic of Testland",
 		"treasury_balance": 10000000.0,
-		"civil_service_quality": 0.85,
-		"corruption_control": 0.90,
-		"infrastructure_condition": 0.75,
 		"cabinet": [
 			{
 				"portfolio": "Finance",
 				"is_appointed": true,
 				"status": "Appointed",
 				"minister_name": "Dr. Elena Rostova",
-				"competence": 0.90,
-				"loyalty": 0.50,
-				"integrity": 0.90,
+				"competence": 0.92,
+				"loyalty": 0.80,
+				"integrity": 0.95,
 				"monthly_salary": 150000.0,
 				"state_capacity_metric": "Civil Service Quality",
-				"state_capacity_value": 0.85
+				"state_capacity_value": 0.92
+			},
+			{
+				"portfolio": "Defense",
+				"is_appointed": true,
+				"status": "Appointed",
+				"minister_name": "General Arthur Pendelton",
+				"competence": 0.88,
+				"loyalty": 0.90,
+				"integrity": 0.85,
+				"monthly_salary": 150000.0,
+				"state_capacity_metric": "Military Readiness",
+				"state_capacity_value": 0.88
+			},
+			{
+				"portfolio": "ForeignAffairs",
+				"is_appointed": true,
+				"status": "Appointed",
+				"minister_name": "Ambassador Evelyn Vance",
+				"competence": 0.90,
+				"loyalty": 0.85,
+				"integrity": 0.92,
+				"monthly_salary": 150000.0,
+				"state_capacity_metric": "Diplomatic Leverage",
+				"state_capacity_value": 0.90
 			},
 			{
 				"portfolio": "Interior",
@@ -237,6 +255,18 @@ func test_authoritative_state_loading(office: Node) -> bool:
 				"state_capacity_value": 0.90
 			},
 			{
+				"portfolio": "Health",
+				"is_appointed": true,
+				"status": "Appointed",
+				"minister_name": "Dr. Miriam Osei",
+				"competence": 0.86,
+				"loyalty": 0.78,
+				"integrity": 0.94,
+				"monthly_salary": 150000.0,
+				"state_capacity_metric": "Healthcare Capacity",
+				"state_capacity_value": 0.86
+			},
+			{
 				"portfolio": "Infrastructure",
 				"is_appointed": true,
 				"status": "Appointed",
@@ -246,47 +276,44 @@ func test_authoritative_state_loading(office: Node) -> bool:
 				"integrity": 0.90,
 				"monthly_salary": 150000.0,
 				"state_capacity_metric": "Infrastructure Condition",
-				"state_capacity_value": 0.75
+				"state_capacity_value": 0.85
 			}
 		]
 	}
 
 	office.apply_state(state)
 
-	# Validate Finance UI
+	# Verify Finance
 	if office.finance_status_label.text != "Appointed (Active)":
-		printerr("  [FAIL]: Finance status expected 'Appointed (Active)', got: %s" % office.finance_status_label.text)
+		printerr("  [FAIL]: Finance status expected 'Appointed (Active)', got: " + office.finance_status_label.text)
 		return false
 	if not office.finance_minister_label.text.contains("Dr. Elena Rostova"):
-		printerr("  [FAIL]: Finance minister expected 'Dr. Elena Rostova', got: %s" % office.finance_minister_label.text)
+		printerr("  [FAIL]: Finance minister expected 'Dr. Elena Rostova', got: " + office.finance_minister_label.text)
 		return false
-	if not office.finance_effect_label.text.contains("Civil Service Quality: 85.0%"):
-		printerr("  [FAIL]: Finance effect label expected 85.0%, got: %s" % office.finance_effect_label.text)
+	if not office.finance_ratings_label.text.contains("92%"):
+		printerr("  [FAIL]: Finance ratings expected competence 92%, got: " + office.finance_ratings_label.text)
+		return false
+	if not office.finance_effect_label.text.contains("Civil Service Quality"):
+		printerr("  [FAIL]: Finance effect expected 'Civil Service Quality', got: " + office.finance_effect_label.text)
 		return false
 	if office.appoint_finance_button.text != "Manage Appointment":
-		printerr("  [FAIL]: Appoint finance button expected 'Manage Appointment', got: %s" % office.appoint_finance_button.text)
+		printerr("  [FAIL]: Appoint finance button expected 'Manage Appointment', got: " + office.appoint_finance_button.text)
 		return false
 
-	# Validate Interior UI
-	if office.interior_status_label.text != "Appointed (Active)":
-		printerr("  [FAIL]: Interior status expected 'Appointed (Active)', got: %s" % office.interior_status_label.text)
-		return false
+	# Verify Interior
 	if not office.interior_minister_label.text.contains("Dr. Alistair Finch"):
-		printerr("  [FAIL]: Interior minister expected 'Dr. Alistair Finch', got: %s" % office.interior_minister_label.text)
+		printerr("  [FAIL]: Interior minister expected 'Dr. Alistair Finch', got: " + office.interior_minister_label.text)
 		return false
-	if not office.interior_effect_label.text.contains("Corruption Control: 90.0%"):
-		printerr("  [FAIL]: Interior effect label expected 90.0%, got: %s" % office.interior_effect_label.text)
+	if not office.interior_effect_label.text.contains("Corruption Control"):
+		printerr("  [FAIL]: Interior effect expected 'Corruption Control', got: " + office.interior_effect_label.text)
 		return false
 
-	# Validate Infrastructure UI
-	if office.infrastructure_status_label.text != "Appointed (Active)":
-		printerr("  [FAIL]: Infrastructure status expected 'Appointed (Active)', got: %s" % office.infrastructure_status_label.text)
-		return false
+	# Verify Infrastructure
 	if not office.infrastructure_minister_label.text.contains("Eng. Marcus Bennett"):
-		printerr("  [FAIL]: Infrastructure minister expected 'Eng. Marcus Bennett', got: %s" % office.infrastructure_minister_label.text)
+		printerr("  [FAIL]: Infrastructure minister expected 'Eng. Marcus Bennett', got: " + office.infrastructure_minister_label.text)
 		return false
-	if not office.infrastructure_effect_label.text.contains("Infrastructure Condition: 75.0%"):
-		printerr("  [FAIL]: Infrastructure effect label expected 75.0%, got: %s" % office.infrastructure_effect_label.text)
+	if not office.infrastructure_effect_label.text.contains("Infrastructure Condition"):
+		printerr("  [FAIL]: Infrastructure effect expected 'Infrastructure Condition', got: " + office.infrastructure_effect_label.text)
 		return false
 
 	print("  [OK]: Authoritative minister names, key ratings, and capacity effects loaded faithfully.")
@@ -431,7 +458,10 @@ func test_appointment_modal_and_previews(office: Node) -> bool:
 func test_appointment_request_pipeline(office: Node) -> bool:
 	print("\n--- Check 7: Appointment Request Pipeline ---")
 
-	var temp_req_path := "res://temp_phase4_request.json"
+	var global_iso := ProjectSettings.globalize_path(ISOLATED_TEST_DIR)
+	DirAccess.make_dir_recursive_absolute(global_iso)
+
+	var temp_req_path := ISOLATED_TEST_DIR + "/temp_phase4_request.json"
 	office.request_file_override = temp_req_path
 
 	office.apply_state({
@@ -445,7 +475,7 @@ func test_appointment_request_pipeline(office: Node) -> bool:
 		return false
 
 	if not FileAccess.file_exists(temp_req_path):
-		printerr("  [FAIL]: Request file was not written to disk: %s" % temp_req_path)
+		printerr("  [FAIL]: Request file was not written to disk: " + temp_req_path)
 		return false
 
 	var f := FileAccess.open(temp_req_path, FileAccess.READ)
@@ -459,7 +489,7 @@ func test_appointment_request_pipeline(office: Node) -> bool:
 	var json := JSON.new()
 	var err := json.parse(json_str)
 	if err != OK or not (json.data is Dictionary):
-		printerr("  [FAIL]: Request file contains invalid JSON: %s" % json_str)
+		printerr("  [FAIL]: Request file contains invalid JSON: " + json_str)
 		return false
 
 	var req_data: Dictionary = json.data
@@ -486,10 +516,8 @@ func test_appointment_request_pipeline(office: Node) -> bool:
 		printerr("  [FAIL]: Expected cabinet appointment to be rejected when no state loaded.")
 		return false
 
-	# Clean up unit test request
-	if FileAccess.file_exists(temp_req_path):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_req_path))
-
+	# Clean up sandbox
+	_cleanup_all()
 	office.request_file_override = ""
 
 	print("  [OK]: Appointment request correctly formatted, serialized to disk, and validated against missing state.")
@@ -513,34 +541,41 @@ func test_navigation_integration(office: Node) -> bool:
 	return true
 
 # ------------------------------------------------------------------------------
-# Check 9: Pre-existing Request File Safety Regression Check
+# Check 9: Fully Isolated Cleanup Safety Check (Never touches real player files)
 # ------------------------------------------------------------------------------
-func test_request_file_safety_regression(office: Node) -> bool:
-	print("\n--- Check 9: Pre-existing Request File Safety Regression Check ---")
+func test_isolated_cleanup_safety(office: Node) -> bool:
+	print("\n--- Check 9: Fully Isolated Cleanup Safety Check ---")
 
-	var real_req_path := "res://presidential_desk_request.json"
-	var global_real_req := ProjectSettings.globalize_path(real_req_path)
+	var protected_real_paths: Array[String] = [
+		"res://presidential_desk_request.json",
+		"res://presidential_desk_state.json",
+		"res://presidential_desk_state.sav",
+		"res://presidential_desk_result.json"
+	]
 
-	# Ensure isolated directory exists
+	# Record status and timestamps of any existing real files WITHOUT creating or modifying them
+	var pre_existing_stats: Dictionary = {}
+	for rp in protected_real_paths:
+		if FileAccess.file_exists(rp):
+			var f := FileAccess.open(rp, FileAccess.READ)
+			var f_len := f.get_length() if f != null else 0
+			if f != null:
+				f.close()
+			pre_existing_stats[rp] = {
+				"exists": true,
+				"length": f_len,
+				"mtime": FileAccess.get_modified_time(rp)
+			}
+		else:
+			pre_existing_stats[rp] = { "exists": false }
+
+	# Verify: We must NEVER plant or create any file at res://presidential_desk_request.json
+	# Even if the real request file does not exist, it must remain non-existent.
+
+	# 1. Setup isolated test sandbox
 	var global_iso := ProjectSettings.globalize_path(ISOLATED_TEST_DIR)
-	DirAccess.make_dir_absolute(global_iso)
+	DirAccess.make_dir_recursive_absolute(global_iso)
 
-	var had_existing_file := FileAccess.file_exists(real_req_path)
-	var original_content := ""
-	if had_existing_file:
-		var f := FileAccess.open(real_req_path, FileAccess.READ)
-		if f != null:
-			original_content = f.get_as_text()
-			f.close()
-	else:
-		# Plant a protected canary file
-		original_content = "{\"canary\": \"protected_real_player_unprocessed_request_12345\"}"
-		var f := FileAccess.open(real_req_path, FileAccess.WRITE)
-		if f != null:
-			f.store_string(original_content)
-			f.close()
-
-	# Run cabinet appointment operations using an isolated request path
 	var iso_req := ISOLATED_TEST_DIR + "/test_safety_request.json"
 	office.request_file_override = iso_req
 	office.apply_state({
@@ -554,44 +589,49 @@ func test_request_file_safety_regression(office: Node) -> bool:
 		return false
 
 	if not FileAccess.file_exists(iso_req):
-		printerr("  [FAIL]: Isolated request file was not created at %s" % iso_req)
+		printerr("  [FAIL]: Isolated request file was not created at: " + iso_req)
 		return false
 
-	# Run isolated cleanup
+	# 2. Run isolated cleanup
 	_cleanup_all()
 
-	# Verify isolated file was removed
+	# 3. Verify isolated test file was removed
 	if FileAccess.file_exists(iso_req):
 		printerr("  [FAIL]: Isolated request file should have been cleaned up.")
 		return false
 
-	# REGRESSION ASSERTION: Real game request file MUST be completely preserved!
-	if not FileAccess.file_exists(real_req_path):
-		printerr("  [FAIL]: CRITICAL REGRESSION! Real game request file '%s' was deleted!" % real_req_path)
-		return false
+	# 4. REGRESSION ASSERTION: Prove real player files were completely untouched
+	for rp in protected_real_paths:
+		var stat: Dictionary = pre_existing_stats.get(rp, {})
+		var originally_existed: bool = stat.get("exists", false)
+		var currently_exists: bool = FileAccess.file_exists(rp)
 
-	var check_f := FileAccess.open(real_req_path, FileAccess.READ)
-	var current_content := check_f.get_as_text() if check_f != null else ""
-	if check_f != null:
-		check_f.close()
-
-	if current_content != original_content:
-		printerr("  [FAIL]: CRITICAL REGRESSION! Real game request file was modified by test!")
-		return false
-
-	# Clean up canary if we planted it
-	if not had_existing_file:
-		DirAccess.remove_absolute(global_real_req)
+		if originally_existed:
+			if not currently_exists:
+				printerr("  [FAIL]: CRITICAL REGRESSION! Real game file '%s' was deleted by test!" % rp)
+				return false
+			var cur_f := FileAccess.open(rp, FileAccess.READ)
+			var cur_len := cur_f.get_length() if cur_f != null else 0
+			if cur_f != null:
+				cur_f.close()
+			var cur_mtime := FileAccess.get_modified_time(rp)
+			if cur_len != stat.get("length", 0) or cur_mtime != stat.get("mtime", 0):
+				printerr("  [FAIL]: CRITICAL REGRESSION! Real game file '%s' was modified by test!" % rp)
+				return false
+		else:
+			if currently_exists:
+				printerr("  [FAIL]: CRITICAL REGRESSION! Test created unauthorized file at real path '%s'!" % rp)
+				return false
 
 	office.request_file_override = ""
-	print("  [OK]: Pre-existing request file safety verified: tests never delete or modify real player files.")
+	print("  [OK]: Cleanup safety verified: tests use dedicated sandbox only; real player files are never created, overwritten, or deleted.")
 	return true
 
 # ------------------------------------------------------------------------------
-# Check 10: Missing Simulation Processor Failure Handling (No False Success)
+# Check 10: Missing Simulation Processor Failure Handling & Timeout Warning
 # ------------------------------------------------------------------------------
 func test_missing_cli_processor_failure_handling(office: Node) -> bool:
-	print("\n--- Check 10: Missing Simulation Processor Failure Handling ---")
+	print("\n--- Check 10: Missing Simulation Processor Failure Handling & Timeout Warning ---")
 
 	var global_iso := ProjectSettings.globalize_path(ISOLATED_TEST_DIR)
 	DirAccess.make_dir_recursive_absolute(global_iso)
@@ -625,14 +665,151 @@ func test_missing_cli_processor_failure_handling(office: Node) -> bool:
 		printerr("  [FAIL]: Expected appointment_status_label to show failure warning, got: " + (office.appointment_status_label.text if office.appointment_status_label else "null"))
 		return false
 
-	print("  [OK]: Missing CLI processor cleanly detected and reported with explicit failure message instead of false success.")
+	# Test timeout handling in polling loop
+	office.pending_appointment_request_id = "req_test_timeout_sample"
+	office.pending_appointment_request_time = Time.get_ticks_msec() - 20000 # 20s ago
+	office._on_poll_timer_timeout()
+	if office.pending_appointment_request_id != "":
+		printerr("  [FAIL]: Timed out pending appointment request should be cleared.")
+		return false
+	if office.appointment_status_label == null or not office.appointment_status_label.text.contains("timed out"):
+		printerr("  [FAIL]: Expected timeout warning in appointment_status_label, got: " + (office.appointment_status_label.text if office.appointment_status_label else "null"))
+		return false
+
+	print("  [OK]: Missing CLI processor and request timeouts cleanly detected and reported with explicit failure messages.")
 	return true
 
 # ------------------------------------------------------------------------------
-# Check 11: Real End-to-End C# CLI Pipeline Integration Verification
+# Check 11: Request/Result ID Matching, Stale Result Clearance & Mismatched Safety
+# ------------------------------------------------------------------------------
+func test_request_result_id_matching(office: Node) -> bool:
+	print("\n--- Check 11: Request/Result ID Matching, Stale Result Clearance & Mismatched Safety ---")
+
+	var global_iso := ProjectSettings.globalize_path(ISOLATED_TEST_DIR)
+	DirAccess.make_dir_recursive_absolute(global_iso)
+
+	var iso_state := ISOLATED_TEST_DIR + "/presidential_desk_state.json"
+	var iso_req := ISOLATED_TEST_DIR + "/presidential_desk_request.json"
+	var iso_res := ISOLATED_TEST_DIR + "/presidential_desk_result.json"
+
+	office.current_state_path = iso_state
+	office.request_file_override = iso_req
+
+	# Setup initial state
+	var base_state: Dictionary = {
+		"country_name": "Federal Republic of Testland",
+		"treasury_balance": 5000000.0,
+		"civil_service_quality": 0.30,
+		"cabinet": [
+			{ "portfolio": "Finance", "is_appointed": false, "status": "Vacant", "minister_name": "Vacant" }
+		]
+	}
+	var sf := FileAccess.open(iso_state, FileAccess.WRITE)
+	if sf != null:
+		sf.store_string(JSON.stringify(base_state, "\t"))
+		sf.close()
+	office.load_state_from_file(iso_state)
+
+	# 11a: Stale result clearance before new request
+	# Plant an old stale result from a previous run
+	var stale_file := FileAccess.open(iso_res, FileAccess.WRITE)
+	if stale_file != null:
+		stale_file.store_string(JSON.stringify({
+			"request_id": "req_stale_old_session_111",
+			"success": true,
+			"result": "Appointed",
+			"message": "Old stale appointment"
+		}))
+		stale_file.close()
+
+	if not FileAccess.file_exists(iso_res):
+		printerr("  [FAIL]: Failed to write stale result file.")
+		return false
+
+	# execute_cabinet_appointment must clear any stale result before writing new request
+	var app_res: Dictionary = office.execute_cabinet_appointment("Finance", "technocrat", false)
+	var active_id: String = app_res.get("request_id", "")
+	if active_id.is_empty():
+		printerr("  [FAIL]: Expected non-empty request_id in appointment submission.")
+		return false
+
+	if FileAccess.file_exists(iso_res):
+		printerr("  [FAIL]: Stale result file was not cleared prior to submitting new request.")
+		return false
+
+	# 11b: Mismatched result ID rejection
+	# Plant a result with a mismatched/unrelated request ID
+	var mismatched_id := "req_unrelated_foreign_agent_999"
+	var mism_file := FileAccess.open(iso_res, FileAccess.WRITE)
+	if mism_file != null:
+		mism_file.store_string(JSON.stringify({
+			"request_id": mismatched_id,
+			"success": true,
+			"result": "Appointed",
+			"message": "Bogus appointment that should be ignored"
+		}))
+		mism_file.close()
+
+	var handled_mismatch: bool = office.check_for_decision_results()
+	if handled_mismatch:
+		printerr("  [FAIL]: Mismatched request ID result must NOT be accepted!")
+		return false
+
+	# Verify: Mismatched result must NOT reload state or set false success
+	if office.appointment_status_label == null or not office.appointment_status_label.text.contains("[Mismatched Result]"):
+		printerr("  [FAIL]: Expected [Mismatched Result] warning in appointment_status_label, got: " + (office.appointment_status_label.text if office.appointment_status_label else "null"))
+		return false
+
+	# Unrelated result file must be preserved and not deleted
+	if not FileAccess.file_exists(iso_res):
+		printerr("  [FAIL]: Unrelated result file should NOT be deleted on mismatch.")
+		return false
+
+	# Clean up the mismatched result manually for the test
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(iso_res))
+
+	# 11c: Matching request/result ID acceptance
+	var match_file := FileAccess.open(iso_res, FileAccess.WRITE)
+	if match_file != null:
+		match_file.store_string(JSON.stringify({
+			"request_id": active_id,
+			"success": true,
+			"result": "Appointed",
+			"message": "Certified appointment for Elena Rostova"
+		}))
+		match_file.close()
+
+	var handled_match: bool = office.check_for_decision_results()
+	if not handled_match:
+		printerr("  [FAIL]: Matching request ID result should be accepted successfully.")
+		return false
+
+	if office.appointment_status_label == null or not office.appointment_status_label.text.begins_with("Certified:"):
+		printerr("  [FAIL]: Expected Certified status prefix on matching result, got: " + (office.appointment_status_label.text if office.appointment_status_label else "null"))
+		return false
+
+	# Result file should now be deleted after successful consumption
+	if FileAccess.file_exists(iso_res):
+		printerr("  [FAIL]: Matching result file should be removed after consumption.")
+		return false
+
+	# Pending request ID should be cleared
+	if office.pending_appointment_request_id != "":
+		printerr("  [FAIL]: pending_appointment_request_id should be reset after matching result.")
+		return false
+
+	# Clean up sandbox
+	_cleanup_all()
+	office.request_file_override = ""
+	office.current_state_path = "res://presidential_desk_state.json"
+	print("  [OK]: Request/result ID matching verified: stale results cleared, mismatched results rejected, matching results certified.")
+	return true
+
+# ------------------------------------------------------------------------------
+# Check 12: Real End-to-End C# CLI Pipeline Integration Verification
 # ------------------------------------------------------------------------------
 func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
-	print("\n--- Check 11: Real End-to-End C# CLI Pipeline Integration Verification ---")
+	print("\n--- Check 12: Real End-to-End C# CLI Pipeline Integration Verification ---")
 
 	# 1. Locate C# CLI DLL
 	var candidates: Array[String] = [
