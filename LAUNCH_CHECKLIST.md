@@ -10,18 +10,22 @@ Before deploying to any hosting environment, verify that the web client builds c
 
 - [ ] **Export Presets**: Confirm `client/godot/export_presets.cfg` contains the `Web` preset configured with `custom_html_shell="res://shell.html"`.
 - [ ] **Run Web Export**:
+
   ```powershell
   godot --headless --path client/godot --export-release "Web" "builds/web/index.html"
   ```
+
 - [ ] **Verify Generated Artifacts** in `client/godot/builds/web/`:
   - `index.html` (entrypoint shell)
   - `index.pck` (engine pack)
   - `index.png` & `index.icon.png` (app icons and splash)
   - `index.apple-touch-icon.png` (iOS touch icon)
 - [ ] **Verify Automated Test Suite**:
+
   ```powershell
   godot --headless --path client/godot -s test_presidential_desk.gd
   ```
+
   Ensure all 28 automated checks pass.
 
 ---
@@ -31,12 +35,15 @@ Before deploying to any hosting environment, verify that the web client builds c
 The exported web build consists of static HTML, JavaScript, WebAssembly, and PNG/PCK assets. It can be hosted on standard static platforms:
 
 ### Option A: Cloudflare Pages (Recommended for Global CDN & DDoS Protection)
+
 - **Framework Preset**: None (Static HTML).
 - **Build Output Directory**: `client/godot/builds/web`.
 - **Advantages**: Built-in global edge caching, automatic SSL, and zero server maintenance.
 
 ### Option B: Nginx on VPS / Dedicated Server
+
 Place the contents of `client/godot/builds/web` into `/var/www/republic` and configure the site:
+
 ```nginx
 server {
     listen 80;
@@ -72,6 +79,7 @@ server {
 ```
 
 ### Option C: Caddy Web Server (Automatic HTTPS)
+
 ```caddy
 play.republicgame.com {
     root * /var/www/republic
@@ -101,13 +109,17 @@ Godot 4 Web export relies on modern browser WebAssembly and SharedArrayBuffer fe
 
 - [ ] **Enforce HTTPS**: All HTTP traffic must redirect to HTTPS (301 redirect).
 - [ ] **Cross-Origin Opener Policy (COOP)**:
+
   ```http
   Cross-Origin-Opener-Policy: same-origin
   ```
+
 - [ ] **Cross-Origin Embedder Policy (COEP)**:
+
   ```http
   Cross-Origin-Embedder-Policy: require-corp
   ```
+
 - [ ] **Content Security Policy (CSP)**:
   Allow WebAssembly execution (`'wasm-unsafe-eval'` or `'unsafe-eval'`) and script loads from your ad provider domain (e.g. `https://pagead2.googlesyndication.com`).
 
