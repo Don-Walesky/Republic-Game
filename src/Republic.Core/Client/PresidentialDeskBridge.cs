@@ -13,6 +13,8 @@ using Republic.Core.Persistence;
 using Republic.Core.Persistence.Models;
 using Republic.Core.Persistence.Services;
 using Republic.Core.Time;
+using Republic.Core.Government.Officials.Models;
+using Republic.Core.Government.Officials.Services;
 using Republic.Core.World;
 using Republic.Core.World.Models;
 using Republic.Core.World.Rules;
@@ -3575,6 +3577,407 @@ public static class PresidentialDeskBridge
         return successResult;
     }
 
+    private static (SaveEnvelope<FullGameState>? Envelope, Country? Country, RepublicTime SimTime, ulong Tick, string TargetSavePath, PresidentialActionResult? Error) ResolveAuthoritativeCountry(
+        string targetStatePath,
+        string? saveFilePath,
+        string? requestId,
+        string operationName)
+    {
+        string? snapshotCountryId = null;
+        string targetSavePath;
+
+        if (!string.IsNullOrWhiteSpace(saveFilePath))
+        {
+            targetSavePath = saveFilePath;
+        }
+        else if (targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
+        {
+            targetSavePath = targetStatePath;
+        }
+        else
+        {
+            if (!File.Exists(targetStatePath))
+            {
+                var missingResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot {operationName}: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, missingResult);
+                return (null, null, default, 0, string.Empty, missingResult);
+            }
+
+            string rawJson;
+            try
+            {
+                rawJson = File.ReadAllText(targetStatePath);
+            }
+            catch (Exception ex)
+            {
+                var ioResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot {operationName}: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, ioResult);
+                return (null, null, default, 0, string.Empty, ioResult);
+            }
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                var emptyResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot {operationName}: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, emptyResult);
+                return (null, null, default, 0, string.Empty, emptyResult);
+            }
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (JsonException)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot {operationName}: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return (null, null, default, 0, string.Empty, corruptResult);
+            }
+
+            using (doc)
+            {
+                if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+                {
+                    targetSavePath = targetStatePath;
+                }
+                else
+                {
+                    string? snapshotSavePath = null;
+                    if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
+                    {
+                        snapshotSavePath = savePathEl.GetString();
+                    }
+
+                    if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                    {
+                        snapshotCountryId = cIdEl.GetString();
+                    }
+                    if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                    {
+                        snapshotCountryId = cNameEl.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                    {
+                        targetSavePath = snapshotSavePath;
+                    }
+                    else
+                    {
+                        var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                        if (File.Exists(companion))
+                        {
+                            targetSavePath = companion;
+                        }
+                        else
+                        {
+                            var noSaveResult = new PresidentialActionResult
+                            {
+                                RequestId = requestId ?? string.Empty,
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot {operationName}: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, noSaveResult);
+                            return (null, null, default, 0, string.Empty, noSaveResult);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot {operationName}: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingSaveResult);
+            return (null, null, default, 0, string.Empty, missingSaveResult);
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot {operationName}: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptSaveResult);
+            return (null, null, default, 0, string.Empty, corruptSaveResult);
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot {operationName}: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return (null, null, default, 0, string.Empty, noCountryResult);
+        }
+
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        country ??= envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+        var tick = envelope.State.CurrentTick;
+
+        return (envelope, country, simTime, tick, targetSavePath, null);
+    }
+
+    /// <summary>
+    /// Evaluates and applies a presidential decision regarding a proactive Chief of Staff recommendation.
+    /// Decisions: "accept", "reject", "defer".
+    /// </summary>
+    public static PresidentialActionResult ApplyChiefOfStaffDecision(
+        string recommendationId,
+        string decision,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "apply Chief of Staff decision");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Chief of Staff recommendation review cancelled. No executive action taken.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var officialsService = new ActiveOfficialsService();
+        bool success = officialsService.ApplyRecommendationDecision(country!, recommendationId, decision, out var outcomeMessage);
+
+        if (!success)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = outcomeMessage,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        try
+        {
+            SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes a presidential security directive in response to a national security threat report.
+    /// Directives: "mobilize", "sweep", "deescalate", "set_defcon".
+    /// </summary>
+    public static PresidentialActionResult ApplySecurityDirective(
+        string threatId,
+        string directive,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "apply security directive");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Security directive order cancelled. National security posture unchanged.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var officialsService = new ActiveOfficialsService();
+        bool success = officialsService.ApplySecurityDirective(country!, threatId, directive, out var outcomeMessage);
+
+        if (!success)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = outcomeMessage,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        try
+        {
+            SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
     private static void TryWriteResultFile(string stateOrSavePath, PresidentialActionResult result)
     {
         try
@@ -3872,6 +4275,82 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyCrisisResponseDecision(decreeType, crisisConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "cos_recommendation" or "chief_of_staff_decision" or "recommendation_decision")
+                    {
+                        string recId = string.Empty;
+                        if (root.TryGetProperty("recommendation_id", out var rIdEl) && rIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            recId = rIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            recId = idEl.GetString() ?? string.Empty;
+                        }
+
+                        string decision = "accept";
+                        if (root.TryGetProperty("decision", out var decEl) && decEl.ValueKind == JsonValueKind.String)
+                        {
+                            decision = decEl.GetString() ?? "accept";
+                        }
+                        else if (root.TryGetProperty("action_type", out var atEl) && atEl.ValueKind == JsonValueKind.String)
+                        {
+                            decision = atEl.GetString() ?? "accept";
+                        }
+
+                        bool cosConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var cosConfEl) && (cosConfEl.ValueKind == JsonValueKind.True || cosConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            cosConfirmed = cosConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyChiefOfStaffDecision(recId, decision, cosConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "security_directive" or "security_response" or "threat_response")
+                    {
+                        string threatId = string.Empty;
+                        if (root.TryGetProperty("threat_id", out var tIdEl) && tIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            threatId = tIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var tidEl) && tidEl.ValueKind == JsonValueKind.String)
+                        {
+                            threatId = tidEl.GetString() ?? string.Empty;
+                        }
+
+                        string directive = "mobilize";
+                        if (root.TryGetProperty("directive", out var dirEl) && dirEl.ValueKind == JsonValueKind.String)
+                        {
+                            directive = dirEl.GetString() ?? "mobilize";
+                        }
+                        else if (root.TryGetProperty("response", out var respEl) && respEl.ValueKind == JsonValueKind.String)
+                        {
+                            directive = respEl.GetString() ?? "mobilize";
+                        }
+
+                        bool secConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var secConfEl) && (secConfEl.ValueKind == JsonValueKind.True || secConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            secConfirmed = secConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplySecurityDirective(threatId, directive, secConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

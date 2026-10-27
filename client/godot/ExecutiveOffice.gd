@@ -1483,16 +1483,34 @@ func apply_state(state: Dictionary) -> void:
 	if briefing_unsupported_label:
 		briefing_unsupported_label.text = "Global Intelligence Wire: [Live simulation feed offline / pending support]"
 
+	# Phase 2: Proactive Chief of Staff Briefing & Recommendations
+	_update_chief_of_staff_briefing_ui(state)
+
 	# 7. Hotline & Classified Dossier Modal Updates
 	if hotline_status_label:
 		hotline_status_label.text = "Secure diplomatic line operational. Connects directly to foreign heads of state."
 	if hotline_standing_label:
 		hotline_standing_label.text = "Diplomatic Standing: %s | Bilateral recognition & trade managed in Foreign Affairs." % str(state.get("status_message", "Connected to live simulation"))
 
+	# Phase 2: Proactive National Security Leadership & Assessment
+	_update_security_leadership_dossier_ui(state)
+
 	if dossier_defense_label:
-		dossier_defense_label.text = "Defense Readiness: %s | %s" % [str(state.get("defcon_level", "DEFCON 5 (Peacetime Watch)")), str(state.get("military_readiness", "85.0% Operational"))]
+		var defcon_dossier := str(state.get("defcon_level", "DEFCON 5 (Peacetime Watch)"))
+		var readiness_dossier := str(state.get("military_readiness", "85.0% Operational"))
+		var sec_summary := str(state.get("security_assessment_summary", ""))
+		if not sec_summary.is_empty():
+			dossier_defense_label.text = "Defense Readiness: %s | %s\nAssessment: %s" % [defcon_dossier, readiness_dossier, sec_summary]
+		else:
+			dossier_defense_label.text = "Defense Readiness: %s | %s" % [defcon_dossier, readiness_dossier]
 	if dossier_crisis_label:
-		dossier_crisis_label.text = "Active National Threat: %s — %s" % [str(state.get("active_crisis", "None")), str(state.get("active_crisis_details", "State institutions stable."))]
+		var sec_threats_list = state.get("security_threats", [])
+		var threat_summary := ""
+		if sec_threats_list is Array and not sec_threats_list.is_empty():
+			threat_summary = "Active Security Threats: %d tracked by National Command." % sec_threats_list.size()
+		else:
+			threat_summary = "State institutions stable. Sovereign order maintained."
+		dossier_crisis_label.text = "Active National Threat: %s — %s" % [str(state.get("active_crisis", "None")), threat_summary]
 	if dossier_espionage_label:
 		dossier_espionage_label.text = "Covert Intelligence Operations: [Feature not yet supported by simulation engine]"
 
@@ -1576,13 +1594,25 @@ func apply_state(state: Dictionary) -> void:
 	# 10. Desk Notification Badges & Diplomatic Dossiers
 	var defcon := str(state.get("defcon_level", "DEFCON 5"))
 	var mil_threat := (not defcon.begins_with("DEFCON 5") and not defcon.is_empty() and defcon != "[No State Loaded]")
+
+	var sec_threats_arr = state.get("security_threats", [])
+	var has_urgent_security_threat := false
+	if sec_threats_arr is Array:
+		for t in sec_threats_arr:
+			if t is Dictionary:
+				var sev_str: String = str(t.get("severity", ""))
+				var conf_str: String = str(t.get("confidence", ""))
+				if sev_str == "Critical" or sev_str == "Severe" or conf_str == "Confirmed":
+					has_urgent_security_threat = true
+					break
+
 	if has_crisis:
 		if not hotline_badge_dismissed:
 			set_hotline_badge(true, "!")
 	else:
 		set_hotline_badge(false)
 
-	if mil_threat or has_crisis:
+	if mil_threat or has_crisis or has_urgent_security_threat:
 		if not dossier_badge_dismissed:
 			set_dossier_badge(true, "!")
 	else:
@@ -1590,9 +1620,17 @@ func apply_state(state: Dictionary) -> void:
 
 	var dec_res := str(state.get("latest_decision_result", ""))
 	var has_pending := dec_res.contains("Pending") or state.has("pending_decision")
-	if has_pending:
+	var recs_val = state.get("chief_of_staff_recommendations", [])
+	var pending_cos_count := 0
+	if recs_val is Array:
+		for r in recs_val:
+			if r is Dictionary and str(r.get("status", "Pending")) == "Pending":
+				pending_cos_count += 1
+
+	if has_pending or pending_cos_count > 0:
 		if not inbox_badge_dismissed:
-			set_inbox_badge(true, "1")
+			var badge_text := str(max(1, pending_cos_count))
+			set_inbox_badge(true, badge_text)
 	else:
 		set_inbox_badge(false)
 
@@ -3144,9 +3182,82 @@ func _update_cabinet_portfolios_ui(state: Dictionary) -> void:
 			if resolve_friction_button:
 				resolve_friction_button.text = "Commission Infrastructure Minister"
 		else:
-			cabinet_friction_panel.visible = false
+			# Check for ministerial advice friction / disloyalty / integrity warnings
+			var advice_list = state.get("ministerial_advice", null)
+			var has_friction := false
+			var friction_headline := ""
+			if advice_list is Array:
+				for adv in advice_list:
+					if adv is Dictionary:
+						var warn_str: String = str(adv.get("warning_notes", ""))
+						var is_self: bool = bool(adv.get("is_self_serving", false))
+						var loy_val: float = float(adv.get("loyalty_rating", 100.0))
+						var is_app: bool = bool(adv.get("is_appointed", false))
+						if is_app and (is_self or not warn_str.is_empty() or loy_val < 35.0):
+							has_friction = true
+							var port_name: String = str(adv.get("portfolio", ""))
+							friction_headline = port_name + ": " + (warn_str if not warn_str.is_empty() else "Institutional friction detected")
+							break
+			if has_friction:
+				cabinet_friction_panel.visible = true
+				if cabinet_friction_label:
+					cabinet_friction_label.text = "⚠️ Cabinet Warning: " + friction_headline
+				if resolve_friction_button:
+					resolve_friction_button.text = "Review Cabinet Portfolio"
+			else:
+				cabinet_friction_panel.visible = false
 
 func _resolve_portfolio_display_data(portfolio: String, state: Dictionary) -> Dictionary:
+	# 1. Check for Phase 2 ministerial_advice
+	var advice_list = state.get("ministerial_advice", null)
+	var matched_advice: Dictionary = {}
+	if advice_list is Array:
+		for adv in advice_list:
+			if adv is Dictionary and str(adv.get("portfolio", "")).to_lower() == portfolio.to_lower():
+				matched_advice = adv
+				break
+
+	if not matched_advice.is_empty():
+		var is_app: bool = bool(matched_advice.get("is_appointed", false))
+		var min_name: String = str(matched_advice.get("minister_name", "Vacant"))
+		if min_name == "" or min_name.to_lower() == "vacant" or min_name == "[No State Loaded]":
+			is_app = false
+
+		if is_app:
+			var comp: float = float(matched_advice.get("competence_rating", 0.0))
+			var loy: float = float(matched_advice.get("loyalty_rating", 0.0))
+			var integ: float = float(matched_advice.get("integrity_rating", 0.0))
+			var headline: String = str(matched_advice.get("headline", ""))
+			var risk_lvl: String = str(matched_advice.get("risk_level", "Low"))
+			var conf_val: float = float(matched_advice.get("confidence_rating", 0.0))
+			var warn_str: String = str(matched_advice.get("warning_notes", ""))
+			var action_str: String = str(matched_advice.get("recommended_action", ""))
+
+			var ratings_text := "Ratings: Comp %d%% | Loy %d%% | Int %d%%" % [int(round(comp)), int(round(loy)), int(round(integ))]
+			if not warn_str.is_empty():
+				ratings_text += " | ⚠️ " + warn_str
+
+			var effect_text := "Advice: %s (Risk: %s, Conf: %0.0f%%) — %s" % [headline, risk_lvl, conf_val, action_str]
+
+			return {
+				"is_appointed": true,
+				"status": "Appointed (Active)",
+				"minister_name": min_name,
+				"ratings": ratings_text,
+				"effect": effect_text
+			}
+		else:
+			var head_vac: String = str(matched_advice.get("headline", "Vacant Portfolio"))
+			var det_vac: String = str(matched_advice.get("detailed_advice", "Emergency baseline 30.0%."))
+			return {
+				"is_appointed": false,
+				"status": "Vacant (Unassigned)",
+				"minister_name": "Minister: [Vacant]",
+				"ratings": "Ratings: -- (Baseline 30%)",
+				"effect": "Bottleneck: %s — %s" % [head_vac, det_vac]
+			}
+
+	# 2. Check traditional cabinet list
 	var cabinet_list = state.get("cabinet", null)
 	var found_entry: Dictionary = {}
 	if cabinet_list is Array:
@@ -3820,6 +3931,345 @@ func execute_crisis_response(decree_type: String, confirmed: bool = true) -> Dic
 		"request_id": req_id,
 		"request_path": req_path
 	}
+
+# ==============================================================================
+# 7. PHASE 2 ACTIVE OFFICIALS & SECURITY LEADERSHIP HANDLERS
+# ==============================================================================
+func _update_chief_of_staff_briefing_ui(state: Dictionary) -> void:
+	if not briefing_modal:
+		return
+	var briefing_content := _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox") as VBoxContainer
+	if not briefing_content:
+		return
+
+	var cos_section := briefing_content.get_node_or_null("ChiefOfStaffSection") as VBoxContainer
+	if not cos_section:
+		cos_section = VBoxContainer.new()
+		cos_section.name = "ChiefOfStaffSection"
+		cos_section.add_theme_constant_override("separation", 6)
+		briefing_content.add_child(cos_section)
+		briefing_content.move_child(cos_section, 0)
+
+	for child in cos_section.get_children():
+		child.queue_free()
+
+	var cos_briefing := str(state.get("chief_of_staff_briefing", ""))
+	if not cos_briefing.is_empty():
+		var header_label := Label.new()
+		header_label.text = "🎖️ Chief of Staff Memorandum: " + cos_briefing
+		header_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		header_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.2))
+		header_label.add_theme_font_size_override("font_size", 12)
+		cos_section.add_child(header_label)
+
+	var recs = state.get("chief_of_staff_recommendations", [])
+	if recs is Array and not recs.is_empty():
+		var recs_title := Label.new()
+		recs_title.text = "Priority Government Recommendations:"
+		recs_title.add_theme_font_size_override("font_size", 11)
+		recs_title.add_theme_color_override("font_color", Color(0.8, 0.85, 0.9))
+		cos_section.add_child(recs_title)
+
+		for rec in recs:
+			if not (rec is Dictionary):
+				continue
+			var r_id: String = str(rec.get("id", ""))
+			var r_title: String = str(rec.get("title", "Untitled Recommendation"))
+			var r_priority: String = str(rec.get("priority", "Medium"))
+			var r_urgent: bool = bool(rec.get("is_urgent", false))
+			var r_status: String = str(rec.get("status", "Pending"))
+			var r_action: String = str(rec.get("recommended_action", ""))
+			var r_summary: String = str(rec.get("summary", ""))
+			var r_cost: float = float(rec.get("estimated_cost", 0.0))
+
+			var card := PanelContainer.new()
+			var card_vbox := VBoxContainer.new()
+			card_vbox.add_theme_constant_override("separation", 3)
+			card.add_child(card_vbox)
+
+			var header_hbox := HBoxContainer.new()
+			var badge := Label.new()
+			var pri_prefix := "[%s]" % r_priority.to_upper()
+			if r_urgent:
+				pri_prefix = "⚠️ [CRITICAL URGENT]"
+			badge.text = pri_prefix
+			if r_urgent or r_priority.to_lower() == "critical":
+				badge.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+			elif r_priority.to_lower() == "high":
+				badge.add_theme_color_override("font_color", Color(1.0, 0.65, 0.2))
+			else:
+				badge.add_theme_color_override("font_color", Color(0.4, 0.8, 0.4))
+			badge.add_theme_font_size_override("font_size", 10)
+			header_hbox.add_child(badge)
+
+			var title_lbl := Label.new()
+			title_lbl.text = r_title
+			title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			title_lbl.add_theme_font_size_override("font_size", 11)
+			header_hbox.add_child(title_lbl)
+
+			var status_lbl := Label.new()
+			status_lbl.text = "Status: " + r_status
+			status_lbl.add_theme_font_size_override("font_size", 10)
+			status_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+			header_hbox.add_child(status_lbl)
+			card_vbox.add_child(header_hbox)
+
+			var desc_lbl := Label.new()
+			var cost_str := " (Cost: R %s)" % _format_number_commas(r_cost) if r_cost > 0 else " (No Direct Cost)"
+			desc_lbl.text = "%s Recommended: %s%s" % [r_summary, r_action, cost_str]
+			desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			desc_lbl.add_theme_font_size_override("font_size", 10)
+			card_vbox.add_child(desc_lbl)
+
+			if r_status == "Pending":
+				var btn_hbox := HBoxContainer.new()
+				btn_hbox.alignment = BoxContainer.ALIGNMENT_END
+
+				var accept_btn := Button.new()
+				accept_btn.text = "Accept"
+				accept_btn.add_theme_font_size_override("font_size", 10)
+				accept_btn.pressed.connect(func():
+					execute_chief_of_staff_decision(r_id, "accept")
+					status_lbl.text = "Status: Accepted"
+					accept_btn.disabled = true
+				)
+				btn_hbox.add_child(accept_btn)
+
+				var reject_btn := Button.new()
+				reject_btn.text = "Reject"
+				reject_btn.add_theme_font_size_override("font_size", 10)
+				reject_btn.pressed.connect(func():
+					execute_chief_of_staff_decision(r_id, "reject")
+					status_lbl.text = "Status: Rejected"
+					reject_btn.disabled = true
+				)
+				btn_hbox.add_child(reject_btn)
+
+				var defer_btn := Button.new()
+				defer_btn.text = "Defer"
+				defer_btn.add_theme_font_size_override("font_size", 10)
+				defer_btn.pressed.connect(func():
+					execute_chief_of_staff_decision(r_id, "defer")
+					status_lbl.text = "Status: Deferred"
+					defer_btn.disabled = true
+				)
+				btn_hbox.add_child(defer_btn)
+
+				card_vbox.add_child(btn_hbox)
+
+			cos_section.add_child(card)
+
+func _update_security_leadership_dossier_ui(state: Dictionary) -> void:
+	if not dossier_modal:
+		return
+	var dossier_vbox := _get_node_safe("InterfaceLayer/DossierModal/DossierVBox") as VBoxContainer
+	if not dossier_vbox:
+		return
+
+	var sec_summary := str(state.get("security_assessment_summary", ""))
+	var dom_idx := float(state.get("domestic_threat_index", 20.0))
+	var ext_idx := float(state.get("external_threat_index", 15.0))
+	if not sec_summary.is_empty() and dossier_defense_label:
+		var defcon := str(state.get("defcon_level", "DEFCON 5 (Peacetime Watch)"))
+		var readiness := str(state.get("military_readiness", "85.0% Operational"))
+		dossier_defense_label.text = "Defense Readiness: %s | %s\nThreat Index: Domestic %0.1f | External %0.1f\nAssessment: %s" % [defcon, readiness, dom_idx, ext_idx, sec_summary]
+
+	var threats_section := dossier_vbox.get_node_or_null("SecurityThreatsSection") as VBoxContainer
+	if not threats_section:
+		threats_section = VBoxContainer.new()
+		threats_section.name = "SecurityThreatsSection"
+		threats_section.add_theme_constant_override("separation", 6)
+		var actions_idx := dossier_vbox.get_child_count() - 1
+		dossier_vbox.add_child(threats_section)
+		if actions_idx >= 0:
+			dossier_vbox.move_child(threats_section, actions_idx)
+
+	for child in threats_section.get_children():
+		child.queue_free()
+
+	var threats = state.get("security_threats", [])
+	if threats is Array and not threats.is_empty():
+		var threats_title := Label.new()
+		threats_title.text = "Active Security Threats & Operational Directives:"
+		threats_title.add_theme_font_size_override("font_size", 11)
+		threats_title.add_theme_color_override("font_color", Color(0.9, 0.7, 0.2))
+		threats_section.add_child(threats_title)
+
+		for threat in threats:
+			if not (threat is Dictionary):
+				continue
+			var t_id: String = str(threat.get("threat_id", ""))
+			var t_title: String = str(threat.get("title", "Unknown Threat"))
+			var t_cat: String = str(threat.get("category", "General"))
+			var t_agency: String = str(threat.get("source_agency", "Security Council"))
+			var t_conf: String = str(threat.get("confidence", "UnverifiedRumor"))
+			var t_sev: String = str(threat.get("severity", "Moderate"))
+			var t_status: String = str(threat.get("status", "Active"))
+			var t_details: String = str(threat.get("details", ""))
+			var t_rec: String = str(threat.get("recommended_response", ""))
+
+			var card := PanelContainer.new()
+			var card_vbox := VBoxContainer.new()
+			card_vbox.add_theme_constant_override("separation", 2)
+			card.add_child(card_vbox)
+
+			var header_hbox := HBoxContainer.new()
+
+			var conf_badge := Label.new()
+			var conf_text := ""
+			match t_conf:
+				"Confirmed":
+					conf_text = "[CONFIRMED]"
+					conf_badge.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
+				"HighProbability":
+					conf_text = "[PROBABLE]"
+					conf_badge.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2))
+				"InterceptedSignal":
+					conf_text = "[SIGNAL]"
+					conf_badge.add_theme_color_override("font_color", Color(0.3, 0.7, 1.0))
+				_:
+					conf_text = "[UNVERIFIED]"
+					conf_badge.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+			conf_badge.text = conf_text
+			conf_badge.add_theme_font_size_override("font_size", 10)
+			header_hbox.add_child(conf_badge)
+
+			var title_lbl := Label.new()
+			title_lbl.text = "%s (%s)" % [t_title, t_agency]
+			title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			title_lbl.add_theme_font_size_override("font_size", 11)
+			header_hbox.add_child(title_lbl)
+
+			var sev_lbl := Label.new()
+			sev_lbl.text = "Severity: " + t_sev
+			sev_lbl.add_theme_font_size_override("font_size", 10)
+			header_hbox.add_child(sev_lbl)
+			card_vbox.add_child(header_hbox)
+
+			var det_lbl := Label.new()
+			det_lbl.text = "%s Recommended: %s" % [t_details, t_rec]
+			det_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			det_lbl.add_theme_font_size_override("font_size", 10)
+			card_vbox.add_child(det_lbl)
+
+			var btn_hbox := HBoxContainer.new()
+			btn_hbox.alignment = BoxContainer.ALIGNMENT_END
+
+			var mob_btn := Button.new()
+			mob_btn.text = "Mobilize Defense"
+			mob_btn.add_theme_font_size_override("font_size", 10)
+			mob_btn.pressed.connect(func():
+				execute_security_directive(t_id, "mobilize")
+				mob_btn.disabled = true
+			)
+			btn_hbox.add_child(mob_btn)
+
+			var sweep_btn := Button.new()
+			sweep_btn.text = "Sweep Operations"
+			sweep_btn.add_theme_font_size_override("font_size", 10)
+			sweep_btn.pressed.connect(func():
+				execute_security_directive(t_id, "sweep")
+				sweep_btn.disabled = true
+			)
+			btn_hbox.add_child(sweep_btn)
+
+			var deesc_btn := Button.new()
+			deesc_btn.text = "De-escalate"
+			deesc_btn.add_theme_font_size_override("font_size", 10)
+			deesc_btn.pressed.connect(func():
+				execute_security_directive(t_id, "deescalate")
+				deesc_btn.disabled = true
+			)
+			btn_hbox.add_child(deesc_btn)
+
+			card_vbox.add_child(btn_hbox)
+			threats_section.add_child(card)
+
+func execute_chief_of_staff_decision(recommendation_id: String, decision: String, confirmed: bool = true) -> Dictionary:
+	if latest_state.is_empty():
+		var err_msg := "Cannot submit Chief of Staff decision: No Republic simulation state loaded."
+		return { "success": false, "message": err_msg }
+
+	var req_path := _resolve_request_path()
+	var req_dir := req_path.get_base_dir()
+	if not req_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
+
+	var req_id := "req_cos_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var timestamp_str := Time.get_datetime_string_from_system()
+
+	var request_dict := {
+		"request_id": req_id,
+		"action": "cos_recommendation",
+		"recommendation_id": recommendation_id,
+		"decision": decision,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to open request file for writing: " + req_path
+		return { "success": false, "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	var msg := "Chief of Staff order submitted: %s recommendation '%s'." % [decision.capitalize(), recommendation_id]
+	if status_ticker_label:
+		status_ticker_label.text = "Executive Order: " + msg
+
+	return {
+		"success": true,
+		"message": msg,
+		"request_id": req_id,
+		"request_path": req_path
+	}
+
+func execute_security_directive(threat_id: String, directive: String, confirmed: bool = true) -> Dictionary:
+	if latest_state.is_empty():
+		var err_msg := "Cannot submit security directive: No Republic simulation state loaded."
+		return { "success": false, "message": err_msg }
+
+	var req_path := _resolve_request_path()
+	var req_dir := req_path.get_base_dir()
+	if not req_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
+
+	var req_id := "req_sec_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var timestamp_str := Time.get_datetime_string_from_system()
+
+	var request_dict := {
+		"request_id": req_id,
+		"action": "security_directive",
+		"threat_id": threat_id,
+		"directive": directive,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to open request file for writing: " + req_path
+		return { "success": false, "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	var msg := "National security directive issued: %s on threat '%s'." % [directive.capitalize(), threat_id]
+	if status_ticker_label:
+		status_ticker_label.text = "National Command: " + msg
+
+	return {
+		"success": true,
+		"message": msg,
+		"request_id": req_id,
+		"request_path": req_path
+	}
+
 
 
 

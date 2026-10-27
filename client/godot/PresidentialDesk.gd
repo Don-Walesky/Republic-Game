@@ -930,15 +930,22 @@ func apply_state(data: Dictionary) -> void:
 	if briefing_active_project_label:
 		briefing_active_project_label.text = "Active Project: " + active_proj
 	if briefing_latest_decision_label:
+		var cos_briefing := str(data.get("chief_of_staff_briefing", data.get("ChiefOfStaffBriefing", "")))
 		if not latest_result.is_empty():
 			briefing_latest_decision_label.text = "Latest Decision: " + latest_result
+		elif not cos_briefing.is_empty():
+			briefing_latest_decision_label.text = "Chief of Staff: " + cos_briefing
 		else:
 			briefing_latest_decision_label.text = "Latest Decision: [No decisions recorded]"
 
 	var defcon: String = str(data.get("defcon_level", data.get("DefconLevel", "DEFCON 5 (Peacetime Watch)")))
 	var mil_readiness: String = str(data.get("military_readiness", data.get("MilitaryReadiness", "85.0% (Armed Forces Operational)")))
+	var sec_assessment: String = str(data.get("security_assessment_summary", data.get("SecurityAssessmentSummary", "")))
 	if defense_readiness_label:
-		defense_readiness_label.text = "Defense Posture: %s | Armed Forces: %s" % [defcon, mil_readiness]
+		if not sec_assessment.is_empty():
+			defense_readiness_label.text = "Defense Posture: %s | %s | %s" % [defcon, mil_readiness, sec_assessment]
+		else:
+			defense_readiness_label.text = "Defense Posture: %s | Armed Forces: %s" % [defcon, mil_readiness]
 
 	var offline_briefing: String = str(data.get("offline_briefing_summary", data.get("OfflineBriefingSummary", "Offline Status: Real-time simulation aligned. Zero pending offline cycles.")))
 	if offline_briefing_label:
