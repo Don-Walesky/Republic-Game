@@ -4,9 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Republic.Core.Cabinet.Models;
+using Republic.Core.Economy.PrivateSector.Models;
+using Republic.Core.Economy.PrivateSector.Services;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Government.Officials.Services;
+using Republic.Core.Media.Models;
+using Republic.Core.Media.Services;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
 
@@ -341,6 +345,42 @@ public sealed record PresidentialDeskSnapshot
     public double ExternalThreatIndex { get; init; } = 15.0;
 
     /// <summary>
+    /// Gets the active media outlets operating within the sovereign republic.
+    /// </summary>
+    [JsonPropertyName("media_outlets")]
+    public IReadOnlyList<MediaOutletSnapshot> MediaOutlets { get; init; } = Array.Empty<MediaOutletSnapshot>();
+
+    /// <summary>
+    /// Gets the published and leaked media reports evaluating recent events.
+    /// </summary>
+    [JsonPropertyName("media_reports")]
+    public IReadOnlyList<MediaReportSnapshot> MediaReports { get; init; } = Array.Empty<MediaReportSnapshot>();
+
+    /// <summary>
+    /// Gets the media landscape briefing summary.
+    /// </summary>
+    [JsonPropertyName("media_summary")]
+    public string MediaSummary { get; init; } = "Media Environment: Free press operating under standard constitutional guarantees.";
+
+    /// <summary>
+    /// Gets the active commercial enterprises, industrialists, and private-sector investors.
+    /// </summary>
+    [JsonPropertyName("private_investors")]
+    public IReadOnlyList<PrivateInvestorSnapshot> PrivateInvestors { get; init; } = Array.Empty<PrivateInvestorSnapshot>();
+
+    /// <summary>
+    /// Gets the inbound and processed commercial investment proposals.
+    /// </summary>
+    [JsonPropertyName("investment_proposals")]
+    public IReadOnlyList<InvestmentProposalSnapshot> InvestmentProposals { get; init; } = Array.Empty<InvestmentProposalSnapshot>();
+
+    /// <summary>
+    /// Gets the private-sector investment status summary.
+    /// </summary>
+    [JsonPropertyName("investment_summary")]
+    public string InvestmentSummary { get; init; } = "Private Sector: Corporate investment channels open.";
+
+    /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
     /// Reuses existing core models and services without duplicating domain rules.
     /// </summary>
@@ -573,6 +613,91 @@ public sealed record PresidentialDeskSnapshot
 
         string readinessText = $"{secAssessment.CompositeReadiness:0.0}% (Armed Forces {(secAssessment.CompositeReadiness >= 75.0 ? "Operational" : (secAssessment.CompositeReadiness >= 50.0 ? "Reduced Readiness" : "Critical Vulnerability"))})";
 
+        // Media environment integration
+        var mediaService = new MediaSimulationService();
+        var mediaOutlets = mediaService.EnsureCountryMediaOutlets(country);
+        mediaService.GenerateMediaReports(country, simulationTime, applySimulationImpacts: false);
+
+        var mediaOutletSnapshots = mediaOutlets.Select(o => new MediaOutletSnapshot
+        {
+            Id = o.Id,
+            Name = o.Name,
+            Leaning = o.Leaning.ToString(),
+            AudienceReach = o.AudienceReach,
+            Credibility = o.Credibility,
+            GovernmentAttitude = o.GovernmentAttitude,
+            IsCensored = o.IsCensored,
+            ConsecutiveStrikes = o.ConsecutiveStrikes
+        }).ToList();
+
+        var mediaReportSnapshots = country.MediaReports.Select(r => new MediaReportSnapshot
+        {
+            Id = r.Id,
+            OutletId = r.OutletId,
+            OutletName = r.OutletName,
+            Leaning = r.Leaning.ToString(),
+            Headline = r.Headline,
+            ArticleSummary = r.ArticleSummary,
+            Category = r.Category,
+            Sentiment = r.Sentiment.ToString(),
+            EventSource = r.EventSource,
+            OutletCredibility = r.OutletCredibility,
+            OutletReach = r.OutletReach,
+            PublishedDay = r.PublishedDay,
+            PublicApprovalImpact = r.PublicApprovalImpact,
+            StabilityImpact = r.StabilityImpact,
+            IsSuppressed = r.IsSuppressed,
+            IsUndergroundLeak = r.IsUndergroundLeak,
+            ResponseStatus = r.ResponseStatus.ToString()
+        }).ToList();
+
+        var topHeadline = country.MediaReports.FirstOrDefault(r => !r.IsSuppressed)?.Headline
+                          ?? country.MediaReports.FirstOrDefault()?.Headline
+                          ?? "No active press reports filed";
+        var mediaSummaryText = $"Media Environment: {mediaOutlets.Count} Outlets Active | Top Story: {topHeadline}";
+
+        // Private sector & investment integration
+        var privateSectorService = new PrivateSectorService();
+        var privateInvestors = privateSectorService.EnsureCountryPrivateInvestors(country);
+        privateSectorService.GenerateInvestmentProposals(country, simulationTime);
+        privateSectorService.CheckInvestmentCompletions(country, simulationTime);
+
+        var privateInvestorSnapshots = privateInvestors.Select(i => new PrivateInvestorSnapshot
+        {
+            Id = i.Id,
+            Name = i.Name,
+            Sector = i.Sector,
+            InvestorType = i.InvestorType,
+            CapitalCapacity = i.CapitalCapacity,
+            RiskTolerance = i.RiskTolerance.ToString(),
+            GovernmentRelationship = i.GovernmentRelationship
+        }).ToList();
+
+        var investmentProposalSnapshots = country.InvestmentProposals.Select(p => new InvestmentProposalSnapshot
+        {
+            Id = p.Id,
+            InvestorId = p.InvestorId,
+            InvestorName = p.InvestorName,
+            Title = p.Title,
+            Sector = p.Sector,
+            Location = p.Location,
+            InvestorContribution = p.InvestorContribution,
+            RequestedGovernmentFunding = p.RequestedGovernmentFunding,
+            RequestedTaxConcession = p.RequestedTaxConcession,
+            EstimatedConstructionDays = p.EstimatedConstructionDays,
+            ProjectedJobsCreated = p.ProjectedJobsCreated,
+            ProjectedGdpBoost = p.ProjectedGdpBoost,
+            ProjectedAnnualTaxRevenue = p.ProjectedAnnualTaxRevenue,
+            RisksAndConditions = p.RisksAndConditions,
+            Status = p.Status.ToString(),
+            CreatedAtDay = p.CreatedAtDay,
+            OutcomeMessage = p.OutcomeMessage
+        }).ToList();
+
+        var pendingPropCount = country.InvestmentProposals.Count(p => p.Status == InvestmentProposalStatus.Pending);
+        var activeInvCount = country.ActivePrivateInvestments.Count(p => p.IsActive);
+        var investmentSummaryText = $"Private Sector: {privateInvestors.Count} Enterprises | {pendingPropCount} Pending Proposals | {activeInvCount} Active Facilities";
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -626,6 +751,12 @@ public sealed record PresidentialDeskSnapshot
             SecurityAssessmentSummary = secAssessment.AssessmentSummary,
             DomesticThreatIndex = secAssessment.DomesticThreatIndex,
             ExternalThreatIndex = secAssessment.ExternalThreatIndex,
+            MediaOutlets = mediaOutletSnapshots.AsReadOnly(),
+            MediaReports = mediaReportSnapshots.AsReadOnly(),
+            MediaSummary = mediaSummaryText,
+            PrivateInvestors = privateInvestorSnapshots.AsReadOnly(),
+            InvestmentProposals = investmentProposalSnapshots.AsReadOnly(),
+            InvestmentSummary = investmentSummaryText,
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,

@@ -13,6 +13,7 @@ using Republic.Core.World.Models;
 [JsonDerivedType(typeof(NationalRoadProject), typeDiscriminator: nameof(NationalRoadProject))]
 [JsonDerivedType(typeof(NationalUniversityProject), typeDiscriminator: nameof(NationalUniversityProject))]
 [JsonDerivedType(typeof(NationalPowerPlantProject), typeDiscriminator: nameof(NationalPowerPlantProject))]
+[JsonDerivedType(typeof(Republic.Core.Economy.PrivateSector.Models.PrivateInvestmentProject), typeDiscriminator: nameof(Republic.Core.Economy.PrivateSector.Models.PrivateInvestmentProject))]
 public abstract class DevelopmentProject : IDevelopmentProject
 {
     /// <summary>

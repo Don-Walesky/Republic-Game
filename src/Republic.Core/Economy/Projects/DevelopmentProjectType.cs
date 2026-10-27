@@ -19,6 +19,11 @@ public enum DevelopmentProjectType
     /// <summary>
     /// National electric power plant and energy generation facility.
     /// </summary>
-    PowerPlant = 2
+    PowerPlant = 2,
+
+    /// <summary>
+    /// Private-sector co-investment or commercial facility project.
+    /// </summary>
+    PrivateInvestment = 3
 }
 

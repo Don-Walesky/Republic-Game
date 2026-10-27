@@ -1486,6 +1486,12 @@ func apply_state(state: Dictionary) -> void:
 	# Phase 2: Proactive Chief of Staff Briefing & Recommendations
 	_update_chief_of_staff_briefing_ui(state)
 
+	# Phase 3: Living Media Environment & Action Management
+	_update_media_environment_briefing_ui(state)
+
+	# Phase 3: Private Sector Inbound Proposals & Investment
+	_update_private_sector_investment_briefing_ui(state)
+
 	# 7. Hotline & Classified Dossier Modal Updates
 	if hotline_status_label:
 		hotline_status_label.text = "Secure diplomatic line operational. Connects directly to foreign heads of state."
@@ -4269,6 +4275,353 @@ func execute_security_directive(threat_id: String, directive: String, confirmed:
 		"request_id": req_id,
 		"request_path": req_path
 	}
+
+# ==============================================================================
+# 8. PHASE 3 MEDIA INFLUENCE & PRIVATE-SECTOR INVESTMENT HANDLERS
+# ==============================================================================
+func _update_media_environment_briefing_ui(state: Dictionary) -> void:
+	if not briefing_modal:
+		return
+	var briefing_content := _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox") as VBoxContainer
+	if not briefing_content:
+		return
+
+	var media_section := briefing_content.get_node_or_null("MediaEnvironmentSection") as VBoxContainer
+	if not media_section:
+		media_section = VBoxContainer.new()
+		media_section.name = "MediaEnvironmentSection"
+		media_section.add_theme_constant_override("separation", 6)
+		briefing_content.add_child(media_section)
+
+	for child in media_section.get_children():
+		child.queue_free()
+
+	var media_summary := str(state.get("media_summary", "Media Environment: Free press operating."))
+	var header_label := Label.new()
+	header_label.text = "📰 National Press & Media Wire: " + media_summary
+	header_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	header_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.95))
+	header_label.add_theme_font_size_override("font_size", 12)
+	media_section.add_child(header_label)
+
+	var reports = state.get("media_reports", [])
+	if reports is Array and not reports.is_empty():
+		var reports_title := Label.new()
+		reports_title.text = "Recent Journalistic Dispatches & Public Coverage:"
+		reports_title.add_theme_font_size_override("font_size", 11)
+		reports_title.add_theme_color_override("font_color", Color(0.8, 0.85, 0.9))
+		media_section.add_child(reports_title)
+
+		for rep in reports:
+			if not (rep is Dictionary):
+				continue
+			var rep_id: String = str(rep.get("id", ""))
+			var outlet_name: String = str(rep.get("outlet_name", "Press"))
+			var leaning: String = str(rep.get("leaning", "StateAligned"))
+			var headline: String = str(rep.get("headline", "Untitled Report"))
+			var summary: String = str(rep.get("article_summary", rep.get("body", "")))
+			var sentiment: String = str(rep.get("sentiment", "Neutral"))
+			var event_source: String = str(rep.get("event_source", "General"))
+			var credibility: float = float(rep.get("outlet_credibility", rep.get("credibility", 0.7)))
+			var reach: float = float(rep.get("outlet_reach", rep.get("reach", 50000.0)))
+			var resp_status: String = str(rep.get("response_status", "Unanswered"))
+			var is_suppressed: bool = bool(rep.get("is_suppressed", false))
+			var is_leak: bool = bool(rep.get("is_underground_leak", rep.get("is_leaked", false)))
+
+			var card := PanelContainer.new()
+			var card_vbox := VBoxContainer.new()
+			card_vbox.add_theme_constant_override("separation", 3)
+			card.add_child(card_vbox)
+
+			var header_hbox := HBoxContainer.new()
+			var outlet_badge := Label.new()
+			var leak_tag := " [UNDERGROUND SAMIZDAT]" if is_leak else ""
+			outlet_badge.text = "[%s | %s | Reach: %0.0f%% | Cred: %0.0f%%%s]" % [outlet_name, leaning, reach, credibility, leak_tag]
+			if is_leak:
+				outlet_badge.add_theme_color_override("font_color", Color(1.0, 0.25, 0.25))
+			elif sentiment.to_lower() == "critical" or sentiment.to_lower() == "sensationalized":
+				outlet_badge.add_theme_color_override("font_color", Color(1.0, 0.65, 0.2))
+			elif sentiment.to_lower() == "positive":
+				outlet_badge.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4))
+			else:
+				outlet_badge.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9))
+			outlet_badge.add_theme_font_size_override("font_size", 10)
+			header_hbox.add_child(outlet_badge)
+			card_vbox.add_child(header_hbox)
+
+			var headline_lbl := Label.new()
+			headline_lbl.text = "Headline: " + headline
+			headline_lbl.add_theme_font_size_override("font_size", 11)
+			card_vbox.add_child(headline_lbl)
+
+			var body_lbl := Label.new()
+			body_lbl.text = "%s (Trigger: %s)" % [summary, event_source]
+			body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			body_lbl.add_theme_font_size_override("font_size", 10)
+			card_vbox.add_child(body_lbl)
+
+			var status_hbox := HBoxContainer.new()
+			var status_lbl := Label.new()
+			status_lbl.text = "Status: " + resp_status
+			status_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			status_lbl.add_theme_font_size_override("font_size", 10)
+			status_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+			status_hbox.add_child(status_lbl)
+			card_vbox.add_child(status_hbox)
+
+			if resp_status == "Unanswered" and not is_suppressed:
+				var btn_hbox := HBoxContainer.new()
+				btn_hbox.alignment = BoxContainer.ALIGNMENT_END
+
+				var statement_btn := Button.new()
+				statement_btn.text = "Statement (R 10,000)"
+				statement_btn.add_theme_font_size_override("font_size", 10)
+				statement_btn.pressed.connect(func():
+					execute_media_response(rep_id, "statement")
+					status_lbl.text = "Status: StatementIssued"
+					statement_btn.disabled = true
+				)
+				btn_hbox.add_child(statement_btn)
+
+				var bribe_btn := Button.new()
+				bribe_btn.text = "Hush Money (R 150,000)"
+				bribe_btn.add_theme_font_size_override("font_size", 10)
+				bribe_btn.pressed.connect(func():
+					execute_media_response(rep_id, "hush_money")
+					status_lbl.text = "Status: HushMoneyAttempted"
+					bribe_btn.disabled = true
+				)
+				btn_hbox.add_child(bribe_btn)
+
+				var censor_btn := Button.new()
+				censor_btn.text = "Gag Order / Censor"
+				censor_btn.add_theme_font_size_override("font_size", 10)
+				censor_btn.pressed.connect(func():
+					execute_media_response(rep_id, "censorship")
+					status_lbl.text = "Status: Censored"
+					censor_btn.disabled = true
+				)
+				btn_hbox.add_child(censor_btn)
+
+				card_vbox.add_child(btn_hbox)
+
+			media_section.add_child(card)
+
+func _update_private_sector_investment_briefing_ui(state: Dictionary) -> void:
+	if not briefing_modal:
+		return
+	var briefing_content := _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingScroll/BriefingContentVBox") as VBoxContainer
+	if not briefing_content:
+		return
+
+	var invest_section := briefing_content.get_node_or_null("PrivateInvestmentSection") as VBoxContainer
+	if not invest_section:
+		invest_section = VBoxContainer.new()
+		invest_section.name = "PrivateInvestmentSection"
+		invest_section.add_theme_constant_override("separation", 6)
+		briefing_content.add_child(invest_section)
+
+	for child in invest_section.get_children():
+		child.queue_free()
+
+	var invest_summary := str(state.get("investment_summary", "Private Sector: Corporate investment channels open."))
+	var header_label := Label.new()
+	header_label.text = "💼 Private Sector Inbound Proposals: " + invest_summary
+	header_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	header_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5))
+	header_label.add_theme_font_size_override("font_size", 12)
+	invest_section.add_child(header_label)
+
+	var proposals = state.get("investment_proposals", [])
+	if proposals is Array and not proposals.is_empty():
+		for prop in proposals:
+			if not (prop is Dictionary):
+				continue
+			var prop_id: String = str(prop.get("id", ""))
+			var investor_name: String = str(prop.get("investor_name", "Corporate Investor"))
+			var title: String = str(prop.get("title", "Industrial Venture"))
+			var sector: String = str(prop.get("sector", "Manufacturing"))
+			var location: String = str(prop.get("location", "Capital Region"))
+			var inv_contribution: float = float(prop.get("investor_contribution", prop.get("proposed_investment", 0.0)))
+			var gov_funding: float = float(prop.get("requested_government_funding", prop.get("government_funding_requested", 0.0)))
+			var tax_concession: float = float(prop.get("requested_tax_concession", prop.get("tax_concession_requested", 0.0)))
+			var construction_days: int = int(prop.get("estimated_construction_days", prop.get("construction_days", 5)))
+			var jobs_created: int = int(prop.get("projected_jobs_created", prop.get("projected_jobs", 500)))
+			var gdp_boost: float = float(prop.get("projected_gdp_boost", 0.0))
+			var annual_tax: float = float(prop.get("projected_annual_tax_revenue", prop.get("projected_annual_tax_yield", 0.0)))
+			var risks: String = str(prop.get("risks_and_conditions", prop.get("conditions_and_risks", "")))
+			var p_status: String = str(prop.get("status", "Pending"))
+
+			var card := PanelContainer.new()
+			var card_vbox := VBoxContainer.new()
+			card_vbox.add_theme_constant_override("separation", 3)
+			card.add_child(card_vbox)
+
+			var header_hbox := HBoxContainer.new()
+			var sector_badge := Label.new()
+			sector_badge.text = "[%s | %s | %s]" % [investor_name, sector, location]
+			sector_badge.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+			sector_badge.add_theme_font_size_override("font_size", 10)
+			header_hbox.add_child(sector_badge)
+
+			var title_lbl := Label.new()
+			title_lbl.text = title
+			title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			title_lbl.add_theme_font_size_override("font_size", 11)
+			header_hbox.add_child(title_lbl)
+
+			var status_lbl := Label.new()
+			status_lbl.text = "Status: " + p_status
+			status_lbl.add_theme_font_size_override("font_size", 10)
+			status_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+			header_hbox.add_child(status_lbl)
+			card_vbox.add_child(header_hbox)
+
+			var finance_lbl := Label.new()
+			finance_lbl.text = "Private Capital: R %s | Requested Public Co-Funding: R %s (Tax Relief: %0.1f%%)" % [
+				_format_number_commas(inv_contribution), _format_number_commas(gov_funding), tax_concession
+			]
+			finance_lbl.add_theme_font_size_override("font_size", 10)
+			card_vbox.add_child(finance_lbl)
+
+			var impact_lbl := Label.new()
+			impact_lbl.text = "Expected Return: +%d Full-Time Jobs | +R %s GDP Output | +R %s/yr Tax Revenue | Construction: %d Days" % [
+				jobs_created, _format_number_commas(gdp_boost), _format_number_commas(annual_tax), construction_days
+			]
+			impact_lbl.add_theme_font_size_override("font_size", 10)
+			card_vbox.add_child(impact_lbl)
+
+			if not risks.is_empty():
+				var risks_lbl := Label.new()
+				risks_lbl.text = "Conditions & Risk: " + risks
+				risks_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				risks_lbl.add_theme_font_size_override("font_size", 9)
+				risks_lbl.add_theme_color_override("font_color", Color(0.85, 0.7, 0.7))
+				card_vbox.add_child(risks_lbl)
+
+			if p_status == "Pending" or p_status == "Negotiated":
+				var btn_hbox := HBoxContainer.new()
+				btn_hbox.alignment = BoxContainer.ALIGNMENT_END
+
+				var accept_btn := Button.new()
+				accept_btn.text = "Authorize Co-Funding (R %s)" % _format_number_commas(gov_funding)
+				accept_btn.add_theme_font_size_override("font_size", 10)
+				accept_btn.pressed.connect(func():
+					execute_investment_decision(prop_id, "accept")
+					status_lbl.text = "Status: Accepted"
+					accept_btn.disabled = true
+				)
+				btn_hbox.add_child(accept_btn)
+
+				if p_status == "Pending":
+					var negotiate_btn := Button.new()
+					negotiate_btn.text = "Renegotiate Terms (-25% State Share)"
+					negotiate_btn.add_theme_font_size_override("font_size", 10)
+					negotiate_btn.pressed.connect(func():
+						execute_investment_decision(prop_id, "negotiate")
+						status_lbl.text = "Status: Negotiated"
+						negotiate_btn.disabled = true
+					)
+					btn_hbox.add_child(negotiate_btn)
+
+				var reject_btn := Button.new()
+				reject_btn.text = "Decline Proposal"
+				reject_btn.add_theme_font_size_override("font_size", 10)
+				reject_btn.pressed.connect(func():
+					execute_investment_decision(prop_id, "reject")
+					status_lbl.text = "Status: Rejected"
+					reject_btn.disabled = true
+				)
+				btn_hbox.add_child(reject_btn)
+
+				card_vbox.add_child(btn_hbox)
+
+			invest_section.add_child(card)
+
+func execute_media_response(report_id: String, response_type: String, confirmed: bool = true) -> Dictionary:
+	if latest_state.is_empty():
+		var err_msg := "Cannot submit media response: No Republic simulation state loaded."
+		return { "success": false, "message": err_msg }
+
+	var req_path := _resolve_request_path()
+	var req_dir := req_path.get_base_dir()
+	if not req_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
+
+	var req_id := "req_media_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var timestamp_str := Time.get_datetime_string_from_system()
+
+	var request_dict := {
+		"request_id": req_id,
+		"action": "media_response",
+		"report_id": report_id,
+		"response_type": response_type,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to open request file for writing: " + req_path
+		return { "success": false, "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	var msg := "Media directive enacted: %s on report '%s'." % [response_type.capitalize(), report_id]
+	if status_ticker_label:
+		status_ticker_label.text = "Press Office: " + msg
+
+	return {
+		"success": true,
+		"message": msg,
+		"request_id": req_id,
+		"request_path": req_path
+	}
+
+func execute_investment_decision(proposal_id: String, decision: String, confirmed: bool = true) -> Dictionary:
+	if latest_state.is_empty():
+		var err_msg := "Cannot submit investment decision: No Republic simulation state loaded."
+		return { "success": false, "message": err_msg }
+
+	var req_path := _resolve_request_path()
+	var req_dir := req_path.get_base_dir()
+	if not req_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
+
+	var req_id := "req_invest_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var timestamp_str := Time.get_datetime_string_from_system()
+
+	var request_dict := {
+		"request_id": req_id,
+		"action": "investment_decision",
+		"proposal_id": proposal_id,
+		"decision": decision,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to open request file for writing: " + req_path
+		return { "success": false, "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	var msg := "Commercial investment decision registered: %s on proposal '%s'." % [decision.capitalize(), proposal_id]
+	if status_ticker_label:
+		status_ticker_label.text = "Commercial Registry: " + msg
+
+	return {
+		"success": true,
+		"message": msg,
+		"request_id": req_id,
+		"request_path": req_path
+	}
+
 
 
 

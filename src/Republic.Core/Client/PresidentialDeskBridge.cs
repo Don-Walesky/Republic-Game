@@ -7,14 +7,16 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Budget.Models;
+using Republic.Core.Economy.PrivateSector.Services;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
+using Republic.Core.Government.Officials.Models;
+using Republic.Core.Government.Officials.Services;
+using Republic.Core.Media.Services;
 using Republic.Core.Persistence;
 using Republic.Core.Persistence.Models;
 using Republic.Core.Persistence.Services;
 using Republic.Core.Time;
-using Republic.Core.Government.Officials.Models;
-using Republic.Core.Government.Officials.Services;
 using Republic.Core.World;
 using Republic.Core.World.Models;
 using Republic.Core.World.Rules;
@@ -3978,6 +3980,210 @@ public static class PresidentialDeskBridge
         return successResult;
     }
 
+    /// <summary>
+    /// Executes an authoritative presidential media-management action (statement, hush_money, or censorship)
+    /// in response to a published or leaked media report, updating authoritative state and exporting an updated snapshot.
+    /// </summary>
+    public static PresidentialActionResult ApplyMediaResponse(
+        string reportId,
+        string responseType,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "apply media management response");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Media response action cancelled. No executive action taken.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var mediaService = new MediaSimulationService();
+        bool success = mediaService.ApplyMediaResponse(country!, reportId, responseType, out var outcomeMessage);
+
+        if (!success)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = outcomeMessage,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        try
+        {
+            SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes an authoritative presidential investment decision (accept, reject, or negotiate)
+    /// on a private-sector investment proposal, updating authoritative state and exporting an updated snapshot.
+    /// </summary>
+    public static PresidentialActionResult ApplyInvestmentDecision(
+        string proposalId,
+        string decision,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "apply private sector investment decision");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Investment proposal review cancelled. No executive action taken.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var privateSectorService = new PrivateSectorService();
+        bool success = privateSectorService.ApplyInvestmentDecision(country!, proposalId, decision, out var outcomeMessage);
+
+        if (!success)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = outcomeMessage,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        try
+        {
+            SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
     private static void TryWriteResultFile(string stateOrSavePath, PresidentialActionResult result)
     {
         try
@@ -4351,6 +4557,86 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplySecurityDirective(threatId, directive, secConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "media_response" or "media_action" or "respond_media")
+                    {
+                        string reportId = string.Empty;
+                        if (root.TryGetProperty("report_id", out var repIdEl) && repIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            reportId = repIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var ridEl) && ridEl.ValueKind == JsonValueKind.String)
+                        {
+                            reportId = ridEl.GetString() ?? string.Empty;
+                        }
+
+                        string responseType = "statement";
+                        if (root.TryGetProperty("response_type", out var rTypeEl) && rTypeEl.ValueKind == JsonValueKind.String)
+                        {
+                            responseType = rTypeEl.GetString() ?? "statement";
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            responseType = tEl.GetString() ?? "statement";
+                        }
+                        else if (root.TryGetProperty("decision", out var decEl) && decEl.ValueKind == JsonValueKind.String)
+                        {
+                            responseType = decEl.GetString() ?? "statement";
+                        }
+
+                        bool mediaConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var mConfEl) && (mConfEl.ValueKind == JsonValueKind.True || mConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            mediaConfirmed = mConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyMediaResponse(reportId, responseType, mediaConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "investment_decision" or "investment_action" or "invest_decision")
+                    {
+                        string proposalId = string.Empty;
+                        if (root.TryGetProperty("proposal_id", out var propIdEl) && propIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = propIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var pidEl) && pidEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = pidEl.GetString() ?? string.Empty;
+                        }
+
+                        string decision = "accept";
+                        if (root.TryGetProperty("decision", out var decEl) && decEl.ValueKind == JsonValueKind.String)
+                        {
+                            decision = decEl.GetString() ?? "accept";
+                        }
+                        else if (root.TryGetProperty("action_type", out var atEl) && atEl.ValueKind == JsonValueKind.String)
+                        {
+                            decision = atEl.GetString() ?? "accept";
+                        }
+
+                        bool investConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var iConfEl) && (iConfEl.ValueKind == JsonValueKind.True || iConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            investConfirmed = iConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyInvestmentDecision(proposalId, decision, investConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

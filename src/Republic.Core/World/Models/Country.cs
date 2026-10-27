@@ -3,9 +3,11 @@ namespace Republic.Core.World.Models;
 using System.Text.Json.Serialization;
 using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Budget.Models;
+using Republic.Core.Economy.PrivateSector.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Officials.Models;
+using Republic.Core.Media.Models;
 using Republic.Core.NationalYield;
 using Republic.Core.Politics;
 using Republic.Core.Time;
@@ -328,6 +330,31 @@ public sealed class Country
     /// Gets or sets the latest ministerial advice evaluated across all six constitutional portfolios.
     /// </summary>
     public List<MinisterialAdvice> LatestMinisterialAdvice { get; set; } = new();
+
+    /// <summary>
+    /// Gets the authoritative media outlets operating within the sovereign republic.
+    /// </summary>
+    public List<MediaOutlet> MediaOutlets { get; set; } = new();
+
+    /// <summary>
+    /// Gets the published and historical media reports evaluating government actions and national events.
+    /// </summary>
+    public List<MediaReport> MediaReports { get; set; } = new();
+
+    /// <summary>
+    /// Gets the active commercial enterprises, industrialists, and private-sector investors.
+    /// </summary>
+    public List<PrivateInvestor> PrivateInvestors { get; set; } = new();
+
+    /// <summary>
+    /// Gets the pending, accepted, or negotiated commercial investment proposals submitted to the administration.
+    /// </summary>
+    public List<InvestmentProposal> InvestmentProposals { get; set; } = new();
+
+    /// <summary>
+    /// Gets the active public-private co-investment facilities currently under development or completed.
+    /// </summary>
+    public List<PrivateInvestmentProject> ActivePrivateInvestments { get; set; } = new();
 
     private readonly HashSet<string> _appliedConsequenceBoundaryIds = new(StringComparer.Ordinal);
 

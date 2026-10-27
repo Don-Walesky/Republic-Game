@@ -82,6 +82,10 @@ func _get_required_node(node_path: String) -> Node:
 @onready var defense_readiness_label: Label = _get_required_node("DefenseReadinessLabel") as Label
 @onready var offline_briefing_label: Label = _get_required_node("OfflineBriefingLabel") as Label
 
+## Media Environment & Private Sector Investment
+@onready var media_summary_label: Label = _get_required_node("MediaSummaryLabel") as Label
+@onready var investment_summary_label: Label = _get_required_node("InvestmentSummaryLabel") as Label
+
 ## Multiplayer Networking Controls & Display
 @onready var host_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/HostButton") as Button
 @onready var join_button: Button = _get_required_node("VBoxContainer/MultiplayerControlsHBox/JoinButton") as Button
@@ -292,6 +296,10 @@ func _init_controls() -> void:
 		defense_readiness_label = _get_required_node("DefenseReadinessLabel") as Label
 	if offline_briefing_label == null:
 		offline_briefing_label = _get_required_node("OfflineBriefingLabel") as Label
+	if media_summary_label == null:
+		media_summary_label = _get_required_node("MediaSummaryLabel") as Label
+	if investment_summary_label == null:
+		investment_summary_label = _get_required_node("InvestmentSummaryLabel") as Label
 
 	if buy_admin_buff_button == null:
 		buy_admin_buff_button = _get_required_node("VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox/BuyAdminBuffButton") as Button
@@ -951,6 +959,20 @@ func apply_state(data: Dictionary) -> void:
 	if offline_briefing_label:
 		offline_briefing_label.text = offline_briefing
 
+	var media_summary: String = str(data.get("media_summary", data.get("MediaSummary", "")))
+	if media_summary_label:
+		if not media_summary.is_empty():
+			media_summary_label.text = "Media Environment: " + media_summary
+		else:
+			media_summary_label.text = "Media Environment: [Normal Reporting]"
+
+	var investment_summary: String = str(data.get("investment_summary", data.get("InvestmentSummary", "")))
+	if investment_summary_label:
+		if not investment_summary.is_empty():
+			investment_summary_label.text = "Private Sector: " + investment_summary
+		else:
+			investment_summary_label.text = "Private Sector: [No active proposals]"
+
 	if status_label:
 		status_label.text = _format_status_text("Status: " + status_msg, "None")
 
@@ -1073,6 +1095,10 @@ func display_missing_state(details: String = "") -> void:
 		defense_readiness_label.text = "Defense Posture: DEFCON 5 (Peacetime Watch) | Armed Forces: 85.0% Operational"
 	if offline_briefing_label:
 		offline_briefing_label.text = "Offline Status: Real-time simulation aligned. Zero pending offline cycles."
+	if media_summary_label:
+		media_summary_label.text = "Media Environment: [No State Loaded]"
+	if investment_summary_label:
+		investment_summary_label.text = "Private Sector: [No State Loaded]"
 	if trade_lifecycle_stage_label:
 		trade_lifecycle_stage_label.text = "Trade Lifecycle: [Draft Proposal] — Configure amount above and propose to peer"
 	if status_label:
