@@ -104,7 +104,7 @@ Anchored along screen edges with high information density and semi-transparent g
 | **Phase 3** | Personalised Presidential Office & Modular Customisation: 8 selectable presidential portraits (5 male, 3 female), sovereign country flag & heraldry, 6 modular furniture categories (desks & chairs, visitor seating, walls & flooring, carpets & lighting, bookshelves & decor, artwork & gifts), authoritative REPU pricing & purchasing validation, facilities/interior approvals, country-isolated persistent storage, and customisation modal UX. | **Verified** |
 | **Living Scenery & Desk Interactivity** | State-driven capital window feedback (prosperity, construction cranes, civil unrest, atmospheric crisis haze), interactive desk controls with notification badges, progressive dock disclosure, soft portrait/flag mood reactivity, and session briefing toast. | **Verified** |
 | **Phase 4** | Domestic Cabinet & Ministry Dock: Left Dock cabinet panel with all 6 constitutional portfolios (Finance, Defense, ForeignAffairs, Interior, Health, Infrastructure), minister appointment cards with competence, loyalty, and integrity ratings, honest state capacity effects (Civil Service Quality, Corruption Control, Infrastructure Condition), appointment modal for supported portfolios with Technocrat, Loyalist, and Dismiss choices, core rules consequence previews, and file-based appointment action pipeline (`presidential_desk_request.json`). | **Verified** |
-| **Phase 5** | Geopolitics & Foreign Relations Dock (Bilateral trade routes, DEFCON posture, summit negotiation). | Planned |
+| **Phase 5 (Diegetic Engagement)** | Session Delta Briefing (delta calculations & baseline advancing), Desk Event Badges (Hotline, Dossier, Inbox, Diplomatic Folder), Clickable Capital Window Markers (procedural monument/spire & status card), Cabinet Friction & Capacity Bottlenecks (finance, interior, infrastructure badges & friction alerts), Diplomatic Dossiers (partner, terms, accept/reject requests), and Project Completion Moments (halo highlight & honest toast). | **Verified** |
 | **Phase 6** | Capital City Scenery expansion (Day/Night cycle, weather, infrastructure development overlays). | Planned |
 
 ---
@@ -120,12 +120,13 @@ All automated suites were executed against the Godot 4.7.2 engine and .NET 8 tes
 | `test_executive_office_phase3.gd` | `godot --headless --path client/godot -s test_executive_office_phase3.gd` | 6 | **PASS** (6/6) | 0 |
 | `test_executive_office_living_feedback.gd` | `godot --headless --path client/godot -s test_executive_office_living_feedback.gd` | 5 | **PASS** (5/5) | 0 |
 | `test_executive_office_phase4.gd` | `godot --headless --path client/godot -s test_executive_office_phase4.gd` | 12 | **PASS** (12/12) | 0 |
+| `test_executive_office_engagement.gd` | `godot --headless --path client/godot -s test_executive_office_engagement.gd` | 6 | **PASS** (6/6) | 0 |
 | `test_presidential_desk.gd` | `godot --headless --path client/godot -s test_presidential_desk.gd` | 28 | **PASS** (28/28) | 0 |
 | `test_first_playable_loop.gd` | `godot --headless --path client/godot -s test_first_playable_loop.gd` | 8 | **PASS** (8/8) | 0 |
 | `test_phase3_governance_loop.gd` | `godot --headless --path client/godot -s test_phase3_governance_loop.gd` | 7 | **PASS** (7/7) | 0 |
 | `test_mvp_multiplayer_simulation.gd` | `godot --headless --path client/godot -s test_mvp_multiplayer_simulation.gd` | 3 | **PASS** (3/3) | 0 |
 | `Republic.Core.Tests` | `dotnet test --nologo` | 785 | **PASS** (785/785) | 0 |
-| **Total** | | **869** | **100% PASS** | **0** |
+| **Total** | | **875** | **100% PASS** | **0** |
 
 ### Launch Behaviour Analysis (`project.godot`)
 - **Current Main Scene**: `res://PresidentialDesk.tscn`
@@ -228,7 +229,47 @@ To ensure zero risk to existing gameplay and regression suites, Phase 4 will be 
 | **Supported Portfolios & Actions** | **All 3 Portfolios Verified** | Verified across all 3 active ministries (`Finance`, `Interior`, `Infrastructure`) for all 3 supported actions (`Technocrat`, `Loyalist`, `Dismiss/Vacate`):<br>• **Finance**: Dr. Elena Rostova (Civil Service Quality: 90.0%), Senator Donald Vance (45.0%), Dismiss (reverts to baseline 30.0%).<br>• **Interior**: Dr. Alistair Finch (Corruption Control: 90.0%), Party Whip Thomas Sterling (45.0%), Dismiss (baseline 30.0%).<br>• **Infrastructure**: Eng. Marcus Bennett (Infrastructure Condition: 85.0%), Alderman Gregory Cross (45.0%), Dismiss (baseline 30.0%). |
 | **Edge Cases & Failure Resilience** | **Verified & Guarded** | • **Cancellation**: Unconfirmed appointment (`confirmed = false`) causes zero state mutation to state or `.sav`.<br>• **Invalid Input**: Unknown candidate type produces `[Rejected]` status with authoritative core message.<br>• **Data Preservation**: Unrelated country data (sovereign treasury R 10B, ruling party Democratic Union) preserved intact.<br>• **Missing Processor & Timeouts (Check 10)**: Missing or failed simulation processor and request timeouts cleanly report explicit warning messages instead of false success.<br>• **Non-Interactive Cards**: Defense, Foreign Affairs, Health cards remain visible with unassigned indicators. |
 | **Windows CLI File Locking Fix** | **Resolved & Hardened** | `FileLogSink.cs` updated to use `FileShare.ReadWrite` and catch transient I/O exceptions, ensuring that CLI instances running in parallel or alongside Godot logging never crash from Windows file locks. |
-| **Automated Test Suites** | **100% Passing** | • `test_executive_office_phase4.gd`: **12/12 checks passed** (exit code 0)<br>• `test_executive_office.gd`: **8/8 checks passed** (exit code 0)<br>• `test_executive_office_phase2.gd`: **7/7 checks passed** (exit code 0)<br>• `test_executive_office_phase3.gd`: **6/6 checks passed** (exit code 0)<br>• `test_executive_office_living_feedback.gd`: **5/5 checks passed** (exit code 0)<br>• `test_presidential_desk.gd`: **28/28 checks passed** (exit code 0)<br>• `test_first_playable_loop.gd`: **8/8 checks passed** (exit code 0)<br>• `test_phase3_governance_loop.gd`: **7/7 checks passed** (exit code 0)<br>• `test_mvp_multiplayer_simulation.gd`: **3/3 checks passed** (exit code 0)<br>• `dotnet test --nologo`: **785/785 tests passed** (exit code 0) |
+| **Automated Test Suites** | **100% Passing** | • `test_executive_office_engagement.gd`: **6/6 checks passed** (exit code 0)<br>• `test_executive_office_phase4.gd`: **12/12 checks passed** (exit code 0)<br>• `test_executive_office.gd`: **8/8 checks passed** (exit code 0)<br>• `test_executive_office_phase2.gd`: **7/7 checks passed** (exit code 0)<br>• `test_executive_office_phase3.gd`: **6/6 checks passed** (exit code 0)<br>• `test_executive_office_living_feedback.gd`: **5/5 checks passed** (exit code 0)<br>• `test_presidential_desk.gd`: **28/28 checks passed** (exit code 0)<br>• `test_first_playable_loop.gd`: **8/8 checks passed** (exit code 0)<br>• `test_phase3_governance_loop.gd`: **7/7 checks passed** (exit code 0)<br>• `test_mvp_multiplayer_simulation.gd`: **3/3 checks passed** (exit code 0)<br>• `dotnet test --nologo`: **785/785 tests passed** (exit code 0) |
+
+---
+
+## 7. Phase 5: Diegetic State-Driven Engagement Features
+
+Phase 5 introduces six state-driven engagement features connecting the physical executive office environment directly to authoritative simulation state:
+
+### 1. Session Delta Briefing
+- **Behavior**: On game load or when the simulation clock advances, calculates real delta changes since the last session/cycle (`Δ Treasury`, `Δ Approval`, `Δ Stability`).
+- **Honest Data Rule**: Only displays deltas computed from actual previous state baselines. Discloses honest formatted values (`+R 2.5B`, `+5.5%`, `+5.0%`).
+- **Node**: `SessionBriefingToast` with dismiss button (`DismissBriefingButton`) that automatically advances baseline metrics upon dismissal.
+
+### 2. Incoming Desk Items & Event Notification Badges
+- **Behavior**: Physical props on the executive desk reflect incoming simulation events with badge counts and visual urgency:
+  - `HotlinePhone`: Badge count reflecting active crises; clicking opens the crisis response dossier modal.
+  - `IntelligenceInbox`: Badge reflecting incoming dispatches and briefs.
+  - `DiplomaticFolder`: Badge reflecting pending bilateral diplomatic proposals; clicking clears badge and expands `RightDock` to the diplomatic dossier card.
+- **Decision Integration**: Hotline crisis modal allows enacting Civic Relief or Austerity Decrees writing authoritative requests to `presidential_desk_request.json`.
+
+### 3. Clickable Capital Window Markers
+- **Behavior**: `CapitalWindowScenery.gd` renders interactive markers in the capital skyline:
+  - **Active Construction**: Scaffolded tower with procedural construction cranes for ongoing projects.
+  - **National Landmark**: State monument spire for completed high-impact projects.
+  - **Interactive Selection**: Clicking or hovering detects procedural bounding rects and opens `CapitalProjectCard` with honest progress metrics, turns remaining, and economic yields.
+
+### 4. Cabinet Friction & Capacity Bottleneck Badges
+- **Behavior**: Left Dock cabinet portfolio cards display high-visibility badges:
+  - `FinanceBottleneckBadge`: Displayed when `economic_capacity` or `civil_service_quality` is below 40%.
+  - `InteriorBottleneckBadge`: Displayed when `corruption_control` is below 40%.
+  - `InfrastructureBottleneckBadge`: Displayed when `infrastructure_condition` is below 40%.
+  - `CabinetFrictionPanel`: Alert panel displaying conflicting portfolio friction or structural capacity bottlenecks with directive action buttons.
+
+### 5. Diplomatic Dossiers & Decision Pipeline
+- **Behavior**: Right Dock embeds `DiplomaticDossierCard` displaying the current sovereign partner, treaty/trade terms, and status.
+- **Request Writing**: Provides `AcceptDossierProposalButton` and `RejectDossierProposalButton` which write `diplomatic_response` decisions (`action: "diplomatic_response"`, `decision: "accept"`/`"reject"`, `partner_country: ...`) to `presidential_desk_request.json` for backend CLI processing.
+
+### 6. Project Completion Moments & Toast Notification
+- **Behavior**: Detects state transition when an active project completes (`status == "completed"` or progress reaches 100%).
+- **Celebratory Feedback**: Activates a procedural gold completion halo in `CapitalWindowScenery.gd` and presents `ProjectCompletionToast` displaying the completed project name and honest delta metric benefits.
+
 
 
 

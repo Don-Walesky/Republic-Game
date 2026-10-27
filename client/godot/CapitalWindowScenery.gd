@@ -8,6 +8,8 @@ extends Control
 ## - Active Projects: renders temporary construction cranes and rooftop scaffolding.
 ## - Active Crises / Low Stability: renders smog/pollution haze tint and protest silhouettes at street level.
 
+signal project_marker_clicked(project_name: String, is_active: bool, marker_id: String)
+
 @export var sky_top_color: Color = Color(0.12, 0.18, 0.28, 1.0)
 @export var sky_horizon_color: Color = Color(0.32, 0.38, 0.48, 1.0)
 @export var distant_buildings_color: Color = Color(0.14, 0.17, 0.24, 0.9)
@@ -22,8 +24,10 @@ extends Control
 @export var pollution_tint: Color = Color(0.0, 0.0, 0.0, 0.0)
 @export var show_construction: bool = false
 @export var show_protest: bool = false
+@export var show_completed_monument: bool = false
 @export var construction_crane_color: Color = Color(0.90, 0.58, 0.15, 0.95)
 @export var protest_silhouette_color: Color = Color(0.04, 0.06, 0.10, 0.85)
+@export var landmark_accent_color: Color = Color(0.85, 0.75, 0.30, 0.95)
 
 var custom_scenery_texture: Texture2D = null
 
@@ -32,13 +36,31 @@ var current_approval: float = 68.5
 var current_stability: float = 85.0
 var current_active_project: String = "None"
 var current_active_crisis: String = "None"
+var current_completed_project: String = "None"
+
+# Completion celebration highlight
+var is_highlighting_completion: bool = false
+var completion_highlight_time: float = 0.0
+var highlight_project_name: String = ""
+var hovered_marker: String = ""
+
+func _ready() -> void:
+	mouse_filter = MOUSE_FILTER_STOP
+
+func _process(delta: float) -> void:
+	if completion_highlight_time > 0.0:
+		completion_highlight_time -= delta
+		if completion_highlight_time <= 0.0:
+			is_highlighting_completion = false
+		queue_redraw()
 
 ## Updates procedural scenery based on authoritative Republic state
-func set_state_metrics(approval_val: float, stability_val: float, active_proj: String = "None", crisis_str: String = "None") -> void:
+func set_state_metrics(approval_val: float, stability_val: float, active_proj: String = "None", crisis_str: String = "None", completed_proj: String = "None") -> void:
 	current_approval = approval_val
 	current_stability = stability_val
 	current_active_project = active_proj
 	current_active_crisis = crisis_str
+	current_completed_project = completed_proj
 
 	# 1. Normalize stability and approval to 0.0 - 1.0
 	var stab_norm: float = clampf(stability_val / 100.0 if stability_val > 1.0 else stability_val, 0.0, 1.0)
@@ -54,7 +76,11 @@ func set_state_metrics(approval_val: float, stability_val: float, active_proj: S
 	var has_proj := (not active_proj.is_empty() and active_proj != "None" and active_proj != "[No State Loaded]")
 	show_construction = has_proj
 
-	# 5. Protest crowds & Smoke/Pollution Haze
+	# 5. Completed project monument: Distinct civic landmark
+	var has_completed := (not completed_proj.is_empty() and completed_proj != "None" and completed_proj != "[No State Loaded]")
+	show_completed_monument = has_completed or is_highlighting_completion
+
+	# 6. Protest crowds & Smoke/Pollution Haze
 	var has_crisis := (not crisis_str.is_empty() and crisis_str != "None" and crisis_str != "[No State Loaded]")
 	show_protest = (stab_norm < 0.45 or appr_norm < 0.45 or has_crisis)
 
@@ -68,6 +94,58 @@ func set_state_metrics(approval_val: float, stability_val: float, active_proj: S
 		pollution_tint = Color(0.0, 0.0, 0.0, 0.0)
 
 	queue_redraw()
+
+func highlight_project_completion(proj_name: String, duration: float = 4.0) -> void:
+	is_highlighting_completion = true
+	highlight_project_name = proj_name
+	completion_highlight_time = duration
+	show_completed_monument = true
+	current_completed_project = proj_name
+	queue_redraw()
+
+func get_active_project_marker_rect() -> Rect2:
+	if not show_construction:
+		return Rect2()
+	return Rect2(size.x * 0.62, size.y * 0.22, size.x * 0.24, size.y * 0.32)
+
+func get_completed_project_marker_rect() -> Rect2:
+	if not show_completed_monument:
+		return Rect2()
+	return Rect2(size.x * 0.20, size.y * 0.26, size.x * 0.16, size.y * 0.32)
+
+func get_capitol_dome_rect() -> Rect2:
+	return Rect2(size.x * 0.40, size.y * 0.38, size.x * 0.16, size.y * 0.22)
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var pos: Vector2 = event.position
+		var prev_hover := hovered_marker
+		if get_active_project_marker_rect().has_point(pos):
+			hovered_marker = "active_project"
+			mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		elif get_completed_project_marker_rect().has_point(pos):
+			hovered_marker = "completed_project"
+			mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		elif get_capitol_dome_rect().has_point(pos):
+			hovered_marker = "capitol_dome"
+			mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		else:
+			hovered_marker = ""
+			mouse_default_cursor_shape = Control.CURSOR_ARROW
+		if prev_hover != hovered_marker:
+			queue_redraw()
+
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var pos: Vector2 = event.position
+		if get_active_project_marker_rect().has_point(pos):
+			project_marker_clicked.emit(current_active_project, true, "active_project")
+			accept_event()
+		elif get_completed_project_marker_rect().has_point(pos):
+			project_marker_clicked.emit(current_completed_project, false, "completed_project")
+			accept_event()
+		elif get_capitol_dome_rect().has_point(pos):
+			project_marker_clicked.emit("National Capitol Dome", false, "capitol_dome")
+			accept_event()
 
 func set_construction_visible(visible_state: bool) -> void:
 	show_construction = visible_state
@@ -216,6 +294,44 @@ func _draw() -> void:
 			draw_line(Vector2(sx, scaf_y), Vector2(sx, scaf_y - 12), construction_crane_color * 0.75, 1.0)
 		draw_line(Vector2(scaf_x, scaf_y - 6), Vector2(scaf_x + scaf_w, scaf_y - 6), construction_crane_color * 0.75, 1.0)
 		draw_line(Vector2(scaf_x, scaf_y - 12), Vector2(scaf_x + scaf_w, scaf_y - 12), construction_crane_color * 0.75, 1.0)
+
+	# 4b. Completed Infrastructure Monument / Civic Landmark Spire
+	if show_completed_monument:
+		var mon_x := w * 0.26
+		var mon_base_y := h * 0.54
+		var mon_top_y := h * 0.28
+		# Tiered landmark tower
+		draw_rect(Rect2(mon_x - 14, mon_base_y - 28, 28, 28), mid_buildings_color * 1.15 * b_mod)
+		draw_rect(Rect2(mon_x - 10, mon_base_y - 50, 20, 24), mid_buildings_color * 1.25 * b_mod)
+		draw_rect(Rect2(mon_x - 6, mon_base_y - 68, 12, 20), mid_buildings_color * 1.35 * b_mod)
+		# Spire & Beacon Finial
+		draw_line(Vector2(mon_x, mon_base_y - 68), Vector2(mon_x, mon_top_y), landmark_accent_color, 2.0)
+		draw_circle(Vector2(mon_x, mon_top_y), 3.0, landmark_accent_color)
+		# Illuminated glass facade bands
+		draw_rect(Rect2(mon_x - 8, mon_base_y - 46, 16, 4), window_light_color * 0.9)
+		draw_rect(Rect2(mon_x - 5, mon_base_y - 64, 10, 4), window_light_color * 0.9)
+
+		# Celebration highlight halo on project completion
+		if is_highlighting_completion:
+			var pulse: float = 0.5 + 0.5 * sin(completion_highlight_time * 8.0)
+			var glow_col := Color(1.0, 0.85, 0.35, 0.5 + 0.4 * pulse)
+			draw_arc(Vector2(mon_x, mon_top_y), 10.0 + 4.0 * pulse, 0, TAU, 16, glow_col, 2.0)
+			draw_line(Vector2(mon_x - 16, mon_top_y), Vector2(mon_x + 16, mon_top_y), glow_col, 1.5)
+			draw_line(Vector2(mon_x, mon_top_y - 16), Vector2(mon_x, mon_top_y + 16), glow_col, 1.5)
+
+	# 4c. Interactive Marker Cues
+	if hovered_marker == "active_project" and show_construction:
+		var a_rect := get_active_project_marker_rect()
+		draw_rect(a_rect, Color(0.9, 0.6, 0.1, 0.15))
+		draw_rect(a_rect, Color(1.0, 0.7, 0.2, 0.7), false, 1.5)
+	elif hovered_marker == "completed_project" and show_completed_monument:
+		var c_rect := get_completed_project_marker_rect()
+		draw_rect(c_rect, Color(0.3, 0.7, 1.0, 0.15))
+		draw_rect(c_rect, Color(0.4, 0.8, 1.0, 0.7), false, 1.5)
+	elif hovered_marker == "capitol_dome":
+		var d_rect := get_capitol_dome_rect()
+		draw_rect(d_rect, Color(1.0, 0.85, 0.3, 0.12))
+		draw_rect(d_rect, Color(1.0, 0.85, 0.3, 0.6), false, 1.5)
 
 	# 5. Near Skyline & Government Quarter
 	var near_poly := PackedVector2Array([

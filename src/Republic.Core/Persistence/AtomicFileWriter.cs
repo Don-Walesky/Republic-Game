@@ -69,13 +69,36 @@ public static class AtomicFileWriter
             }
 
             // 2. Safely replace destination file once temporary file is fully closed and flushed
-            if (File.Exists(fullDestPath))
+            bool replaced = false;
+            for (int attempt = 0; attempt < 10; attempt++)
             {
-                File.Move(tempPath, fullDestPath, overwrite: true);
+                try
+                {
+                    if (File.Exists(fullDestPath))
+                    {
+                        File.Move(tempPath, fullDestPath, overwrite: true);
+                    }
+                    else
+                    {
+                        File.Move(tempPath, fullDestPath);
+                    }
+                    replaced = true;
+                    break;
+                }
+                catch (Exception ex) when (attempt < 9 && (ex is IOException or UnauthorizedAccessException))
+                {
+                    Thread.Sleep(50);
+                }
             }
-            else
+
+            if (!replaced)
             {
-                File.Move(tempPath, fullDestPath);
+                File.Copy(tempPath, fullDestPath, overwrite: true);
+                try
+                {
+                    File.Delete(tempPath);
+                }
+                catch { /* best-effort cleanup */ }
             }
         }
         catch
@@ -134,13 +157,36 @@ public static class AtomicFileWriter
                 stream.Flush(flushToDisk: true);
             }
 
-            if (File.Exists(fullDestPath))
+            bool replaced = false;
+            for (int attempt = 0; attempt < 10; attempt++)
             {
-                File.Move(tempPath, fullDestPath, overwrite: true);
+                try
+                {
+                    if (File.Exists(fullDestPath))
+                    {
+                        File.Move(tempPath, fullDestPath, overwrite: true);
+                    }
+                    else
+                    {
+                        File.Move(tempPath, fullDestPath);
+                    }
+                    replaced = true;
+                    break;
+                }
+                catch (Exception ex) when (attempt < 9 && (ex is IOException or UnauthorizedAccessException))
+                {
+                    await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+                }
             }
-            else
+
+            if (!replaced)
             {
-                File.Move(tempPath, fullDestPath);
+                File.Copy(tempPath, fullDestPath, overwrite: true);
+                try
+                {
+                    File.Delete(tempPath);
+                }
+                catch { /* best-effort cleanup */ }
             }
         }
         catch

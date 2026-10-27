@@ -49,6 +49,8 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var city_scenery: Control = _get_node_safe("OfficeEnvironment/CapitalWindow/CityScenery") as Control
 @onready var window_frame: Control = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowFrame") as Control
 @onready var window_button: Button = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowButton") as Button
+@onready var active_project_marker_button: Button = _get_node_safe("OfficeEnvironment/CapitalWindow/ActiveProjectMarkerButton") as Button
+@onready var completed_project_marker_button: Button = _get_node_safe("OfficeEnvironment/CapitalWindow/CompletedProjectMarkerButton") as Button
 
 @onready var country_flag: Control = _get_node_safe("OfficeEnvironment/CountryFlag") as Control
 @onready var flag_pole: Control = _get_node_safe("OfficeEnvironment/CountryFlag/FlagPole") as Control
@@ -78,6 +80,9 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var executive_inbox: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton") as Button
 @onready var inbox_badge: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge") as Control
 @onready var inbox_badge_label: Label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge/InboxBadgeLabel") as Label
+@onready var diplomatic_folder: Button = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton") as Button
+@onready var diplomatic_badge: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton/DiplomaticNotificationBadge") as Control
+@onready var diplomatic_badge_label: Label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton/DiplomaticNotificationBadge/DiplomaticBadgeLabel") as Label
 @onready var presidential_seal: Control = _get_node_safe("OfficeEnvironment/ExecutiveDesk/PresidentialSeal") as Control
 
 # ==============================================================================
@@ -165,6 +170,14 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var infrastructure_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureEffectLabel") as Label
 @onready var appoint_infrastructure_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/AppointInfrastructureButton") as Button
 
+# Left Dock Bottlenecks & Friction
+@onready var finance_bottleneck_badge: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox/FinanceBottleneckBadge") as Label
+@onready var interior_bottleneck_badge: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorHeaderHBox/InteriorBottleneckBadge") as Label
+@onready var infrastructure_bottleneck_badge: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureHeaderHBox/InfrastructureBottleneckBadge") as Label
+@onready var cabinet_friction_panel: PanelContainer = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel") as PanelContainer
+@onready var cabinet_friction_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel/FrictionVBox/CabinetFrictionLabel") as Label
+@onready var resolve_friction_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel/FrictionVBox/ResolveFrictionButton") as Button
+
 # Right Dock: Foreign Affairs & Intelligence
 @onready var right_dock: PanelContainer = _get_node_safe("InterfaceLayer/RightDock") as PanelContainer
 @onready var toggle_right_dock_button: Button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockHeader/ToggleRightDockButton") as Button
@@ -173,6 +186,15 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var gdp_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/GdpLabel") as Label
 @onready var offline_briefing_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/OfflineBriefingLabel") as Label
 @onready var open_diplomacy_button: Button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/OpenDiplomacyButton") as Button
+
+# Right Dock Diplomatic Dossier
+@onready var diplomatic_dossier_title: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierTitleLabel") as Label
+@onready var diplomatic_dossier_card: PanelContainer = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard") as PanelContainer
+@onready var dossier_partner_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierPartnerLabel") as Label
+@onready var dossier_terms_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierTermsLabel") as Label
+@onready var accept_dossier_proposal_button: Button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierCardActionsHBox/AcceptDossierProposalButton") as Button
+@onready var reject_dossier_proposal_button: Button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierCardActionsHBox/RejectDossierProposalButton") as Button
+@onready var dossier_status_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierStatusLabel") as Label
 
 # Bottom Dock: Situation Ticker & Infrastructure Projects
 @onready var bottom_dock: PanelContainer = _get_node_safe("InterfaceLayer/BottomDock") as PanelContainer
@@ -187,6 +209,22 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var dismiss_briefing_toast_button: Button = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/ToastHeader/DismissBriefingToastButton") as Button
 @onready var session_briefing_metrics_label: Label = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/SessionBriefingMetricsLabel") as Label
 @onready var session_briefing_status_label: Label = _get_node_safe("InterfaceLayer/SessionBriefingToast/ToastVBox/SessionBriefingStatusLabel") as Label
+
+# Project Completion Toast
+@onready var project_completion_toast: PanelContainer = _get_node_safe("InterfaceLayer/ProjectCompletionToast") as PanelContainer
+@onready var project_completion_title: Label = _get_node_safe("InterfaceLayer/ProjectCompletionToast/ToastVBox/ToastHeader/ProjectCompletionTitle") as Label
+@onready var dismiss_project_toast_button: Button = _get_node_safe("InterfaceLayer/ProjectCompletionToast/ToastVBox/ToastHeader/DismissProjectToastButton") as Button
+@onready var project_completion_details_label: Label = _get_node_safe("InterfaceLayer/ProjectCompletionToast/ToastVBox/ProjectCompletionDetailsLabel") as Label
+
+# Capital Project Card
+@onready var capital_project_card: PanelContainer = _get_node_safe("InterfaceLayer/CapitalProjectCard") as PanelContainer
+@onready var capital_project_title: Label = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CardHeader/CapitalProjectTitle") as Label
+@onready var close_capital_project_button: Button = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CardHeader/CloseCapitalProjectButton") as Button
+@onready var capital_project_status_label: Label = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CapitalProjectStatusLabel") as Label
+@onready var capital_project_eta_label: Label = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CapitalProjectEtaLabel") as Label
+@onready var capital_project_capacity_label: Label = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CapitalProjectCapacityLabel") as Label
+@onready var capital_project_desk_button: Button = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CardActions/CapitalProjectDeskButton") as Button
+@onready var dismiss_project_card_button: Button = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CardActions/DismissProjectCardButton") as Button
 
 # ==============================================================================
 # 3. INTERACTIVE MODAL PANELS (BRIEFING, HOTLINE, DOSSIER, CUSTOMISATION)
@@ -223,6 +261,8 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var dossier_espionage_label: Label = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierEspionageLabel") as Label
 @onready var dossier_desk_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/DossierDeskButton") as Button
 @onready var close_dossier_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/CloseDossierButton") as Button
+@onready var civic_relief_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/CivicReliefButton") as Button
+@onready var austerity_decree_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/AusterityDecreeButton") as Button
 
 # Phase 3 Customisation Modal
 @onready var customisation_modal: PanelContainer = _get_node_safe("InterfaceLayer/CustomisationModal") as PanelContainer
@@ -301,6 +341,15 @@ var flag_sway_frequency: float = 1.5
 
 var left_dock_pinned: bool = false
 var right_dock_pinned: bool = false
+
+# Engagement & Delta Tracking State
+var previous_state: Dictionary = {}
+var last_session_delta_summary: String = ""
+var diplomatic_badge_dismissed: bool = false
+var current_diplomatic_proposal: Dictionary = {}
+var previous_active_project: String = ""
+var previous_completed_projects: String = ""
+var project_toast_timer: Timer = null
 
 # Phase 4 Cabinet Appointment Tracking & Honest Simulation Rules
 var current_appointment_portfolio: String = "Finance"
@@ -474,6 +523,10 @@ func _init_controls() -> void:
 		window_frame = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowFrame") as Control
 	if window_button == null:
 		window_button = _get_node_safe("OfficeEnvironment/CapitalWindow/WindowButton") as Button
+	if active_project_marker_button == null:
+		active_project_marker_button = _get_node_safe("OfficeEnvironment/CapitalWindow/ActiveProjectMarkerButton") as Button
+	if completed_project_marker_button == null:
+		completed_project_marker_button = _get_node_safe("OfficeEnvironment/CapitalWindow/CompletedProjectMarkerButton") as Button
 
 	if country_flag == null:
 		country_flag = _get_node_safe("OfficeEnvironment/CountryFlag") as Control
@@ -529,6 +582,12 @@ func _init_controls() -> void:
 		inbox_badge = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge") as Control
 	if inbox_badge_label == null:
 		inbox_badge_label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton/InboxNotificationBadge/InboxBadgeLabel") as Label
+	if diplomatic_folder == null:
+		diplomatic_folder = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton") as Button
+	if diplomatic_badge == null:
+		diplomatic_badge = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton/DiplomaticNotificationBadge") as Control
+	if diplomatic_badge_label == null:
+		diplomatic_badge_label = _get_node_safe("OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton/DiplomaticNotificationBadge/DiplomaticBadgeLabel") as Label
 	if presidential_seal == null:
 		presidential_seal = _get_node_safe("OfficeEnvironment/ExecutiveDesk/PresidentialSeal") as Control
 
@@ -846,6 +905,70 @@ func _init_controls() -> void:
 	if cancel_appointment_button == null:
 		cancel_appointment_button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox/CancelAppointmentButton") as Button
 
+	# Left Dock Bottlenecks & Friction Lookups
+	if finance_bottleneck_badge == null:
+		finance_bottleneck_badge = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox/FinanceBottleneckBadge") as Label
+	if interior_bottleneck_badge == null:
+		interior_bottleneck_badge = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorHeaderHBox/InteriorBottleneckBadge") as Label
+	if infrastructure_bottleneck_badge == null:
+		infrastructure_bottleneck_badge = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureHeaderHBox/InfrastructureBottleneckBadge") as Label
+	if cabinet_friction_panel == null:
+		cabinet_friction_panel = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel") as PanelContainer
+	if cabinet_friction_label == null:
+		cabinet_friction_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel/FrictionVBox/CabinetFrictionLabel") as Label
+	if resolve_friction_button == null:
+		resolve_friction_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel/FrictionVBox/ResolveFrictionButton") as Button
+
+	# Right Dock Diplomatic Dossier Lookups
+	if diplomatic_dossier_title == null:
+		diplomatic_dossier_title = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierTitleLabel") as Label
+	if diplomatic_dossier_card == null:
+		diplomatic_dossier_card = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard") as PanelContainer
+	if dossier_partner_label == null:
+		dossier_partner_label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierPartnerLabel") as Label
+	if dossier_terms_label == null:
+		dossier_terms_label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierTermsLabel") as Label
+	if accept_dossier_proposal_button == null:
+		accept_dossier_proposal_button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierCardActionsHBox/AcceptDossierProposalButton") as Button
+	if reject_dossier_proposal_button == null:
+		reject_dossier_proposal_button = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierCardActionsHBox/RejectDossierProposalButton") as Button
+	if dossier_status_label == null:
+		dossier_status_label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierStatusLabel") as Label
+
+	# Project Completion Toast Lookups
+	if project_completion_toast == null:
+		project_completion_toast = _get_node_safe("InterfaceLayer/ProjectCompletionToast") as PanelContainer
+	if project_completion_title == null:
+		project_completion_title = _get_node_safe("InterfaceLayer/ProjectCompletionToast/ToastVBox/ToastHeader/ProjectCompletionTitle") as Label
+	if dismiss_project_toast_button == null:
+		dismiss_project_toast_button = _get_node_safe("InterfaceLayer/ProjectCompletionToast/ToastVBox/ToastHeader/DismissProjectToastButton") as Button
+	if project_completion_details_label == null:
+		project_completion_details_label = _get_node_safe("InterfaceLayer/ProjectCompletionToast/ToastVBox/ProjectCompletionDetailsLabel") as Label
+
+	# Capital Project Card Lookups
+	if capital_project_card == null:
+		capital_project_card = _get_node_safe("InterfaceLayer/CapitalProjectCard") as PanelContainer
+	if capital_project_title == null:
+		capital_project_title = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CardHeader/CapitalProjectTitle") as Label
+	if close_capital_project_button == null:
+		close_capital_project_button = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CardHeader/CloseCapitalProjectButton") as Button
+	if capital_project_status_label == null:
+		capital_project_status_label = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CapitalProjectStatusLabel") as Label
+	if capital_project_eta_label == null:
+		capital_project_eta_label = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CapitalProjectEtaLabel") as Label
+	if capital_project_capacity_label == null:
+		capital_project_capacity_label = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CapitalProjectCapacityLabel") as Label
+	if capital_project_desk_button == null:
+		capital_project_desk_button = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CardActions/CapitalProjectDeskButton") as Button
+	if dismiss_project_card_button == null:
+		dismiss_project_card_button = _get_node_safe("InterfaceLayer/CapitalProjectCard/CardVBox/CardActions/DismissProjectCardButton") as Button
+
+	# Dossier Modal Crisis Decree Buttons
+	if civic_relief_button == null:
+		civic_relief_button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/CivicReliefButton") as Button
+	if austerity_decree_button == null:
+		austerity_decree_button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/AusterityDecreeButton") as Button
+
 func _ready() -> void:
 	_init_controls()
 	_connect_signals()
@@ -876,6 +999,13 @@ func _ready() -> void:
 	dock_flash_timer.timeout.connect(_on_dock_flash_timeout)
 	add_child(dock_flash_timer)
 
+	# Project Completion Toast Timer
+	project_toast_timer = Timer.new()
+	project_toast_timer.wait_time = 6.0
+	project_toast_timer.one_shot = true
+	project_toast_timer.timeout.connect(dismiss_project_completion_toast)
+	add_child(project_toast_timer)
+
 	# Progressive Disclosure: Start docks collapsed
 	collapse_all_docks()
 
@@ -895,6 +1025,8 @@ func _process(delta: float) -> void:
 		inbox_badge.modulate.a = pulse
 	if dossier_badge and dossier_badge.visible:
 		dossier_badge.modulate.a = pulse
+	if diplomatic_badge and diplomatic_badge.visible:
+		diplomatic_badge.modulate.a = pulse
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -1043,6 +1175,41 @@ func _connect_signals() -> void:
 		candidate_loyalist_button.pressed.connect(_on_candidate_loyalist_pressed)
 	if candidate_dismiss_button and not candidate_dismiss_button.pressed.is_connected(_on_candidate_dismiss_pressed):
 		candidate_dismiss_button.pressed.connect(_on_candidate_dismiss_pressed)
+
+	# Engagement Feature Signals
+	if city_scenery and city_scenery.has_signal("project_marker_clicked") and not city_scenery.project_marker_clicked.is_connected(_on_city_scenery_project_marker_clicked):
+		city_scenery.project_marker_clicked.connect(_on_city_scenery_project_marker_clicked)
+	if active_project_marker_button and not active_project_marker_button.pressed.is_connected(_on_active_project_marker_pressed):
+		active_project_marker_button.pressed.connect(_on_active_project_marker_pressed)
+	if completed_project_marker_button and not completed_project_marker_button.pressed.is_connected(_on_completed_project_marker_pressed):
+		completed_project_marker_button.pressed.connect(_on_completed_project_marker_pressed)
+
+	if diplomatic_folder and not diplomatic_folder.pressed.is_connected(_on_diplomatic_folder_pressed):
+		diplomatic_folder.pressed.connect(_on_diplomatic_folder_pressed)
+	if accept_dossier_proposal_button and not accept_dossier_proposal_button.pressed.is_connected(_on_accept_dossier_proposal_pressed):
+		accept_dossier_proposal_button.pressed.connect(_on_accept_dossier_proposal_pressed)
+	if reject_dossier_proposal_button and not reject_dossier_proposal_button.pressed.is_connected(_on_reject_dossier_proposal_pressed):
+		reject_dossier_proposal_button.pressed.connect(_on_reject_dossier_proposal_pressed)
+
+	if resolve_friction_button and not resolve_friction_button.pressed.is_connected(_on_resolve_friction_pressed):
+		resolve_friction_button.pressed.connect(_on_resolve_friction_pressed)
+
+	if dismiss_project_toast_button and not dismiss_project_toast_button.pressed.is_connected(dismiss_project_completion_toast):
+		dismiss_project_toast_button.pressed.connect(dismiss_project_completion_toast)
+	if project_completion_toast and not project_completion_toast.gui_input.is_connected(_on_project_completion_toast_gui_input):
+		project_completion_toast.gui_input.connect(_on_project_completion_toast_gui_input)
+
+	if close_capital_project_button and not close_capital_project_button.pressed.is_connected(dismiss_capital_project_card):
+		close_capital_project_button.pressed.connect(dismiss_capital_project_card)
+	if dismiss_project_card_button and not dismiss_project_card_button.pressed.is_connected(dismiss_capital_project_card):
+		dismiss_project_card_button.pressed.connect(dismiss_capital_project_card)
+	if capital_project_desk_button and not capital_project_desk_button.pressed.is_connected(_on_capital_project_desk_button_pressed):
+		capital_project_desk_button.pressed.connect(_on_capital_project_desk_button_pressed)
+
+	if civic_relief_button and not civic_relief_button.pressed.is_connected(_on_civic_relief_pressed):
+		civic_relief_button.pressed.connect(_on_civic_relief_pressed)
+	if austerity_decree_button and not austerity_decree_button.pressed.is_connected(_on_austerity_decree_pressed):
+		austerity_decree_button.pressed.connect(_on_austerity_decree_pressed)
 
 func _apply_tooltips() -> void:
 	if window_button:
@@ -1330,12 +1497,73 @@ func apply_state(state: Dictionary) -> void:
 		dossier_espionage_label.text = "Covert Intelligence Operations: [Feature not yet supported by simulation engine]"
 
 	# 8. Living Capital Window Scenery: state-driven skyline reaction
+	var curr_active_proj := str(state.get("active_project", "None"))
+	var curr_completed_summary := ""
+	if state.has("completed_projects_summary"):
+		curr_completed_summary = str(state.get("completed_projects_summary"))
+	elif state.has("completed_projects"):
+		var cp = state.get("completed_projects")
+		if cp is Array:
+			curr_completed_summary = ", ".join(PackedStringArray(cp))
+		else:
+			curr_completed_summary = str(cp)
+	if curr_completed_summary.is_empty():
+		curr_completed_summary = "None"
+
 	if city_scenery and city_scenery.has_method("set_state_metrics"):
 		var app_val := float(state.get("approval_rating", 68.5))
 		var stab_val := float(state.get("stability_rating", 85.0))
 		var act_proj := str(state.get("active_project", "None"))
 		var act_crisis := str(state.get("active_crisis", "None"))
-		city_scenery.set_state_metrics(app_val, stab_val, act_proj, act_crisis)
+		var first_comp := curr_completed_summary.split(",")[0].strip_edges()
+		city_scenery.set_state_metrics(app_val, stab_val, act_proj, act_crisis, first_comp)
+
+	if active_project_marker_button:
+		active_project_marker_button.visible = (curr_active_proj != "None" and not curr_active_proj.is_empty())
+	if completed_project_marker_button:
+		completed_project_marker_button.visible = (curr_completed_summary != "None" and not curr_completed_summary.is_empty())
+
+	# 8b. Project Completion Moment Detection
+	var latest_dec := str(state.get("latest_decision_result", ""))
+	var is_project_finished := false
+	var finished_name := ""
+
+	if not previous_active_project.is_empty() and previous_active_project != "None" and (curr_active_proj != previous_active_project or curr_active_proj == "None"):
+		if curr_completed_summary.contains(previous_active_project) or (state.has("completed_projects") and state.get("completed_projects") is Array and state.get("completed_projects").has(previous_active_project)) or latest_dec.contains("Completed") or latest_dec.contains("commissioned"):
+			is_project_finished = true
+			finished_name = previous_active_project
+	elif not previous_completed_projects.is_empty() and curr_completed_summary != previous_completed_projects and curr_completed_summary != "None":
+		is_project_finished = true
+		finished_name = curr_completed_summary.split(",")[0].strip_edges()
+
+	if is_project_finished and not finished_name.is_empty():
+		var app_delta_str := ""
+		if state.has("latest_approval_delta"):
+			app_delta_str = str(state.get("latest_approval_delta"))
+		elif not previous_state.is_empty() and previous_state.has("approval_rating") and state.has("approval_rating"):
+			var diff := float(state.get("approval_rating", 0.0)) - float(previous_state.get("approval_rating", 0.0))
+			app_delta_str = ("+" if diff >= 0 else "") + "%0.1f%%" % diff
+
+		var stab_delta_str := ""
+		if state.has("latest_stability_delta"):
+			stab_delta_str = str(state.get("latest_stability_delta"))
+		elif not previous_state.is_empty() and previous_state.has("stability_rating") and state.has("stability_rating"):
+			var diff := float(state.get("stability_rating", 0.0)) - float(previous_state.get("stability_rating", 0.0))
+			stab_delta_str = ("+" if diff >= 0 else "") + "%0.1f%%" % diff
+
+		var cap_delta_str := ""
+		if state.has("latest_capacity_delta"):
+			cap_delta_str = str(state.get("latest_capacity_delta"))
+		elif state.has("infrastructure_condition"):
+			var ic_val := float(state.get("infrastructure_condition", 0.85))
+			if ic_val <= 1.0:
+				ic_val *= 100.0
+			cap_delta_str = "%0.1f%% Condition" % ic_val
+
+		trigger_project_completion(finished_name, app_delta_str, stab_delta_str, cap_delta_str)
+
+	previous_active_project = curr_active_proj
+	previous_completed_projects = curr_completed_summary
 
 	# 9. Soft Identity Feedback (Portrait Frame Glow & Flag Dynamic Sway)
 	var appr_num := float(state.get("approval_rating", 68.5))
@@ -1345,7 +1573,7 @@ func apply_state(state: Dictionary) -> void:
 	update_portrait_state_feedback(appr_num, stab_num, has_crisis)
 	update_flag_state_feedback(stab_num, has_crisis)
 
-	# 10. Desk Notification Badges
+	# 10. Desk Notification Badges & Diplomatic Dossiers
 	var defcon := str(state.get("defcon_level", "DEFCON 5"))
 	var mil_threat := (not defcon.begins_with("DEFCON 5") and not defcon.is_empty() and defcon != "[No State Loaded]")
 	if has_crisis:
@@ -1368,6 +1596,8 @@ func apply_state(state: Dictionary) -> void:
 	else:
 		set_inbox_badge(false)
 
+	_update_diplomatic_dossiers_ui(state)
+
 	# 11. Session Briefing Toast Update
 	update_session_briefing(state)
 	if session_briefing_toast and not session_briefing_toast.visible:
@@ -1377,6 +1607,7 @@ func apply_state(state: Dictionary) -> void:
 	if has_crisis:
 		trigger_dock_alert("right")
 
+	previous_state = state.duplicate(true)
 	state_loaded.emit(state)
 
 func _on_poll_timer_timeout() -> void:
@@ -1969,6 +2200,8 @@ func close_all_modals() -> void:
 		purchase_confirm_modal.visible = false
 	if cabinet_appointment_modal:
 		cabinet_appointment_modal.visible = false
+	if capital_project_card:
+		capital_project_card.visible = false
 	active_nav_section = Section.OVERVIEW
 	_update_nav_button_highlights()
 
@@ -1978,7 +2211,8 @@ func is_any_modal_open() -> bool:
 		(dossier_modal and dossier_modal.visible) or \
 		(customisation_modal and customisation_modal.visible) or \
 		(purchase_confirm_modal and purchase_confirm_modal.visible) or \
-		(cabinet_appointment_modal and cabinet_appointment_modal.visible)
+		(cabinet_appointment_modal and cabinet_appointment_modal.visible) or \
+		(capital_project_card and capital_project_card.visible)
 
 func _on_modal_backdrop_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -2158,33 +2392,94 @@ func update_flag_state_feedback(stability: float, has_crisis: bool = false) -> v
 # ==============================================================================
 # SESSION BRIEFING TOAST API
 # ==============================================================================
-func update_session_briefing(state: Dictionary) -> void:
-	if session_briefing_metrics_label:
-		var c_name := str(state.get("country_name", "Republic"))
-		var treas := str(state.get("treasury", ""))
-		if treas.is_empty() and state.has("treasury_balance"):
-			treas = "R " + _format_number_commas(float(state.get("treasury_balance", 0.0)))
-		var appr := str(state.get("approval", ""))
-		if appr.is_empty() and state.has("approval_rating"):
-			appr = str(state.get("approval_rating", 0.0)) + "%"
-		var stab := str(state.get("stability", ""))
-		if stab.is_empty() and state.has("stability_rating"):
-			stab = str(state.get("stability_rating", 0.0)) + "%"
-		
-		session_briefing_metrics_label.text = "%s | Liquid Reserves: %s | Approval: %s | Stability: %s" % [
-			c_name,
-			(treas if not treas.is_empty() else "[No State Loaded]"),
-			(appr if not appr.is_empty() else "[No State Loaded]"),
-			(stab if not stab.is_empty() else "[No State Loaded]")
-		]
+func _extract_numeric_value(val: Variant) -> float:
+	if val is float or val is int:
+		return float(val)
+	var s := str(val).replace("R", "").replace("$", "").replace(",", "").replace("%", "").strip_edges()
+	if s.is_valid_float():
+		return s.to_float()
+	return 0.0
 
-	if session_briefing_status_label:
-		var proj := str(state.get("active_project", "None"))
-		var cr := str(state.get("active_crisis", "None"))
-		var msg := str(state.get("latest_decision_result", ""))
-		if msg.is_empty():
-			msg = str(state.get("status_message", "Executive office online."))
-		session_briefing_status_label.text = "Active Program: %s | Crisis Posture: %s | Status: %s" % [proj, cr, msg]
+func update_session_briefing(state: Dictionary) -> void:
+	if state.is_empty():
+		return
+
+	var c_name := str(state.get("country_name", "Republic"))
+	var curr_treas_val: float = float(state.get("treasury_balance", _extract_numeric_value(state.get("treasury", 0.0))))
+	var curr_app: float = float(state.get("approval_rating", _extract_numeric_value(state.get("approval", 0.0))))
+	var curr_stab: float = float(state.get("stability_rating", _extract_numeric_value(state.get("stability", 0.0))))
+	var curr_proj := str(state.get("active_project", "None"))
+	var curr_crisis := str(state.get("active_crisis", "None"))
+
+	var treas_str := str(state.get("treasury", ""))
+	if treas_str.is_empty() and state.has("treasury_balance"):
+		treas_str = "R " + _format_number_commas(curr_treas_val)
+	var app_str := str(state.get("approval", ""))
+	if app_str.is_empty() and state.has("approval_rating"):
+		app_str = "%0.1f%%" % curr_app
+	var stab_str := str(state.get("stability", ""))
+	if stab_str.is_empty() and state.has("stability_rating"):
+		stab_str = "%0.1f%%" % curr_stab
+
+	var base_metrics := "%s | Liquid Reserves: %s | Approval: %s | Stability: %s" % [
+		c_name,
+		(treas_str if not treas_str.is_empty() else "[No State Loaded]"),
+		(app_str if not app_str.is_empty() else "[No State Loaded]"),
+		(stab_str if not stab_str.is_empty() else "[No State Loaded]")
+	]
+
+	if previous_state.is_empty():
+		# Initial load: honest baseline summary
+		if session_briefing_title:
+			session_briefing_title.text = "📋 EXECUTIVE SESSION BRIEFING"
+		if session_briefing_metrics_label:
+			session_briefing_metrics_label.text = base_metrics
+		if session_briefing_status_label:
+			var msg := str(state.get("latest_decision_result", ""))
+			if msg.is_empty():
+				msg = str(state.get("status_message", "Executive office online."))
+			session_briefing_status_label.text = "Active Program: %s | Crisis Posture: %s | Status: %s" % [curr_proj, curr_crisis, msg]
+		last_session_delta_summary = base_metrics
+		previous_state = state.duplicate(true)
+	else:
+		# Delta calculation between previous_state and new state
+		var prev_treas_val: float = float(previous_state.get("treasury_balance", _extract_numeric_value(previous_state.get("treasury", 0.0))))
+		var prev_app: float = float(previous_state.get("approval_rating", _extract_numeric_value(previous_state.get("approval", 0.0))))
+		var prev_stab: float = float(previous_state.get("stability_rating", _extract_numeric_value(previous_state.get("stability", 0.0))))
+		var prev_proj := str(previous_state.get("active_project", "None"))
+
+		var diff_treas: float = curr_treas_val - prev_treas_val
+		var diff_app: float = curr_app - prev_app
+		var diff_stab: float = curr_stab - prev_stab
+
+		var treas_delta_str := ("+R " if diff_treas >= 0.0 else "-R ") + _format_number_commas(abs(diff_treas))
+		var app_delta_str := ("+" if diff_app >= 0.0 else "") + "%0.1f%%" % diff_app
+		var stab_delta_str := ("+" if diff_stab >= 0.0 else "") + "%0.1f%%" % diff_stab
+
+		var proj_delta_str := ""
+		if curr_proj != prev_proj and prev_proj != "None":
+			proj_delta_str = "Project Shift: %s (was %s)" % [curr_proj, prev_proj]
+		else:
+			proj_delta_str = "Active Program: " + curr_proj
+
+		var cab_delta_str := ""
+		var prev_cab = previous_state.get("cabinet", [])
+		var curr_cab = state.get("cabinet", [])
+		if prev_cab != curr_cab and not str(prev_cab).is_empty():
+			cab_delta_str = "Cabinet: Portfolio shifts detected"
+		else:
+			var cs := float(state.get("civil_service_quality", 0.3)) * 100.0
+			var cc := float(state.get("corruption_control", 0.3)) * 100.0
+			cab_delta_str = "Capacity: CS %0.0f%% | CC %0.0f%%" % [cs, cc]
+
+		if session_briefing_title:
+			session_briefing_title.text = "📋 SESSION DELTA BRIEFING"
+		if session_briefing_metrics_label:
+			session_briefing_metrics_label.text = "%s | Deltas: Treas %s, App %s, Stab %s" % [base_metrics, treas_delta_str, app_delta_str, stab_delta_str]
+		if session_briefing_status_label:
+			session_briefing_status_label.text = "%s | %s" % [proj_delta_str, cab_delta_str]
+		last_session_delta_summary = "Treasury Delta: %s | Approval: %s | Stability: %s" % [treas_delta_str, app_delta_str, stab_delta_str]
+		previous_state = state.duplicate(true)
 
 func show_session_briefing(auto_dismiss: bool = true) -> void:
 	if session_briefing_toast:
@@ -2205,6 +2500,195 @@ func is_session_briefing_visible() -> bool:
 func _on_session_briefing_toast_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		dismiss_session_briefing()
+
+# ------------------------------------------------------------------------------
+# DIPLOMATIC DESK PROP & DOSSIER API
+# ------------------------------------------------------------------------------
+func set_diplomatic_badge(visible_flag: bool, text: String = "!") -> void:
+	if diplomatic_badge:
+		diplomatic_badge.visible = visible_flag
+	if diplomatic_badge_label and visible_flag:
+		diplomatic_badge_label.text = text
+
+func is_diplomatic_badge_visible() -> bool:
+	return diplomatic_badge != null and diplomatic_badge.visible
+
+func _on_diplomatic_folder_pressed() -> void:
+	diplomatic_badge_dismissed = true
+	set_diplomatic_badge(false)
+	set_right_dock_expanded(true)
+	right_dock_pinned = true
+	if status_ticker_label:
+		status_ticker_label.text = "Diplomatic Folder: Bilateral proposals and foreign affairs dossier opened."
+
+func _update_diplomatic_dossiers_ui(state: Dictionary) -> void:
+	var prop = null
+	if state.has("diplomatic_proposals") and state.get("diplomatic_proposals") is Array and not state.get("diplomatic_proposals").is_empty():
+		prop = state.get("diplomatic_proposals")[0]
+	elif state.has("incoming_diplomatic_proposals") and state.get("incoming_diplomatic_proposals") is Array and not state.get("incoming_diplomatic_proposals").is_empty():
+		prop = state.get("incoming_diplomatic_proposals")[0]
+	elif state.has("incoming_trade_offers") and state.get("incoming_trade_offers") is Array and not state.get("incoming_trade_offers").is_empty():
+		prop = state.get("incoming_trade_offers")[0]
+	elif state.has("diplomatic_proposal") and state.get("diplomatic_proposal") is Dictionary:
+		prop = state.get("diplomatic_proposal")
+	elif state.has("diplomatic_offer") and not str(state.get("diplomatic_offer", "")).is_empty():
+		prop = {
+			"partner": str(state.get("diplomatic_partner", "Bilateral Partner")),
+			"terms": str(state.get("diplomatic_offer", "")),
+			"proposal_id": str(state.get("diplomatic_proposal_id", "prop_01"))
+		}
+
+	if prop is Dictionary and not prop.is_empty():
+		current_diplomatic_proposal = prop
+		if diplomatic_dossier_card:
+			diplomatic_dossier_card.visible = true
+		if diplomatic_dossier_title:
+			diplomatic_dossier_title.visible = true
+		if dossier_partner_label:
+			dossier_partner_label.text = "Partner: " + str(prop.get("partner", prop.get("partner_name", "Foreign Sovereign")))
+		if dossier_terms_label:
+			dossier_terms_label.text = "Terms: " + str(prop.get("terms", prop.get("offer_summary", "Bilateral trade agreement proposed.")))
+		if dossier_status_label:
+			dossier_status_label.text = "Status: Pending Sovereign Response"
+		if not diplomatic_badge_dismissed:
+			set_diplomatic_badge(true, "!")
+	else:
+		current_diplomatic_proposal = {}
+		if diplomatic_dossier_card:
+			diplomatic_dossier_card.visible = false
+		if diplomatic_dossier_title:
+			diplomatic_dossier_title.visible = false
+		set_diplomatic_badge(false)
+
+func _on_accept_dossier_proposal_pressed() -> void:
+	var prop_id := str(current_diplomatic_proposal.get("id", current_diplomatic_proposal.get("proposal_id", "prop_default")))
+	execute_diplomatic_response(prop_id, "accept", true)
+
+func _on_reject_dossier_proposal_pressed() -> void:
+	var prop_id := str(current_diplomatic_proposal.get("id", current_diplomatic_proposal.get("proposal_id", "prop_default")))
+	execute_diplomatic_response(prop_id, "reject", true)
+
+func _on_resolve_friction_pressed() -> void:
+	var cs_val := float(latest_state.get("civil_service_quality", 0.3))
+	var cc_val := float(latest_state.get("corruption_control", 0.3))
+	var ic_val := float(latest_state.get("infrastructure_condition", 0.3))
+
+	if cs_val < 0.40:
+		open_appointment_modal("Finance")
+	elif cc_val < 0.40:
+		open_appointment_modal("Interior")
+	elif ic_val < 0.40:
+		open_appointment_modal("Infrastructure")
+	else:
+		open_appointment_modal("Finance")
+
+# ------------------------------------------------------------------------------
+# CAPITAL WINDOW PROJECT MARKERS & STATUS CARD API
+# ------------------------------------------------------------------------------
+func show_capital_project_card(project_name: String, is_active: bool) -> void:
+	if capital_project_card:
+		capital_project_card.visible = true
+	if capital_project_title:
+		if is_active:
+			capital_project_title.text = "🏗️ CAPITAL PROJECT: " + project_name.to_upper()
+		else:
+			capital_project_title.text = "🏛️ CIVIC LANDMARK: " + project_name.to_upper()
+	if capital_project_status_label:
+		if is_active:
+			capital_project_status_label.text = "Status: Active Capital Construction"
+		else:
+			capital_project_status_label.text = "Status: Commissioned & Fully Operational"
+	if capital_project_eta_label:
+		if is_active:
+			var proj_str := str(latest_state.get("active_project", ""))
+			if proj_str.contains("Finishes:"):
+				var parts := proj_str.split("Finishes:")
+				capital_project_eta_label.text = "Estimated Completion: Finishes" + parts[1].replace(")", "")
+			else:
+				capital_project_eta_label.text = "Estimated Completion: Construction underway"
+		else:
+			capital_project_eta_label.text = "Commission Status: Completed and permanently serving the Republic"
+	if capital_project_capacity_label:
+		var cap := float(latest_state.get("infrastructure_condition", 0.85)) * 100.0
+		if is_active:
+			capital_project_capacity_label.text = "Capacity Impact: Current Infrastructure Condition at %0.1f%%" % cap
+		else:
+			capital_project_capacity_label.text = "Capacity Contribution: Infrastructure Condition secured at %0.1f%%" % cap
+
+func dismiss_capital_project_card() -> void:
+	if capital_project_card:
+		capital_project_card.visible = false
+
+func is_capital_project_card_visible() -> bool:
+	return capital_project_card != null and capital_project_card.visible
+
+func _on_city_scenery_project_marker_clicked(project_name: String, is_active: bool, _marker_id: String) -> void:
+	show_capital_project_card(project_name, is_active)
+
+func _on_active_project_marker_pressed() -> void:
+	var proj := str(latest_state.get("active_project", "National Highway System"))
+	show_capital_project_card(proj, true)
+
+func _on_completed_project_marker_pressed() -> void:
+	var comp_str := str(latest_state.get("completed_projects_summary", "Civic Spire & Landmark"))
+	var first_comp := comp_str.split(",")[0].strip_edges()
+	if first_comp.is_empty() or first_comp == "None":
+		first_comp = "National Civic Landmark"
+	show_capital_project_card(first_comp, false)
+
+func _on_capital_project_desk_button_pressed() -> void:
+	dismiss_capital_project_card()
+	navigate_to_section(Section.ECONOMY)
+
+# ------------------------------------------------------------------------------
+# PROJECT COMPLETION MOMENT & TOAST API
+# ------------------------------------------------------------------------------
+func trigger_project_completion(project_name: String, app_change: String = "", stab_change: String = "", cap_change: String = "") -> void:
+	if city_scenery and city_scenery.has_method("highlight_project_completion"):
+		city_scenery.highlight_project_completion(project_name, 6.0)
+	if completed_project_marker_button:
+		completed_project_marker_button.visible = true
+
+	var details := "Project '%s' commissioned into sovereign service for the Republic." % project_name
+	if not app_change.is_empty() or not stab_change.is_empty() or not cap_change.is_empty():
+		details += "\n• Approval Effect: " + (app_change if not app_change.is_empty() else "Positive")
+		details += "\n• Stability Effect: " + (stab_change if not stab_change.is_empty() else "Elevated")
+		if not cap_change.is_empty():
+			details += "\n• Capacity Effect: " + cap_change
+
+	show_project_completion_toast(project_name, details)
+
+func show_project_completion_toast(project_name: String, details: String = "") -> void:
+	if project_completion_toast:
+		project_completion_toast.visible = true
+	if project_completion_title:
+		project_completion_title.text = "🏛️ CIVIC PROJECT COMPLETED: " + project_name.to_upper()
+	if project_completion_details_label:
+		project_completion_details_label.text = details if not details.is_empty() else "Infrastructure project commissioned into sovereign service."
+	if project_toast_timer:
+		project_toast_timer.start(6.0)
+
+func dismiss_project_completion_toast() -> void:
+	if project_completion_toast:
+		project_completion_toast.visible = false
+	if project_toast_timer and not project_toast_timer.is_stopped():
+		project_toast_timer.stop()
+
+func is_project_completion_toast_visible() -> bool:
+	return project_completion_toast != null and project_completion_toast.visible
+
+func _on_project_completion_toast_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		dismiss_project_completion_toast()
+
+# ------------------------------------------------------------------------------
+# CRISIS DECREE BUTTON HANDLERS
+# ------------------------------------------------------------------------------
+func _on_civic_relief_pressed() -> void:
+	execute_crisis_response("civic_relief", true)
+
+func _on_austerity_decree_pressed() -> void:
+	execute_crisis_response("austerity", true)
 
 # ==============================================================================
 # 10. CATALOG VIEW POPULATION & USER ACTIONS
@@ -2590,6 +3074,15 @@ func _clear_cabinet_portfolios_ui() -> void:
 		appoint_infrastructure_button.disabled = false
 		appoint_infrastructure_button.text = "Appoint Minister"
 
+	if finance_bottleneck_badge:
+		finance_bottleneck_badge.visible = false
+	if interior_bottleneck_badge:
+		interior_bottleneck_badge.visible = false
+	if infrastructure_bottleneck_badge:
+		infrastructure_bottleneck_badge.visible = false
+	if cabinet_friction_panel:
+		cabinet_friction_panel.visible = false
+
 func _update_cabinet_portfolios_ui(state: Dictionary) -> void:
 	if state.is_empty():
 		_clear_cabinet_portfolios_ui()
@@ -2599,6 +3092,59 @@ func _update_cabinet_portfolios_ui(state: Dictionary) -> void:
 	for p in portfolios:
 		var p_data := _resolve_portfolio_display_data(p, state)
 		_apply_portfolio_card_data(p, p_data)
+
+	# Capacity bottlenecks and ministerial friction checks
+	var econ_val := float(state.get("economic_capacity", state.get("civil_service_quality", 0.5)))
+	var cs_val := float(state.get("civil_service_quality", 0.5))
+	var cc_val := float(state.get("corruption_control", state.get("civil_service_quality", 0.5)))
+	var ic_val := float(state.get("infrastructure_condition", 0.5))
+
+	var econ_norm := econ_val / 100.0 if econ_val > 1.0 else econ_val
+	var cs_norm := cs_val / 100.0 if cs_val > 1.0 else cs_val
+	var cc_norm := cc_val / 100.0 if cc_val > 1.0 else cc_val
+	var ic_norm := ic_val / 100.0 if ic_val > 1.0 else ic_val
+
+	if finance_bottleneck_badge:
+		finance_bottleneck_badge.visible = (econ_norm < 0.40 or cs_norm < 0.40)
+	if interior_bottleneck_badge:
+		interior_bottleneck_badge.visible = (cc_norm < 0.40)
+	if infrastructure_bottleneck_badge:
+		infrastructure_bottleneck_badge.visible = (ic_norm < 0.40)
+
+	if cabinet_friction_panel:
+		var friction_obj = state.get("cabinet_friction", state.get("minister_request", null))
+		var friction_msg := ""
+		if friction_obj is Dictionary:
+			friction_msg = str(friction_obj.get("description", friction_obj.get("message", "")))
+		elif friction_obj != null:
+			friction_msg = str(friction_obj)
+
+		if not friction_msg.is_empty():
+			cabinet_friction_panel.visible = true
+			if cabinet_friction_label:
+				cabinet_friction_label.text = "⚠️ Ministerial Friction: " + friction_msg
+			if resolve_friction_button:
+				resolve_friction_button.text = "Review Cabinet Order"
+		elif cs_norm < 0.40 or econ_norm < 0.40:
+			cabinet_friction_panel.visible = true
+			if cabinet_friction_label:
+				cabinet_friction_label.text = "⚠️ Administrative Bottleneck: Civil Service Quality constrained at %0.0f%%. Treasury efficiency degraded." % (cs_norm * 100.0)
+			if resolve_friction_button:
+				resolve_friction_button.text = "Commission Finance Minister"
+		elif cc_norm < 0.40:
+			cabinet_friction_panel.visible = true
+			if cabinet_friction_label:
+				cabinet_friction_label.text = "⚠️ Regulatory Friction: Corruption Control below threshold at %0.0f%%. Institutional compliance compromised." % (cc_norm * 100.0)
+			if resolve_friction_button:
+				resolve_friction_button.text = "Commission Interior Minister"
+		elif ic_norm < 0.40:
+			cabinet_friction_panel.visible = true
+			if cabinet_friction_label:
+				cabinet_friction_label.text = "⚠️ Infrastructure Deficit: Condition at %0.0f%%. Capital projects delayed." % (ic_norm * 100.0)
+			if resolve_friction_button:
+				resolve_friction_button.text = "Commission Infrastructure Minister"
+		else:
+			cabinet_friction_panel.visible = false
 
 func _resolve_portfolio_display_data(portfolio: String, state: Dictionary) -> Dictionary:
 	var cabinet_list = state.get("cabinet", null)
@@ -2885,6 +3431,7 @@ func _on_confirm_appointment_pressed() -> void:
 			appointment_status_label.text = "Error: " + result.get("message", "Failed to submit appointment.")
 
 var cli_processor_override: String = ""
+var last_cli_pid: int = -1
 
 func _resolve_request_path() -> String:
 	if request_file_override != "":
@@ -2958,11 +3505,13 @@ func _try_run_cli_request_processor() -> Dictionary:
 			args.append("--save-file=" + norm_save)
 		var pid := OS.create_process("dotnet", args)
 		if pid < 0:
+			last_cli_pid = -1
 			return {
 				"success": false,
 				"pid": pid,
 				"message": "Failed to launch simulation processor process."
 			}
+		last_cli_pid = pid
 		return {
 			"success": true,
 			"pid": pid,
@@ -2984,16 +3533,19 @@ func _try_run_cli_request_processor() -> Dictionary:
 					args.append("--save-file=" + ProjectSettings.globalize_path(custom_save_path))
 				var pid := OS.create_process("dotnet", args)
 				if pid < 0:
+					last_cli_pid = -1
 					return {
 						"success": false,
 						"pid": pid,
 						"message": "Failed to launch simulation processor project."
 					}
+				last_cli_pid = pid
 				return {
 					"success": true,
 					"pid": pid,
 					"message": "Simulation processor launched via dotnet run."
 				}
+		last_cli_pid = -1
 		return {
 			"success": false,
 			"pid": -1,
@@ -3002,17 +3554,22 @@ func _try_run_cli_request_processor() -> Dictionary:
 
 ## Synchronously executes the CLI request processor and reloads state upon completion
 func run_cli_request_processor_sync(timeout_msec: int = 8000) -> Dictionary:
-	var proc := _try_run_cli_request_processor()
-	if not proc.get("success", false):
-		return proc
-	var pid: int = proc.get("pid", -1)
-	if pid <= 0:
-		return proc
+	var pid: int = -1
+	if last_cli_pid > 0 and OS.is_process_running(last_cli_pid):
+		pid = last_cli_pid
+	else:
+		var proc := _try_run_cli_request_processor()
+		if not proc.get("success", false):
+			return proc
+		pid = proc.get("pid", -1)
+		if pid <= 0:
+			return proc
 
 	var start_t := Time.get_ticks_msec()
 	while OS.is_process_running(pid):
 		OS.delay_msec(25)
 		if Time.get_ticks_msec() - start_t > timeout_msec:
+			last_cli_pid = -1
 			pending_appointment_request_id = ""
 			var timeout_msg := "CLI processor timed out after %d ms." % timeout_msec
 			if appointment_status_label:
@@ -3022,6 +3579,7 @@ func run_cli_request_processor_sync(timeout_msec: int = 8000) -> Dictionary:
 				"message": timeout_msg,
 				"pid": pid
 			}
+	last_cli_pid = -1
 
 	var handled := check_for_decision_results()
 	if not handled:
@@ -3175,5 +3733,93 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 		"request_id": req_id,
 		"request_path": req_path
 	}
+
+func execute_diplomatic_response(proposal_id: String, decision: String, confirmed: bool = true) -> Dictionary:
+	if latest_state.is_empty():
+		var err_msg := "Cannot submit diplomatic response: No Republic simulation state loaded."
+		if dossier_status_label:
+			dossier_status_label.text = "Response Failed: " + err_msg
+		return { "success": false, "message": err_msg }
+
+	var req_path := _resolve_request_path()
+	var req_dir := req_path.get_base_dir()
+	if not req_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
+
+	var req_id := "req_dip_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var timestamp_str := Time.get_datetime_string_from_system()
+
+	var request_dict := {
+		"request_id": req_id,
+		"action": "diplomatic_response",
+		"proposal_id": proposal_id,
+		"decision": decision,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to open request file for writing: " + req_path
+		return { "success": false, "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	var msg := "Diplomatic order submitted: %s proposal '%s'." % [decision.capitalize(), proposal_id]
+	if dossier_status_label:
+		dossier_status_label.text = "Certified: " + msg
+	if status_ticker_label:
+		status_ticker_label.text = "Diplomatic Dispatch: " + msg
+
+	return {
+		"success": true,
+		"message": msg,
+		"request_id": req_id,
+		"request_path": req_path
+	}
+
+func execute_crisis_response(decree_type: String, confirmed: bool = true) -> Dictionary:
+	if latest_state.is_empty():
+		var err_msg := "Cannot submit crisis response: No Republic simulation state loaded."
+		return { "success": false, "message": err_msg }
+
+	var req_path := _resolve_request_path()
+	var req_dir := req_path.get_base_dir()
+	if not req_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
+
+	var req_id := "req_cr_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var timestamp_str := Time.get_datetime_string_from_system()
+
+	var request_dict := {
+		"request_id": req_id,
+		"action": "crisis_response",
+		"decree_type": decree_type,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to open request file for writing: " + req_path
+		return { "success": false, "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	var msg := "Crisis decree enacted: %s." % decree_type.capitalize()
+	if status_ticker_label:
+		status_ticker_label.text = "Presidential Decree: " + msg
+
+	return {
+		"success": true,
+		"message": msg,
+		"request_id": req_id,
+		"request_path": req_path
+	}
+
 
 

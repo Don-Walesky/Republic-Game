@@ -527,6 +527,26 @@ grow_horizontal = 2
 grow_vertical = 2
 flat = true
 
+[node name="ActiveProjectMarkerButton" type="Button" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchor_left = 0.64
+anchor_top = 0.22
+anchor_right = 0.86
+anchor_bottom = 0.52
+flat = true
+mouse_default_cursor_shape = 2
+tooltip_text = "Active Capital Project"
+
+[node name="CompletedProjectMarkerButton" type="Button" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchor_left = 0.18
+anchor_top = 0.26
+anchor_right = 0.34
+anchor_bottom = 0.56
+flat = true
+mouse_default_cursor_shape = 2
+tooltip_text = "Completed Infrastructure Landmark"
+
 [node name="CountryFlag" type="Control" parent="OfficeEnvironment"]
 layout_mode = 1
 anchor_left = 0.14
@@ -820,6 +840,39 @@ text = "1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="DiplomaticFolderButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
+layout_mode = 1
+anchor_left = 0.08
+anchor_top = 0.72
+anchor_right = 0.20
+anchor_bottom = 0.96
+theme_override_font_sizes/font_size = 10
+text = "🤝 DIPLOMACY"
+
+[node name="DiplomaticNotificationBadge" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -10.0
+offset_top = -6.0
+offset_right = 8.0
+offset_bottom = 12.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="DiplomaticBadgeLabel" type="Label" parent="OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton/DiplomaticNotificationBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="InterfaceLayer" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -1060,6 +1113,13 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Vacant"
 
+[node name="FinanceBottleneckBadge" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.45, 0.2, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ BOTTLENECK"
+
 [node name="FinanceMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
@@ -1191,6 +1251,13 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Vacant"
 
+[node name="InteriorBottleneckBadge" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorHeaderHBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.45, 0.2, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ BOTTLENECK"
+
 [node name="InteriorMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
@@ -1280,6 +1347,13 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Vacant"
 
+[node name="InfrastructureBottleneckBadge" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureHeaderHBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.45, 0.2, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ BOTTLENECK"
+
 [node name="InfrastructureMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
@@ -1306,6 +1380,27 @@ text = "Appoint / Reassign ->"
 
 [node name="HSeparator4" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
+
+[node name="CabinetFrictionPanel" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="FrictionVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CabinetFrictionLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel/FrictionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 10
+text = "⚡ Ministerial Friction: Capacity constraint detected."
+autowrap_mode = 2
+
+[node name="ResolveFrictionButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetFrictionPanel/FrictionVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Resolve Constraint ->"
 
 [node name="OpenCabinetButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
@@ -1369,6 +1464,58 @@ text = "GDP: R 450B"
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "Simulation: Real-time aligned"
+autowrap_mode = 2
+
+[node name="HSeparatorDossier" type="HSeparator" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+
+[node name="DiplomaticDossierTitleLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 11
+text = "📄 DIPLOMATIC DOSSIERS"
+
+[node name="DiplomaticDossierCard" type="PanelContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="DossierCardVBox" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="DossierPartnerLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Partner: None Pending"
+
+[node name="DossierTermsLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "Zero pending bilateral proposals."
+autowrap_mode = 2
+
+[node name="DossierCardActionsHBox" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="AcceptDossierProposalButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierCardActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Accept"
+
+[node name="RejectDossierProposalButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox/DossierCardActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Decline"
+
+[node name="DossierStatusLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/DiplomaticDossierCard/DossierCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 8
+text = "Status: Real-time bilateral network aligned"
 autowrap_mode = 2
 
 [node name="OpenDiplomacyButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
@@ -1461,6 +1608,114 @@ theme_override_colors/font_color = Color(0.65, 0.8, 0.95, 1)
 theme_override_font_sizes/font_size = 9
 text = "Executive Office synchronized. Zero critical emergencies."
 autowrap_mode = 2
+
+[node name="ProjectCompletionToast" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 184.0
+offset_right = 280.0
+offset_bottom = 264.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_toast")
+
+[node name="ToastVBox" type="VBoxContainer" parent="InterfaceLayer/ProjectCompletionToast"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ToastHeader" type="HBoxContainer" parent="InterfaceLayer/ProjectCompletionToast/ToastVBox"]
+layout_mode = 2
+
+[node name="ProjectCompletionTitle" type="Label" parent="InterfaceLayer/ProjectCompletionToast/ToastVBox/ToastHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 11
+text = "🎉 NATIONAL PROJECT COMPLETED!"
+
+[node name="DismissProjectToastButton" type="Button" parent="InterfaceLayer/ProjectCompletionToast/ToastVBox/ToastHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "✕"
+
+[node name="ProjectCompletionDetailsLabel" type="Label" parent="InterfaceLayer/ProjectCompletionToast/ToastVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Project completed. Institutional capacity and approval expanded."
+autowrap_mode = 2
+
+[node name="CapitalProjectCard" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.32
+anchor_right = 0.5
+anchor_bottom = 0.32
+offset_left = -220.0
+offset_top = -80.0
+offset_right = 220.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="CardVBox" type="VBoxContainer" parent="InterfaceLayer/CapitalProjectCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CardHeader" type="HBoxContainer" parent="InterfaceLayer/CapitalProjectCard/CardVBox"]
+layout_mode = 2
+
+[node name="CapitalProjectTitle" type="Label" parent="InterfaceLayer/CapitalProjectCard/CardVBox/CardHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 12
+text = "🏗️ CAPITAL INFRASTRUCTURE PROJECT"
+
+[node name="CloseCapitalProjectButton" type="Button" parent="InterfaceLayer/CapitalProjectCard/CardVBox/CardHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "✕"
+
+[node name="CapitalProjectStatusLabel" type="Label" parent="InterfaceLayer/CapitalProjectCard/CardVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Status: Active Program"
+autowrap_mode = 2
+
+[node name="CapitalProjectEtaLabel" type="Label" parent="InterfaceLayer/CapitalProjectCard/CardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_font_sizes/font_size = 10
+text = "ETA / Timeline: In Progress"
+autowrap_mode = 2
+
+[node name="CapitalProjectCapacityLabel" type="Label" parent="InterfaceLayer/CapitalProjectCard/CardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.8, 0.95, 1)
+theme_override_font_sizes/font_size = 10
+text = "Capacity Effect: Enhances State Capacity and Infrastructure Condition"
+autowrap_mode = 2
+
+[node name="CardActions" type="HBoxContainer" parent="InterfaceLayer/CapitalProjectCard/CardVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="CapitalProjectDeskButton" type="Button" parent="InterfaceLayer/CapitalProjectCard/CardVBox/CardActions"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Open Projects in Desk ->"
+
+[node name="DismissProjectCardButton" type="Button" parent="InterfaceLayer/CapitalProjectCard/CardVBox/CardActions"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Dismiss"
 
 [node name="ModalBackdrop" type="ColorRect" parent="InterfaceLayer"]
 visible = false
@@ -1701,6 +1956,16 @@ autowrap_mode = 2
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 2
+
+[node name="CivicReliefButton" type="Button" parent="InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Civic Relief (R100k)"
+
+[node name="AusterityDecreeButton" type="Button" parent="InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Austerity (+R500k)"
 
 [node name="DossierDeskButton" type="Button" parent="InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox"]
 layout_mode = 2
