@@ -12,6 +12,8 @@ using Republic.Core.Government.Officials.Services;
 using Republic.Core.Media.Models;
 using Republic.Core.Media.Services;
 using Republic.Core.Time;
+using Republic.Core.World;
+using Republic.Core.World.Factories;
 using Republic.Core.World.Models;
 
 /// <summary>
@@ -381,6 +383,42 @@ public sealed record PresidentialDeskSnapshot
     public string InvestmentSummary { get; init; } = "Private Sector: Corporate investment channels open.";
 
     /// <summary>
+    /// Gets the comparative diplomatic profiles for peer sovereign nations, distinguishing confirmed metrics from intelligence estimates.
+    /// </summary>
+    [JsonPropertyName("diplomatic_profiles")]
+    public IReadOnlyList<DiplomaticCountryProfileSnapshot> DiplomaticProfiles { get; init; } = Array.Empty<DiplomaticCountryProfileSnapshot>();
+
+    /// <summary>
+    /// Gets the active, pending, and inbound flexible bilateral trade proposals.
+    /// </summary>
+    [JsonPropertyName("diplomatic_proposals")]
+    public IReadOnlyList<BilateralTradeProposalSnapshot> DiplomaticProposals { get; init; } = Array.Empty<BilateralTradeProposalSnapshot>();
+
+    /// <summary>
+    /// Gets the ratified bilateral treaties, agreements, and active recurring trade contracts.
+    /// </summary>
+    [JsonPropertyName("diplomatic_agreements")]
+    public IReadOnlyList<DiplomaticAgreementSnapshot> DiplomaticAgreements { get; init; } = Array.Empty<DiplomaticAgreementSnapshot>();
+
+    /// <summary>
+    /// Gets the list of natural resources and goods where this nation has active production or exportable surplus.
+    /// </summary>
+    [JsonPropertyName("export_opportunities")]
+    public IReadOnlyList<string> ExportOpportunities { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets the list of critical economic resources that this nation does not domestically extract and requires through trade.
+    /// </summary>
+    [JsonPropertyName("import_needs")]
+    public IReadOnlyList<string> ImportNeeds { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets the executive diplomacy briefing summary.
+    /// </summary>
+    [JsonPropertyName("diplomacy_summary")]
+    public string DiplomacySummary { get; init; } = "Diplomacy: Sovereign diplomatic missions operational.";
+
+    /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
     /// Reuses existing core models and services without duplicating domain rules.
     /// </summary>
@@ -391,7 +429,8 @@ public sealed record PresidentialDeskSnapshot
         string? saveFilePath = null,
         string? latestDecisionResult = null,
         string? statusMessage = null,
-        string? lastAiDecision = null)
+        string? lastAiDecision = null,
+        IEnumerable<Country>? worldCountries = null)
     {
         ArgumentNullException.ThrowIfNull(country);
 
@@ -698,6 +737,145 @@ public sealed record PresidentialDeskSnapshot
         var activeInvCount = country.ActivePrivateInvestments.Count(p => p.IsActive);
         var investmentSummaryText = $"Private Sector: {privateInvestors.Count} Enterprises | {pendingPropCount} Pending Proposals | {activeInvCount} Active Facilities";
 
+        // Multiplayer Diplomacy and Flexible Bilateral Trade
+        var profileFactory = new CountryProfileFactory();
+        var allWorldCountries = new List<Country>();
+        if (worldCountries != null)
+        {
+            allWorldCountries.AddRange(worldCountries);
+        }
+
+        if (!allWorldCountries.Any(c => c.Id != country.Id))
+        {
+            // Fallback: seed standard peer nations if world registry has only player nation
+            int[] peerSeeds = { 101, 102, 103, 104, 105 };
+            foreach (var seed in peerSeeds)
+            {
+                var peer = profileFactory.CreateCountry(seed, simulationTime);
+                allWorldCountries.Add(peer);
+            }
+        }
+
+        var selfProfile = DiplomaticCountryProfile.Create(country, country, simulationTime);
+        var diplomaticProfileSnapshots = new List<DiplomaticCountryProfileSnapshot>
+        {
+            new DiplomaticCountryProfileSnapshot
+            {
+                CountryId = selfProfile.CountryId,
+                CountryName = selfProfile.CountryName,
+                CapitalCity = selfProfile.CapitalCity,
+                GovernmentType = selfProfile.GovernmentType,
+                Region = selfProfile.Region,
+                PrimaryResource = selfProfile.PrimaryResource,
+                IsSelf = true,
+                IsAuthorizedIntelligence = true,
+                TreasuryDisplay = selfProfile.TreasuryDisplay,
+                TreasuryIsConfirmed = true,
+                GdpDisplay = selfProfile.GdpDisplay,
+                ApprovalDisplay = selfProfile.ApprovalDisplay,
+                ApprovalIsConfirmed = true,
+                StabilityDisplay = selfProfile.StabilityDisplay,
+                StabilityIsConfirmed = true,
+                MilitaryReadinessDisplay = selfProfile.MilitaryReadinessDisplay,
+                MilitaryIsConfirmed = true,
+                ExportOpportunities = selfProfile.ExportOpportunities,
+                ImportNeeds = selfProfile.ImportNeeds,
+                AvailableCommodities = selfProfile.AvailableCommodities,
+                DiplomaticRelationStatus = "Sovereign Republic (Self)",
+                DiplomaticReputation = 100.0,
+                ActiveAgreements = selfProfile.ActiveAgreements
+            }
+        };
+
+        foreach (var foreignCountry in allWorldCountries.Where(c => c.Id != country.Id))
+        {
+            var p = DiplomaticCountryProfile.Create(country, foreignCountry, simulationTime);
+            diplomaticProfileSnapshots.Add(new DiplomaticCountryProfileSnapshot
+            {
+                CountryId = p.CountryId,
+                CountryName = p.CountryName,
+                CapitalCity = p.CapitalCity,
+                GovernmentType = p.GovernmentType,
+                Region = p.Region,
+                PrimaryResource = p.PrimaryResource,
+                IsSelf = false,
+                IsAuthorizedIntelligence = p.IsAuthorizedIntelligence,
+                TreasuryDisplay = p.TreasuryDisplay,
+                TreasuryIsConfirmed = p.TreasuryIsConfirmed,
+                GdpDisplay = p.GdpDisplay,
+                ApprovalDisplay = p.ApprovalDisplay,
+                ApprovalIsConfirmed = p.ApprovalIsConfirmed,
+                StabilityDisplay = p.StabilityDisplay,
+                StabilityIsConfirmed = p.StabilityIsConfirmed,
+                MilitaryReadinessDisplay = p.MilitaryReadinessDisplay,
+                MilitaryIsConfirmed = p.MilitaryIsConfirmed,
+                ExportOpportunities = p.ExportOpportunities,
+                ImportNeeds = p.ImportNeeds,
+                AvailableCommodities = p.AvailableCommodities,
+                DiplomaticRelationStatus = p.DiplomaticRelationStatus,
+                DiplomaticReputation = p.DiplomaticReputation,
+                ActiveAgreements = p.ActiveAgreements
+            });
+        }
+
+        var tradeProposalSnapshots = country.FlexibleTradeProposals.Select(tp =>
+        {
+            var proposer = allWorldCountries.FirstOrDefault(c => c.Id == tp.ProposerCountryId) ?? (tp.ProposerCountryId == country.Id ? country : null);
+            var target = allWorldCountries.FirstOrDefault(c => c.Id == tp.TargetCountryId) ?? (tp.TargetCountryId == country.Id ? country : null);
+            var proposerName = proposer?.Name ?? tp.ProposerCountryId;
+            var targetName = target?.Name ?? tp.TargetCountryId;
+
+            return new BilateralTradeProposalSnapshot
+            {
+                Id = tp.Id,
+                ProposerCountryId = tp.ProposerCountryId,
+                ProposerCountryName = proposerName,
+                TargetCountryId = tp.TargetCountryId,
+                TargetCountryName = targetName,
+                OfferedResourceType = tp.OfferedResourceType,
+                OfferedQuantity = tp.OfferedQuantity,
+                RequestedResourceType = tp.RequestedResourceType,
+                RequestedQuantity = tp.RequestedQuantity,
+                CurrencyPayment = tp.CurrencyPayment,
+                CurrencyPaymentFormatted = RepuTreasury.Format(Math.Abs(tp.CurrencyPayment)),
+                IsRecurring = tp.IsRecurring,
+                TotalDeliveryCycles = tp.TotalDeliveryCycles,
+                RemainingDeliveryCycles = tp.RemainingDeliveryCycles,
+                RevisionNumber = tp.RevisionNumber,
+                LastModifiedByCountryId = tp.LastModifiedByCountryId,
+                CanAccept = tp.CanBeAcceptedBy(country.Id),
+                CanCounter = tp.Involves(country.Id) && tp.Status is FlexibleTradeStatus.Pending or FlexibleTradeStatus.Countered,
+                CanReject = tp.Involves(country.Id) && tp.Status is FlexibleTradeStatus.Pending or FlexibleTradeStatus.Countered,
+                Status = tp.Status.ToString(),
+                Summary = tp.FormatSummary(),
+                CreatedAt = tp.CreatedAt.ToString(),
+                StatusMessage = tp.StatusMessage
+            };
+        }).ToList();
+
+        var diplomaticAgreementSnapshots = country.Agreements.Select(a =>
+        {
+            var partnerId = string.Equals(a.SourceCountryId, country.Id, StringComparison.OrdinalIgnoreCase) ? a.TargetCountryId : a.SourceCountryId;
+            var partner = allWorldCountries.FirstOrDefault(c => c.Id == partnerId);
+            var partnerName = partner?.Name ?? partnerId;
+
+            return new DiplomaticAgreementSnapshot
+            {
+                Id = a.Id,
+                PartnerCountryId = partnerId,
+                PartnerCountryName = partnerName,
+                AgreementType = a.AgreementType.ToString(),
+                Status = a.Status.ToString(),
+                ProposedBoundary = a.ProposedBoundary.ToString(),
+                DecidedBoundary = a.DecidedBoundary?.ToString() ?? "Pending",
+                Summary = a.ToString()
+            };
+        }).ToList();
+
+        var activeTreatyCount = diplomaticAgreementSnapshots.Count(a => a.Status is "Accepted" or "Completed");
+        var pendingDealCount = tradeProposalSnapshots.Count(p => p.Status is "Pending" or "Countered");
+        var diplomacySummaryText = $"Diplomacy: {diplomaticProfileSnapshots.Count - 1} Foreign Nations Registered | {pendingDealCount} Active Proposals | {activeTreatyCount} Ratified Treaties";
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -757,6 +935,12 @@ public sealed record PresidentialDeskSnapshot
             PrivateInvestors = privateInvestorSnapshots.AsReadOnly(),
             InvestmentProposals = investmentProposalSnapshots.AsReadOnly(),
             InvestmentSummary = investmentSummaryText,
+            DiplomaticProfiles = diplomaticProfileSnapshots.AsReadOnly(),
+            DiplomaticProposals = tradeProposalSnapshots.AsReadOnly(),
+            DiplomaticAgreements = diplomaticAgreementSnapshots.AsReadOnly(),
+            ExportOpportunities = selfProfile.ExportOpportunities,
+            ImportNeeds = selfProfile.ImportNeeds,
+            DiplomacySummary = diplomacySummaryText,
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,
@@ -789,7 +973,7 @@ public sealed record PresidentialDeskSnapshot
             resolvedAiDecision = otherCountry?.LastAIDecision;
         }
 
-        return Create(country, simulationTime, simulationTick, saveFilePath, latestDecisionResult, statusMessage, resolvedAiDecision);
+        return Create(country, simulationTime, simulationTick, saveFilePath, latestDecisionResult, statusMessage, resolvedAiDecision, world.Countries);
     }
 }
 

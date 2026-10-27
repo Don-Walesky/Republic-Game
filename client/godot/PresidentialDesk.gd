@@ -1001,6 +1001,48 @@ func apply_state(data: Dictionary) -> void:
 				if not res_msg.is_empty():
 					decision_result_label.text = "Decision Result: " + res_msg
 
+	# Bilateral Diplomacy & Flexible Trade state synchronization
+	var dip_summary := str(data.get("diplomacy_summary", ""))
+	if not dip_summary.is_empty() and diplomacy_status_label:
+		diplomacy_status_label.text = "Diplomacy: " + dip_summary
+
+	var proposals_val = data.get("diplomatic_proposals", [])
+	if proposals_val is Array and not proposals_val.is_empty():
+		var first_prop = proposals_val[0]
+		if first_prop is Dictionary:
+			_active_trade_proposal = first_prop
+			var p_status := str(first_prop.get("status", "Pending"))
+			var p_summary := str(first_prop.get("summary", first_prop.get("status_message", "Trade proposal active")))
+			var p_rev := int(first_prop.get("revision_number", 1))
+			var p_target := str(first_prop.get("target_country_id", ""))
+			var is_inbound := (p_target == country_name or p_target == str(data.get("country_id", "")))
+
+			if latest_trade_status_label:
+				latest_trade_status_label.text = "Trade Status: [%s] %s (Rev %d)" % [p_status, p_summary, p_rev]
+
+			if trade_lifecycle_stage_label:
+				if is_inbound and (p_status == "Pending" or p_status == "Countered"):
+					trade_lifecycle_stage_label.text = "Trade Lifecycle: [Inbound Proposal Awaiting Executive Review] — Counter or Accept"
+				elif not is_inbound and (p_status == "Pending" or p_status == "Countered"):
+					trade_lifecycle_stage_label.text = "Trade Lifecycle: [Outbound Proposal Under Foreign Peer Review] — Revision %d" % p_rev
+				elif p_status == "Executed" or p_status == "Active":
+					trade_lifecycle_stage_label.text = "Trade Lifecycle: [Ratified & Active Sovereign Trade Contract]"
+				elif p_status == "Disputed":
+					trade_lifecycle_stage_label.text = "Trade Lifecycle: [Trade Default & Diplomatic Dispute Active]"
+				elif p_status == "Rejected":
+					trade_lifecycle_stage_label.text = "Trade Lifecycle: [Trade Proposal Rejected]"
+
+			if is_inbound and (p_status == "Pending" or p_status == "Countered"):
+				if accept_trade_button:
+					accept_trade_button.disabled = false
+				if reject_trade_button:
+					reject_trade_button.disabled = false
+			else:
+				if accept_trade_button:
+					accept_trade_button.disabled = true
+				if reject_trade_button:
+					reject_trade_button.disabled = true
+
 	# If connected to multiplayer network host, broadcast updated country snapshot and update status
 	if _is_network_connected:
 		_send_local_country_snapshot()
@@ -2873,6 +2915,27 @@ func _on_propose_trade_button_pressed() -> void:
 	_send_network_message(net_msg)
 	_handle_network_message(net_msg)
 
+	# Submit authoritative request for file-driven simulation
+	var req_path := _resolve_request_path()
+	if not req_path.is_empty():
+		var req_dict := {
+			"request_id": "req_trade_" + str(Time.get_ticks_msec()),
+			"action": "propose_bilateral_trade",
+			"target_country_id": peer_id,
+			"offered_resource": "REPU",
+			"offered_quantity": 0.0,
+			"requested_resource": null,
+			"requested_quantity": 0.0,
+			"currency_payment": amount,
+			"is_recurring": false,
+			"total_delivery_cycles": 1,
+			"confirmed": true
+		}
+		var f := FileAccess.open(req_path, FileAccess.WRITE)
+		if f:
+			f.store_string(JSON.stringify(req_dict, "\t"))
+			f.close()
+
 
 func _on_accept_trade_button_pressed() -> void:
 	if _active_trade_proposal.is_empty():
@@ -2885,6 +2948,20 @@ func _on_accept_trade_button_pressed() -> void:
 	}
 	_send_network_message(net_msg)
 	_handle_network_message(net_msg)
+
+	var req_path := _resolve_request_path()
+	if not req_path.is_empty():
+		var req_dict := {
+			"request_id": "req_acc_" + str(Time.get_ticks_msec()),
+			"action": "diplomatic_response",
+			"proposal_id": str(_active_trade_proposal.get("id", "")),
+			"decision": "accept",
+			"confirmed": true
+		}
+		var f := FileAccess.open(req_path, FileAccess.WRITE)
+		if f:
+			f.store_string(JSON.stringify(req_dict, "\t"))
+			f.close()
 
 
 func _on_reject_trade_button_pressed() -> void:
@@ -2899,30 +2976,26 @@ func _on_reject_trade_button_pressed() -> void:
 	_send_network_message(net_msg)
 	_handle_network_message(net_msg)
 
+	var req_path := _resolve_request_path()
+	if not req_path.is_empty():
+		var req_dict := {
+			"request_id": "req_rej_" + str(Time.get_ticks_msec()),
+			"action": "diplomatic_response",
+			"proposal_id": str(_active_trade_proposal.get("id", "")),
+			"decision": "reject",
+			"confirmed": true
+		}
+		var f := FileAccess.open(req_path, FileAccess.WRITE)
+		if f:
+			f.store_string(JSON.stringify(req_dict, "\t"))
+			f.close()
+
 
 func _apply_local_trade_treasury_adjustment(from_id: String, to_id: String, amount: float) -> void:
-	# If local client is sender or recipient and we have a treasury displayed, update it locally
-	if treasury_label and not treasury_label.text.is_empty():
-		var raw_str := treasury_label.text.replace("Treasury: R ", "").replace("Treasury: ", "").replace(",", "").strip_edges()
-		if raw_str.is_valid_float():
-			var cur_val := raw_str.to_float()
-			if from_id == _local_client_id:
-				cur_val = max(0.0, cur_val - amount)
-				treasury_label.text = "Treasury: R " + _format_number_commas(cur_val)
-			elif to_id == _local_client_id:
-				cur_val += amount
-				treasury_label.text = "Treasury: R " + _format_number_commas(cur_val)
-
-	if foreign_country_treasury_label and not foreign_country_treasury_label.text.is_empty():
-		var peer_raw := foreign_country_treasury_label.text.replace("Treasury: R ", "").replace("Treasury: ", "").replace(",", "").strip_edges()
-		if peer_raw.is_valid_float():
-			var cur_peer := peer_raw.to_float()
-			if from_id == _peer_country_id:
-				cur_peer = max(0.0, cur_peer - amount)
-				foreign_country_treasury_label.text = "Treasury: R " + _format_number_commas(cur_peer)
-			elif to_id == _peer_country_id:
-				cur_peer += amount
-				foreign_country_treasury_label.text = "Treasury: R " + _format_number_commas(cur_peer)
+	# PHASE 4 MULTIPLAYER DIPLOMACY: Direct client-side treasury manipulation is removed.
+	# All resource balances and treasury transfers are authoritatively computed and executed
+	# by the host/simulation server. Client UI synchronizes exclusively from authoritative snapshots.
+	pass
 
 
 func _format_number_commas(val: float) -> String:

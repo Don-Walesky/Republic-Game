@@ -18,8 +18,10 @@ using Republic.Core.Persistence.Models;
 using Republic.Core.Persistence.Services;
 using Republic.Core.Time;
 using Republic.Core.World;
+using Republic.Core.World.Factories;
 using Republic.Core.World.Models;
 using Republic.Core.World.Rules;
+using Republic.Core.World.Services;
 
 /// <summary>
 /// Bridge service coordinating the live Republic simulation state connection to the Godot presidential desk client.
@@ -4184,6 +4186,816 @@ public static class PresidentialDeskBridge
         return successResult;
     }
 
+    /// <summary>
+    /// Executes an authoritative presidential trade proposal, offering commodities or currency to a target nation.
+    /// Performs atomic pre-execution validation of country solvency and commodity availability.
+    /// </summary>
+    public static PresidentialActionResult ApplyBilateralTradeProposal(
+        string targetCountryId,
+        string? offeredResourceType,
+        double offeredQuantity,
+        string? requestedResourceType,
+        double requestedQuantity,
+        double currencyPayment = 0.0,
+        bool isRecurring = false,
+        int totalDeliveryCycles = 1,
+        string? notes = null,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "propose bilateral trade");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Bilateral trade proposal cancelled by executive order. No proposal submitted.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        if (string.IsNullOrWhiteSpace(targetCountryId))
+        {
+            var invalidPartnerResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = "Bilateral trade rejected: Target partner country must be specified.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, invalidPartnerResult);
+            return invalidPartnerResult;
+        }
+
+        var world = envelope?.State?.World;
+        Country? targetCountry = null;
+        if (world?.Countries != null)
+        {
+            targetCountry = world.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, targetCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, targetCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (targetCountry == null)
+        {
+            // Seed peer country into world if not already present
+            var factory = new CountryProfileFactory();
+            int seed = Math.Abs(targetCountryId.GetHashCode()) % 1000 + 100;
+            targetCountry = factory.CreateCountry(seed, simTime);
+            if (world?.Countries != null && !world.Countries.Any(c => c.Id == targetCountry.Id))
+            {
+                world.Countries.Add(targetCountry);
+            }
+        }
+
+        var terms = new FlexibleTradeTerms
+        {
+            Id = $"trade_{Guid.NewGuid():N}"[..16],
+            ProposerCountryId = country!.Id,
+            TargetCountryId = targetCountry.Id,
+            OfferedResourceType = offeredResourceType,
+            OfferedQuantity = offeredQuantity,
+            RequestedResourceType = requestedResourceType,
+            RequestedQuantity = requestedQuantity,
+            CurrencyPayment = currencyPayment,
+            IsRecurring = isRecurring,
+            TotalDeliveryCycles = isRecurring ? Math.Max(1, totalDeliveryCycles) : 1,
+            RemainingDeliveryCycles = isRecurring ? Math.Max(1, totalDeliveryCycles) : 1,
+            RevisionNumber = 1,
+            LastModifiedByCountryId = country.Id,
+            ProposerApproved = true,
+            TargetApproved = false,
+            Status = FlexibleTradeStatus.Pending,
+            CreatedAt = simTime,
+            LastModifiedAt = simTime,
+            TermsNotes = notes ?? string.Empty,
+            StatusMessage = $"Outbound trade proposal sent to {targetCountry.Name}."
+        };
+
+        var tradeService = new BilateralTradeService();
+        var (success, outcomeMessage, proposal) = tradeService.CreateProposal(
+            country!,
+            targetCountry,
+            terms,
+            simTime);
+
+        if (!success || proposal == null)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = outcomeMessage,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, outcomeMessage)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Submits a bilateral counter-offer to an existing trade proposal, revising terms and invalidating prior approvals.
+    /// </summary>
+    public static PresidentialActionResult ApplyTradeCounterProposal(
+        string proposalId,
+        string? newOfferedResourceType,
+        double? newOfferedQuantity,
+        string? newRequestedResourceType,
+        double? newRequestedQuantity,
+        double? newCurrencyPayment,
+        string? notes = null,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "counter trade proposal");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        var world = envelope?.State?.World;
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Counter-proposal review cancelled. Existing proposal terms remain unchanged.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var proposal = country!.GetFlexibleTradeProposal(proposalId);
+        if (proposal == null)
+        {
+            var notFoundResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = $"Cannot counter trade proposal: Proposal '{proposalId}' was not found in diplomatic archives.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, notFoundResult);
+            return notFoundResult;
+        }
+
+        var counterTerms = proposal.CreateCounterOffer(
+            country!.Id,
+            newOfferedResourceType,
+            newOfferedQuantity,
+            newRequestedResourceType,
+            newRequestedQuantity,
+            newCurrencyPayment,
+            simTime,
+            notes);
+
+        var tradeService = new BilateralTradeService();
+        var (success, outcomeMessage, counter) = tradeService.CounterProposal(
+            country!,
+            proposalId,
+            counterTerms,
+            simTime);
+
+        if (!success || counter == null)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = outcomeMessage,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, outcomeMessage)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Authoritatively accepts and executes an agreed bilateral trade proposal as a single atomic transaction.
+    /// Debits and credits both countries simultaneously with complete rollback on any shortfall.
+    /// </summary>
+    public static PresidentialActionResult ApplyAcceptBilateralTrade(
+        string proposalId,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "accept bilateral trade proposal");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Trade proposal acceptance cancelled by executive order. Agreement remains unexecuted.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var proposal = country!.GetFlexibleTradeProposal(proposalId);
+        if (proposal == null)
+        {
+            var notFoundResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = $"Cannot accept trade agreement: Proposal '{proposalId}' not found in active diplomatic archives.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, notFoundResult);
+            return notFoundResult;
+        }
+
+        var partnerId = string.Equals(proposal.ProposerCountryId, country.Id, StringComparison.OrdinalIgnoreCase)
+            ? proposal.TargetCountryId
+            : proposal.ProposerCountryId;
+
+        var world = envelope?.State?.World;
+        Country? partnerCountry = null;
+        if (world?.Countries != null)
+        {
+            partnerCountry = world.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, partnerId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, partnerId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (partnerCountry == null)
+        {
+            var factory = new CountryProfileFactory();
+            int seed = Math.Abs(partnerId.GetHashCode()) % 1000 + 100;
+            partnerCountry = factory.CreateCountry(seed, simTime);
+            if (world?.Countries != null && !world.Countries.Any(c => c.Id == partnerCountry.Id))
+            {
+                world.Countries.Add(partnerCountry);
+            }
+        }
+
+        var allCountries = world?.Countries ?? new List<Country> { country! };
+        var tradeService = new BilateralTradeService();
+        var (success, outcomeMessage, executed) = tradeService.AcceptProposal(
+            country!,
+            proposalId,
+            simTime,
+            allCountries);
+
+        if (!success || executed == null)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = outcomeMessage,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, outcomeMessage)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Rejects or cancels an active or pending bilateral trade proposal.
+    /// </summary>
+    public static PresidentialActionResult ApplyRejectBilateralTrade(
+        string proposalId,
+        string? reason = null,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "reject bilateral trade proposal");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Trade proposal rejection cancelled. Proposal remains in current state.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var proposal = country!.GetFlexibleTradeProposal(proposalId);
+        if (proposal == null)
+        {
+            var notFoundResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = $"Cannot reject trade proposal: Proposal '{proposalId}' not found in active diplomatic archives.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, notFoundResult);
+            return notFoundResult;
+        }
+
+        var tradeService = new BilateralTradeService();
+        var (success, outcomeMessage, rejected) = tradeService.RejectProposal(
+            country!,
+            proposalId,
+            simTime);
+
+        if (!success || rejected == null)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = outcomeMessage,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, outcomeMessage)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Opens an initial diplomatic mission or relation with a target country.
+    /// </summary>
+    public static PresidentialActionResult ApplyOpenDiplomaticRelation(
+        string targetCountryId,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "open diplomatic relation");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Diplomatic mission dispatch cancelled by executive order.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var rel = country!.OpenRelation(targetCountryId, simTime, DiplomaticRelationStatus.Unrecognized);
+        var outcomeMessage = $"Diplomatic mission established with {targetCountryId}. Initial relation status: Unrecognized.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Formally grants sovereign diplomatic recognition to another sovereign nation.
+    /// </summary>
+    public static PresidentialActionResult ApplyRecognizeDiplomaticRelation(
+        string targetCountryId,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "recognize diplomatic relation");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Sovereign diplomatic recognition cancelled by executive order.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var rel = country!.RecognizeRelation(targetCountryId, simTime);
+        var outcomeMessage = $"Sovereign diplomatic recognition granted to {targetCountryId}. Bilateral ties elevated to Recognized.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
     private static void TryWriteResultFile(string stateOrSavePath, PresidentialActionResult result)
     {
         try
@@ -4637,6 +5449,310 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyInvestmentDecision(proposalId, decision, investConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "diplomatic_response" or "diplomacy_response")
+                    {
+                        string proposalId = string.Empty;
+                        if (root.TryGetProperty("proposal_id", out var propIdEl) && propIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = propIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var pidEl) && pidEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = pidEl.GetString() ?? string.Empty;
+                        }
+
+                        string decision = "accept";
+                        if (root.TryGetProperty("decision", out var decEl) && decEl.ValueKind == JsonValueKind.String)
+                        {
+                            decision = decEl.GetString() ?? "accept";
+                        }
+
+                        bool dipConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var dipConfEl) && (dipConfEl.ValueKind == JsonValueKind.True || dipConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            dipConfirmed = dipConfEl.GetBoolean();
+                        }
+
+                        string? reason = null;
+                        if (root.TryGetProperty("reason", out var reasonEl) && reasonEl.ValueKind == JsonValueKind.String)
+                        {
+                            reason = reasonEl.GetString();
+                        }
+
+                        try
+                        {
+                            if (string.Equals(decision, "reject", StringComparison.OrdinalIgnoreCase))
+                            {
+                                return ApplyRejectBilateralTrade(proposalId, reason, dipConfirmed, targetStatePath, saveFilePath, requestId);
+                            }
+                            else if (string.Equals(decision, "counter", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string? newOffered = root.TryGetProperty("offered_resource", out var oEl) ? oEl.GetString() : null;
+                                double? newOfferedQty = root.TryGetProperty("offered_quantity", out var oqEl) && oqEl.TryGetDouble(out var oq) ? oq : null;
+                                string? newRequested = root.TryGetProperty("requested_resource", out var rEl) ? rEl.GetString() : null;
+                                double? newRequestedQty = root.TryGetProperty("requested_quantity", out var rqEl) && rqEl.TryGetDouble(out var rq) ? rq : null;
+                                double? newCurr = root.TryGetProperty("currency_payment", out var cpEl) && cpEl.TryGetDouble(out var cp) ? cp : null;
+                                string? notes = root.TryGetProperty("notes", out var nEl) ? nEl.GetString() : null;
+
+                                return ApplyTradeCounterProposal(proposalId, newOffered, newOfferedQty, newRequested, newRequestedQty, newCurr, notes, dipConfirmed, targetStatePath, saveFilePath, requestId);
+                            }
+                            else
+                            {
+                                return ApplyAcceptBilateralTrade(proposalId, dipConfirmed, targetStatePath, saveFilePath, requestId);
+                            }
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "propose_bilateral_trade" or "propose_trade" or "create_trade_proposal")
+                    {
+                        string targetCountryId = string.Empty;
+                        if (root.TryGetProperty("target_country_id", out var tcIdEl) && tcIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryId = tcIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("partner_id", out var pIdEl) && pIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryId = pIdEl.GetString() ?? string.Empty;
+                        }
+
+                        string? offeredResource = root.TryGetProperty("offered_resource", out var oEl) ? oEl.GetString() :
+                            (root.TryGetProperty("offered_resource_type", out var ortEl) ? ortEl.GetString() : null);
+
+                        double offeredQty = 0.0;
+                        if (root.TryGetProperty("offered_quantity", out var oqEl) && oqEl.TryGetDouble(out var oqVal))
+                        {
+                            offeredQty = oqVal;
+                        }
+
+                        string? requestedResource = root.TryGetProperty("requested_resource", out var rEl) ? rEl.GetString() :
+                            (root.TryGetProperty("requested_resource_type", out var rrtEl) ? rrtEl.GetString() : null);
+
+                        double requestedQty = 0.0;
+                        if (root.TryGetProperty("requested_quantity", out var rqEl) && rqEl.TryGetDouble(out var rqVal))
+                        {
+                            requestedQty = rqVal;
+                        }
+
+                        double currencyPayment = 0.0;
+                        if (root.TryGetProperty("currency_payment", out var cpEl) && cpEl.TryGetDouble(out var cpVal))
+                        {
+                            currencyPayment = cpVal;
+                        }
+                        else if (root.TryGetProperty("cash_payment", out var cashEl) && cashEl.TryGetDouble(out var cashVal))
+                        {
+                            currencyPayment = cashVal;
+                        }
+
+                        bool isRecurring = false;
+                        if (root.TryGetProperty("is_recurring", out var irEl) && (irEl.ValueKind == JsonValueKind.True || irEl.ValueKind == JsonValueKind.False))
+                        {
+                            isRecurring = irEl.GetBoolean();
+                        }
+
+                        int totalCycles = 1;
+                        if (root.TryGetProperty("total_cycles", out var tcEl) && tcEl.TryGetInt32(out var tcVal))
+                        {
+                            totalCycles = tcVal;
+                        }
+                        else if (root.TryGetProperty("cycles", out var cEl) && cEl.TryGetInt32(out var cVal))
+                        {
+                            totalCycles = cVal;
+                        }
+
+                        string? notes = root.TryGetProperty("notes", out var nEl) ? nEl.GetString() : null;
+
+                        bool tradeConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var tConfEl) && (tConfEl.ValueKind == JsonValueKind.True || tConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            tradeConfirmed = tConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyBilateralTradeProposal(
+                                targetCountryId,
+                                offeredResource,
+                                offeredQty,
+                                requestedResource,
+                                requestedQty,
+                                currencyPayment,
+                                isRecurring,
+                                totalCycles,
+                                notes,
+                                tradeConfirmed,
+                                targetStatePath,
+                                saveFilePath,
+                                requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "counter_trade_proposal" or "counter_trade" or "trade_counter")
+                    {
+                        string proposalId = string.Empty;
+                        if (root.TryGetProperty("proposal_id", out var pIdEl) && pIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = pIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = idEl.GetString() ?? string.Empty;
+                        }
+
+                        string? newOffered = root.TryGetProperty("offered_resource", out var oEl) ? oEl.GetString() : null;
+                        double? newOfferedQty = root.TryGetProperty("offered_quantity", out var oqEl) && oqEl.TryGetDouble(out var oq) ? oq : null;
+                        string? newRequested = root.TryGetProperty("requested_resource", out var rEl) ? rEl.GetString() : null;
+                        double? newRequestedQty = root.TryGetProperty("requested_quantity", out var rqEl) && rqEl.TryGetDouble(out var rq) ? rq : null;
+                        double? newCurr = root.TryGetProperty("currency_payment", out var cpEl) && cpEl.TryGetDouble(out var cp) ? cp : null;
+                        string? notes = root.TryGetProperty("notes", out var nEl) ? nEl.GetString() : null;
+
+                        bool counterConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var cConfEl) && (cConfEl.ValueKind == JsonValueKind.True || cConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            counterConfirmed = cConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyTradeCounterProposal(
+                                proposalId,
+                                newOffered,
+                                newOfferedQty,
+                                newRequested,
+                                newRequestedQty,
+                                newCurr,
+                                notes,
+                                counterConfirmed,
+                                targetStatePath,
+                                saveFilePath,
+                                requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "accept_bilateral_trade" or "accept_trade")
+                    {
+                        string proposalId = string.Empty;
+                        if (root.TryGetProperty("proposal_id", out var pIdEl) && pIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = pIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = idEl.GetString() ?? string.Empty;
+                        }
+
+                        bool acceptConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var aConfEl) && (aConfEl.ValueKind == JsonValueKind.True || aConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            acceptConfirmed = aConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyAcceptBilateralTrade(proposalId, acceptConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "reject_bilateral_trade" or "reject_trade")
+                    {
+                        string proposalId = string.Empty;
+                        if (root.TryGetProperty("proposal_id", out var pIdEl) && pIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = pIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            proposalId = idEl.GetString() ?? string.Empty;
+                        }
+
+                        string? reason = root.TryGetProperty("reason", out var rEl) ? rEl.GetString() : null;
+                        bool rejectConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var rConfEl) && (rConfEl.ValueKind == JsonValueKind.True || rConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            rejectConfirmed = rConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyRejectBilateralTrade(proposalId, reason, rejectConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "open_diplomatic_relation" or "open_relation")
+                    {
+                        string targetCountryId = string.Empty;
+                        if (root.TryGetProperty("target_country_id", out var tcIdEl) && tcIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryId = tcIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("country_id", out var cIdEl) && cIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryId = cIdEl.GetString() ?? string.Empty;
+                        }
+
+                        bool openConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var oConfEl) && (oConfEl.ValueKind == JsonValueKind.True || oConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            openConfirmed = oConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyOpenDiplomaticRelation(targetCountryId, openConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "recognize_diplomatic_relation" or "recognize_relation")
+                    {
+                        string targetCountryId = string.Empty;
+                        if (root.TryGetProperty("target_country_id", out var tcIdEl) && tcIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryId = tcIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("country_id", out var cIdEl) && cIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryId = cIdEl.GetString() ?? string.Empty;
+                        }
+
+                        bool recConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var rConfEl) && (rConfEl.ValueKind == JsonValueKind.True || rConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            recConfirmed = rConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyRecognizeDiplomaticRelation(targetCountryId, recConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

@@ -32,6 +32,7 @@ public sealed class RepublicHost : IDisposable
     private readonly ConcurrentDictionary<string, CountrySnapshot> _knownCountries = new();
     private readonly ConcurrentDictionary<string, DiplomaticSnapshot> _diplomacy = new();
     private readonly ConcurrentDictionary<string, TradeProposal> _trades = new();
+    private readonly ConcurrentDictionary<string, FlexibleTradeTerms> _flexibleTrades = new();
     private readonly ConcurrentDictionary<string, RepuTreasury> _treasuries = new();
     private readonly ConcurrentDictionary<string, string> _countryOwners = new();
     private readonly ConcurrentDictionary<string, string> _playerCountries = new();
@@ -76,6 +77,11 @@ public sealed class RepublicHost : IDisposable
     /// Event invoked whenever a trade proposal is proposed, accepted, or rejected.
     /// </summary>
     public event Action<TradeProposal>? OnTradeUpdated;
+
+    /// <summary>
+    /// Event invoked whenever a flexible bilateral trade proposal is created, countered, accepted, or rejected.
+    /// </summary>
+    public event Action<FlexibleTradeTerms>? OnFlexibleTradeUpdated;
 
     /// <summary>
     /// Event invoked whenever the authoritative shared world clock is updated.
@@ -734,6 +740,204 @@ public sealed class RepublicHost : IDisposable
     }
 
     /// <summary>
+    /// Submits and authoritatively validates a flexible bilateral trade proposal on the host.
+    /// Enforces proposer nation ownership, solvency, and non-self-trading rules.
+    /// </summary>
+    public bool SubmitFlexibleTradeProposal(string playerId, FlexibleTradeTerms trade)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
+        ArgumentNullException.ThrowIfNull(trade);
+
+        if (!IsOwner(playerId, trade.ProposerCountryId))
+        {
+            return false;
+        }
+
+        if (string.Equals(trade.ProposerCountryId, trade.TargetCountryId, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (_flexibleTrades.ContainsKey(trade.Id))
+        {
+            return false;
+        }
+
+        // Validate solvency for currency payment
+        if (trade.CurrencyPayment > 0)
+        {
+            var fromTreasury = GetOrCreateTreasury(trade.ProposerCountryId);
+            if (fromTreasury.Balance < trade.CurrencyPayment)
+            {
+                return false;
+            }
+        }
+
+        _flexibleTrades[trade.Id] = trade;
+        SaveWorld();
+        OnFlexibleTradeUpdated?.Invoke(trade);
+        _ = BroadcastMessageAsync(new NetworkMessage { Type = "flexible_trade", SenderId = "host", FlexibleTrade = trade });
+        return true;
+    }
+
+    /// <summary>
+    /// Revises an existing flexible trade proposal with counter-terms, invalidating prior approvals.
+    /// </summary>
+    public bool CounterFlexibleTradeProposal(string playerId, string proposalId, FlexibleTradeTerms counterTerms)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(proposalId);
+        ArgumentNullException.ThrowIfNull(counterTerms);
+
+        if (!_flexibleTrades.TryGetValue(proposalId, out var existing))
+        {
+            return false;
+        }
+
+        if (!IsOwner(playerId, counterTerms.LastModifiedByCountryId))
+        {
+            return false;
+        }
+
+        _flexibleTrades[proposalId] = counterTerms;
+        SaveWorld();
+        OnFlexibleTradeUpdated?.Invoke(counterTerms);
+        _ = BroadcastMessageAsync(new NetworkMessage { Type = "flexible_trade", SenderId = "host", FlexibleTrade = counterTerms });
+        return true;
+    }
+
+    /// <summary>
+    /// Validates and authoritatively executes an agreed flexible bilateral trade proposal.
+    /// Debits and credits treasuries atomically with full rollback on any failure.
+    /// </summary>
+    public bool AcceptFlexibleTrade(string playerId, string proposalId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(proposalId);
+
+        if (!_flexibleTrades.TryGetValue(proposalId, out var trade))
+        {
+            return false;
+        }
+
+        // Must be authorized by recipient
+        var expectedAcceptor = string.Equals(trade.LastModifiedByCountryId, trade.ProposerCountryId, StringComparison.OrdinalIgnoreCase)
+            ? trade.TargetCountryId
+            : trade.ProposerCountryId;
+
+        if (!IsOwner(playerId, expectedAcceptor))
+        {
+            return false;
+        }
+
+        lock (trade)
+        {
+            if (trade.Status is not (FlexibleTradeStatus.Pending or FlexibleTradeStatus.Countered))
+            {
+                return false;
+            }
+
+            var proposerTreasury = GetOrCreateTreasury(trade.ProposerCountryId);
+            var targetTreasury = GetOrCreateTreasury(trade.TargetCountryId);
+
+            // Atomic currency settlement
+            if (trade.CurrencyPayment > 0)
+            {
+                if (!proposerTreasury.TryWithdraw(trade.CurrencyPayment))
+                {
+                    return false;
+                }
+                targetTreasury.Deposit(trade.CurrencyPayment);
+            }
+            else if (trade.CurrencyPayment < 0)
+            {
+                var absPayment = Math.Abs(trade.CurrencyPayment);
+                if (!targetTreasury.TryWithdraw(absPayment))
+                {
+                    return false;
+                }
+                proposerTreasury.Deposit(absPayment);
+            }
+
+            // Update trade state
+            var acceptedTrade = trade with
+            {
+                Status = trade.IsRecurring ? FlexibleTradeStatus.ActiveContract : FlexibleTradeStatus.Accepted,
+                TargetApproved = true,
+                ProposerApproved = true,
+                StatusMessage = trade.IsRecurring
+                    ? $"Bilateral treaty operational. Active for {trade.RemainingDeliveryCycles} delivery cycles."
+                    : "Spot transaction authoritatively settled. Goods and funds transferred."
+            };
+
+            _flexibleTrades[proposalId] = acceptedTrade;
+
+            // Update country snapshots
+            if (_knownCountries.TryGetValue(trade.ProposerCountryId, out var propSnap))
+            {
+                var updatedProp = propSnap with { Treasury = $"R {proposerTreasury.Balance:N0}" };
+                _knownCountries[trade.ProposerCountryId] = updatedProp;
+                OnCountryUpdated?.Invoke(updatedProp);
+                _ = BroadcastMessageAsync(new NetworkMessage { Type = "country", SenderId = "host", Country = updatedProp });
+            }
+
+            if (_knownCountries.TryGetValue(trade.TargetCountryId, out var tgtSnap))
+            {
+                var updatedTgt = tgtSnap with { Treasury = $"R {targetTreasury.Balance:N0}" };
+                _knownCountries[trade.TargetCountryId] = updatedTgt;
+                OnCountryUpdated?.Invoke(updatedTgt);
+                _ = BroadcastMessageAsync(new NetworkMessage { Type = "country", SenderId = "host", Country = updatedTgt });
+            }
+
+            SaveWorld();
+            OnFlexibleTradeUpdated?.Invoke(acceptedTrade);
+            _ = BroadcastMessageAsync(new NetworkMessage { Type = "flexible_trade", SenderId = "host", FlexibleTrade = acceptedTrade });
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Rejects or cancels an active or pending flexible trade proposal.
+    /// </summary>
+    public bool RejectFlexibleTrade(string playerId, string proposalId, string? reason = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(proposalId);
+
+        if (!_flexibleTrades.TryGetValue(proposalId, out var trade))
+        {
+            return false;
+        }
+
+        if (!IsOwner(playerId, trade.TargetCountryId) && !IsOwner(playerId, trade.ProposerCountryId))
+        {
+            return false;
+        }
+
+        lock (trade)
+        {
+            if (trade.Status is not (FlexibleTradeStatus.Pending or FlexibleTradeStatus.Countered))
+            {
+                return false;
+            }
+
+            var rejectedTrade = trade with
+            {
+                Status = FlexibleTradeStatus.Rejected,
+                StatusMessage = !string.IsNullOrWhiteSpace(reason)
+                    ? $"Proposal rejected by sovereign partner: {reason}"
+                    : "Proposal rejected by sovereign partner."
+            };
+
+            _flexibleTrades[proposalId] = rejectedTrade;
+            SaveWorld();
+            OnFlexibleTradeUpdated?.Invoke(rejectedTrade);
+            _ = BroadcastMessageAsync(new NetworkMessage { Type = "flexible_trade", SenderId = "host", FlexibleTrade = rejectedTrade });
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Broadcasts a diplomatic recognition update to all connected peers.
     /// </summary>
     public void BroadcastDiplomacy(DiplomaticSnapshot diplomacy)
@@ -1253,6 +1457,74 @@ public sealed class RepublicHost : IDisposable
                                     Success = false,
                                     Result = "Rejected",
                                     StatusMessage = $"Rejected: Trade proposal '{trade.Id}' rejected (unauthorized or insufficient balance)."
+                                }).ConfigureAwait(false);
+                            }
+                        }
+                    }
+                    else if ((message.Type == "flexible_trade" || message.FlexibleTrade != null) && message.FlexibleTrade != null)
+                    {
+                        var flexTrade = message.FlexibleTrade;
+                        if (flexTrade.Status == FlexibleTradeStatus.Accepted || message.Action == "accept_flexible_trade")
+                        {
+                            var accepted = AcceptFlexibleTrade(message.SenderId, flexTrade.Id);
+                            if (!accepted)
+                            {
+                                await client.SendMessageAsync(new NetworkMessage
+                                {
+                                    Type = "decision_result",
+                                    SenderId = "host",
+                                    RequestId = message.RequestId,
+                                    Success = false,
+                                    Result = "Rejected",
+                                    StatusMessage = $"Rejected: Flexible trade '{flexTrade.Id}' acceptance rejected (unauthorized or not in actionable status)."
+                                }).ConfigureAwait(false);
+                            }
+                        }
+                        else if (flexTrade.Status == FlexibleTradeStatus.Rejected || message.Action == "reject_flexible_trade")
+                        {
+                            var rejected = RejectFlexibleTrade(message.SenderId, flexTrade.Id);
+                            if (!rejected)
+                            {
+                                await client.SendMessageAsync(new NetworkMessage
+                                {
+                                    Type = "decision_result",
+                                    SenderId = "host",
+                                    RequestId = message.RequestId,
+                                    Success = false,
+                                    Result = "Rejected",
+                                    StatusMessage = $"Rejected: Flexible trade '{flexTrade.Id}' rejection rejected."
+                                }).ConfigureAwait(false);
+                            }
+                        }
+                        else if (flexTrade.Status == FlexibleTradeStatus.Countered || message.Action == "counter_flexible_trade")
+                        {
+                            var countered = CounterFlexibleTradeProposal(message.SenderId, flexTrade.Id, flexTrade);
+                            if (!countered)
+                            {
+                                await client.SendMessageAsync(new NetworkMessage
+                                {
+                                    Type = "decision_result",
+                                    SenderId = "host",
+                                    RequestId = message.RequestId,
+                                    Success = false,
+                                    Result = "Rejected",
+                                    StatusMessage = $"Rejected: Counter-proposal for '{flexTrade.Id}' rejected (unauthorized or not found)."
+                                }).ConfigureAwait(false);
+                            }
+                        }
+                        else
+                        {
+                            var proposed = SubmitFlexibleTradeProposal(message.SenderId, flexTrade);
+                            if (!proposed)
+                            {
+                                await client.SendMessageAsync(new NetworkMessage
+                                {
+                                    Type = "decision_result",
+                                    SenderId = "host",
+                                    RequestId = message.RequestId,
+                                    Success = false,
+                                    Result = "Rejected",
+                                    StatusMessage = $"Rejected: Flexible trade proposal '{flexTrade.Id}' rejected (unauthorized, invalid, or duplicate)."
                                 }).ConfigureAwait(false);
                             }
                         }

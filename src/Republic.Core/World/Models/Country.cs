@@ -1689,6 +1689,60 @@ public sealed class Country
         Country? otherCountry = null) =>
         RespondToAgreement(agreementId, accept: false, clock, otherCountry);
 
+    /// <summary>
+    /// Stores or updates a bilateral diplomatic agreement record on this sovereign country.
+    /// </summary>
+    public void StoreAgreement(DiplomaticAgreement agreement)
+    {
+        ArgumentNullException.ThrowIfNull(agreement);
+        var idx = _agreements.FindIndex(a => string.Equals(a.Id, agreement.Id, StringComparison.OrdinalIgnoreCase));
+        if (idx >= 0)
+        {
+            _agreements[idx] = agreement;
+        }
+        else
+        {
+            _agreements.Add(agreement);
+        }
+    }
+
+    /// <summary>
+    /// Gets the list of flexible bilateral trade proposals, counter-offers, and active contracts involving this nation.
+    /// </summary>
+    [JsonPropertyName("flexible_trade_proposals")]
+    public List<FlexibleTradeTerms> FlexibleTradeProposals { get; set; } = new();
+
+    /// <summary>
+    /// Adds or replaces a flexible trade proposal record on this sovereign country.
+    /// </summary>
+    public void StoreFlexibleTradeProposal(FlexibleTradeTerms proposal)
+    {
+        ArgumentNullException.ThrowIfNull(proposal);
+        var idx = FlexibleTradeProposals.FindIndex(p => string.Equals(p.Id, proposal.Id, StringComparison.OrdinalIgnoreCase));
+        if (idx >= 0)
+        {
+            FlexibleTradeProposals[idx] = proposal;
+        }
+        else
+        {
+            FlexibleTradeProposals.Add(proposal);
+        }
+    }
+
+    /// <summary>
+    /// Retrieves a flexible bilateral trade proposal by identifier.
+    /// </summary>
+    public FlexibleTradeTerms? GetFlexibleTradeProposal(string proposalId)
+    {
+        if (string.IsNullOrWhiteSpace(proposalId))
+        {
+            return null;
+        }
+
+        return FlexibleTradeProposals.FirstOrDefault(p => string.Equals(p.Id, proposalId.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
     /// Gets or sets the national road development project record for this country.
     /// Backward-compatibility accessor backed authoritatively by <see cref="Projects"/>.
     /// </summary>
@@ -2630,7 +2684,8 @@ public sealed class Country
         MinistryBudget? ministryBudget = null,
         double tradeBalance = 2_100_000_000.0,
         FiscalQuarterReport? latestFiscalReport = null,
-        int lastProcessedFiscalQuarter = 0)
+        int lastProcessedFiscalQuarter = 0,
+        IEnumerable<FlexibleTradeTerms>? flexibleTradeProposals = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -2700,6 +2755,17 @@ public sealed class Country
                 if (!country._agreements.Any(existing => existing.Id == a.Id))
                 {
                     country._agreements.Add(a);
+                }
+            }
+        }
+
+        if (flexibleTradeProposals != null)
+        {
+            foreach (var p in flexibleTradeProposals)
+            {
+                if (!country.FlexibleTradeProposals.Any(existing => existing.Id == p.Id))
+                {
+                    country.FlexibleTradeProposals.Add(p);
                 }
             }
         }

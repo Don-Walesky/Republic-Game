@@ -51,6 +51,12 @@ public sealed record NetworkMessage
     public Republic.Core.World.TradeProposal? Trade { get; init; }
 
     /// <summary>
+    /// Gets the flexible bilateral trade proposal payload if <see cref="Type"/> is "flexible_trade".
+    /// </summary>
+    [JsonPropertyName("flexible_trade")]
+    public Republic.Core.World.FlexibleTradeTerms? FlexibleTrade { get; init; }
+
+    /// <summary>
     /// Gets the unique request identifier for idempotent operation validation.
     /// </summary>
     [JsonPropertyName("request_id")]

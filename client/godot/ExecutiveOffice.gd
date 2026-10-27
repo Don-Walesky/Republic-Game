@@ -3897,6 +3897,67 @@ func execute_diplomatic_response(proposal_id: String, decision: String, confirme
 		"request_path": req_path
 	}
 
+func execute_diplomatic_counter_proposal(
+	proposal_id: String,
+	offered_res: String,
+	offered_qty: float,
+	requested_res: String,
+	requested_qty: float,
+	currency_pmt: float,
+	notes: String = "",
+	confirmed: bool = true
+) -> Dictionary:
+	if latest_state.is_empty():
+		var err_msg := "Cannot submit diplomatic counter-proposal: No Republic simulation state loaded."
+		if dossier_status_label:
+			dossier_status_label.text = "Counter Failed: " + err_msg
+		return { "success": false, "message": err_msg }
+
+	var req_path := _resolve_request_path()
+	var req_dir := req_path.get_base_dir()
+	if not req_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(req_dir))
+
+	var req_id := "req_cntr_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var timestamp_str := Time.get_datetime_string_from_system()
+
+	var request_dict := {
+		"request_id": req_id,
+		"action": "diplomatic_response",
+		"proposal_id": proposal_id,
+		"decision": "counter",
+		"offered_resource": offered_res,
+		"offered_quantity": offered_qty,
+		"requested_resource": requested_res,
+		"requested_quantity": requested_qty,
+		"currency_payment": currency_pmt,
+		"notes": notes,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(req_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to open request file for writing: " + req_path
+		return { "success": false, "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	var msg := "Diplomatic counter-proposal submitted for '%s'. Prior approvals invalidated." % proposal_id
+	if dossier_status_label:
+		dossier_status_label.text = "Certified: " + msg
+	if status_ticker_label:
+		status_ticker_label.text = "Diplomatic Dispatch: " + msg
+
+	return {
+		"success": true,
+		"message": msg,
+		"request_id": req_id,
+		"request_path": req_path
+	}
+
 func execute_crisis_response(decree_type: String, confirmed: bool = true) -> Dictionary:
 	if latest_state.is_empty():
 		var err_msg := "Cannot submit crisis response: No Republic simulation state loaded."
