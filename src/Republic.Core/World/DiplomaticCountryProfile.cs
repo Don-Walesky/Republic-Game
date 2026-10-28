@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using Republic.Core.Economy.Treasury;
+using Republic.Core.Intelligence.Models;
 using Republic.Core.Time;
 using Republic.Core.World.Factories;
 using Republic.Core.World.Models;
@@ -104,6 +105,10 @@ public sealed record DiplomaticCountryProfile
         bool hasAlliance = viewingCountry.HasActiveAgreement(targetCountry.Id, DiplomaticAgreementType.Alliance);
         bool isAuthorized = isSelf || hasAlliance;
 
+        // Check for active classified intelligence dossier acquired on target
+        var intelDossier = viewingCountry.GetLatestIntelligenceForTarget(targetCountry.Id);
+        bool hasFreshIntel = intelDossier != null && intelDossier.FreshnessDaysRemaining > 0;
+
         // Treasury classification
         string treasuryDisplay;
         bool treasuryConfirmed;
@@ -111,6 +116,16 @@ public sealed record DiplomaticCountryProfile
         {
             treasuryDisplay = RepuTreasury.Format(targetCountry.Treasury.Balance) + " (Confirmed)";
             treasuryConfirmed = true;
+        }
+        else if (hasFreshIntel && intelDossier!.ConfirmedTreasury.HasValue)
+        {
+            treasuryDisplay = RepuTreasury.Format(intelDossier.ConfirmedTreasury.Value) + " (Classified Espionage Confirmed)";
+            treasuryConfirmed = true;
+        }
+        else if (hasFreshIntel && intelDossier!.EstimatedTreasury.HasValue)
+        {
+            treasuryDisplay = RepuTreasury.Format(intelDossier.EstimatedTreasury.Value) + " (Espionage Estimate +/- 8%)";
+            treasuryConfirmed = false;
         }
         else
         {
@@ -160,8 +175,19 @@ public sealed record DiplomaticCountryProfile
         bool milConfirmed;
         if (isAuthorized)
         {
-            milDisplay = "85.0% Operational (Peacetime Readiness Confirmed)";
+            var r = targetCountry.LatestSecurityAssessment?.CompositeReadiness ?? 85.0;
+            milDisplay = $"{r:0.0}% Operational (Peacetime Readiness Confirmed)";
             milConfirmed = true;
+        }
+        else if (hasFreshIntel && intelDossier!.ConfirmedMilitaryReadiness.HasValue)
+        {
+            milDisplay = $"{intelDossier.ConfirmedMilitaryReadiness.Value:0.0}% Operational (Covert Reconnaissance Confirmed)";
+            milConfirmed = true;
+        }
+        else if (hasFreshIntel && intelDossier!.EstimatedMilitaryReadiness.HasValue)
+        {
+            milDisplay = $"~{intelDossier.EstimatedMilitaryReadiness.Value:0.0}% (Espionage Signal Estimate)";
+            milConfirmed = false;
         }
         else
         {

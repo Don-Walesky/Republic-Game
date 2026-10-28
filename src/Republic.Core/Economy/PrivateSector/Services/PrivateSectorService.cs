@@ -2,6 +2,7 @@ namespace Republic.Core.Economy.PrivateSector.Services;
 
 using Republic.Core.Economy.PrivateSector.Models;
 using Republic.Core.Media.Models;
+using Republic.Core.NationalStrategy.Models;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
 
@@ -157,6 +158,73 @@ public sealed class PrivateSectorService : IPrivateSectorService
                 Status = InvestmentProposalStatus.Pending,
                 CreatedAtDay = day
             });
+        }
+
+        // 4. Strategic Direction-specific Proposals
+        var stratDir = country.StrategicDirection;
+        if (stratDir == NationalStrategicDirection.ScienceAndTechnology)
+        {
+            var propTechId = $"prop_tech_{vanguard.Id}_d{day}";
+            if (!country.InvestmentProposals.Any(p => p.Id == propTechId))
+            {
+                newProposals.Add(new InvestmentProposal
+                {
+                    Id = propTechId,
+                    InvestorId = vanguard.Id,
+                    InvestorName = vanguard.Name,
+                    Title = "Applied Robotics & Cyber Defense Systems Facility",
+                    Sector = "Technology",
+                    Location = "Arcadia High-Tech Corridor",
+                    InvestorContribution = 2_500_000.0,
+                    RequestedGovernmentFunding = 400_000.0,
+                    RequestedTaxConcession = 4.0,
+                    EstimatedConstructionDays = 6,
+                    ProjectedJobsCreated = 650,
+                    ProjectedGdpBoost = 2_800_000_000.0,
+                    ProjectedAnnualTaxRevenue = 220_000.0,
+                    RisksAndConditions = $"Directly targets {stratDir.GetDisplayName()}; requires high-speed fiber connectivity.",
+                    Status = InvestmentProposalStatus.Pending,
+                    CreatedAtDay = day
+                });
+            }
+        }
+        else if (stratDir == NationalStrategicDirection.InfrastructureDevelopment)
+        {
+            var propInfraId = $"prop_infra_{vanguard.Id}_d{day}";
+            if (!country.InvestmentProposals.Any(p => p.Id == propInfraId))
+            {
+                newProposals.Add(new InvestmentProposal
+                {
+                    Id = propInfraId,
+                    InvestorId = vanguard.Id,
+                    InvestorName = vanguard.Name,
+                    Title = "Intermodal Freight Terminal & Cold-Chain Logistics Hub",
+                    Sector = "Transport",
+                    Location = "Central Railway Junction",
+                    InvestorContribution = 1_800_000.0,
+                    RequestedGovernmentFunding = 350_000.0,
+                    RequestedTaxConcession = 3.0,
+                    EstimatedConstructionDays = 5,
+                    ProjectedJobsCreated = 500,
+                    ProjectedGdpBoost = 1_900_000_000.0,
+                    ProjectedAnnualTaxRevenue = 150_000.0,
+                    RisksAndConditions = $"Directly targets {stratDir.GetDisplayName()}; requires municipal land-use permits.",
+                    Status = InvestmentProposalStatus.Pending,
+                    CreatedAtDay = day
+                });
+            }
+        }
+
+        // Apply alignment incentives: if proposal matches national direction, private investor contributes more and requests less funding
+        var primarySectors = stratDir.GetPrimarySectors();
+        foreach (var p in newProposals)
+        {
+            if (primarySectors.Any(s => p.Sector.Contains(s, StringComparison.OrdinalIgnoreCase) || s.Contains(p.Sector, StringComparison.OrdinalIgnoreCase)))
+            {
+                p.InvestorContribution = Math.Round(p.InvestorContribution * 1.25, 0);
+                p.RequestedGovernmentFunding = Math.Round(p.RequestedGovernmentFunding * 0.80, 0);
+                p.RisksAndConditions += $" [Aligned with National Strategy: {stratDir.GetDisplayName()}]";
+            }
         }
 
         country.InvestmentProposals.AddRange(newProposals);

@@ -72,9 +72,9 @@ public sealed class InvestmentProposal
     public string Location { get; init; } = "Capital Industrial District";
 
     /// <summary>
-    /// Gets the private capital committed by the investor in REPU.
+    /// Gets or sets the private capital committed by the investor in REPU.
     /// </summary>
-    public double InvestorContribution { get; init; } = 1_000_000.0;
+    public double InvestorContribution { get; set; } = 1_000_000.0;
 
     /// <summary>
     /// Gets or sets the requested government co-funding contribution in REPU.
@@ -107,9 +107,9 @@ public sealed class InvestmentProposal
     public double ProjectedAnnualTaxRevenue { get; init; } = 80_000.0;
 
     /// <summary>
-    /// Gets the commercial risks, infrastructure prerequisites, or civic conditions noted in the proposal.
+    /// Gets or sets the commercial risks, infrastructure prerequisites, or civic conditions noted in the proposal.
     /// </summary>
-    public string RisksAndConditions { get; init; } = string.Empty;
+    public string RisksAndConditions { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the lifecycle status of the proposal.

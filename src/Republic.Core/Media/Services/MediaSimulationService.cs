@@ -3,6 +3,7 @@ namespace Republic.Core.Media.Services;
 using Republic.Core.Crises.Models;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Media.Models;
+using Republic.Core.NationalStrategy.Models;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
 
@@ -257,6 +258,84 @@ public sealed class MediaSimulationService : IMediaSimulationService
                     StabilityImpact = 1.5
                 });
             }
+        }
+
+        // 5. National Strategic Direction Scrutiny & Progress Reporting
+        var stratDir = country.StrategicDirection;
+        var stratRepId = $"rep_strat_direction_{stratDir}_{day}";
+        if (!country.MediaReports.Any(r => r.Id == stratRepId))
+        {
+            var profile = country.StrategyProfile;
+            double progress = profile?.ProgressIndex ?? 15.0;
+            bool isTransitioning = profile?.IsTransitioning ?? false;
+
+            string headline;
+            string summary;
+            MediaReportSentiment sentiment;
+            double appImpact;
+            double stabImpact;
+            var targetOutlet = (progress >= 35.0) ? stateOutlet : indepOutlet;
+
+            if (isTransitioning)
+            {
+                headline = $"Policy Realignment: Administrative Friction Strains State Agencies under {stratDir.GetDisplayName()}";
+                summary = $"Government departments undergo restructuring as the administration shifts national development priorities. Parliamentary critics cite short-term disruption.";
+                sentiment = MediaReportSentiment.Sensationalized;
+                appImpact = -1.5;
+                stabImpact = -2.0;
+            }
+            else if (progress >= 35.0)
+            {
+                headline = stratDir switch
+                {
+                    NationalStrategicDirection.Industrialisation => "Industrial Renaissance: Factories & Mineral Output Surge Under National Priority",
+                    NationalStrategicDirection.ScienceAndTechnology => "Technological Vanguard: Research & Cyber Modernization Attract Regional Focus",
+                    NationalStrategicDirection.EnergyIndependence => "Power Sovereignty: Domestic Energy Reserves Shield Economy from External Shocks",
+                    NationalStrategicDirection.HumanDevelopment => "Civic Renaissance: Health & Educational Reforms Deliver Measurable Gains",
+                    NationalStrategicDirection.InfrastructureDevelopment => "Arteries of Progress: Highway, Rail & Port Networks Accelerate Distribution",
+                    NationalStrategicDirection.RegionalInfluence => "Sovereign Diplomacy: Bilateral Treaties Elevate Republic to Regional Leadership",
+                    _ => "Balanced Horizons: Equitable National Development Steadies Sovereign Growth"
+                };
+                summary = $"Independent audits confirm genuine progress toward the administration's stated focus on {stratDir.GetDisplayName()} (Progress: {progress:0.#}%).";
+                sentiment = MediaReportSentiment.Positive;
+                appImpact = 2.0;
+                stabImpact = 1.5;
+            }
+            else
+            {
+                headline = stratDir switch
+                {
+                    NationalStrategicDirection.Industrialisation => "Industrial Stagnation: Capital Shortfalls and Factory Delays Threaten Promised Boom",
+                    NationalStrategicDirection.ScienceAndTechnology => "Innovation Bottleneck: High-Tech Ambitions Hampered by Weak R&D Infrastructure",
+                    NationalStrategicDirection.EnergyIndependence => "Energy Vulnerability: Power Shortfalls and Fuel Gaps Expose Self-Sufficiency Goal",
+                    NationalStrategicDirection.HumanDevelopment => "Social Disillusionment: Living Standard Gains Lag Behind Executive Promises",
+                    NationalStrategicDirection.InfrastructureDevelopment => "Logistical Gridlock: Deteriorating Arteries and Potholes Stymie Transport Plan",
+                    NationalStrategicDirection.RegionalInfluence => "Diplomatic Isolation: Fragile Bilateral Ties Challenge Regional Strategy",
+                    _ => "Strategic Drift: Analysts Question Absence of Clear National Development Focus"
+                };
+                summary = $"Investigative journalists scrutinize executive delivery on {stratDir.GetDisplayName()}, highlighting gaps between official speeches and actual economic indicators.";
+                sentiment = MediaReportSentiment.Critical;
+                appImpact = -2.5;
+                stabImpact = -2.0;
+            }
+
+            newReports.Add(new MediaReport
+            {
+                Id = stratRepId,
+                OutletId = targetOutlet.Id,
+                OutletName = targetOutlet.Name,
+                Leaning = targetOutlet.Leaning,
+                Headline = headline,
+                ArticleSummary = summary,
+                Category = "NationalStrategy",
+                Sentiment = sentiment,
+                EventSource = "national_strategic_direction",
+                OutletCredibility = targetOutlet.Credibility,
+                OutletReach = targetOutlet.AudienceReach,
+                PublishedDay = day,
+                PublicApprovalImpact = appImpact,
+                StabilityImpact = stabImpact
+            });
         }
 
         // Apply balanced impact to country stats for newly published unsuppressed reports

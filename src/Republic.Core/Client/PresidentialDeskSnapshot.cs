@@ -11,6 +11,10 @@ using Republic.Core.Government.Officials.Models;
 using Republic.Core.Government.Officials.Services;
 using Republic.Core.Media.Models;
 using Republic.Core.Media.Services;
+using Republic.Core.Intelligence.Models;
+using Republic.Core.Intelligence.Services;
+using Republic.Core.NationalStrategy.Models;
+using Republic.Core.NationalStrategy.Services;
 using Republic.Core.Time;
 using Republic.Core.World;
 using Republic.Core.World.Factories;
@@ -417,6 +421,115 @@ public sealed record PresidentialDeskSnapshot
     /// </summary>
     [JsonPropertyName("diplomacy_summary")]
     public string DiplomacySummary { get; init; } = "Diplomacy: Sovereign diplomatic missions operational.";
+
+    /// <summary>
+    /// Gets the enum identifier of the active national strategic direction.
+    /// </summary>
+    [JsonPropertyName("strategic_direction")]
+    public string StrategicDirection { get; init; } = "Industrialisation";
+
+    /// <summary>
+    /// Gets the user-friendly display name of the national strategic direction.
+    /// </summary>
+    [JsonPropertyName("strategic_direction_display")]
+    public string StrategicDirectionDisplay { get; init; } = "Industrialisation & Manufacturing";
+
+    /// <summary>
+    /// Gets the empirical strategic progress index percentage (0.0 to 100.0).
+    /// </summary>
+    [JsonPropertyName("strategic_progress_index")]
+    public double StrategicProgressIndex { get; init; } = 15.0;
+
+    /// <summary>
+    /// Gets the formatted strategic progress string (e.g. "25.0%").
+    /// </summary>
+    [JsonPropertyName("strategic_progress")]
+    public string StrategicProgress { get; init; } = "15.0%";
+
+    /// <summary>
+    /// Gets the descriptive policy focus statement for the active strategic direction.
+    /// </summary>
+    [JsonPropertyName("strategic_focus_statement")]
+    public string StrategicFocusStatement { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the days remaining in the policy realignment transition period.
+    /// </summary>
+    [JsonPropertyName("strategic_transition_remaining")]
+    public int StrategicTransitionRemaining { get; init; }
+
+    /// <summary>
+    /// Gets the priority economic and institutional sectors aligned with the active direction.
+    /// </summary>
+    [JsonPropertyName("strategic_priority_sectors")]
+    public IReadOnlyList<string> StrategicPrioritySectors { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets the concise strategic direction summary.
+    /// </summary>
+    [JsonPropertyName("strategic_summary")]
+    public string StrategicSummary { get; init; } = "Industrialisation & Manufacturing (Progress: 15.0%)";
+
+    /// <summary>
+    /// Gets the authoritative composite military progression level (1 to 30).
+    /// </summary>
+    [JsonPropertyName("military_level")]
+    public int MilitaryLevel { get; init; } = 12;
+
+    /// <summary>
+    /// Gets the authoritative domestic counterintelligence defense rating (0.0 to 100.0).
+    /// </summary>
+    [JsonPropertyName("counterintelligence_level")]
+    public double CounterintelligenceLevel { get; init; } = 65.0;
+
+    /// <summary>
+    /// Gets the formatted counterintelligence rating string.
+    /// </summary>
+    [JsonPropertyName("counterintelligence_display")]
+    public string CounterintelligenceDisplay { get; init; } = "65.0% (Domestic Security Counter-Surveillance)";
+
+    /// <summary>
+    /// Gets whether Tier 1 Basic Espionage operations are currently unlocked.
+    /// </summary>
+    [JsonPropertyName("basic_espionage_unlocked")]
+    public bool BasicEspionageUnlocked { get; init; }
+
+    /// <summary>
+    /// Gets the operational explanation or prerequisite lock reason for basic espionage.
+    /// </summary>
+    [JsonPropertyName("basic_espionage_lock_reason")]
+    public string BasicEspionageLockReason { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets whether Tier 2 Advanced Espionage operations are currently unlocked.
+    /// </summary>
+    [JsonPropertyName("advanced_espionage_unlocked")]
+    public bool AdvancedEspionageUnlocked { get; init; }
+
+    /// <summary>
+    /// Gets the operational explanation or prerequisite lock reason for advanced espionage.
+    /// </summary>
+    [JsonPropertyName("advanced_espionage_lock_reason")]
+    public string AdvancedEspionageLockReason { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the executive intelligence and security summary string.
+    /// </summary>
+    [JsonPropertyName("intelligence_summary")]
+    public string IntelligenceSummary { get; init; } = "Intelligence: Defense intelligence network operational.";
+
+    /// <summary>
+    /// Gets the active, scheduled, and past covert intelligence operations initiated by this sovereign country.
+    /// </summary>
+    [JsonPropertyName("active_intelligence_operations")]
+    public IReadOnlyList<IntelligenceOperationSnapshot> ActiveIntelligenceOperations { get; init; } = Array.Empty<IntelligenceOperationSnapshot>();
+
+    /// <summary>
+    /// Gets the classified dossier reports gathered on foreign nations.
+    /// Restricted strictly to the player's sovereign nation (never leaked to peer clients).
+    /// </summary>
+    [JsonPropertyName("acquired_intelligence_dossiers")]
+    public IReadOnlyList<IntelligenceDossierSnapshot> AcquiredIntelligenceDossiers { get; init; } = Array.Empty<IntelligenceDossierSnapshot>();
 
     /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
@@ -876,6 +989,59 @@ public sealed record PresidentialDeskSnapshot
         var pendingDealCount = tradeProposalSnapshots.Count(p => p.Status is "Pending" or "Countered");
         var diplomacySummaryText = $"Diplomacy: {diplomaticProfileSnapshots.Count - 1} Foreign Nations Registered | {pendingDealCount} Active Proposals | {activeTreatyCount} Ratified Treaties";
 
+        // Strategic Direction integration
+        var strategyService = new NationalStrategyService();
+        var strategyProfile = strategyService.EnsureStrategyProfile(country, simulationTime);
+        strategyService.UpdateStrategicProgress(country, simulationTime);
+
+        // Intelligence & Espionage progression integration
+        var intelProgService = new IntelligenceProgressionService();
+        intelProgService.DegradeIntelligenceFreshness(country, simulationTime);
+        var (basicUnlocked, basicReason, _) = intelProgService.CheckOperationPrerequisites(country, IntelligenceOperationType.StrategicIntelligence);
+        var (advUnlocked, advReason, _) = intelProgService.CheckOperationPrerequisites(country, IntelligenceOperationType.AdvancedEspionage);
+
+        var intelOpSnapshots = country.IntelligenceOperations.Select(op => new IntelligenceOperationSnapshot
+        {
+            Id = op.Id,
+            InitiatorCountryId = op.InitiatorCountryId,
+            TargetCountryId = op.TargetCountryId,
+            TargetCountryName = op.TargetCountryName,
+            OperationType = op.Type.ToString(),
+            Title = op.Title,
+            FinancialCost = op.FinancialCost,
+            FinancialCostFormatted = RepuTreasury.Format(op.FinancialCost),
+            RequiredMilitaryLevel = op.RequiredMilitaryLevel,
+            Status = op.Status.ToString(),
+            RiskRating = op.RiskRating,
+            SuccessProbability = op.SuccessProbability,
+            IsDetected = op.IsDetected,
+            OutcomeMessage = op.OutcomeMessage
+        }).ToList();
+
+        var dossierSnapshots = country.AcquiredIntelligence.Select(d => new IntelligenceDossierSnapshot
+        {
+            Id = d.Id,
+            TargetCountryId = d.TargetCountryId,
+            TargetCountryName = d.TargetCountryName,
+            OperationType = d.OperationType.ToString(),
+            Title = d.Title,
+            AcquiredDay = d.AcquiredDay,
+            FreshnessDaysRemaining = d.FreshnessDaysRemaining,
+            Confidence = d.Confidence.ToString(),
+            ReportSummary = d.ReportSummary,
+            ConfirmedTreasury = d.ConfirmedTreasury,
+            EstimatedTreasury = d.EstimatedTreasury,
+            ConfirmedMilitaryReadiness = d.ConfirmedMilitaryReadiness,
+            EstimatedMilitaryReadiness = d.EstimatedMilitaryReadiness,
+            ConfirmedGdp = d.ConfirmedGdp,
+            EstimatedGdp = d.EstimatedGdp,
+            DiscoveredProjects = d.DiscoveredProjects.AsReadOnly(),
+            DiscoveredVulnerabilities = d.DiscoveredVulnerabilities.AsReadOnly()
+        }).ToList();
+
+        var activeOpsCount = intelOpSnapshots.Count(o => o.Status is "Preparing" or "InProgress");
+        var intelSummaryText = $"Intelligence: Level {country.MilitaryLevel} Armed Forces | {activeOpsCount} Active Operations | {dossierSnapshots.Count} Acquired Dossiers";
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -941,6 +1107,24 @@ public sealed record PresidentialDeskSnapshot
             ExportOpportunities = selfProfile.ExportOpportunities,
             ImportNeeds = selfProfile.ImportNeeds,
             DiplomacySummary = diplomacySummaryText,
+            StrategicDirection = strategyProfile.Direction.ToString(),
+            StrategicDirectionDisplay = strategyProfile.Direction.GetDisplayName(),
+            StrategicProgressIndex = strategyProfile.ProgressIndex,
+            StrategicProgress = $"{strategyProfile.ProgressIndex:0.0}%",
+            StrategicFocusStatement = strategyProfile.FocusStatement,
+            StrategicTransitionRemaining = strategyProfile.TransitionDaysRemaining,
+            StrategicPrioritySectors = strategyProfile.PrioritySectors.AsReadOnly(),
+            StrategicSummary = strategyProfile.FormatSummary(),
+            MilitaryLevel = country.MilitaryLevel,
+            CounterintelligenceLevel = Math.Round(country.CounterintelligenceLevel, 1),
+            CounterintelligenceDisplay = $"{country.CounterintelligenceLevel:0.0}% (Domestic Counter-Surveillance)",
+            BasicEspionageUnlocked = basicUnlocked,
+            BasicEspionageLockReason = basicReason,
+            AdvancedEspionageUnlocked = advUnlocked,
+            AdvancedEspionageLockReason = advReason,
+            IntelligenceSummary = intelSummaryText,
+            ActiveIntelligenceOperations = intelOpSnapshots.AsReadOnly(),
+            AcquiredIntelligenceDossiers = dossierSnapshots.AsReadOnly(),
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,

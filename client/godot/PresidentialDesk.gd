@@ -119,6 +119,28 @@ func _get_required_node(node_path: String) -> Node:
 @onready var buff_status_label: Label = _get_required_node("VBoxContainer/BuffStatusLabel") as Label
 @onready var ad_placeholder: ColorRect = _get_required_node("VBoxContainer/AdPlaceholder") as ColorRect
 
+## Phase 5 National Strategic Direction & Intelligence Progression
+@onready var strategic_direction_label: Label = _get_required_node("StrategicDirectionLabel") as Label
+@onready var strategic_focus_label: Label = _get_required_node("StrategicFocusLabel") as Label
+@onready var military_progression_label: Label = _get_required_node("MilitaryProgressionLabel") as Label
+@onready var intelligence_status_label: Label = _get_required_node("IntelligenceStatusLabel") as Label
+@onready var intelligence_dossier_label: Label = _get_required_node("IntelligenceDossierLabel") as Label
+
+var strategic_direction: String = "Industrialisation"
+var strategic_direction_display: String = "Industrialisation & Manufacturing Expansion"
+var strategic_focus_statement: String = ""
+var strategic_transition_remaining: int = 0
+var strategic_progress_index: float = 0.0
+
+var military_level: int = 12
+var base_military_level: int = 12
+var counterintelligence_level: float = 50.0
+var basic_espionage_unlocked: bool = false
+var advanced_espionage_unlocked: bool = false
+var espionage_lock_reason: String = ""
+var active_intelligence_operations: Array = []
+var acquired_intelligence_dossiers: Array = []
+
 ## Navigation Sections
 enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS }
 var active_section: Section = Section.OVERVIEW
@@ -1047,6 +1069,58 @@ func apply_state(data: Dictionary) -> void:
 	if _is_network_connected:
 		_send_local_country_snapshot()
 		_update_network_status_display()
+
+	# Phase 5: National Strategic Direction & Intelligence Progression state synchronization
+	strategic_direction = str(data.get("strategic_direction", "Industrialisation"))
+	strategic_direction_display = str(data.get("strategic_direction_display", strategic_direction))
+	strategic_focus_statement = str(data.get("strategic_focus_statement", ""))
+	strategic_transition_remaining = int(data.get("strategic_transition_remaining", 0))
+	strategic_progress_index = float(data.get("strategic_progress_index", 0.0))
+
+	military_level = int(data.get("military_level", 12))
+	base_military_level = int(data.get("base_military_level", 12))
+	counterintelligence_level = float(data.get("counterintelligence_level", 50.0))
+	basic_espionage_unlocked = bool(data.get("basic_espionage_unlocked", false))
+	advanced_espionage_unlocked = bool(data.get("advanced_espionage_unlocked", false))
+	espionage_lock_reason = str(data.get("espionage_lock_reason", ""))
+	active_intelligence_operations = data.get("active_intelligence_operations", [])
+	acquired_intelligence_dossiers = data.get("acquired_intelligence_dossiers", [])
+
+	if strategic_direction_label:
+		if strategic_transition_remaining > 0:
+			strategic_direction_label.text = "Strategic Direction: %s [Transitioning: %d days remaining] (Progress: %.1f%%)" % [strategic_direction_display, strategic_transition_remaining, strategic_progress_index]
+		else:
+			strategic_direction_label.text = "Strategic Direction: %s (Progress: %.1f%%)" % [strategic_direction_display, strategic_progress_index]
+
+	if strategic_focus_label:
+		strategic_focus_label.text = "Strategic Focus: " + strategic_focus_statement
+
+	if military_progression_label:
+		military_progression_label.text = "Military Level: %d (Base: %d) | Counterintelligence: %.1f" % [military_level, base_military_level, counterintelligence_level]
+
+	if intelligence_status_label:
+		var esp_tier := "Tier 0 (Domestic / Recon Only)"
+		if advanced_espionage_unlocked:
+			esp_tier = "Tier 2 (Advanced Strategic Espionage & Cyber Operations Unlocked)"
+		elif basic_espionage_unlocked:
+			esp_tier = "Tier 1 (Basic Foreign Espionage Authorized)"
+		
+		if not advanced_espionage_unlocked and not espionage_lock_reason.is_empty():
+			intelligence_status_label.text = "Intelligence: %s — %s" % [esp_tier, espionage_lock_reason]
+		else:
+			intelligence_status_label.text = "Intelligence: %s" % esp_tier
+
+	if intelligence_dossier_label:
+		if acquired_intelligence_dossiers is Array and not acquired_intelligence_dossiers.is_empty():
+			var latest_dossier = acquired_intelligence_dossiers[0]
+			if latest_dossier is Dictionary:
+				var d_title: String = str(latest_dossier.get("title", "Classified Dossier"))
+				var d_target: String = str(latest_dossier.get("target_country_name", "Foreign Power"))
+				var d_conf: String = str(latest_dossier.get("confidence", "Classified"))
+				var d_fresh: int = int(latest_dossier.get("freshness_days_remaining", 30))
+				intelligence_dossier_label.text = "Dossier: [%s] %s on %s (Freshness: %d days)" % [d_conf, d_title, d_target, d_fresh]
+		else:
+			intelligence_dossier_label.text = "Dossier: [No foreign intelligence gathered]"
 
 
 ## Formats the status label text to clearly display connection state, state file presence,
@@ -2311,6 +2385,233 @@ func execute_crisis_response(decree_type: String, confirmed: bool) -> Dictionary
 	return { "success": true, "result": "Pending", "message": submit_msg }
 
 
+## Submits a strategic direction change decision via file-based request (presidential_desk_request.json)
+func execute_strategic_direction_decision(direction: String, confirmed: bool = true) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	if not _is_connected or _latest_state.is_empty():
+		var no_state_msg := "Cannot submit strategic direction decision: No Republic simulation state loaded."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Missing or Corrupted Save - " + no_state_msg
+		return {
+			"success": false,
+			"result": "StateMissingOrCorrupt",
+			"message": no_state_msg
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_strat_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id if confirmed else ""
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "set_strategic_direction",
+		"direction": direction,
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create strategic direction request file: " + request_path
+		_active_request_id = ""
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Error - " + err_msg
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	if not confirmed:
+		_is_waiting_for_decision = false
+		_active_request_id = ""
+		var cancel_msg := "Strategic direction change cancelled by executive order. Zero funds deducted."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Cancelled] " + cancel_msg
+		return {
+			"success": false,
+			"result": "Cancelled",
+			"message": cancel_msg
+		}
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	var submit_msg := "Strategic direction transition to '%s' submitted. Awaiting simulation..." % direction
+	if decision_result_label:
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Strategic direction request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
+
+## Submits an intelligence operation launch decision via file-based request (presidential_desk_request.json)
+func execute_intelligence_operation(operation_type: String, target_country_id: String, title: String, confirmed: bool = true, resolve_immediately: bool = false) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	if not _is_connected or _latest_state.is_empty():
+		var no_state_msg := "Cannot submit intelligence operation: No Republic simulation state loaded."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Missing or Corrupted Save - " + no_state_msg
+		return {
+			"success": false,
+			"result": "StateMissingOrCorrupt",
+			"message": no_state_msg
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_intel_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id if confirmed else ""
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "launch_intelligence_operation",
+		"operation_type": operation_type,
+		"target_country_id": target_country_id,
+		"title": title,
+		"confirmed": confirmed,
+		"resolve_immediately": resolve_immediately,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create intelligence request file: " + request_path
+		_active_request_id = ""
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Error - " + err_msg
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	if not confirmed:
+		_is_waiting_for_decision = false
+		_active_request_id = ""
+		var cancel_msg := "Intelligence operation launch cancelled by executive order. Zero operational funds deducted."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Cancelled] " + cancel_msg
+		return {
+			"success": false,
+			"result": "Cancelled",
+			"message": cancel_msg
+		}
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	var submit_msg := "Intelligence operation '%s' submitted for authorization. Awaiting simulation..." % title
+	if decision_result_label:
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Intelligence request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
+
+## Submits a domestic counterintelligence sweep decision via file-based request (presidential_desk_request.json)
+func execute_counterintelligence_sweep(confirmed: bool = true) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	if not _is_connected or _latest_state.is_empty():
+		var no_state_msg := "Cannot submit counterintelligence sweep: No Republic simulation state loaded."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Missing or Corrupted Save - " + no_state_msg
+		return {
+			"success": false,
+			"result": "StateMissingOrCorrupt",
+			"message": no_state_msg
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_sweep_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id if confirmed else ""
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "counterintelligence_sweep",
+		"confirmed": confirmed,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create counterintelligence sweep request file: " + request_path
+		_active_request_id = ""
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Rejected] Error - " + err_msg
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	if not confirmed:
+		_is_waiting_for_decision = false
+		_active_request_id = ""
+		var cancel_msg := "Counterintelligence sweep cancelled by executive order. Zero funds deducted."
+		if decision_result_label:
+			decision_result_label.text = "Decision Result: [Cancelled] " + cancel_msg
+		return {
+			"success": false,
+			"result": "Cancelled",
+			"message": cancel_msg
+		}
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	var submit_msg := "Counterintelligence sweep order submitted. Awaiting simulation..."
+	if decision_result_label:
+		decision_result_label.text = "Decision Result: [Pending] " + submit_msg
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Sweep request written to " + DEFAULT_REQUEST_FILENAME, "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
+
 ## Handles incoming structured action results from Republic simulation
 func _handle_decision_result(result_dict: Dictionary) -> void:
 	_is_waiting_for_decision = false
@@ -3067,4 +3368,3 @@ func _on_buy_admin_buff_pressed() -> void:
 
 func _on_buy_investor_buff_pressed() -> void:
 	buy_buff("investor_confidence", "Investor Confidence", 1.99)
-

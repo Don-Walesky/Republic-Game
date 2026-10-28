@@ -12,7 +12,11 @@ using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Government.Officials.Services;
+using Republic.Core.Intelligence.Models;
+using Republic.Core.Intelligence.Services;
 using Republic.Core.Media.Services;
+using Republic.Core.NationalStrategy.Models;
+using Republic.Core.NationalStrategy.Services;
 using Republic.Core.Persistence;
 using Republic.Core.Persistence.Models;
 using Republic.Core.Persistence.Services;
@@ -5008,6 +5012,327 @@ public static class PresidentialDeskBridge
     }
 
     /// <summary>
+    /// Applies an executive decision to adopt or transition to a new national strategic direction.
+    /// Incurs R 25M retooling expense, political transition friction (-5% stability, -4% approval), and enforces cooldown.
+    /// </summary>
+    public static PresidentialActionResult ApplyStrategicDirectionDecision(
+        string strategicDirectionName,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "set national strategic direction");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!Enum.TryParse<NationalStrategicDirection>(strategicDirectionName, true, out var direction))
+        {
+            var invalidDirResult = CreateInvalidInputResult(
+                targetStatePath,
+                $"Invalid national strategic direction '{strategicDirectionName}'. Valid options: Industrialisation, ScienceAndTechnology, EnergyIndependence, HumanDevelopment, InfrastructureDevelopment, RegionalInfluence, BalancedGrowth.",
+                requestId);
+            TryWriteResultFile(targetStatePath, invalidDirResult);
+            return invalidDirResult;
+        }
+
+        var strategyService = new NationalStrategyService();
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose adopting {direction.GetDisplayName()}: R 25,000,000 administrative retooling expense, 14-day transition friction (-5% stability, -4% approval), and 30-day change cooldown.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        var (success, outcomeMessage, profile) = strategyService.SetStrategicDirection(country!, direction, simTime);
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var result = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = success,
+            Result = success ? "Success" : "Failed",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+
+        TryWriteResultFile(targetStatePath, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Applies an executive directive to launch or execute a covert foreign espionage or domestic reconnaissance operation.
+    /// Validates military level unlocking thresholds (L15 for basic, L20 for advanced) and prerequisites.
+    /// </summary>
+    public static PresidentialActionResult ApplyLaunchIntelligenceOperation(
+        string operationTypeName,
+        string targetCountryId,
+        string? title = null,
+        bool confirmed = true,
+        bool resolveImmediately = false,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "launch intelligence operation");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!Enum.TryParse<IntelligenceOperationType>(operationTypeName, true, out var opType))
+        {
+            var invalidTypeResult = CreateInvalidInputResult(
+                targetStatePath,
+                $"Invalid intelligence operation type '{operationTypeName}'.",
+                requestId);
+            TryWriteResultFile(targetStatePath, invalidTypeResult);
+            return invalidTypeResult;
+        }
+
+        var world = envelope?.State?.World;
+        var targetCountry = world?.Countries?.FirstOrDefault(c => string.Equals(c.Id, targetCountryId, StringComparison.OrdinalIgnoreCase));
+
+        if (targetCountry == null && opType >= IntelligenceOperationType.StrategicIntelligence)
+        {
+            var invalidTargetResult = CreateInvalidInputResult(
+                targetStatePath,
+                $"Foreign espionage target nation '{targetCountryId}' was not found in world state.",
+                requestId);
+            TryWriteResultFile(targetStatePath, invalidTargetResult);
+            return invalidTargetResult;
+        }
+
+        var intelService = new IntelligenceProgressionService();
+        var (isUnlocked, unlockReason, reqLevel) = intelService.CheckOperationPrerequisites(country!, opType);
+
+        if (!isUnlocked)
+        {
+            var lockedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PrerequisitesNotMet",
+                Message = $"Intelligence operation locked: {unlockReason}",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, lockedResult);
+            return lockedResult;
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Ready to launch {opType} targeting {targetCountry?.Name ?? targetCountryId}. Prerequisites verified at Military Level {country!.MilitaryLevel}.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        var effectiveTarget = targetCountry ?? country!;
+        var opTitle = !string.IsNullOrWhiteSpace(title) ? title : $"{opType} against {effectiveTarget.Name}";
+        var (launchSuccess, outcomeMessage, op) = intelService.LaunchOperation(country!, effectiveTarget, opType, opTitle, simTime);
+
+        if (op != null && resolveImmediately)
+        {
+            var (_, resMsg, _) = intelService.ResolveOperation(op, country!, effectiveTarget, simTime);
+            outcomeMessage = resMsg;
+        }
+
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var result = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = launchSuccess,
+            Result = launchSuccess ? "Success" : "Failed",
+            Message = outcomeMessage,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+
+        TryWriteResultFile(targetStatePath, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Applies an executive directive to execute a domestic counterintelligence sweep.
+    /// Uncovers foreign espionage threats and heightens security posture.
+    /// </summary>
+    public static PresidentialActionResult ApplyCounterintelligenceSweep(
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "conduct counterintelligence sweep");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Domestic counterintelligence sweep stood down by presidential instruction.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        var intelService = new IntelligenceProgressionService();
+        var outcome = intelService.ConductCounterintelligenceSweep(country!, simTime);
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country!, simTime, tick, targetSavePath);
+            }
+        }
+        catch { /* best-effort save */ }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcome.Message)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcome.Message);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var result = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = outcome.Success,
+            Result = outcome.Success ? "Success" : "Failed",
+            Message = outcome.Message,
+            CountryName = country!.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+
+        TryWriteResultFile(targetStatePath, result);
+        return result;
+    }
+
+    /// <summary>
     /// Checks for and processes any pending presidential decision request written to disk by the Godot client.
     /// If presidential_desk_request.json exists, reads the proposed rate and confirmed flag,
     /// applies the decision via <see cref="ApplyTaxDecision(double, bool, string?, string?)"/>,
@@ -5753,6 +6078,98 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyRecognizeDiplomaticRelation(targetCountryId, recConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "set_strategic_direction" or "change_strategic_direction" or "set_strategy" or "change_strategy")
+                    {
+                        string direction = string.Empty;
+                        if (root.TryGetProperty("direction", out var dirEl) && dirEl.ValueKind == JsonValueKind.String)
+                        {
+                            direction = dirEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("strategic_direction", out var sDirEl) && sDirEl.ValueKind == JsonValueKind.String)
+                        {
+                            direction = sDirEl.GetString() ?? string.Empty;
+                        }
+
+                        bool dirConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var dConfEl) && (dConfEl.ValueKind == JsonValueKind.True || dConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            dirConfirmed = dConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyStrategicDirectionDecision(direction, dirConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "launch_intelligence_operation" or "launch_intelligence_op" or "spy_operation" or "launch_spy_op")
+                    {
+                        string opType = string.Empty;
+                        if (root.TryGetProperty("operation_type", out var otEl) && otEl.ValueKind == JsonValueKind.String)
+                        {
+                            opType = otEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            opType = tEl.GetString() ?? string.Empty;
+                        }
+
+                        string targetCountryId = string.Empty;
+                        if (root.TryGetProperty("target_country_id", out var tcIdEl) && tcIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryId = tcIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("target", out var tgEl) && tgEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryId = tgEl.GetString() ?? string.Empty;
+                        }
+
+                        string? title = root.TryGetProperty("title", out var titleEl) ? titleEl.GetString() : null;
+
+                        bool intelConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var iConfEl) && (iConfEl.ValueKind == JsonValueKind.True || iConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            intelConfirmed = iConfEl.GetBoolean();
+                        }
+
+                        bool resolveImmediately = false;
+                        if (root.TryGetProperty("resolve_immediately", out var resImmEl) && (resImmEl.ValueKind == JsonValueKind.True || resImmEl.ValueKind == JsonValueKind.False))
+                        {
+                            resolveImmediately = resImmEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyLaunchIntelligenceOperation(opType, targetCountryId, title, intelConfirmed, resolveImmediately, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "counterintelligence_sweep" or "conduct_counterintelligence_sweep" or "security_sweep")
+                    {
+                        bool sweepConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var sConfEl) && (sConfEl.ValueKind == JsonValueKind.True || sConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            sweepConfirmed = sConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyCounterintelligenceSweep(sweepConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

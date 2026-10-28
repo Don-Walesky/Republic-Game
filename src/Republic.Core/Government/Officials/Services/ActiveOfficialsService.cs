@@ -7,6 +7,7 @@ using Republic.Core.Cabinet.Models;
 using Republic.Core.Crises.Models;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Military.Models;
+using Republic.Core.NationalStrategy.Models;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
 
@@ -160,6 +161,22 @@ public sealed class ActiveOfficialsService : IActiveOfficialsService
                 CreatedDay = simulationTime.DayNumber
             });
         }
+
+        // 5. National Strategic Direction Alignment
+        var stratDir = country.StrategicDirection;
+        var stratProfile = country.StrategyProfile;
+        var stratProg = stratProfile?.ProgressIndex ?? 15.0;
+        newCandidates.Add(new ChiefOfStaffRecommendation
+        {
+            Id = $"rec_strategy_{stratDir}",
+            Title = $"National Priority: {stratDir.GetDisplayName()}",
+            Summary = $"Current strategic progress is evaluated at {stratProg:0.#}%. Executive focus should center on {string.Join(", ", stratDir.GetPrimarySectors())} to solidify long-term sovereign goals.",
+            Category = "NationalStrategy",
+            Priority = stratProfile?.IsTransitioning == true ? RecommendationPriority.High : RecommendationPriority.Medium,
+            IsUrgent = stratProfile?.IsTransitioning == true,
+            RecommendedAction = $"advance_strategy_{stratDir.ToString().ToLowerInvariant()}",
+            CreatedDay = simulationTime.DayNumber
+        });
 
         // Deduplicate and integrate candidates with existing recommendations
         foreach (var cand in newCandidates)

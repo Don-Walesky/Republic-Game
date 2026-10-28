@@ -8,6 +8,8 @@ using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Media.Models;
+using Republic.Core.Intelligence.Models;
+using Republic.Core.NationalStrategy.Models;
 using Republic.Core.NationalYield;
 using Republic.Core.Politics;
 using Republic.Core.Time;
@@ -1743,6 +1745,142 @@ public sealed class Country
     }
 
     /// <summary>
+    /// Gets or sets the long-term national strategic direction.
+    /// </summary>
+    [JsonPropertyName("strategic_direction")]
+    public NationalStrategicDirection StrategicDirection { get; set; } = NationalStrategicDirection.Industrialisation;
+
+    /// <summary>
+    /// Gets or sets the authoritative national strategy profile tracking transition friction, progress, and focus.
+    /// </summary>
+    [JsonPropertyName("strategy_profile")]
+    public NationalStrategyProfile? StrategyProfile { get; set; }
+
+    /// <summary>
+    /// Gets or sets the base military progression level before operational bonuses (1 to 30).
+    /// </summary>
+    [JsonPropertyName("base_military_level")]
+    public int BaseMilitaryLevel { get; set; } = 12;
+
+    /// <summary>
+    /// Gets the authoritative composite military progression level (1 to 30),
+    /// calculated from base level, readiness, personnel, equipment, budget, and cyber capabilities.
+    /// </summary>
+    [JsonPropertyName("military_level")]
+    public int MilitaryLevel
+    {
+        get
+        {
+            int level = BaseMilitaryLevel;
+            var readiness = BaselineStability;
+            if (LatestSecurityAssessment != null)
+            {
+                readiness = LatestSecurityAssessment.CompositeReadiness;
+            }
+
+            // Readiness bonus (up to +4)
+            level += (int)Math.Clamp(readiness / 25.0, 0.0, 4.0);
+
+            // Defense budget bonus (up to +4)
+            if (MinistryBudget != null)
+            {
+                level += (int)Math.Clamp(MinistryBudget.DefenseAllocation / 100_000_000.0, 0.0, 4.0);
+            }
+
+            // State capacity / Civil service / cyber bonus (up to +3)
+            if (StateCapacity != null)
+            {
+                level += (int)Math.Clamp((StateCapacity.CivilServiceQuality ?? 0.3) * 3.0, 0.0, 3.0);
+            }
+
+            // Defense Minister competence bonus (up to +2)
+            var defMinister = GetMinister(CabinetPortfolio.Defense);
+            if (defMinister != null && defMinister.Competence >= 0.7)
+            {
+                level += 2;
+            }
+
+            return Math.Clamp(level, 1, 30);
+        }
+    }
+
+    /// <summary>
+    /// Gets the authoritative domestic counterintelligence defense rating (0.0 to 100.0),
+    /// driven by Interior portfolio, corruption control, and defense readiness.
+    /// </summary>
+    [JsonPropertyName("counterintelligence_level")]
+    public double CounterintelligenceLevel
+    {
+        get
+        {
+            double corr = StateCapacity?.CorruptionControl ?? 0.3;
+            double civil = StateCapacity?.CivilServiceQuality ?? 0.3;
+            var intMinister = GetMinister(CabinetPortfolio.Interior);
+            double ministerBonus = intMinister != null ? (intMinister.Competence * 25.0) : 10.0;
+            return Math.Clamp((corr * 40.0) + (civil * 25.0) + ministerBonus, 10.0, 100.0);
+        }
+    }
+
+    /// <summary>
+    /// Gets the list of active, scheduled, and past intelligence operations initiated by this sovereign country.
+    /// </summary>
+    [JsonPropertyName("intelligence_operations")]
+    public List<IntelligenceOperation> IntelligenceOperations { get; set; } = new();
+
+    /// <summary>
+    /// Gets the classified dossier reports gathered on foreign nations.
+    /// Authoritative and private to this country (never leaked to peer clients).
+    /// </summary>
+    [JsonPropertyName("acquired_intelligence")]
+    public List<IntelligenceDossierReport> AcquiredIntelligence { get; set; } = new();
+
+    /// <summary>
+    /// Adds or updates an intelligence operation record.
+    /// </summary>
+    public void StoreIntelligenceOperation(IntelligenceOperation op)
+    {
+        ArgumentNullException.ThrowIfNull(op);
+        var idx = IntelligenceOperations.FindIndex(o => string.Equals(o.Id, op.Id, StringComparison.OrdinalIgnoreCase));
+        if (idx >= 0)
+        {
+            IntelligenceOperations[idx] = op;
+        }
+        else
+        {
+            IntelligenceOperations.Add(op);
+        }
+    }
+
+    /// <summary>
+    /// Adds or updates an acquired intelligence dossier report.
+    /// </summary>
+    public void StoreAcquiredIntelligence(IntelligenceDossierReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        var idx = AcquiredIntelligence.FindIndex(r => string.Equals(r.Id, report.Id, StringComparison.OrdinalIgnoreCase));
+        if (idx >= 0)
+        {
+            AcquiredIntelligence[idx] = report;
+        }
+        else
+        {
+            AcquiredIntelligence.Add(report);
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the freshest classified dossier on a target country, or null if none acquired.
+    /// </summary>
+    public IntelligenceDossierReport? GetLatestIntelligenceForTarget(string targetCountryId)
+    {
+        if (string.IsNullOrWhiteSpace(targetCountryId)) return null;
+        return AcquiredIntelligence
+            .Where(r => string.Equals(r.TargetCountryId, targetCountryId.Trim(), StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(r => r.AcquiredDay)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
     /// Gets or sets the national road development project record for this country.
     /// Backward-compatibility accessor backed authoritatively by <see cref="Projects"/>.
     /// </summary>
@@ -2685,7 +2823,12 @@ public sealed class Country
         double tradeBalance = 2_100_000_000.0,
         FiscalQuarterReport? latestFiscalReport = null,
         int lastProcessedFiscalQuarter = 0,
-        IEnumerable<FlexibleTradeTerms>? flexibleTradeProposals = null)
+        IEnumerable<FlexibleTradeTerms>? flexibleTradeProposals = null,
+        NationalStrategicDirection? strategicDirection = null,
+        NationalStrategyProfile? strategyProfile = null,
+        int baseMilitaryLevel = 12,
+        IEnumerable<IntelligenceOperation>? intelligenceOperations = null,
+        IEnumerable<IntelligenceDossierReport>? acquiredIntelligence = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -2710,6 +2853,9 @@ public sealed class Country
             HappinessRating = happinessRating,
             LatestYieldSnapshot = latestYieldSnapshot,
             LatestTreasuryConsequence = latestTreasuryConsequence,
+            StrategicDirection = strategicDirection ?? NationalStrategicDirection.Industrialisation,
+            StrategyProfile = strategyProfile,
+            BaseMilitaryLevel = baseMilitaryLevel,
             TaxPolicy = taxPolicy != null
                 ? new TaxPolicy { IncomeTaxRate = taxPolicy.IncomeTaxRate, CorporateTaxRate = taxPolicy.CorporateTaxRate, ImportTariffRate = taxPolicy.ImportTariffRate }
                 : new TaxPolicy(),
@@ -2767,6 +2913,22 @@ public sealed class Country
                 {
                     country.FlexibleTradeProposals.Add(p);
                 }
+            }
+        }
+
+        if (intelligenceOperations != null)
+        {
+            foreach (var op in intelligenceOperations)
+            {
+                country.StoreIntelligenceOperation(op);
+            }
+        }
+
+        if (acquiredIntelligence != null)
+        {
+            foreach (var intel in acquiredIntelligence)
+            {
+                country.StoreAcquiredIntelligence(intel);
             }
         }
 
