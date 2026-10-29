@@ -322,6 +322,16 @@ func _init_controls() -> void:
 		media_summary_label = _get_required_node("MediaSummaryLabel") as Label
 	if investment_summary_label == null:
 		investment_summary_label = _get_required_node("InvestmentSummaryLabel") as Label
+	if strategic_direction_label == null:
+		strategic_direction_label = _get_required_node("StrategicDirectionLabel") as Label
+	if strategic_focus_label == null:
+		strategic_focus_label = _get_required_node("StrategicFocusLabel") as Label
+	if military_progression_label == null:
+		military_progression_label = _get_required_node("MilitaryProgressionLabel") as Label
+	if intelligence_status_label == null:
+		intelligence_status_label = _get_required_node("IntelligenceStatusLabel") as Label
+	if intelligence_dossier_label == null:
+		intelligence_dossier_label = _get_required_node("IntelligenceDossierLabel") as Label
 
 	if buy_admin_buff_button == null:
 		buy_admin_buff_button = _get_required_node("VBoxContainer/BuffsHBox/AdminBuffPanel/AdminBuffVBox/BuyAdminBuffButton") as Button
