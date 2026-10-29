@@ -3243,7 +3243,8 @@ func _resolve_portfolio_display_data(portfolio: String, state: Dictionary) -> Di
 			if not warn_str.is_empty():
 				ratings_text += " | ⚠️ " + warn_str
 
-			var effect_text := "Advice: %s (Risk: %s, Conf: %0.0f%%) — %s" % [headline, risk_lvl, conf_val, action_str]
+			var cap_text := _get_appointed_effect_string(portfolio, state)
+			var effect_text := "%s | Advice: %s (Risk: %s, Conf: %0.0f%%) — %s" % [cap_text, headline, risk_lvl, conf_val, action_str]
 
 			return {
 				"is_appointed": true,

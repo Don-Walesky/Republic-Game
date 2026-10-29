@@ -3303,10 +3303,28 @@ func _on_reject_trade_button_pressed() -> void:
 
 
 func _apply_local_trade_treasury_adjustment(from_id: String, to_id: String, amount: float) -> void:
-	# PHASE 4 MULTIPLAYER DIPLOMACY: Direct client-side treasury manipulation is removed.
-	# All resource balances and treasury transfers are authoritatively computed and executed
-	# by the host/simulation server. Client UI synchronizes exclusively from authoritative snapshots.
-	pass
+	# Reflect ratified trade funds immediately on desk UI until next authoritative snapshot reload
+	if treasury_label and not treasury_label.text.is_empty():
+		var raw_str := treasury_label.text.replace("Treasury: R ", "").replace("Treasury: ", "").replace(",", "").strip_edges()
+		if raw_str.is_valid_float():
+			var cur_val := raw_str.to_float()
+			if from_id == _local_client_id:
+				cur_val = max(0.0, cur_val - amount)
+				treasury_label.text = "Treasury: R " + _format_number_commas(cur_val)
+			elif to_id == _local_client_id:
+				cur_val += amount
+				treasury_label.text = "Treasury: R " + _format_number_commas(cur_val)
+
+	if foreign_country_treasury_label and not foreign_country_treasury_label.text.is_empty():
+		var peer_raw := foreign_country_treasury_label.text.replace("Treasury: R ", "").replace("Treasury: ", "").replace(",", "").strip_edges()
+		if peer_raw.is_valid_float():
+			var cur_peer := peer_raw.to_float()
+			if from_id == _peer_country_id:
+				cur_peer = max(0.0, cur_peer - amount)
+				foreign_country_treasury_label.text = "Treasury: R " + _format_number_commas(cur_peer)
+			elif to_id == _peer_country_id:
+				cur_peer += amount
+				foreign_country_treasury_label.text = "Treasury: R " + _format_number_commas(cur_peer)
 
 
 func _format_number_commas(val: float) -> String:
