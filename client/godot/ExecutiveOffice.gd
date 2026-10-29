@@ -1659,7 +1659,7 @@ func _on_poll_timer_timeout() -> void:
 
 	if not pending_appointment_request_id.is_empty():
 		if Time.get_ticks_msec() - pending_appointment_request_time > 15000:
-			var timeout_msg := "Order Warning: Cabinet appointment request timed out without response from simulation processor."
+			var timeout_msg := "Order Warning: Cabinet appointment request timed out without response from simulation processor. (Start watcher: dotnet run --project src/Republic.Cli -- --watch-requests)"
 			if appointment_status_label:
 				appointment_status_label.text = timeout_msg
 			if status_ticker_label:
@@ -2529,13 +2529,13 @@ func show_session_briefing(auto_dismiss: bool = true) -> void:
 	if session_briefing_toast:
 		session_briefing_toast.visible = true
 	if auto_dismiss:
-		if session_briefing_timer:
+		if session_briefing_timer and session_briefing_timer.is_inside_tree():
 			session_briefing_timer.start(5.0)
 
 func dismiss_session_briefing() -> void:
 	if session_briefing_toast:
 		session_briefing_toast.visible = false
-	if session_briefing_timer and not session_briefing_timer.is_stopped():
+	if session_briefing_timer and session_briefing_timer.is_inside_tree() and not session_briefing_timer.is_stopped():
 		session_briefing_timer.stop()
 
 func is_session_briefing_visible() -> bool:

@@ -778,7 +778,7 @@ func _process(delta: float) -> void:
 				proposed_rate_spinbox.editable = true
 			if not _pending_request_path.is_empty() and FileAccess.file_exists(_pending_request_path):
 				if status_label:
-					var warn_text := "Status: Warning - Decision request written, but no updated simulation state arrived within %.0fs. Is Republic simulation running?" % REQUEST_TIMEOUT_SECONDS
+					var warn_text := "Status: Warning - Decision request written, but no updated simulation state arrived within %.0fs. Is Republic simulation running? (Start watcher: dotnet run --project src/Republic.Cli -- --watch-requests)" % REQUEST_TIMEOUT_SECONDS
 					status_label.text = _format_status_text(warn_text, "Timed out")
 
 	# 2. Check for live state updates
