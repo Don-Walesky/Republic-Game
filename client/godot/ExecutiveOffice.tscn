@@ -1,126 +1,67 @@
-[gd_scene load_steps=20 format=3]
+[gd_scene load_steps=32 format=3]
 
 [ext_resource type="Script" path="res://ExecutiveOffice.gd" id="1_office"]
 [ext_resource type="Script" path="res://CapitalWindowScenery.gd" id="2_scenery"]
+[ext_resource type="Texture2D" path="res://presidential_office_bg.jpg" id="3_bg_texture"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
-bg_color = Color(0.0470588, 0.0666667, 0.105882, 0.96)
-border_width_bottom = 2
-border_color = Color(0.85098, 0.678431, 0.282353, 1)
-content_margin_left = 14.0
-content_margin_top = 6.0
-content_margin_right = 14.0
-content_margin_bottom = 6.0
+bg_color = Color(0.035, 0.055, 0.09, 0.94)
+border_width_bottom = 1
+border_color = Color(0.18, 0.25, 0.35, 0.8)
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 6
+content_margin_left = 16.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_glassdock"]
-bg_color = Color(0.054902, 0.0784314, 0.121569, 0.88)
+bg_color = Color(0.043, 0.075, 0.125, 0.88)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.2, 0.28, 0.4, 0.7)
+border_color = Color(0.18, 0.27, 0.38, 0.7)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 8
 content_margin_left = 12.0
 content_margin_top = 10.0
 content_margin_right = 12.0
 content_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bottomdock"]
-bg_color = Color(0.0392157, 0.054902, 0.0823529, 0.94)
+bg_color = Color(0.035, 0.05, 0.08, 0.96)
 border_width_top = 1
-border_color = Color(0.85098, 0.678431, 0.282353, 0.6)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
+border_color = Color(0.18, 0.25, 0.35, 0.8)
 content_margin_left = 14.0
-content_margin_top = 6.0
+content_margin_top = 4.0
 content_margin_right = 14.0
-content_margin_bottom = 6.0
+content_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_windowframe"]
-bg_color = Color(0.02, 0.03, 0.05, 0.3)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.24, 0.28, 0.35, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portraitframe"]
-bg_color = Color(0.1, 0.08, 0.05, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.85, 0.68, 0.28, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portraitcanvas"]
-bg_color = Color(0.12, 0.16, 0.22, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_plaque"]
-bg_color = Color(0.18, 0.14, 0.08, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.85, 0.68, 0.28, 0.9)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-content_margin_left = 6.0
-content_margin_top = 2.0
-content_margin_right = 6.0
-content_margin_bottom = 2.0
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_flagbanner"]
-bg_color = Color(0.15, 0.35, 0.65, 0.95)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 3
-border_color = Color(0.85, 0.68, 0.28, 1)
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-content_margin_left = 8.0
-content_margin_top = 12.0
-content_margin_right = 8.0
-content_margin_bottom = 12.0
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_desksurface"]
-bg_color = Color(0.14, 0.09, 0.06, 1)
-border_width_left = 2
-border_width_top = 3
-border_width_right = 2
-border_width_bottom = 1
-border_color = Color(0.35, 0.24, 0.16, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-shadow_color = Color(0, 0, 0, 0.6)
-shadow_size = 12
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_deskblotter"]
-bg_color = Color(0.06, 0.08, 0.09, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.75, 0.6, 0.25, 0.8)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_navbar"]
 bg_color = Color(0.0352941, 0.0509804, 0.0784314, 0.94)
@@ -150,44 +91,13 @@ content_margin_right = 18.0
 content_margin_bottom = 16.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_carpet"]
-bg_color = Color(0.42, 0.1, 0.12, 0.85)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.85, 0.68, 0.28, 0.8)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chair"]
-bg_color = Color(0.28, 0.1, 0.08, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.85, 0.68, 0.28, 0.9)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_decor"]
-bg_color = Color(0.08, 0.1, 0.14, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.35, 0.4, 0.5, 0.8)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-content_margin_left = 6.0
-content_margin_top = 6.0
-content_margin_right = 6.0
-content_margin_bottom = 6.0
+bg_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 bg_color = Color(0.06, 0.08, 0.12, 0.92)
@@ -200,10 +110,10 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-content_margin_left = 12.0
-content_margin_top = 10.0
-content_margin_right = 12.0
-content_margin_bottom = 10.0
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
 bg_color = Color(0.04, 0.06, 0.1, 0.95)
@@ -235,6 +145,98 @@ corner_radius_top_right = 9
 corner_radius_bottom_right = 9
 corner_radius_bottom_left = 9
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_metric_card"]
+bg_color = Color(0.055, 0.09, 0.14, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.25, 0.35, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_delta_pill"]
+bg_color = Color(0.06, 0.22, 0.12, 0.85)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 6.0
+content_margin_top = 1.0
+content_margin_right = 6.0
+content_margin_bottom = 1.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nav_active"]
+bg_color = Color(0.18, 0.14, 0.06, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.88, 0.72, 0.28, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nav_inactive"]
+bg_color = Color(0.05, 0.08, 0.12, 0.65)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14, 0.20, 0.30, 0.5)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge_counter"]
+bg_color = Color(0.65, 0.48, 0.15, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.82, 0.45, 0.8)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 5.0
+content_margin_top = 1.0
+content_margin_right = 5.0
+content_margin_bottom = 1.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
+bg_color = Color(0.08, 0.12, 0.18, 0.9)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.17, 0.83, 0.49, 1.0)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_transparent"]
+bg_color = Color(0, 0, 0, 0)
+
 [node name="ExecutiveOffice" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -253,240 +255,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="RoomBackdrop" type="ColorRect" parent="OfficeEnvironment"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.06, 0.075, 0.105, 1)
-
-[node name="WallBackdrop" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
-layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 0.65
-grow_horizontal = 2
-color = Color(0.08, 0.11, 0.16, 1)
-
-[node name="MoldingStrip" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
-layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.648
-anchor_right = 1.0
-anchor_bottom = 0.654
-grow_horizontal = 2
-color = Color(0.85098, 0.678431, 0.282353, 0.75)
-
-[node name="FloorBackdrop" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
-layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.654
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.24, 0.16, 0.10, 1)
-
-[node name="WoodPanelingTop" type="ColorRect" parent="OfficeEnvironment"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 54.0
-grow_horizontal = 2
-color = Color(0.16, 0.11, 0.08, 0.95)
-
-[node name="BrassMolding" type="ColorRect" parent="OfficeEnvironment"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 54.0
-offset_bottom = 56.0
-grow_horizontal = 2
-color = Color(0.85098, 0.678431, 0.282353, 0.75)
-
-[node name="OfficeCarpet" type="PanelContainer" parent="OfficeEnvironment"]
-layout_mode = 1
-anchor_left = 0.20
-anchor_top = 0.60
-anchor_right = 0.80
-anchor_bottom = 0.95
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_carpet")
-
-[node name="CeilingLighting" type="Control" parent="OfficeEnvironment"]
-layout_mode = 1
-anchor_left = 0.40
-anchor_top = 0.035
-anchor_right = 0.60
-anchor_bottom = 0.11
-grow_horizontal = 2
-
-[node name="ChandelierLabel" type="Label" parent="OfficeEnvironment/CeilingLighting"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(1, 0.88, 0.65, 0.9)
-theme_override_font_sizes/font_size = 18
-text = "✨ ═══ 🕯 ═══ ✨"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="BookshelvesAndDecor" type="Control" parent="OfficeEnvironment"]
-layout_mode = 1
-anchor_left = 0.015
-anchor_top = 0.13
-anchor_right = 0.13
-anchor_bottom = 0.58
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BookshelfVisual" type="PanelContainer" parent="OfficeEnvironment/BookshelvesAndDecor"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
-
-[node name="BookshelfVBox" type="VBoxContainer" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual"]
-layout_mode = 2
-alignment = 1
-
-[node name="BookshelfIconLabel" type="Label" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "📚"
-horizontal_alignment = 1
-
-[node name="BookshelfLabel" type="Label" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.80, 0.70, 1)
-theme_override_font_sizes/font_size = 9
-text = "CONSTITUTIONAL\nARCHIVES"
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="ArtworkAndGifts" type="Control" parent="OfficeEnvironment"]
-layout_mode = 1
-anchor_left = 0.83
-anchor_top = 0.13
-anchor_right = 0.97
-anchor_bottom = 0.52
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="ArtworkVisual" type="PanelContainer" parent="OfficeEnvironment/ArtworkAndGifts"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
-
-[node name="ArtworkVBox" type="VBoxContainer" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual"]
-layout_mode = 2
-alignment = 1
-
-[node name="ArtworkIconLabel" type="Label" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "📜"
-horizontal_alignment = 1
-
-[node name="ArtworkLabel" type="Label" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.45, 1)
-theme_override_font_sizes/font_size = 9
-text = "FOUNDING\nCHARTER"
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="VisitorSeating" type="Control" parent="OfficeEnvironment"]
-layout_mode = 1
-anchor_left = 0.02
-anchor_top = 0.65
-anchor_right = 0.18
-anchor_bottom = 0.88
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VisitorTable" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
-layout_mode = 1
-anchor_left = 0.28
-anchor_top = 0.20
-anchor_right = 0.72
-anchor_bottom = 0.80
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
-
-[node name="VisitorChair1" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
-layout_mode = 1
-anchor_left = 0.02
-anchor_top = 0.15
-anchor_right = 0.26
-anchor_bottom = 0.85
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_chair")
-
-[node name="VisitorChair2" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
-layout_mode = 1
-anchor_left = 0.74
-anchor_top = 0.15
-anchor_right = 0.98
-anchor_bottom = 0.85
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_chair")
-
-[node name="VisitorLabel" type="Label" parent="OfficeEnvironment/VisitorSeating"]
-layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.88
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
-theme_override_font_sizes/font_size = 8
-text = "VISITOR LOUNGE"
-horizontal_alignment = 1
-
-[node name="CapitalWindow" type="Control" parent="OfficeEnvironment"]
-layout_mode = 1
-anchor_left = 0.24
-anchor_top = 0.11
-anchor_right = 0.66
-anchor_bottom = 0.58
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="WindowBackdrop" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.08, 0.12, 0.18, 1)
-
-[node name="CityScenery" type="Control" parent="OfficeEnvironment/CapitalWindow"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("2_scenery")
-
-[node name="WindowFrame" type="PanelContainer" parent="OfficeEnvironment/CapitalWindow"]
+[node name="RoomBackdrop" type="Control" parent="OfficeEnvironment"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -494,121 +263,278 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_windowframe")
 
-[node name="VerticalMullion" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
-layout_mode = 1
-anchor_left = 0.5
-anchor_top = 0.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -2.0
-offset_right = 2.0
-grow_vertical = 2
-color = Color(0.24, 0.28, 0.35, 0.85)
-
-[node name="HorizontalMullion" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
-layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.45
-anchor_right = 1.0
-anchor_bottom = 0.45
-offset_top = -2.0
-offset_bottom = 2.0
-grow_horizontal = 2
-color = Color(0.24, 0.28, 0.35, 0.85)
-
-[node name="WindowButton" type="Button" parent="OfficeEnvironment/CapitalWindow"]
+[node name="OfficeBgTexture" type="TextureRect" parent="OfficeEnvironment/RoomBackdrop"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_bg_texture")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="WallBackdrop" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0)
+
+[node name="MoldingStrip" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
+layout_mode = 1
+anchor_right = 1.0
+offset_bottom = 1.0
+color = Color(0, 0, 0, 0)
+
+[node name="FloorBackdrop" type="ColorRect" parent="OfficeEnvironment/RoomBackdrop"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0)
+
+[node name="WoodPanelingTop" type="ColorRect" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_right = 1.0
+offset_bottom = 1.0
+color = Color(0, 0, 0, 0)
+
+[node name="BrassMolding" type="ColorRect" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_right = 1.0
+offset_bottom = 1.0
+color = Color(0, 0, 0, 0)
+
+[node name="OfficeCarpet" type="PanelContainer" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.2
+anchor_top = 0.6
+anchor_right = 0.8
+anchor_bottom = 0.95
+theme_override_styles/panel = SubResource("StyleBoxFlat_carpet")
+
+[node name="CeilingLighting" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.4
+anchor_top = 0.03
+anchor_right = 0.6
+anchor_bottom = 0.08
+
+[node name="ChandelierLabel" type="Label" parent="OfficeEnvironment/CeilingLighting"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = ""
+
+[node name="BookshelvesAndDecor" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.01
+anchor_top = 0.15
+anchor_right = 0.12
+anchor_bottom = 0.6
+
+[node name="BookshelfVisual" type="PanelContainer" parent="OfficeEnvironment/BookshelvesAndDecor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
+
+[node name="BookshelfVBox" type="VBoxContainer" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual"]
+layout_mode = 2
+
+[node name="BookshelfIconLabel" type="Label" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox"]
+layout_mode = 2
+text = ""
+
+[node name="BookshelfLabel" type="Label" parent="OfficeEnvironment/BookshelvesAndDecor/BookshelfVisual/BookshelfVBox"]
+layout_mode = 2
+text = ""
+
+[node name="ArtworkAndGifts" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.88
+anchor_top = 0.15
+anchor_right = 0.98
+anchor_bottom = 0.55
+
+[node name="ArtworkVisual" type="PanelContainer" parent="OfficeEnvironment/ArtworkAndGifts"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
+
+[node name="ArtworkVBox" type="VBoxContainer" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual"]
+layout_mode = 2
+
+[node name="ArtworkIconLabel" type="Label" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox"]
+layout_mode = 2
+text = ""
+
+[node name="ArtworkLabel" type="Label" parent="OfficeEnvironment/ArtworkAndGifts/ArtworkVisual/ArtworkVBox"]
+layout_mode = 2
+text = ""
+
+[node name="VisitorSeating" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.02
+anchor_top = 0.65
+anchor_right = 0.18
+anchor_bottom = 0.88
+
+[node name="VisitorTable" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_decor")
+
+[node name="VisitorChair1" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
+layout_mode = 1
+offset_right = 1.0
+offset_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_chair")
+
+[node name="VisitorChair2" type="PanelContainer" parent="OfficeEnvironment/VisitorSeating"]
+layout_mode = 1
+offset_right = 1.0
+offset_bottom = 1.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_chair")
+
+[node name="VisitorLabel" type="Label" parent="OfficeEnvironment/VisitorSeating"]
+layout_mode = 1
+offset_right = 1.0
+offset_bottom = 1.0
+text = ""
+
+[node name="CapitalWindow" type="Control" parent="OfficeEnvironment"]
+layout_mode = 1
+anchor_left = 0.22
+anchor_top = 0.08
+anchor_right = 0.78
+anchor_bottom = 0.58
+
+[node name="WindowBackdrop" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0)
+
+[node name="CityScenery" type="Control" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("2_scenery")
+
+[node name="WindowFrame" type="PanelContainer" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_windowframe")
+
+[node name="VerticalMullion" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -1.0
+offset_right = 1.0
+color = Color(0, 0, 0, 0)
+
+[node name="HorizontalMullion" type="ColorRect" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -1.0
+offset_bottom = 1.0
+color = Color(0, 0, 0, 0)
+
+[node name="WindowButton" type="Button" parent="OfficeEnvironment/CapitalWindow"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 flat = true
 
 [node name="ActiveProjectMarkerButton" type="Button" parent="OfficeEnvironment/CapitalWindow"]
 layout_mode = 1
-anchor_left = 0.64
-anchor_top = 0.22
-anchor_right = 0.86
-anchor_bottom = 0.52
+anchor_left = 0.65
+anchor_top = 0.25
+anchor_right = 0.85
+anchor_bottom = 0.55
 flat = true
 mouse_default_cursor_shape = 2
 tooltip_text = "Active Capital Project"
 
 [node name="CompletedProjectMarkerButton" type="Button" parent="OfficeEnvironment/CapitalWindow"]
 layout_mode = 1
-anchor_left = 0.18
-anchor_top = 0.26
-anchor_right = 0.34
-anchor_bottom = 0.56
+anchor_left = 0.15
+anchor_top = 0.25
+anchor_right = 0.35
+anchor_bottom = 0.55
 flat = true
 mouse_default_cursor_shape = 2
 tooltip_text = "Completed Infrastructure Landmark"
 
 [node name="CountryFlag" type="Control" parent="OfficeEnvironment"]
 layout_mode = 1
-anchor_left = 0.14
+anchor_left = 0.24
 anchor_top = 0.12
-anchor_right = 0.22
-anchor_bottom = 0.62
-grow_horizontal = 2
-grow_vertical = 2
+anchor_right = 0.31
+anchor_bottom = 0.55
 
 [node name="FlagPole" type="ColorRect" parent="OfficeEnvironment/CountryFlag"]
 layout_mode = 1
 anchor_left = 0.1
-anchor_top = 0.0
 anchor_right = 0.1
 anchor_bottom = 1.0
-offset_left = -3.0
-offset_right = 3.0
-grow_vertical = 2
-color = Color(0.85, 0.68, 0.28, 1)
+offset_left = -2.0
+offset_right = 2.0
+color = Color(0, 0, 0, 0)
 
 [node name="FlagFinial" type="ColorRect" parent="OfficeEnvironment/CountryFlag"]
 layout_mode = 1
-anchor_left = 0.1
-anchor_top = 0.0
-anchor_right = 0.1
-anchor_bottom = 0.0
-offset_left = -6.0
-offset_top = -10.0
-offset_right = 6.0
-color = Color(0.95, 0.8, 0.35, 1)
+offset_right = 1.0
+offset_bottom = 1.0
+color = Color(0, 0, 0, 0)
 
 [node name="FlagBanner" type="PanelContainer" parent="OfficeEnvironment/CountryFlag"]
 layout_mode = 1
-anchor_left = 0.1
-anchor_top = 0.04
-anchor_right = 0.95
-anchor_bottom = 0.72
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_flagbanner")
 
 [node name="FlagEmblemLabel" type="Label" parent="OfficeEnvironment/CountryFlag/FlagBanner"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.4, 1)
-theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.95, 0.85, 0.4, 0)
 text = "REPUBLIC"
 horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="PresidentialPortrait" type="Control" parent="OfficeEnvironment"]
 layout_mode = 1
-anchor_left = 0.68
-anchor_top = 0.13
-anchor_right = 0.80
-anchor_bottom = 0.48
-grow_horizontal = 2
-grow_vertical = 2
+anchor_left = 0.29
+anchor_top = 0.14
+anchor_right = 0.39
+anchor_bottom = 0.36
 
 [node name="PortraitFrame" type="PanelContainer" parent="OfficeEnvironment/PresidentialPortrait"]
 layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.0
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.78
+anchor_bottom = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_portraitframe")
 
 [node name="PortraitCanvas" type="PanelContainer" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame"]
@@ -617,73 +543,52 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_portraitcanvas")
 
 [node name="PortraitVBox" type="VBoxContainer" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas"]
 layout_mode = 2
-alignment = 1
 
 [node name="PortraitIconLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
-theme_override_font_sizes/font_size = 32
-text = "🏛"
-horizontal_alignment = 1
+text = ""
 
 [node name="PortraitPlaceholderLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/PortraitFrame/PortraitCanvas/PortraitVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
-theme_override_font_sizes/font_size = 10
-text = "THE STATESMAN"
-horizontal_alignment = 1
+text = ""
 
 [node name="Plaque" type="PanelContainer" parent="OfficeEnvironment/PresidentialPortrait"]
 layout_mode = 1
-anchor_left = 0.05
-anchor_top = 0.80
-anchor_right = 0.95
+anchor_top = 0.9
+anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_plaque")
 
 [node name="PlaqueVBox" type="VBoxContainer" parent="OfficeEnvironment/PresidentialPortrait/Plaque"]
 layout_mode = 2
-theme_override_constants/separation = 1
 
 [node name="PortraitNameLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/Plaque/PlaqueVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.45, 1)
-theme_override_font_sizes/font_size = 10
 text = "PRES. ALEXANDER VANCE"
-horizontal_alignment = 1
 
 [node name="PortraitPartyLabel" type="Label" parent="OfficeEnvironment/PresidentialPortrait/Plaque/PlaqueVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
-theme_override_font_sizes/font_size = 9
 text = "Party: [No State Loaded]"
-horizontal_alignment = 1
 
 [node name="PortraitButton" type="Button" parent="OfficeEnvironment/PresidentialPortrait"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 flat = true
+tooltip_text = "Presidential Portrait"
 
 [node name="ExecutiveDesk" type="Control" parent="OfficeEnvironment"]
 layout_mode = 1
-anchor_left = 0.16
-anchor_top = 0.52
-anchor_right = 0.84
-anchor_bottom = 0.92
-grow_horizontal = 2
-grow_vertical = 2
+anchor_left = 0.22
+anchor_top = 0.5
+anchor_right = 0.78
+anchor_bottom = 0.88
 
 [node name="PresidentialChair" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
-anchor_left = 0.42
-anchor_top = -0.30
-anchor_right = 0.58
-anchor_bottom = 0.15
-grow_horizontal = 2
+offset_right = 1.0
+offset_bottom = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_chair")
 
 [node name="DeskSurface" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk"]
@@ -691,18 +596,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_desksurface")
 
 [node name="DeskBlotter" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
-anchor_left = 0.22
-anchor_top = 0.18
-anchor_right = 0.78
-anchor_bottom = 0.82
-grow_horizontal = 2
-grow_vertical = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_deskblotter")
 
 [node name="BlotterButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk/DeskBlotter"]
@@ -710,44 +610,28 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 flat = true
 mouse_default_cursor_shape = 2
 
 [node name="PresidentialSeal" type="Control" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -28.0
-offset_top = -28.0
-offset_right = 28.0
-offset_bottom = 28.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 1.0
+offset_bottom = 1.0
 
 [node name="SealLabel" type="Label" parent="OfficeEnvironment/ExecutiveDesk/PresidentialSeal"]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(0.85, 0.68, 0.28, 0.6)
-theme_override_font_sizes/font_size = 32
-text = "★"
-horizontal_alignment = 1
-vertical_alignment = 1
+offset_right = 1.0
+offset_bottom = 1.0
+text = ""
 
 [node name="HotlinePhoneButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
-anchor_left = 0.08
-anchor_top = 0.25
-anchor_right = 0.18
-anchor_bottom = 0.65
+anchor_left = 0.1
+anchor_top = 0.3
+anchor_right = 0.22
+anchor_bottom = 0.6
 theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_metric_card")
 text = "☎ HOTLINE"
 
 [node name="HotlineNotificationBadge" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk/HotlinePhoneButton"]
@@ -755,14 +639,11 @@ visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
-anchor_top = 0.0
 anchor_right = 1.0
-anchor_bottom = 0.0
 offset_left = -10.0
 offset_top = -6.0
 offset_right = 8.0
 offset_bottom = 12.0
-grow_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
 
@@ -772,15 +653,15 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 10
 text = "!"
 horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="IntelligenceDossierButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
-anchor_left = 0.64
-anchor_top = 0.25
-anchor_right = 0.76
-anchor_bottom = 0.65
+anchor_left = 0.62
+anchor_top = 0.3
+anchor_right = 0.74
+anchor_bottom = 0.6
 theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_metric_card")
 text = "📁 DOSSIER"
 
 [node name="DossierNotificationBadge" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk/IntelligenceDossierButton"]
@@ -788,14 +669,11 @@ visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
-anchor_top = 0.0
 anchor_right = 1.0
-anchor_bottom = 0.0
 offset_left = -10.0
 offset_top = -6.0
 offset_right = 8.0
 offset_bottom = 12.0
-grow_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
 
@@ -805,15 +683,15 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 10
 text = "!"
 horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="ExecutiveInboxButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
-anchor_left = 0.82
-anchor_top = 0.25
-anchor_right = 0.92
-anchor_bottom = 0.65
+anchor_left = 0.78
+anchor_top = 0.3
+anchor_right = 0.9
+anchor_bottom = 0.6
 theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_metric_card")
 text = "✉ INBOX"
 
 [node name="InboxNotificationBadge" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk/ExecutiveInboxButton"]
@@ -821,14 +699,11 @@ visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
-anchor_top = 0.0
 anchor_right = 1.0
-anchor_bottom = 0.0
 offset_left = -10.0
 offset_top = -6.0
 offset_right = 8.0
 offset_bottom = 12.0
-grow_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
 
@@ -838,15 +713,15 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 10
 text = "1"
 horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="DiplomaticFolderButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
-anchor_left = 0.08
-anchor_top = 0.72
-anchor_right = 0.20
-anchor_bottom = 0.96
+anchor_left = 0.1
+anchor_top = 0.68
+anchor_right = 0.24
+anchor_bottom = 0.95
 theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_metric_card")
 text = "🤝 DIPLOMACY"
 
 [node name="DiplomaticNotificationBadge" type="PanelContainer" parent="OfficeEnvironment/ExecutiveDesk/DiplomaticFolderButton"]
@@ -854,14 +729,11 @@ visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
-anchor_top = 0.0
 anchor_right = 1.0
-anchor_bottom = 0.0
 offset_left = -10.0
 offset_top = -6.0
 offset_right = 8.0
 offset_bottom = 12.0
-grow_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
 
@@ -871,7 +743,6 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 10
 text = "!"
 horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="InterfaceLayer" type="Control" parent="."]
 layout_mode = 1
@@ -886,60 +757,274 @@ mouse_filter = 2
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 44.0
+offset_bottom = 54.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
 
 [node name="TopBarHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
-[node name="CountryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+[node name="FlagIcon" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
+theme_override_font_sizes/font_size = 20
+text = "🇿🇦"
+
+[node name="CountryBox" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="CountryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CountryBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
 text = "Country: [No State Loaded]"
+
+[node name="GovernmentTypeLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CountryBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 10
+text = "Democratic Republic"
 
 [node name="VSeparator1" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 
-[node name="TreasuryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+[node name="PresidentCard" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_metric_card")
+
+[node name="PresidentHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/PresidentCard"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PresidentAvatar" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "👤"
+
+[node name="PresidentVBox" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="PresidentRoleLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 9
+text = "President"
+
+[node name="PresidentNameLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 12
-text = "Treasury: [No State Loaded]"
+text = "Daniel M. Okafor"
+
+[node name="PresidentTermLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Term 1 | 2026 - 2030"
 
 [node name="VSeparator2" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 
-[node name="ApprovalLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+[node name="CardTreasury" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_metric_card")
+
+[node name="TreasuryVBox" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury"]
+layout_mode = 2
+alignment = 1
+
+[node name="TreasuryHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TreasuryIcon" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "💰"
+
+[node name="TreasuryTitle" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "REPU Treasury"
+
+[node name="TreasuryDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
+
+[node name="TreasuryDeltaLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox/TreasuryDelta"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "+12.4M / h"
+
+[node name="TreasuryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 12
-text = "Approval: [No State Loaded]"
+text = "Treasury: [No State Loaded]"
 
 [node name="VSeparator3" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 
-[node name="StabilityLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+[node name="CardApproval" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_metric_card")
+
+[node name="ApprovalVBox" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval"]
+layout_mode = 2
+alignment = 1
+
+[node name="ApprovalHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ApprovalIcon" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "👤"
+
+[node name="ApprovalTitle" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Public Approval"
+
+[node name="ApprovalDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
+
+[node name="ApprovalDeltaLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox/ApprovalDelta"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "+2%"
+
+[node name="ApprovalLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 12
-text = "Stability: [No State Loaded]"
+text = "Approval: [No State Loaded]"
 
 [node name="VSeparator4" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 
-[node name="DefconLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+[node name="CardStability" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_metric_card")
+
+[node name="StabilityVBox" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability"]
+layout_mode = 2
+alignment = 1
+
+[node name="StabilityHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="StabilityIcon" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🛡️"
+
+[node name="StabilityTitle" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Stability"
+
+[node name="StabilityDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
+
+[node name="StabilityDeltaLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox/StabilityDelta"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "+1%"
+
+[node name="StabilityLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 12
+text = "Stability: [No State Loaded]"
+
+[node name="VSeparatorDefcon" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+
+[node name="CardEconomy" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_metric_card")
+
+[node name="EconomyVBox" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy"]
+layout_mode = 2
+alignment = 1
+
+[node name="EconomyHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EconomyIcon" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "📈"
+
+[node name="EconomyTitle" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Economy"
+
+[node name="EconomyDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
+
+[node name="EconomyDeltaLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox/EconomyDelta"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "+1%"
+
+[node name="DefconLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
 text = "Defense: [No State Loaded]"
 
 [node name="VSeparator5" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 
-[node name="SimulationTimeLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
+[node name="TimeSection" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
+alignment = 1
+
+[node name="SimulationTimeLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/TimeSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
 text = "Simulation Time: [No State Loaded]"
+
+[node name="SpeedHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/TimeSection"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SpeedPauseBtn" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "⏸"
+
+[node name="SpeedPlayBtn" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "►"
+
+[node name="SpeedFastBtn" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "►►"
 
 [node name="RefreshButton" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
@@ -955,8 +1040,8 @@ text = "Cabinet Data Desk ->"
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 46.0
-offset_bottom = 82.0
+offset_top = 56.0
+offset_bottom = 90.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_navbar")
 
@@ -967,57 +1052,57 @@ theme_override_constants/separation = 8
 [node name="NavOverviewButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "★ 1. Executive Office"
 
 [node name="NavCabinetButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "2. Cabinet & Ministers"
 
 [node name="NavEconomyButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "3. Economy & Taxes"
 
 [node name="NavCampaignButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "4. Campaign & Elections"
 
 [node name="NavDiplomacyButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "5. Diplomacy & Trade"
 
 [node name="NavBriefingsButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "6. Presidential Briefings"
 
 [node name="NavCustomiseButton" type="Button" parent="InterfaceLayer/NavBarPanel/NavBarHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "🏛 7. Office Décor"
 
 [node name="LeftDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
 anchor_left = 0.01
-anchor_top = 0.088
-anchor_bottom = 0.91
-offset_right = 260.0
+anchor_top = 0.09
+anchor_bottom = 0.88
+offset_right = 230.0
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
 
 [node name="LeftDockVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="LeftDockHeader" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox"]
 layout_mode = 2
@@ -1026,8 +1111,8 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 12
-text = "🏛 DOMESTIC GOVERNANCE"
+theme_override_font_sizes/font_size = 13
+text = "🏛 Presidential Desk"
 
 [node name="ToggleLeftDockButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockHeader"]
 layout_mode = 2
@@ -1036,47 +1121,208 @@ text = "▲"
 
 [node name="LeftDockContent" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox"]
 layout_mode = 2
-theme_override_constants/separation = 6
+size_flags_vertical = 3
+theme_override_constants/separation = 4
 
-[node name="CabinetSummaryLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+[node name="SidebarNavVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="NavOverviewItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_active")
+text = "🏠  Overview"
+alignment = 0
+
+[node name="NavCabinetHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
+layout_mode = 2
+
+[node name="NavCabinetItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCabinetHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "👥  Cabinet"
+alignment = 0
+
+[node name="BadgeCabinet" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCabinetHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
+
+[node name="BadgeCabinetLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCabinetHBox/BadgeCabinet"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "2"
+
+[node name="NavEconomyHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
+layout_mode = 2
+
+[node name="NavEconomyItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavEconomyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "📈  Economy"
+alignment = 0
+
+[node name="BadgeEconomy" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavEconomyHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
+
+[node name="BadgeEconomyLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavEconomyHBox/BadgeEconomy"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "3"
+
+[node name="NavCampaignHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
+layout_mode = 2
+
+[node name="NavCampaignItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCampaignHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "📢  Campaign"
+alignment = 0
+
+[node name="BadgeCampaign" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCampaignHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
+
+[node name="BadgeCampaignLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCampaignHBox/BadgeCampaign"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "1"
+
+[node name="NavDiplomacyHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
+layout_mode = 2
+
+[node name="NavDiplomacyItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDiplomacyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "🌐  Diplomacy"
+alignment = 0
+
+[node name="BadgeDiplomacy" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDiplomacyHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
+
+[node name="BadgeDiplomacyLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDiplomacyHBox/BadgeDiplomacy"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "2"
+
+[node name="NavDevHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
+layout_mode = 2
+
+[node name="NavDevItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDevHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "⚙️  Development"
+alignment = 0
+
+[node name="BadgeDev" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDevHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
+
+[node name="BadgeDevLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDevHBox/BadgeDev"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "4"
+
+[node name="NavIntelHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
+layout_mode = 2
+
+[node name="NavIntelItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavIntelHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "👁  Intelligence"
+alignment = 0
+
+[node name="BadgeIntel" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavIntelHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
+
+[node name="BadgeIntelLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavIntelHBox/BadgeIntel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "1"
+
+[node name="NavDefenceHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
+layout_mode = 2
+
+[node name="NavDefenceItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDefenceHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "🛡️  Defence"
+alignment = 0
+
+[node name="BadgeDefence" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDefenceHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
+
+[node name="BadgeDefenceLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDefenceHBox/BadgeDefence"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "1"
+
+[node name="NavWorldItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Finance: Vacant | Interior: Vacant"
-autowrap_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "🌍  World"
+alignment = 0
 
 [node name="HSeparator1" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
 
+[node name="CabinetSummaryLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Finance: Vacant | Interior: Vacant"
+autowrap_mode = 2
+
 [node name="CivilServiceLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "Civil Service Merit: [No State Loaded]"
 
 [node name="CorruptionControlLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "Corruption Control: [No State Loaded]"
-
-[node name="HSeparator2" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
-layout_mode = 2
 
 [node name="RulingPartyLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "Ruling Party: None"
 
 [node name="PollingSupportLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "National Polling: 0.0%"
-
-[node name="HSeparator3" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
-layout_mode = 2
 
 [node name="CabinetPortfoliosHeaderLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "🏛 MINISTERIAL PORTFOLIOS (6)"
 
 [node name="CabinetScroll" type="ScrollContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
@@ -1404,22 +1650,22 @@ text = "Resolve Constraint ->"
 
 [node name="OpenCabinetButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "Full Cabinet in Desk ->"
 
 [node name="RightDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
-anchor_left = 0.875
-anchor_top = 0.088
+anchor_left = 0.77
+anchor_top = 0.09
 anchor_right = 0.99
-anchor_bottom = 0.91
+anchor_bottom = 0.88
 grow_horizontal = 0
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
 
 [node name="RightDockVBox" type="VBoxContainer" parent="InterfaceLayer/RightDock"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="RightDockHeader" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox"]
 layout_mode = 2
@@ -1429,7 +1675,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
 theme_override_font_sizes/font_size = 12
-text = "🌐 FOREIGN AFFAIRS"
+text = "🌐 FOREIGN AFFAIRS & EVENTS"
 
 [node name="ToggleRightDockButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockHeader"]
 layout_mode = 2
@@ -1438,36 +1684,402 @@ text = "▲"
 
 [node name="RightDockContent" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 6
+
+[node name="CardEvents" type="PanelContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="EventsVBox" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="EventsHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
+layout_mode = 2
+
+[node name="EventsBellIcon" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventsHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 12
+text = "🔔"
+
+[node name="EventsTitle" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventsHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "Recent Events & Briefings"
+
+[node name="EventsViewAll" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventsHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.68, 0.82, 1)
+theme_override_font_sizes/font_size = 9
+text = "View All →"
+
+[node name="EventItem1" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EvIcon1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "📢"
+
+[node name="EvVBox1" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EvTitle1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1/EvVBox1"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Election campaign rally scheduled"
+
+[node name="EvSub1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1/EvVBox1"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "Next rally in 3 days - East District"
+
+[node name="EvTime1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "2h ago"
+
+[node name="EventItem2" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EvIcon2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "⇄"
+
+[node name="EvVBox2" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EvTitle2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2/EvVBox2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Trade proposal from Southland"
+
+[node name="EvSub2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2/EvVBox2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "Requesting 12.5M REPU in raw materials"
+
+[node name="EvTime2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "4h ago"
+
+[node name="EventItem3" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EvIcon3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "🏛️"
+
+[node name="EvVBox3" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EvTitle3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3/EvVBox3"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Cabinet report - Finance"
+
+[node name="EvSub3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3/EvVBox3"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "Tax revenue up 8% this cycle"
+
+[node name="EvTime3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "6h ago"
+
+[node name="EventItem4" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EvIcon4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "🔬"
+
+[node name="EvVBox4" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EvTitle4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4/EvVBox4"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Research completed"
+
+[node name="EvSub4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4/EvVBox4"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "Renewable Energy (Level 1)"
+
+[node name="EvTime4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "8h ago"
+
+[node name="EventItem5" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EvIcon5" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "🌐"
+
+[node name="EvVBox5" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EvTitle5" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5/EvVBox5"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Diplomatic message"
+
+[node name="EvSub5" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5/EvVBox5"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "Alliance proposal from Westoria"
+
+[node name="EvTime5" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "12h ago"
+
+[node name="EventItem6" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EvIcon6" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "⚙️"
+
+[node name="EvVBox6" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EvTitle6" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6/EvVBox6"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Construction update"
+
+[node name="EvSub6" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6/EvVBox6"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "Port Expansion - 45% complete"
+
+[node name="EvTime6" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "18h ago"
+
+[node name="CardObjectives" type="PanelContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ObjVBox" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ObjHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox"]
+layout_mode = 2
+
+[node name="ObjTargetIcon" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 12
+text = "🎯"
+
+[node name="ObjTitle" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "Current Objectives"
+
+[node name="ObjItem1" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ObjItem1HBox" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem1"]
+layout_mode = 2
+
+[node name="ObjCheck1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem1/ObjItem1HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "✓"
+
+[node name="ObjLabel1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem1/ObjItem1HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Increase public approval to 70%"
+
+[node name="ObjVal1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem1/ObjItem1HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "67%"
+
+[node name="ObjBar1" type="ProgressBar" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem1"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 67.0
+show_percentage = false
+
+[node name="ObjItem2" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ObjItem2HBox" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem2"]
+layout_mode = 2
+
+[node name="ObjCheck2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem2/ObjItem2HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "✓"
+
+[node name="ObjLabel2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem2/ObjItem2HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Complete Port Expansion project"
+
+[node name="ObjVal2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem2/ObjItem2HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "45%"
+
+[node name="ObjBar2" type="ProgressBar" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem2"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 45.0
+show_percentage = false
+
+[node name="ObjItem3" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ObjItem3HBox" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem3"]
+layout_mode = 2
+
+[node name="ObjCheck3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem3/ObjItem3HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "📅"
+
+[node name="ObjLabel3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem3/ObjItem3HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Prepare for national election"
+
+[node name="ObjVal3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem3/ObjItem3HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "71 days"
+
+[node name="ObjBar3" type="ProgressBar" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem3"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 50.0
+show_percentage = false
+
+[node name="ObjItem4" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ObjItem4HBox" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem4"]
+layout_mode = 2
+
+[node name="ObjCheck4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem4/ObjItem4HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 9
+text = "🎯"
+
+[node name="ObjLabel4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem4/ObjItem4HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Maintain treasury above 300M REPU"
+
+[node name="ObjVal4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem4/ObjItem4HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "452.8M"
+
+[node name="ObjBar4" type="ProgressBar" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem4"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 100.0
+show_percentage = false
+
+[node name="OfflineBriefingLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Simulation: Real-time aligned"
+autowrap_mode = 2
 
 [node name="MilitaryReadinessLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
-text = "Readiness: Armed Forces Operational"
+theme_override_font_sizes/font_size = 10
+text = "Military Readiness: Operational"
 autowrap_mode = 2
-
-[node name="HSeparator3" type="HSeparator" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
-layout_mode = 2
 
 [node name="ActiveCrisisLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "Active Crisis: None"
 autowrap_mode = 2
 
 [node name="GdpLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "GDP: R 450B"
-
-[node name="OfflineBriefingLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 11
-text = "Simulation: Real-time aligned"
-autowrap_mode = 2
-
-[node name="HSeparatorDossier" type="HSeparator" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
-layout_mode = 2
 
 [node name="DiplomaticDossierTitleLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
@@ -1520,8 +2132,403 @@ autowrap_mode = 2
 
 [node name="OpenDiplomacyButton" type="Button" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "Diplomacy Console ->"
+
+[node name="FloatingTelemetryDeck" type="HBoxContainer" parent="InterfaceLayer"]
+layout_mode = 1
+anchor_left = 0.18
+anchor_top = 0.76
+anchor_right = 0.76
+anchor_bottom = 0.91
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 8
+
+[node name="DeckYieldCard" type="PanelContainer" parent="InterfaceLayer/FloatingTelemetryDeck"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
+
+[node name="YieldCardVBox" type="VBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="YieldHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox"]
+layout_mode = 2
+
+[node name="YieldIcon" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 11
+text = "📈"
+
+[node name="YieldTitle" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "National Yield"
+
+[node name="YieldVal" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "184.7M / cycle"
+
+[node name="YieldDelta" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "+6.2%"
+
+[node name="YieldChartHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Bar1" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 6)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="Bar2" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 8)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="Bar3" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 10)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="Bar4" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 11)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="Bar5" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 12)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="Bar6" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 13)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="Bar7" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 14)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="Bar8" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 15)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="Bar9" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 16)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="DeckTaxCard" type="PanelContainer" parent="InterfaceLayer/FloatingTelemetryDeck"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
+
+[node name="TaxCardVBox" type="VBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TaxHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox"]
+layout_mode = 2
+
+[node name="TaxIcon" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 11
+text = "💰"
+
+[node name="TaxTitle" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Tax Revenue"
+
+[node name="TaxVal" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "96.3M / cycle"
+
+[node name="TaxDelta" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "+8.1%"
+
+[node name="TaxChartHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="TBar1" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 5)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="TBar2" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 7)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="TBar3" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 9)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="TBar4" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 10)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="TBar5" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 12)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="TBar6" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 13)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="TBar7" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 14)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="TBar8" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 15)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="TBar9" type="ColorRect" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxChartHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 8
+custom_minimum_size = Vector2(0, 16)
+color = Color(0.17, 0.83, 0.49, 1)
+
+[node name="DeckCapacityCard" type="PanelContainer" parent="InterfaceLayer/FloatingTelemetryDeck"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
+
+[node name="CapCardVBox" type="VBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="CapHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox"]
+layout_mode = 2
+
+[node name="CapIcon" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox/CapHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.72, 0.95, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏛️"
+
+[node name="CapTitle" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox/CapHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "State Capacity"
+
+[node name="CapVal" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "71%"
+
+[node name="CapDelta" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "+2%"
+
+[node name="CapBar" type="ProgressBar" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 71.0
+show_percentage = false
+
+[node name="DeckWelfareCard" type="PanelContainer" parent="InterfaceLayer/FloatingTelemetryDeck"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
+
+[node name="WelfareCardVBox" type="VBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="WelfareHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox"]
+layout_mode = 2
+
+[node name="WelfareIcon" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox/WelfareHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 11
+text = "👥"
+
+[node name="WelfareTitle" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox/WelfareHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Citizen Welfare"
+
+[node name="WelfareVal" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "68%"
+
+[node name="WelfareDelta" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "+1%"
+
+[node name="WelfareBar" type="ProgressBar" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox"]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+value = 68.0
+show_percentage = false
+
+[node name="DeckDecisionsCard" type="PanelContainer" parent="InterfaceLayer/FloatingTelemetryDeck"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
+
+[node name="DecCardVBox" type="VBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="DecHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox"]
+layout_mode = 2
+
+[node name="DecIcon" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 11
+text = "📋"
+
+[node name="DecTitle" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Recent Decisions"
+
+[node name="DecItem1HBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox"]
+layout_mode = 2
+
+[node name="DecCheck1" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem1HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "✓"
+
+[node name="DecVBox1" type="VBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem1HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DecName1" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem1HBox/DecVBox1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Tax Rate Adjustment"
+
+[node name="DecStatus1" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem1HBox/DecVBox1"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 8
+text = "Approved"
+
+[node name="DecTime1" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem1HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "2h ago"
+
+[node name="DecItem2HBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox"]
+layout_mode = 2
+
+[node name="DecCheck2" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem2HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.72, 0.95, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚙️"
+
+[node name="DecVBox2" type="VBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem2HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DecName2" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem2HBox/DecVBox2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Infrastructure Project"
+
+[node name="DecStatus2" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem2HBox/DecVBox2"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.72, 0.95, 1)
+theme_override_font_sizes/font_size = 8
+text = "In Progress"
+
+[node name="DecTime2" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem2HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "6h ago"
 
 [node name="BottomDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
@@ -1529,40 +2536,136 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -38.0
+offset_top = -44.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_bottomdock")
 
 [node name="BottomDockHBox" type="HBoxContainer" parent="InterfaceLayer/BottomDock"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
+
+[node name="ChatPill" type="PanelContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ChatPillHBox" type="HBoxContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatPill"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ChatIcon" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatPill/ChatPillHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "💬"
+
+[node name="StatusTickerLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatPill/ChatPillHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "Executive Briefing: Presidential executive office online."
+
+[node name="ChatMembers" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatPill/ChatPillHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 10
+text = "👥 22 >"
+
+[node name="StateStatusLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 9
+text = "Status: Waiting for state file"
 
 [node name="ActiveProjectLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "Active Project: None"
 
 [node name="OpenProjectsButton" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
-text = "View Projects ->"
+text = "Projects ->"
 
-[node name="VSeparator6" type="VSeparator" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
-layout_mode = 2
-
-[node name="StatusTickerLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+[node name="BottomNavPills" type="HBoxContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
-text = "Executive Briefing: Presidential executive office online."
+alignment = 1
+theme_override_constants/separation = 4
 
-[node name="StateStatusLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+[node name="BtnBtmOverview" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 10
-text = "Status: Waiting for state file"
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_active")
+text = "🏠 Overview"
+
+[node name="BtnBtmGov" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "🏛️ Government"
+
+[node name="BtnBtmEcon" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "📈 Economy"
+
+[node name="BtnBtmCamp" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "📢 Campaign"
+
+[node name="BtnBtmDip" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "🌐 Diplomacy"
+
+[node name="BtnBtmDev" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "⚙️ Development"
+
+[node name="BtnBtmIntel" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "👁 Intelligence"
+
+[node name="BtnBtmDef" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "🛡️ Defence"
+
+[node name="BtnBtmWorld" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "🌍 World"
+
+[node name="SloganCard" type="PanelContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SloganVBox" type="VBoxContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox/SloganCard"]
+layout_mode = 2
+alignment = 1
+
+[node name="SloganTitle" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/SloganCard/SloganVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "A Stronger Tomorrow"
+
+[node name="SloganQuote" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/SloganCard/SloganVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 8
+text = "\"Prosperity, Stability, Unity\" — Pres. Okafor"
 
 [node name="SessionBriefingToast" type="PanelContainer" parent="InterfaceLayer"]
 visible = false

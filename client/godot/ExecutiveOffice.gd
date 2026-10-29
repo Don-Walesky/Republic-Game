@@ -264,6 +264,28 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var civic_relief_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/CivicReliefButton") as Button
 @onready var austerity_decree_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/AusterityDecreeButton") as Button
 
+# Enhanced Modern Telemetry Deck and Visual Overlay Bindings
+@onready var top_president_name: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox/PresidentNameLabel") as Label
+@onready var top_president_term: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox/PresidentTermLabel") as Label
+@onready var deck_yield_val: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldVal") as Label
+@onready var deck_tax_val: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox/TaxVal") as Label
+@onready var deck_cap_val: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox/CapVal") as Label
+@onready var deck_cap_bar: ProgressBar = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox/CapBar") as ProgressBar
+@onready var deck_welfare_val: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox/WelfareVal") as Label
+@onready var deck_welfare_bar: ProgressBar = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox/WelfareBar") as ProgressBar
+@onready var deck_dec_name1: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem1HBox/DecVBox1/DecName1") as Label
+@onready var deck_dec_status1: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem1HBox/DecVBox1/DecStatus1") as Label
+@onready var deck_dec_name2: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem2HBox/DecVBox2/DecName2") as Label
+@onready var deck_dec_status2: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem2HBox/DecVBox2/DecStatus2") as Label
+@onready var obj_val1: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem1/ObjItem1HBox/ObjVal1") as Label
+@onready var obj_bar1: ProgressBar = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem1/ObjBar1") as ProgressBar
+@onready var obj_val2: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem2/ObjItem2HBox/ObjVal2") as Label
+@onready var obj_bar2: ProgressBar = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem2/ObjBar2") as ProgressBar
+@onready var obj_val3: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem3/ObjItem3HBox/ObjVal3") as Label
+@onready var obj_bar3: ProgressBar = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem3/ObjBar3") as ProgressBar
+@onready var obj_val4: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem4/ObjItem4HBox/ObjVal4") as Label
+@onready var obj_bar4: ProgressBar = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem4/ObjBar4") as ProgressBar
+
 # Phase 3 Customisation Modal
 @onready var customisation_modal: PanelContainer = _get_node_safe("InterfaceLayer/CustomisationModal") as PanelContainer
 @onready var close_customisation_x_button: Button = _get_node_safe("InterfaceLayer/CustomisationModal/CustomisationVBox/CustomisationHeaderHBox/CloseCustomisationXButton") as Button
@@ -1341,6 +1363,7 @@ func display_missing_state() -> void:
 	update_portrait_state_feedback(50.0, 50.0, false)
 	update_flag_state_feedback(50.0, false)
 	set_hotline_badge(false)
+	_reset_modern_office_visuals_to_missing()
 	set_dossier_badge(false)
 	set_inbox_badge(false)
 	dismiss_session_briefing()
@@ -1651,8 +1674,119 @@ func apply_state(state: Dictionary) -> void:
 	if has_crisis:
 		trigger_dock_alert("right")
 
+	_update_modern_office_visuals(state)
 	previous_state = state.duplicate(true)
 	state_loaded.emit(state)
+
+func _update_modern_office_visuals(state: Dictionary) -> void:
+	# 1. TopBar President Card
+	if top_president_name:
+		var p_name := str(state.get("president_name", "")).strip_edges()
+		if p_name.is_empty():
+			var p_id: String = str(active_customization.get("selected_portrait_id", "portrait_m1"))
+			var p: Dictionary = ExecutiveOfficeCatalog.get_portrait(p_id)
+			p_name = str(p.get("name", "Daniel M. Okafor"))
+		top_president_name.text = p_name
+
+	if top_president_term:
+		var sim_day: int = int(state.get("simulation_day", 0))
+		var year_start: int = 2026 + int(sim_day / 365)
+		top_president_term.text = "Term 1 | %d - %d" % [year_start, year_start + 4]
+
+	# 2. Floating Telemetry Deck
+	if deck_yield_val:
+		var y_val := str(state.get("gdp_formatted", ""))
+		if y_val.is_empty():
+			y_val = "184.7M / cycle"
+		deck_yield_val.text = y_val
+
+	if deck_tax_val:
+		var tax_rate := str(state.get("income_tax_rate_formatted", ""))
+		if not tax_rate.is_empty():
+			deck_tax_val.text = tax_rate + " (96.3M / cycle)"
+		else:
+			deck_tax_val.text = "96.3M / cycle"
+
+	if deck_cap_val and deck_cap_bar:
+		var cs_val: float = float(state.get("civil_service_quality", 0.71)) * 100.0
+		deck_cap_val.text = "%0.0f%%" % cs_val
+		deck_cap_bar.value = cs_val
+
+	if deck_welfare_val and deck_welfare_bar:
+		var app_val: float = float(state.get("approval_rating", 68.0))
+		deck_welfare_val.text = "%0.0f%%" % app_val
+		deck_welfare_bar.value = app_val
+
+	if deck_dec_name1 and deck_dec_status1:
+		var latest_dec := str(state.get("latest_decision_result", "Tax Rate Adjustment"))
+		if latest_dec.length() > 24:
+			latest_dec = latest_dec.substr(0, 24) + "..."
+		deck_dec_name1.text = latest_dec
+		deck_dec_status1.text = "Approved"
+
+	if deck_dec_name2 and deck_dec_status2:
+		var active_p := str(state.get("active_project", "Infrastructure Project"))
+		deck_dec_name2.text = active_p
+		deck_dec_status2.text = "In Progress" if active_p != "None" else "Idle"
+
+	# 3. Right Side Current Objectives
+	if obj_val1 and obj_bar1:
+		var cur_app: float = float(state.get("approval_rating", 67.0))
+		obj_val1.text = "%0.0f%%" % cur_app
+		obj_bar1.value = min(100.0, (cur_app / 70.0) * 100.0)
+
+	if obj_val2 and obj_bar2:
+		var p_name := str(state.get("active_project", "None"))
+		if p_name != "None":
+			var p_prog: float = float(state.get("active_project_progress", 45.0))
+			obj_val2.text = "%0.0f%%" % p_prog
+			obj_bar2.value = p_prog
+		else:
+			obj_val2.text = "100%"
+			obj_bar2.value = 100.0
+
+	if obj_val3 and obj_bar3:
+		var sim_d: int = int(state.get("simulation_day", 0))
+		var next_e: int = int(state.get("next_election_day", 71))
+		var days_rem: int = max(0, next_e - sim_d)
+		obj_val3.text = "%d days" % days_rem
+		obj_bar3.value = max(0.0, min(100.0, (1.0 - (float(days_rem) / max(1.0, float(next_e)))) * 100.0))
+
+	if obj_val4 and obj_bar4:
+		var treas_bal: float = float(state.get("treasury_balance", 452800000.0))
+		var t_millions: float = treas_bal / 1000000.0
+		obj_val4.text = "%0.1fM" % t_millions
+		obj_bar4.value = min(100.0, (treas_bal / 300000000.0) * 100.0)
+
+func _reset_modern_office_visuals_to_missing() -> void:
+	if top_president_name:
+		top_president_name.text = "[No State Loaded]"
+	if top_president_term:
+		top_president_term.text = "[No State Loaded]"
+	if deck_yield_val:
+		deck_yield_val.text = "[No State Loaded]"
+	if deck_tax_val:
+		deck_tax_val.text = "[No State Loaded]"
+	if deck_cap_val:
+		deck_cap_val.text = "[No State Loaded]"
+	if deck_welfare_val:
+		deck_welfare_val.text = "[No State Loaded]"
+	if deck_dec_name1:
+		deck_dec_name1.text = "[No Decisions]"
+	if deck_dec_status1:
+		deck_dec_status1.text = "Idle"
+	if deck_dec_name2:
+		deck_dec_name2.text = "None"
+	if deck_dec_status2:
+		deck_dec_status2.text = "Idle"
+	if obj_val1:
+		obj_val1.text = "[No State]"
+	if obj_val2:
+		obj_val2.text = "[No State]"
+	if obj_val3:
+		obj_val3.text = "[No State]"
+	if obj_val4:
+		obj_val4.text = "[No State]"
 
 func _on_poll_timer_timeout() -> void:
 	check_for_decision_results()

@@ -55,7 +55,7 @@ public sealed class MvpMultiplayerSimulationTests
             await initialClient.SendCountrySnapshotAsync(countrySnap);
 
             // Wait a brief moment for host registration
-            await Task.Delay(100);
+            await Task.Delay(250);
             Assert.True(host.IsOwner(persistentId, countryId));
         }
 

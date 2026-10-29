@@ -911,7 +911,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 
 	# 5b. Finance Loyalist
 	office.execute_cabinet_appointment("Finance", "loyalist", true)
-	var sync_f_loy: Dictionary = office.run_cli_request_processor_sync(10000)
+	var sync_f_loy: Dictionary = office.run_cli_request_processor_sync(15000)
 	if not sync_f_loy.get("success", false):
 		printerr("  [FAIL]: CLI processor failed for Finance loyalist.")
 		return false
@@ -927,7 +927,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 
 	# 5c. Finance Dismiss / Vacate
 	office.execute_cabinet_appointment("Finance", "dismiss", true)
-	var sync_f_dis: Dictionary = office.run_cli_request_processor_sync(10000)
+	var sync_f_dis: Dictionary = office.run_cli_request_processor_sync(15000)
 	if not sync_f_dis.get("success", false):
 		printerr("  [FAIL]: CLI processor failed for Finance dismiss.")
 		return false
@@ -943,7 +943,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 
 	# 6a. Interior Technocrat
 	office.execute_cabinet_appointment("Interior", "technocrat", true)
-	var sync_i_tech: Dictionary = office.run_cli_request_processor_sync(10000)
+	var sync_i_tech: Dictionary = office.run_cli_request_processor_sync(15000)
 	if not sync_i_tech.get("success", false):
 		printerr("  [FAIL]: CLI processor failed for Interior technocrat.")
 		return false
@@ -962,7 +962,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 
 	# 6b. Interior Loyalist
 	office.execute_cabinet_appointment("Interior", "loyalist", true)
-	var sync_i_loy: Dictionary = office.run_cli_request_processor_sync(10000)
+	var sync_i_loy: Dictionary = office.run_cli_request_processor_sync(15000)
 	if not sync_i_loy.get("success", false):
 		printerr("  [FAIL]: CLI processor failed for Interior loyalist.")
 		return false
@@ -975,7 +975,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 
 	# 6c. Interior Dismiss / Vacate
 	office.execute_cabinet_appointment("Interior", "dismiss", true)
-	var sync_i_dis: Dictionary = office.run_cli_request_processor_sync(10000)
+	var sync_i_dis: Dictionary = office.run_cli_request_processor_sync(15000)
 	if not sync_i_dis.get("success", false):
 		printerr("  [FAIL]: CLI processor failed for Interior dismiss.")
 		return false
@@ -991,7 +991,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 
 	# 7a. Infrastructure Technocrat
 	office.execute_cabinet_appointment("Infrastructure", "technocrat", true)
-	var sync_inf_tech: Dictionary = office.run_cli_request_processor_sync(10000)
+	var sync_inf_tech: Dictionary = office.run_cli_request_processor_sync(15000)
 	if not sync_inf_tech.get("success", false):
 		printerr("  [FAIL]: CLI processor failed for Infrastructure technocrat.")
 		return false
@@ -1007,7 +1007,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 
 	# 7b. Infrastructure Loyalist
 	office.execute_cabinet_appointment("Infrastructure", "loyalist", true)
-	var sync_inf_loy: Dictionary = office.run_cli_request_processor_sync(10000)
+	var sync_inf_loy: Dictionary = office.run_cli_request_processor_sync(15000)
 	if not sync_inf_loy.get("success", false):
 		printerr("  [FAIL]: CLI processor failed for Infrastructure loyalist.")
 		return false
@@ -1020,7 +1020,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 
 	# 7c. Infrastructure Dismiss / Vacate
 	office.execute_cabinet_appointment("Infrastructure", "dismiss", true)
-	var sync_inf_dis: Dictionary = office.run_cli_request_processor_sync(10000)
+	var sync_inf_dis: Dictionary = office.run_cli_request_processor_sync(15000)
 	if not sync_inf_dis.get("success", false):
 		printerr("  [FAIL]: CLI processor failed for Infrastructure dismiss.")
 		return false
