@@ -180,9 +180,9 @@ func _run_tests() -> void:
 		return
 
 	# Select 3 priorities:
-	onboarding._on_plan_clicked("agrarian_self_sufficiency", onboarding.btn_plan_1)
-	onboarding._on_plan_clicked("renewable_power_grid", onboarding.btn_plan_3)
-	onboarding._on_plan_clicked("higher_education_research", onboarding.btn_plan_4)
+	onboarding._on_plan_clicked("industrialisation_first", onboarding.btn_plan_1)
+	onboarding._on_plan_clicked("agricultural_transformation", onboarding.btn_plan_2)
+	onboarding._on_plan_clicked("technology_and_innovation", onboarding.btn_plan_3)
 
 	if onboarding.selected_plans.size() != 3:
 		printerr("[FAIL]: Expected 3 selected plans, got: ", onboarding.selected_plans.size())
@@ -195,8 +195,8 @@ func _run_tests() -> void:
 		quit(1)
 		return
 
-	# Select 4th priority: Digital Infrastructure & Cyber Defense
-	onboarding._on_plan_clicked("digital_infrastructure_cyber", onboarding.btn_plan_7)
+	# Select 4th priority: Infrastructure Revolution
+	onboarding._on_plan_clicked("infrastructure_revolution", onboarding.btn_plan_4)
 	if onboarding.selected_plans.size() != 4:
 		printerr("[FAIL]: Expected 4 selected plans, got: ", onboarding.selected_plans.size())
 		_clean_files()
@@ -210,7 +210,7 @@ func _run_tests() -> void:
 	print("  [OK]: 4 development priorities selected. Confirm button enabled.")
 
 	# Attempt to select a 5th priority -> should be blocked!
-	onboarding._on_plan_clicked("transit_rail_arteries", onboarding.btn_plan_10)
+	onboarding._on_plan_clicked("human_capital_development", onboarding.btn_plan_5)
 	if onboarding.selected_plans.size() != 4:
 		printerr("[FAIL]: 5th plan selection should be blocked! Count: ", onboarding.selected_plans.size())
 		_clean_files()
@@ -261,6 +261,17 @@ func _run_tests() -> void:
 		return
 	print("  [OK]: State successfully reloaded from authoritative save file on disk.")
 
+	print("\n--- Check 8b: Modify Selections via 'Edit Choices' ---")
+	onboarding._on_change_selections_pressed()
+	if onboarding.current_stage != OnboardingScript.ScreenStage.LEADERSHIP:
+		printerr("[FAIL]: Expected return to LEADERSHIP stage upon editing selections, got: ", onboarding.current_stage)
+		_clean_files()
+		quit(1)
+		return
+	print("  [OK]: Player navigated back to Leadership screen to adjust selections.")
+	onboarding._on_confirm_leadership_pressed()
+	onboarding._on_confirm_plans_pressed()
+
 	print("\n--- Check 9: PII Isolation in Public Snapshot ---")
 	var glob_state := ProjectSettings.globalize_path(TEST_STATE_PATH)
 	var state_file := FileAccess.open(glob_state, FileAccess.READ)
@@ -308,10 +319,25 @@ func _run_tests() -> void:
 			quit(1)
 			return
 
-	print("  [OK]: Public snapshot verified: Zero PII leaked, exact 2 archetypes and 4 plans exported.")
+		var obj_list = parsed.get("starting_objectives", [])
+		if typeof(obj_list) != TYPE_ARRAY or obj_list.size() != 4:
+			printerr("[FAIL]: Expected exactly 4 starting objectives in snapshot, got: ", obj_list)
+			_clean_files()
+			quit(1)
+			return
+
+		var opp_list = parsed.get("strategic_opportunities", [])
+		if typeof(opp_list) != TYPE_ARRAY or opp_list.size() != 2:
+			printerr("[FAIL]: Expected exactly 2 strategic opportunities in snapshot, got: ", opp_list)
+			_clean_files()
+			quit(1)
+			return
+
+	print("  [OK]: Public snapshot verified: Zero PII leaked, 2 archetypes, 4 plans, 4 objectives, 2 opportunities exported.")
 
 	print("\n==============================================================")
 	print(" [PASS]: ALL 9 ONBOARDING PHASE 3 FLOW CHECKS PASSED!        ")
 	print("==============================================================\n")
 	_clean_files()
 	quit(0)
+

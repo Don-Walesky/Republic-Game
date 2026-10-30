@@ -7,6 +7,7 @@ using Republic.Core.Economy.PrivateSector.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Officials.Models;
+using Republic.Core.Identity.Models;
 using Republic.Core.Media.Models;
 using Republic.Core.Intelligence.Models;
 using Republic.Core.NationalStrategy.Models;
@@ -1895,6 +1896,36 @@ public sealed class Country
     /// </summary>
     [JsonPropertyName("strategy_profile")]
     public NationalStrategyProfile? StrategyProfile { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sovereign leadership types establishing the president's executive doctrine.
+    /// </summary>
+    [JsonPropertyName("leadership_types")]
+    public List<LeadershipArchetype> LeadershipTypes { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the formal executive doctrine title derived from the dual leadership types.
+    /// </summary>
+    [JsonPropertyName("leadership_doctrine")]
+    public string LeadershipDoctrine { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the four inaugural national development priorities chosen during sovereign setup.
+    /// </summary>
+    [JsonPropertyName("development_plans")]
+    public List<NationalDevelopmentPriority> DevelopmentPlans { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the active starting national objectives generated from the development plans.
+    /// </summary>
+    [JsonPropertyName("starting_objectives")]
+    public List<NationalObjective> StartingObjectives { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the strategic presidential opportunities emerging from the leadership identity.
+    /// </summary>
+    [JsonPropertyName("opportunities")]
+    public List<StrategicOpportunity> Opportunities { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the base military progression level before operational bonuses (1 to 30).

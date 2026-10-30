@@ -192,19 +192,19 @@ public sealed class LeadershipAndDevelopmentPlanTests : IDisposable
         Assert.True(leaderResult.Success);
         Assert.Equal("Success", leaderResult.Result);
         Assert.Equal("LeadershipSelected", leaderResult.OnboardingStep);
-        Assert.Equal("Technocratic Builder", leaderResult.LeadershipDoctrineTitle);
+        Assert.Equal("Technocratic Strategist", leaderResult.LeadershipDoctrineTitle);
         Assert.Equal(2, leaderResult.SelectedLeadershipArchetypes.Count);
         Assert.Contains("Technocrat", leaderResult.SelectedLeadershipArchetypes);
-        Assert.Contains("StatistBuilder", leaderResult.SelectedLeadershipArchetypes);
+        Assert.Contains("Strategist", leaderResult.SelectedLeadershipArchetypes);
 
         // Step 5: Select National Development Agenda (Phase 3 Part 2)
         var devResult = PresidentialDeskBridge.SelectDevelopmentPlansDecision(
             new[]
             {
-                "agrarian_self_sufficiency",
-                "renewable_power_grid",
-                "higher_education_research",
-                "digital_infrastructure_cyber"
+                "agricultural_transformation",
+                "sustainable_development",
+                "human_capital_development",
+                "technology_and_innovation"
             },
             _statePath, _savePath, "req_dev_1");
 
@@ -212,8 +212,8 @@ public sealed class LeadershipAndDevelopmentPlanTests : IDisposable
         Assert.Equal("Success", devResult.Result);
         Assert.Equal("DevelopmentPlansSelected", devResult.OnboardingStep);
         Assert.Equal(4, devResult.SelectedDevelopmentPlans.Count);
-        Assert.Contains("AgrarianSelfSufficiency", devResult.SelectedDevelopmentPlans);
-        Assert.Contains("DigitalInfrastructureCyber", devResult.SelectedDevelopmentPlans);
+        Assert.Contains("AgriculturalTransformation", devResult.SelectedDevelopmentPlans);
+        Assert.Contains("TechnologyAndInnovation", devResult.SelectedDevelopmentPlans);
         Assert.Equal(4, devResult.SelectedDevelopmentPlanNames.Count);
 
         // Step 6: Verify Authoritative Save Round-Trip
@@ -224,7 +224,7 @@ public sealed class LeadershipAndDevelopmentPlanTests : IDisposable
         Assert.NotNull(envelope?.State?.Account);
         Assert.Equal(OnboardingStep.DevelopmentPlansSelected, envelope.State.OnboardingStep);
         Assert.Equal(OnboardingStep.DevelopmentPlansSelected, envelope.State.Account.CurrentStep);
-        Assert.Equal("Technocratic Builder", envelope.State.Account.LeadershipDoctrineTitle);
+        Assert.Equal("Technocratic Strategist", envelope.State.Account.LeadershipDoctrineTitle);
         Assert.Equal(2, envelope.State.Account.SelectedLeadershipArchetypes.Count);
         Assert.Equal(4, envelope.State.Account.SelectedDevelopmentPlans.Count);
 
@@ -236,7 +236,7 @@ public sealed class LeadershipAndDevelopmentPlanTests : IDisposable
         using var doc = JsonDocument.Parse(rawSnapshot);
         var root = doc.RootElement;
         Assert.Equal("DevelopmentPlansSelected", root.GetProperty("onboarding_step").GetString());
-        Assert.Equal("Technocratic Builder", root.GetProperty("leadership_doctrine_title").GetString());
+        Assert.Equal("Technocratic Strategist", root.GetProperty("leadership_doctrine_title").GetString());
         Assert.Equal(2, root.GetProperty("selected_leadership_archetypes").GetArrayLength());
         Assert.Equal(4, root.GetProperty("selected_development_plans").GetArrayLength());
     }
@@ -263,7 +263,7 @@ public sealed class LeadershipAndDevelopmentPlanTests : IDisposable
         var leaderResult = PresidentialDeskBridge.ProcessPendingDecisionRequest(_statePath, _savePath, _requestPath);
         Assert.NotNull(leaderResult);
         Assert.True(leaderResult.Success);
-        Assert.Equal("Populist Visionary", leaderResult.LeadershipDoctrineTitle);
+        Assert.Equal("Visionary Champion", leaderResult.LeadershipDoctrineTitle);
         Assert.Equal("LeadershipSelected", leaderResult.OnboardingStep);
         Assert.False(File.Exists(_requestPath)); // Request file deleted after processing
 
@@ -283,4 +283,129 @@ public sealed class LeadershipAndDevelopmentPlanTests : IDisposable
         Assert.Equal(4, devResult.SelectedDevelopmentPlans.Count);
         Assert.False(File.Exists(_requestPath));
     }
+
+    [Fact]
+    public void LeadershipAndDevelopmentPlans_EnforcesMultiplayerOwnershipValidation()
+    {
+        var refDate = new DateOnly(2027, 2, 10);
+        var reg = PresidentialDeskBridge.RegisterAccountDecision("Amina", "Diallo", "amina@republic.net", "1994-07-15", _statePath, _savePath, "r_own_1", refDate);
+        PresidentialDeskBridge.VerifyEmailDecision(reg.VerificationToken, _statePath, _savePath, "r_own_2");
+        var found = PresidentialDeskBridge.CreateOrLoadCountry("Republic of Diallo", _statePath, _savePath, "r_own_3");
+
+        // 1. Leadership ownership check: Impostor account ID
+        var impostorLeader = PresidentialDeskBridge.SelectLeadershipDecision(
+            new[] { "visionary", "technocrat" },
+            _statePath, _savePath, "r_lead_fail",
+            requestingAccountId: "acc_impostor_999");
+
+        Assert.False(impostorLeader.Success);
+        Assert.Equal("Unauthorized", impostorLeader.Result);
+
+        // 2. Leadership ownership check: Wrong country ID
+        var wrongCountryLeader = PresidentialDeskBridge.SelectLeadershipDecision(
+            new[] { "visionary", "technocrat" },
+            _statePath, _savePath, "r_lead_fail_2",
+            targetCountryId: "country_foreign_foreign");
+
+        Assert.False(wrongCountryLeader.Success);
+        Assert.Equal("Unauthorized", wrongCountryLeader.Result);
+
+        // 3. Legitimate leadership selection succeeds
+        var legitimateLeader = PresidentialDeskBridge.SelectLeadershipDecision(
+            new[] { "visionary", "technocrat" },
+            _statePath, _savePath, "r_lead_ok");
+        Assert.True(legitimateLeader.Success);
+
+        // 4. Plans ownership check: Impostor account ID
+        var impostorPlans = PresidentialDeskBridge.SelectDevelopmentPlansDecision(
+            new[] { "industrialisation_first", "agricultural_transformation", "technology_and_innovation", "infrastructure_revolution" },
+            _statePath, _savePath, "r_plan_fail",
+            requestingAccountId: "acc_impostor_999");
+
+        Assert.False(impostorPlans.Success);
+        Assert.Equal("Unauthorized", impostorPlans.Result);
+
+        // 5. Plans ownership check: Wrong country ID
+        var wrongCountryPlans = PresidentialDeskBridge.SelectDevelopmentPlansDecision(
+            new[] { "industrialisation_first", "agricultural_transformation", "technology_and_innovation", "infrastructure_revolution" },
+            _statePath, _savePath, "r_plan_fail_2",
+            targetCountryId: "country_foreign_foreign");
+
+        Assert.False(wrongCountryPlans.Success);
+        Assert.Equal("Unauthorized", wrongCountryPlans.Result);
+
+        // 6. Legitimate plans selection succeeds
+        var legitimatePlans = PresidentialDeskBridge.SelectDevelopmentPlansDecision(
+            new[] { "industrialisation_first", "agricultural_transformation", "technology_and_innovation", "infrastructure_revolution" },
+            _statePath, _savePath, "r_plan_ok");
+        Assert.True(legitimatePlans.Success);
+    }
+
+    [Fact]
+    public void LeadershipAndDevelopmentPlans_GeneratesAuthoritativeObjectivesAndOpportunities()
+    {
+        var refDate = new DateOnly(2027, 2, 10);
+        var reg = PresidentialDeskBridge.RegisterAccountDecision("Kenzo", "Tanaka", "kenzo@republic.net", "1989-05-12", _statePath, _savePath, "rk1", refDate);
+        PresidentialDeskBridge.VerifyEmailDecision(reg.VerificationToken, _statePath, _savePath, "rk2");
+        PresidentialDeskBridge.CreateOrLoadCountry("Republic of Yamato", _statePath, _savePath, "rk3");
+
+        // Step 1: Select Leadership -> Expect strategic opportunities generated
+        var leaderResult = PresidentialDeskBridge.SelectLeadershipDecision(
+            new[] { "strategist", "diplomat" },
+            _statePath, _savePath, "rk4");
+
+        Assert.True(leaderResult.Success);
+        Assert.Equal(2, leaderResult.StrategicOpportunities.Count);
+        Assert.Contains(leaderResult.StrategicOpportunities, o => o.Source.Contains("Strategist"));
+        Assert.Contains(leaderResult.StrategicOpportunities, o => o.Source.Contains("Diplomat"));
+
+        // Step 2: Select 4 National Development Plans -> Expect starting objectives generated
+        var devResult = PresidentialDeskBridge.SelectDevelopmentPlansDecision(
+            new[]
+            {
+                "industrialisation_first",
+                "energy_and_natural_resources",
+                "national_security_and_defence",
+                "global_trade_and_international_influence"
+            },
+            _statePath, _savePath, "rk5");
+
+        Assert.True(devResult.Success);
+        Assert.Equal(4, devResult.StartingObjectives.Count);
+        Assert.Contains(devResult.StartingObjectives, o => o.Id == "obj_industrialisation_first");
+        Assert.Contains(devResult.StartingObjectives, o => o.Id == "obj_energy_and_natural_resources");
+        Assert.Contains(devResult.StartingObjectives, o => o.Id == "obj_national_security_and_defence");
+        Assert.Contains(devResult.StartingObjectives, o => o.Id == "obj_global_trade_and_international_influence");
+
+        // Step 3: Inspect Authoritative Save Envelope
+        var serializer = new JsonStateSerializer();
+        var rawSave = File.ReadAllText(_savePath);
+        var envelope = serializer.Deserialize<FullGameState>(rawSave);
+        var country = envelope?.State?.World?.Countries?.FirstOrDefault(c => c.Name == "Republic of Yamato");
+
+        Assert.NotNull(country);
+        Assert.Equal(2, country.LeadershipTypes.Count);
+        Assert.Equal(4, country.DevelopmentPlans.Count);
+        Assert.Equal(4, country.StartingObjectives.Count);
+        Assert.Equal(2, country.Opportunities.Count);
+
+        // Verify CountryProfile has leadership & development metadata
+        Assert.NotNull(country.Profile);
+        Assert.Equal(2, country.Profile.LeadershipTypes.Count);
+        Assert.Equal(4, country.Profile.DevelopmentPlans.Count);
+
+        // Step 4: Verify Chief of Staff / General Adviser Advice References Doctrine & Development Agenda
+        var simTime = new Republic.Core.Time.RepublicTime(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        var officialsService = new Republic.Core.Government.Officials.Services.ActiveOfficialsService();
+        var recommendations = officialsService.EvaluateChiefOfStaffRecommendations(country, simTime);
+
+        var doctrineRec = recommendations.FirstOrDefault(r => r.Category == "ExecutiveDoctrine");
+        Assert.NotNull(doctrineRec);
+        Assert.Contains(country.LeadershipDoctrine, doctrineRec.Title);
+
+        var devRec = recommendations.FirstOrDefault(r => r.Category == "DevelopmentAgenda");
+        Assert.NotNull(devRec);
+        Assert.Contains("Industrialisation First", devRec.Title);
+    }
 }
+

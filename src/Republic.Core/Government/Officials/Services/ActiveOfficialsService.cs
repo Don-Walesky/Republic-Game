@@ -6,6 +6,7 @@ using System.Linq;
 using Republic.Core.Cabinet.Models;
 using Republic.Core.Crises.Models;
 using Republic.Core.Government.Officials.Models;
+using Republic.Core.Identity.Models;
 using Republic.Core.Military.Models;
 using Republic.Core.NationalStrategy.Models;
 using Republic.Core.Time;
@@ -177,6 +178,62 @@ public sealed class ActiveOfficialsService : IActiveOfficialsService
             RecommendedAction = $"advance_strategy_{stratDir.ToString().ToLowerInvariant()}",
             CreatedDay = simulationTime.DayNumber
         });
+
+        // 6. Executive Leadership Doctrine Alignment (General Adviser / Chief of Staff)
+        if (!string.IsNullOrWhiteSpace(country.LeadershipDoctrine) || country.LeadershipTypes.Count > 0)
+        {
+            var doctrine = !string.IsNullOrWhiteSpace(country.LeadershipDoctrine)
+                ? country.LeadershipDoctrine
+                : string.Join(" & ", country.LeadershipTypes.Select(t => t.ToString()));
+
+            var leaderSummary = country.LeadershipTypes.Count > 0
+                ? string.Join("; ", country.LeadershipTypes.Select(t =>
+                {
+                    try { return LeadershipArchetypeRegistry.Get(t).Advantage; }
+                    catch { return t.ToString(); }
+                }))
+                : "Executive doctrine active.";
+
+            newCandidates.Add(new ChiefOfStaffRecommendation
+            {
+                Id = "rec_leadership_doctrine",
+                Title = $"Executive Doctrine: {doctrine}",
+                Summary = $"General Adviser strategic assessment under the {doctrine} doctrine: {leaderSummary}",
+                Category = "ExecutiveDoctrine",
+                Priority = RecommendationPriority.Medium,
+                IsUrgent = false,
+                RecommendedAction = "align_cabinet_doctrine",
+                CreatedDay = simulationTime.DayNumber
+            });
+        }
+
+        // 7. Inaugural National Development Agenda Focus
+        if (country.DevelopmentPlans != null && country.DevelopmentPlans.Count > 0)
+        {
+            var planDefs = country.DevelopmentPlans.Select(p =>
+            {
+                try { return NationalDevelopmentPlanRegistry.Get(p); }
+                catch { return null; }
+            }).Where(d => d != null).Select(d => d!).ToList();
+
+            if (planDefs.Count > 0)
+            {
+                var planNames = string.Join(", ", planDefs.Select(d => d.DisplayName));
+                var topPlan = planDefs[0];
+
+                newCandidates.Add(new ChiefOfStaffRecommendation
+                {
+                    Id = "rec_development_agenda",
+                    Title = $"Development Agenda: {topPlan.DisplayName}",
+                    Summary = $"Inaugural national priorities ({planNames}). Priority execution required on {topPlan.DisplayName}: {topPlan.Focus} Expected benefit: {topPlan.Benefit}",
+                    Category = "DevelopmentAgenda",
+                    Priority = RecommendationPriority.High,
+                    IsUrgent = false,
+                    RecommendedAction = $"advance_{topPlan.Key}",
+                    CreatedDay = simulationTime.DayNumber
+                });
+            }
+        }
 
         // Deduplicate and integrate candidates with existing recommendations
         foreach (var cand in newCandidates)

@@ -596,6 +596,12 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("selected_development_plan_names")]
     public IReadOnlyList<string> SelectedDevelopmentPlanNames { get; init; } = Array.Empty<string>();
 
+    [JsonPropertyName("starting_objectives")]
+    public IReadOnlyList<NationalObjective> StartingObjectives { get; init; } = Array.Empty<NationalObjective>();
+
+    [JsonPropertyName("strategic_opportunities")]
+    public IReadOnlyList<StrategicOpportunity> StrategicOpportunities { get; init; } = Array.Empty<StrategicOpportunity>();
+
     [JsonPropertyName("is_registered")]
     public bool IsRegistered { get; init; } = true;
 
@@ -1433,6 +1439,8 @@ public sealed record PresidentialDeskSnapshot
             LeadershipDoctrineTitle = leadershipDoctrine,
             SelectedDevelopmentPlans = selectedPlans.AsReadOnly(),
             SelectedDevelopmentPlanNames = selectedPlanNames.AsReadOnly(),
+            StartingObjectives = country.StartingObjectives != null ? country.StartingObjectives.ToList().AsReadOnly() : Array.Empty<NationalObjective>(),
+            StrategicOpportunities = country.Opportunities != null ? country.Opportunities.ToList().AsReadOnly() : Array.Empty<StrategicOpportunity>(),
 
             LastAiDecision = resolvedAiDecision
         };

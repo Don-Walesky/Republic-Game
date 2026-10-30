@@ -155,6 +155,21 @@ public sealed record CountryProfile
     public RepublicTime FoundingTime { get; init; }
 
     /// <summary>
+    /// Gets the executive leadership archetypes established during founding.
+    /// </summary>
+    public IReadOnlyList<string> LeadershipTypes { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets the ratified executive leadership doctrine title.
+    /// </summary>
+    public string LeadershipDoctrine { get; init; } = DefaultUnspecified;
+
+    /// <summary>
+    /// Gets the inaugural national development plans selected for the nation.
+    /// </summary>
+    public IReadOnlyList<string> DevelopmentPlans { get; init; } = Array.Empty<string>();
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CountryProfile"/> record with default unspecified values.
     /// Parameterless constructor required for JSON serialization.
     /// </summary>
@@ -176,7 +191,10 @@ public sealed record CountryProfile
         string? constitutionName = DefaultUnspecified,
         string? primaryResource = DefaultUnspecified,
         string? politicalCulture = DefaultUnspecified,
-        RepublicTime foundingTime = default)
+        RepublicTime foundingTime = default,
+        IReadOnlyList<string>? leadershipTypes = null,
+        string? leadershipDoctrine = null,
+        IReadOnlyList<string>? developmentPlans = null)
     {
         if (population < 0)
         {
@@ -201,6 +219,9 @@ public sealed record CountryProfile
         PrimaryResource = primaryResource ?? DefaultUnspecified;
         PoliticalCulture = politicalCulture ?? DefaultUnspecified;
         FoundingTime = foundingTime;
+        LeadershipTypes = leadershipTypes ?? Array.Empty<string>();
+        LeadershipDoctrine = leadershipDoctrine ?? DefaultUnspecified;
+        DevelopmentPlans = developmentPlans ?? Array.Empty<string>();
     }
 
     /// <summary>

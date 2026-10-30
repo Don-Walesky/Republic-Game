@@ -144,6 +144,7 @@ var resend_cooldown_timer: float = 0.0
 @onready var lbl_summary_archetypes: Label = $PanelContainer/VBox/ScreenPhase3Summary/Grid/LblArchetypesVal
 @onready var lbl_summary_plans: Label = $PanelContainer/VBox/ScreenPhase3Summary/Grid/LblPlansVal
 @onready var btn_verify_phase3_reload: Button = $PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnVerifyPhase3Reload
+@onready var btn_change_selections: Button = $PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnChangeSelections
 @onready var btn_proceed_phase4: Button = $PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnProceedPhase4
 
 func _ready() -> void:
@@ -241,6 +242,7 @@ func _init_controls() -> void:
 	if lbl_summary_archetypes == null: lbl_summary_archetypes = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/Grid/LblArchetypesVal")
 	if lbl_summary_plans == null: lbl_summary_plans = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/Grid/LblPlansVal")
 	if btn_verify_phase3_reload == null: btn_verify_phase3_reload = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnVerifyPhase3Reload")
+	if btn_change_selections == null: btn_change_selections = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnChangeSelections")
 	if btn_proceed_phase4 == null: btn_proceed_phase4 = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnProceedPhase4")
 
 func _process(delta: float) -> void:
@@ -271,6 +273,8 @@ func _connect_signals() -> void:
 		btn_cancel_modal.pressed.connect(_on_cancel_modal_pressed)
 	if btn_resume_session and not btn_resume_session.pressed.is_connected(_on_resume_session_pressed):
 		btn_resume_session.pressed.connect(_on_resume_session_pressed)
+	if btn_change_selections and not btn_change_selections.pressed.is_connected(_on_change_selections_pressed):
+		btn_change_selections.pressed.connect(_on_change_selections_pressed)
 	if btn_proceed_leadership and not btn_proceed_leadership.pressed.is_connected(_on_proceed_leadership_pressed):
 		btn_proceed_leadership.pressed.connect(_on_proceed_leadership_pressed)
 
@@ -289,16 +293,16 @@ func _connect_signals() -> void:
 		btn_confirm_leadership.pressed.connect(_on_confirm_leadership_pressed)
 
 	# Development Plan buttons
-	_connect_plan_button(btn_plan_1, "agrarian_self_sufficiency")
-	_connect_plan_button(btn_plan_2, "mineral_industrialization")
-	_connect_plan_button(btn_plan_3, "renewable_power_grid")
-	_connect_plan_button(btn_plan_4, "higher_education_research")
-	_connect_plan_button(btn_plan_5, "border_security_defense")
-	_connect_plan_button(btn_plan_6, "maritime_trade_ports")
-	_connect_plan_button(btn_plan_7, "digital_infrastructure_cyber")
-	_connect_plan_button(btn_plan_8, "universal_healthcare")
-	_connect_plan_button(btn_plan_9, "fiscal_reserve_fortress")
-	_connect_plan_button(btn_plan_10, "transit_rail_arteries")
+	_connect_plan_button(btn_plan_1, "industrialisation_first")
+	_connect_plan_button(btn_plan_2, "agricultural_transformation")
+	_connect_plan_button(btn_plan_3, "technology_and_innovation")
+	_connect_plan_button(btn_plan_4, "infrastructure_revolution")
+	_connect_plan_button(btn_plan_5, "human_capital_development")
+	_connect_plan_button(btn_plan_6, "financial_and_commercial_power")
+	_connect_plan_button(btn_plan_7, "energy_and_natural_resources")
+	_connect_plan_button(btn_plan_8, "national_security_and_defence")
+	_connect_plan_button(btn_plan_9, "sustainable_development")
+	_connect_plan_button(btn_plan_10, "global_trade_and_international_influence")
 	if btn_confirm_plans and not btn_confirm_plans.pressed.is_connected(_on_confirm_plans_pressed):
 		btn_confirm_plans.pressed.connect(_on_confirm_plans_pressed)
 
@@ -602,16 +606,16 @@ func _on_technocrat_toggled() -> void:
 	_toggle_archetype("technocrat", btn_arch_technocrat)
 
 func _on_populist_toggled() -> void:
-	_toggle_archetype("populist_reformer", btn_arch_populist)
+	_toggle_archetype("peoples_champion", btn_arch_populist)
 
 func _on_visionary_toggled() -> void:
-	_toggle_archetype("economic_visionary", btn_arch_visionary)
+	_toggle_archetype("visionary", btn_arch_visionary)
 
 func _on_statist_toggled() -> void:
-	_toggle_archetype("statist_builder", btn_arch_statist)
+	_toggle_archetype("strategist", btn_arch_statist)
 
 func _on_diplomat_toggled() -> void:
-	_toggle_archetype("diplomatic_strategist", btn_arch_diplomat)
+	_toggle_archetype("diplomat", btn_arch_diplomat)
 
 func _toggle_archetype(key: String, btn: Button) -> void:
 	if lbl_leadership_feedback: lbl_leadership_feedback.text = ""
@@ -650,18 +654,23 @@ func _compute_doctrine_title(archetypes: Array[String]) -> String:
 
 	var set := {}
 	for a in archetypes:
-		set[a] = true
+		var norm := a.to_lower().replace("-", "_")
+		if norm.contains("visionary") or norm.contains("economic"): set["visionary"] = true
+		elif norm.contains("diplomat"): set["diplomat"] = true
+		elif norm.contains("strategist") or norm.contains("statist") or norm.contains("builder"): set["strategist"] = true
+		elif norm.contains("champion") or norm.contains("people") or norm.contains("populist") or norm.contains("reformer"): set["champion"] = true
+		elif norm.contains("technocrat"): set["technocrat"] = true
 
-	if set.has("technocrat") and set.has("economic_visionary"): return "Technocratic Visionary"
-	if set.has("technocrat") and set.has("statist_builder"): return "Technocratic Builder"
-	if set.has("technocrat") and set.has("diplomatic_strategist"): return "Technocratic Diplomat"
-	if set.has("technocrat") and set.has("populist_reformer"): return "Technocratic Reformer"
-	if set.has("populist_reformer") and set.has("statist_builder"): return "Populist Builder"
-	if set.has("populist_reformer") and set.has("economic_visionary"): return "Populist Visionary"
-	if set.has("populist_reformer") and set.has("diplomatic_strategist"): return "Populist Diplomat"
-	if set.has("economic_visionary") and set.has("statist_builder"): return "Visionary Builder"
-	if set.has("economic_visionary") and set.has("diplomatic_strategist"): return "Visionary Diplomat"
-	if set.has("statist_builder") and set.has("diplomatic_strategist"): return "Strategic Builder"
+	if set.has("technocrat") and set.has("visionary"): return "Technocratic Visionary"
+	if set.has("technocrat") and set.has("strategist"): return "Technocratic Strategist"
+	if set.has("technocrat") and set.has("diplomat"): return "Technocratic Diplomat"
+	if set.has("technocrat") and set.has("champion"): return "Technocratic Reformer"
+	if set.has("visionary") and set.has("strategist"): return "Visionary Strategist"
+	if set.has("visionary") and set.has("diplomat"): return "Visionary Diplomat"
+	if set.has("visionary") and set.has("champion"): return "Visionary Champion"
+	if set.has("diplomat") and set.has("strategist"): return "Strategic Diplomat"
+	if set.has("diplomat") and set.has("champion"): return "Diplomatic Champion"
+	if set.has("strategist") and set.has("champion"): return "Strategic Champion"
 
 	return archetypes[0].capitalize() + "-" + archetypes[1].capitalize()
 
@@ -786,6 +795,10 @@ func _populate_phase3_summary_view(data: Dictionary) -> void:
 	if lbl_summary_doctrine: lbl_summary_doctrine.text = doctrine
 	if lbl_summary_archetypes: lbl_summary_archetypes.text = archetypes_str
 	if lbl_summary_plans: lbl_summary_plans.text = plans_str
+
+func _on_change_selections_pressed() -> void:
+	# Allows the player to adjust choices prior to confirming to next stage
+	_show_stage(ScreenStage.LEADERSHIP)
 
 func _on_resume_session_pressed() -> void:
 	# Reloads state from disk to confirm persistent survival across restart

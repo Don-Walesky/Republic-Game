@@ -1917,7 +1917,9 @@ public static class PresidentialDeskBridge
         IReadOnlyList<string>? archetypes,
         string? stateFilePath = null,
         string? saveFilePath = null,
-        string? requestId = null)
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
@@ -1957,6 +1959,37 @@ public static class PresidentialDeskBridge
             return invalidPrecondition;
         }
 
+        if (!string.IsNullOrWhiteSpace(requestingAccountId) &&
+            !string.Equals(requestingAccountId, envelope.State.Account.AccountId, StringComparison.OrdinalIgnoreCase))
+        {
+            var unauthorizedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not have permission to modify another player's sovereign leadership identity.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, unauthorizedResult);
+            return unauthorizedResult;
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetCountryId) &&
+            !string.IsNullOrWhiteSpace(envelope.State.Account.OwnedCountryId) &&
+            !string.Equals(targetCountryId, envelope.State.Account.OwnedCountryId, StringComparison.OrdinalIgnoreCase))
+        {
+            var forbiddenResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not own this sovereign country.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, forbiddenResult);
+            return forbiddenResult;
+        }
+
         var identityService = new PlayerIdentityService();
         var (isValid, validationMessage, parsedArchetypes, doctrineTitle) = identityService.ValidateLeadershipSelection(archetypes);
         if (!isValid)
@@ -1983,6 +2016,33 @@ public static class PresidentialDeskBridge
         var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
         if (country != null)
         {
+            country.LeadershipTypes = parsedArchetypes.ToList();
+            country.LeadershipDoctrine = doctrineTitle;
+
+            country.Opportunities.Clear();
+            foreach (var arch in parsedArchetypes)
+            {
+                var def = LeadershipArchetypeRegistry.Get(arch);
+                country.Opportunities.Add(new StrategicOpportunity
+                {
+                    Id = $"opp_{def.Key}",
+                    Title = $"{def.DisplayName} Opportunity: {def.Advantage.Split('(')[0].Trim()}",
+                    Description = $"Strategic presidential opportunity emerging from {def.DisplayName} leadership: {def.Advantage} Challenge: {def.Challenge}",
+                    Source = def.DisplayName,
+                    AdvantageSummary = def.Advantage,
+                    IsActive = true
+                });
+            }
+
+            if (country.Profile != null)
+            {
+                country.Profile = country.Profile with
+                {
+                    LeadershipTypes = country.LeadershipTypes.Select(t => t.ToString()).ToList(),
+                    LeadershipDoctrine = country.LeadershipDoctrine
+                };
+            }
+
             // Apply executive doctrine stat bonuses to live country
             foreach (var arch in parsedArchetypes)
             {
@@ -1999,20 +2059,20 @@ public static class PresidentialDeskBridge
                             country.StateCapacity.AdministrativeCompetence = Math.Min(1.0, ac * 1.10);
                         }
                         break;
-                    case LeadershipArchetype.PopulistReformer:
+                    case LeadershipArchetype.PeoplesChampion:
                         country.HappinessRating = Math.Min(100.0, country.HappinessRating + 10.0);
                         break;
-                    case LeadershipArchetype.EconomicVisionary:
+                    case LeadershipArchetype.Visionary:
                         var treasuryBonus = country.Treasury.Balance * 0.10;
                         if (treasuryBonus > 0)
                         {
                             country.Treasury.Deposit(treasuryBonus);
                         }
                         break;
-                    case LeadershipArchetype.StatistBuilder:
+                    case LeadershipArchetype.Strategist:
                         country.BaselineStability = Math.Min(100.0, country.BaselineStability + 10.0);
                         break;
-                    case LeadershipArchetype.DiplomaticStrategist:
+                    case LeadershipArchetype.Diplomat:
                         break;
                 }
             }
@@ -2039,7 +2099,8 @@ public static class PresidentialDeskBridge
             PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
             CountryName = country?.Name ?? string.Empty,
             SelectedLeadershipArchetypes = parsedArchetypes.Select(a => a.ToString()).ToList(),
-            LeadershipDoctrineTitle = doctrineTitle
+            LeadershipDoctrineTitle = doctrineTitle,
+            StrategicOpportunities = country?.Opportunities != null ? country.Opportunities.ToList().AsReadOnly() : Array.Empty<StrategicOpportunity>()
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -2054,7 +2115,9 @@ public static class PresidentialDeskBridge
         IReadOnlyList<string>? plans,
         string? stateFilePath = null,
         string? saveFilePath = null,
-        string? requestId = null)
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
@@ -2094,6 +2157,37 @@ public static class PresidentialDeskBridge
             return invalidPrecondition;
         }
 
+        if (!string.IsNullOrWhiteSpace(requestingAccountId) &&
+            !string.Equals(requestingAccountId, envelope.State.Account.AccountId, StringComparison.OrdinalIgnoreCase))
+        {
+            var unauthorizedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not have permission to modify another player's sovereign development agenda.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, unauthorizedResult);
+            return unauthorizedResult;
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetCountryId) &&
+            !string.IsNullOrWhiteSpace(envelope.State.Account.OwnedCountryId) &&
+            !string.Equals(targetCountryId, envelope.State.Account.OwnedCountryId, StringComparison.OrdinalIgnoreCase))
+        {
+            var forbiddenResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not own this sovereign country.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, forbiddenResult);
+            return forbiddenResult;
+        }
+
         var identityService = new PlayerIdentityService();
         var (isValid, validationMessage, parsedPriorities) = identityService.ValidateDevelopmentPlansSelection(plans);
         if (!isValid)
@@ -2123,9 +2217,38 @@ public static class PresidentialDeskBridge
         var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
         if (country != null)
         {
+            country.DevelopmentPlans = parsedPriorities.ToList();
             country.StrategyProfile ??= new NationalStrategyProfile();
             country.StrategyProfile.PrioritySectors = planSectors;
             country.StrategyProfile.FocusStatement = $"Inaugural development focus: {string.Join(", ", planNames)}";
+
+            country.StartingObjectives.Clear();
+            foreach (var priority in parsedPriorities)
+            {
+                var def = NationalDevelopmentPlanRegistry.Get(priority);
+                country.StartingObjectives.Add(new NationalObjective
+                {
+                    Id = $"obj_{def.Key}",
+                    Title = $"Implement {def.DisplayName}",
+                    Description = $"{def.Focus} Expected benefit: {def.Benefit} Challenge: {def.Challenge}",
+                    Category = def.Sector,
+                    TargetValue = 100.0,
+                    CurrentValue = 15.0,
+                    ProgressPercentage = 15.0,
+                    IsCompleted = false,
+                    RewardSummary = string.Join("; ", def.KeyBenefits)
+                });
+            }
+
+            if (country.Profile != null)
+            {
+                country.Profile = country.Profile with
+                {
+                    LeadershipTypes = country.LeadershipTypes.Select(t => t.ToString()).ToList(),
+                    LeadershipDoctrine = country.LeadershipDoctrine,
+                    DevelopmentPlans = country.DevelopmentPlans.Select(p => p.ToString()).ToList()
+                };
+            }
         }
 
         var serializer = new JsonStateSerializer();
@@ -2151,7 +2274,9 @@ public static class PresidentialDeskBridge
             SelectedLeadershipArchetypes = envelope.State.Account.SelectedLeadershipArchetypes.Select(a => a.ToString()).ToList(),
             LeadershipDoctrineTitle = envelope.State.Account.LeadershipDoctrineTitle,
             SelectedDevelopmentPlans = parsedPriorities.Select(p => p.ToString()).ToList(),
-            SelectedDevelopmentPlanNames = planNames
+            SelectedDevelopmentPlanNames = planNames,
+            StartingObjectives = country?.StartingObjectives != null ? country.StartingObjectives.ToList().AsReadOnly() : Array.Empty<NationalObjective>(),
+            StrategicOpportunities = country?.Opportunities != null ? country.Opportunities.ToList().AsReadOnly() : Array.Empty<StrategicOpportunity>()
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -6800,9 +6925,16 @@ public static class PresidentialDeskBridge
                             archetypesList.Add(a2El.GetString()!.Trim());
                         }
 
+                        string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
+                        string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid) && root.TryGetProperty("target_country_id", out var tcidEl))
+                        {
+                            reqCid = tcidEl.GetString();
+                        }
+
                         try
                         {
-                            return SelectLeadershipDecision(archetypesList, targetStatePath, saveFilePath, requestId);
+                            return SelectLeadershipDecision(archetypesList, targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
                         }
                         finally
                         {
@@ -6853,9 +6985,16 @@ public static class PresidentialDeskBridge
                             }
                         }
 
+                        string? reqAccId2 = root.TryGetProperty("account_id", out var accEl2) ? accEl2.GetString() : null;
+                        string? reqCid2 = root.TryGetProperty("country_id", out var cidEl2) ? cidEl2.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid2) && root.TryGetProperty("target_country_id", out var tcidEl2))
+                        {
+                            reqCid2 = tcidEl2.GetString();
+                        }
+
                         try
                         {
-                            return SelectDevelopmentPlansDecision(plansList, targetStatePath, saveFilePath, requestId);
+                            return SelectDevelopmentPlansDecision(plansList, targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId2, targetCountryId: reqCid2);
                         }
                         finally
                         {
@@ -8142,4 +8281,10 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("selected_development_plan_names")]
     public IReadOnlyList<string> SelectedDevelopmentPlanNames { get; init; } = Array.Empty<string>();
+
+    [JsonPropertyName("starting_objectives")]
+    public IReadOnlyList<NationalObjective> StartingObjectives { get; init; } = Array.Empty<NationalObjective>();
+
+    [JsonPropertyName("strategic_opportunities")]
+    public IReadOnlyList<StrategicOpportunity> StrategicOpportunities { get; init; } = Array.Empty<StrategicOpportunity>();
 }

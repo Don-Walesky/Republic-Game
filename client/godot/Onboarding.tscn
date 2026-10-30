@@ -454,7 +454,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_font_sizes/font_size = 14
-text = "Technocrat"
+text = "The Technocrat"
 
 [node name="BtnSelectTechnocrat" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat/VBox/HBoxHeader"]
 layout_mode = 2
@@ -464,7 +464,7 @@ text = "Select"
 [node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Data-driven governance: +15% State Capacity & Civil Service Quality, +10% Science & Tech | Tradeoff: -5% Populist Sensitivity | Synergies: Finance & Education"
+text = "Focus: Expertise, efficiency, evidence-based decisions and institutional performance.\nAdvantage: Better opportunities for administrative and economic reforms.\nChallenge: Difficulty navigating political sensitivities and public expectations."
 autowrap_mode = 2
 
 [node name="CardPopulist" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
@@ -482,7 +482,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_font_sizes/font_size = 14
-text = "Populist Reformer"
+text = "The People's Champion"
 
 [node name="BtnSelectPopulist" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist/VBox/HBoxHeader"]
 layout_mode = 2
@@ -492,7 +492,7 @@ text = "Select"
 [node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Popular mandate: +10% Base Public Approval, +15% Campaign Rally Effectiveness | Tradeoff: -5% Foreign Diplomatic Standing | Synergies: Interior & Labor"
+text = "Focus: Public welfare, social justice and popular support.\nAdvantage: Better opportunities for social programmes and public engagement.\nChallenge: Expensive promises and pressure on national finances."
 autowrap_mode = 2
 
 [node name="CardVisionary" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
@@ -510,7 +510,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_font_sizes/font_size = 14
-text = "Economic Visionary"
+text = "The Visionary"
 
 [node name="BtnSelectVisionary" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary/VBox/HBoxHeader"]
 layout_mode = 2
@@ -520,7 +520,7 @@ text = "Select"
 [node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Market innovation: +10% Private Investment & National Yield, +10% REPU Treasury Generation | Tradeoff: -5% Environmental Stability | Synergies: Commerce & Resources"
+text = "Focus: Innovation, transformation and long-term national progress.\nAdvantage: Better opportunities for long-term reforms and innovation.\nChallenge: Resistance to rapid change and pressure to address immediate needs."
 autowrap_mode = 2
 
 [node name="CardStatist" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
@@ -538,7 +538,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_font_sizes/font_size = 14
-text = "Statist Builder"
+text = "The Strategist"
 
 [node name="BtnSelectStatist" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist/VBox/HBoxHeader"]
 layout_mode = 2
@@ -548,7 +548,7 @@ text = "Select"
 [node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Monumental infrastructure: +15% Infrastructure Construction Speed, +10% National Stability | Tradeoff: +5% Public Works Maintenance | Synergies: Infrastructure & Transport"
+text = "Focus: Planning, calculated decisions, national positioning and security.\nAdvantage: Stronger strategic planning and crisis preparation.\nChallenge: Risk of overlooking public sentiment or social concerns."
 autowrap_mode = 2
 
 [node name="CardDiplomat" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
@@ -566,7 +566,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_font_sizes/font_size = 14
-text = "Diplomatic Strategist"
+text = "The Diplomat"
 
 [node name="BtnSelectDiplomat" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat/VBox/HBoxHeader"]
 layout_mode = 2
@@ -576,7 +576,7 @@ text = "Select"
 [node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "Sovereign diplomacy: +15% Bilateral Trade Yields, +10% Alliance Approval & Regional Influence | Tradeoff: -5% Aggressive Deterrence | Synergies: Foreign Affairs"
+text = "Focus: Negotiation, compromise, alliances and international relationships.\nAdvantage: Stronger diplomatic opportunities and political negotiation.\nChallenge: Excessive concessions or difficulty making unpopular decisions."
 autowrap_mode = 2
 
 [node name="LblDoctrinePreview" type="Label" parent="PanelContainer/VBox/ScreenLeadership"]
@@ -991,6 +991,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 38)
 text = "Verify Saved Progress & Reload"
+
+[node name="BtnChangeSelections" type="Button" parent="PanelContainer/VBox/ScreenPhase3Summary/HBoxActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "Edit Choices"
 
 [node name="BtnProceedPhase4" type="Button" parent="PanelContainer/VBox/ScreenPhase3Summary/HBoxActions"]
 layout_mode = 2
