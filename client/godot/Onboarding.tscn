@@ -1282,3 +1282,140 @@ layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 38)
 text = "Induct Advisory Council & Enter Campaign Headquarters"
+
+
+[node name="ScreenCampaignHq" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LblTitle" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "PRESIDENTIAL CAMPAIGN HEADQUARTERS (PHASE 5)"
+horizontal_alignment = 1
+
+[node name="LblSub" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "The campaign is where the consequences of leadership begin. Every decision generates genuine positive and negative trade-offs. Balance outreach, protect the R 5,000,000 purse, and secure 50.0% majority to win the presidency."
+autowrap_mode = 2
+horizontal_alignment = 1
+
+[node name="HBoxStats" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LblPurse" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxStats"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Campaign Purse: R 5,000,000 REPU"
+
+[node name="LblPolling" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxStats"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7, 0.85, 1.0, 1)
+theme_override_font_sizes/font_size = 14
+text = "National Polling: 35.0%"
+
+[node name="LblAudit" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxStats"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "Audit: Clean (Kaelen Thorne)"
+
+[node name="CardTeam" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TeamTitle" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Campaign Leadership Guidance"
+
+[node name="LblGeneralAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "• Marcus Vance (General Adviser): Build broad voter momentum across capital and labor while conserving purse liquidity."
+autowrap_mode = 2
+
+[node name="LblPressAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "• Elena Vance (Press Secretary): High turnout at campaign rallies elevates our debate positioning and media sentiment."
+autowrap_mode = 2
+
+[node name="LblAccountantAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "• Kaelen Thorne (Accountant General): Strict financial controls active. All expenditures audited."
+autowrap_mode = 2
+
+[node name="ScrollDecisions" type="ScrollContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+
+[node name="DecisionsBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/ScrollDecisions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="CardElectionNight" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HBoxElection" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox"]
+layout_mode = 2
+
+[node name="LblElectionTally" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Election Night Readiness: Polling Support >= 50.0% Required to Win Democratic Mandate"
+
+[node name="BtnContestElection" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 32)
+text = "Contest National Election Night 🗳️"
+
+[node name="LblElectionResult" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Election Status: Campaigning in progress. Build public support before contesting election night."
+autowrap_mode = 2
+
+[node name="BtnAssumeOffice" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+text = "Assume Office in Presidential Executive Office 🏛️"
+
+[node name="LblCampaignFeedback" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="HBoxCampaignActions" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnBackToAdvisers" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "Back to Presidential Advisory Council"

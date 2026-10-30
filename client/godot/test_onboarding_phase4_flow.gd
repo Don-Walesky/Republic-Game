@@ -211,8 +211,8 @@ func _run_tests() -> void:
 			return
 
 		var step := str(parsed.get("onboarding_step", ""))
-		if step != "AdvisersIntroduced":
-			printerr("[FAIL]: Expected onboarding_step 'AdvisersIntroduced', got: ", step)
+		if step != "AdvisersIntroduced" and step != "CampaignHeadquarters":
+			printerr("[FAIL]: Expected onboarding_step 'AdvisersIntroduced' or 'CampaignHeadquarters', got: ", step)
 			_clean_files()
 			quit(1)
 			return
@@ -253,3 +253,4 @@ func _run_tests() -> void:
 	print("==============================================================\n")
 	_clean_files()
 	quit(0)
+

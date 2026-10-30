@@ -25,7 +25,8 @@ enum ScreenStage {
 	LEADERSHIP,
 	DEVELOPMENT_PLANS,
 	PHASE3_SUMMARY,
-	ADVISERS
+	ADVISERS,
+	CAMPAIGN_HQ
 }
 
 var current_stage: ScreenStage = ScreenStage.REGISTER
@@ -50,6 +51,7 @@ var selected_doctrine_title: String = ""
 var selected_plan_names: Array[String] = []
 var active_advisers_data: Dictionary = {}
 var sovereign_gems_count: int = 500
+var active_campaign_data: Dictionary = {}
 
 var is_processing: bool = false
 var resend_cooldown_timer: float = 0.0
@@ -174,6 +176,23 @@ var resend_cooldown_timer: float = 0.0
 @onready var btn_back_to_summary: Button = $PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions/BtnBackToSummary
 @onready var btn_confirm_advisers: Button = $PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions/BtnConfirmAdvisers
 
+# Phase 5 Campaign HQ Nodes
+@onready var campaign_panel: Control = $PanelContainer/VBox/ScreenCampaignHq
+@onready var lbl_campaign_title: Label = $PanelContainer/VBox/ScreenCampaignHq/LblTitle
+@onready var lbl_campaign_purse: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPurse
+@onready var lbl_campaign_polling: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPolling
+@onready var lbl_campaign_audit: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblAudit
+@onready var lbl_team_general: Label = $PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblGeneralAdvice
+@onready var lbl_team_press: Label = $PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblPressAdvice
+@onready var lbl_team_accountant: Label = $PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblAccountantAdvice
+@onready var decisions_box: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/ScrollDecisions/DecisionsBox
+@onready var lbl_election_tally: Label = $PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection/LblElectionTally
+@onready var btn_contest_election: Button = $PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection/BtnContestElection
+@onready var lbl_election_result: Label = $PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/LblElectionResult
+@onready var btn_assume_office: Button = $PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/BtnAssumeOffice
+@onready var lbl_campaign_feedback: Label = $PanelContainer/VBox/ScreenCampaignHq/LblCampaignFeedback
+@onready var btn_back_to_advisers: Button = $PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnBackToAdvisers
+
 func _ready() -> void:
 	_init_controls()
 	_connect_signals()
@@ -293,6 +312,21 @@ func _init_controls() -> void:
 	if lbl_advisers_feedback == null: lbl_advisers_feedback = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/LblAdvisersFeedback")
 	if btn_back_to_summary == null: btn_back_to_summary = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions/BtnBackToSummary")
 	if btn_confirm_advisers == null: btn_confirm_advisers = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions/BtnConfirmAdvisers")
+	if campaign_panel == null: campaign_panel = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq")
+	if lbl_campaign_title == null: lbl_campaign_title = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/LblTitle")
+	if lbl_campaign_purse == null: lbl_campaign_purse = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPurse")
+	if lbl_campaign_polling == null: lbl_campaign_polling = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPolling")
+	if lbl_campaign_audit == null: lbl_campaign_audit = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblAudit")
+	if lbl_team_general == null: lbl_team_general = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblGeneralAdvice")
+	if lbl_team_press == null: lbl_team_press = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblPressAdvice")
+	if lbl_team_accountant == null: lbl_team_accountant = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblAccountantAdvice")
+	if decisions_box == null: decisions_box = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/ScrollDecisions/DecisionsBox")
+	if lbl_election_tally == null: lbl_election_tally = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection/LblElectionTally")
+	if btn_contest_election == null: btn_contest_election = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection/BtnContestElection")
+	if lbl_election_result == null: lbl_election_result = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/LblElectionResult")
+	if btn_assume_office == null: btn_assume_office = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/BtnAssumeOffice")
+	if lbl_campaign_feedback == null: lbl_campaign_feedback = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/LblCampaignFeedback")
+	if btn_back_to_advisers == null: btn_back_to_advisers = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnBackToAdvisers")
 
 func _process(delta: float) -> void:
 	if resend_cooldown_timer > 0.0:
@@ -338,6 +372,12 @@ func _connect_signals() -> void:
 		btn_unlock_slot4.pressed.connect(_on_unlock_slot4_pressed)
 	if btn_unlock_slot5 and not btn_unlock_slot5.pressed.is_connected(_on_unlock_slot5_pressed):
 		btn_unlock_slot5.pressed.connect(_on_unlock_slot5_pressed)
+	if btn_back_to_advisers and not btn_back_to_advisers.pressed.is_connected(_on_back_to_advisers_pressed):
+		btn_back_to_advisers.pressed.connect(_on_back_to_advisers_pressed)
+	if btn_contest_election and not btn_contest_election.pressed.is_connected(_on_contest_election_pressed):
+		btn_contest_election.pressed.connect(_on_contest_election_pressed)
+	if btn_assume_office and not btn_assume_office.pressed.is_connected(_on_assume_office_pressed):
+		btn_assume_office.pressed.connect(_on_assume_office_pressed)
 	if btn_proceed_leadership and not btn_proceed_leadership.pressed.is_connected(_on_proceed_leadership_pressed):
 		btn_proceed_leadership.pressed.connect(_on_proceed_leadership_pressed)
 
@@ -421,6 +461,7 @@ func _show_stage(stage: ScreenStage) -> void:
 	if plans_panel: plans_panel.visible = (stage == ScreenStage.DEVELOPMENT_PLANS)
 	if summary_panel: summary_panel.visible = (stage == ScreenStage.PHASE3_SUMMARY)
 	if advisers_panel: advisers_panel.visible = (stage == ScreenStage.ADVISERS)
+	if campaign_panel: campaign_panel.visible = (stage == ScreenStage.CAMPAIGN_HQ)
 
 	var stage_name := "Register"
 	match stage:
@@ -433,6 +474,7 @@ func _show_stage(stage: ScreenStage) -> void:
 		ScreenStage.DEVELOPMENT_PLANS: stage_name = "DevelopmentPlans"
 		ScreenStage.PHASE3_SUMMARY: stage_name = "Phase3Summary"
 		ScreenStage.ADVISERS: stage_name = "Advisers"
+		ScreenStage.CAMPAIGN_HQ: stage_name = "CampaignHeadquarters"
 
 	onboarding_step_changed.emit(stage_name)
 
@@ -1089,8 +1131,254 @@ func _on_confirm_advisers_pressed() -> void:
 		if lbl_advisers_feedback:
 			lbl_advisers_feedback.text = "Presidential Advisory Council Inducted! Entering Campaign Headquarters..."
 			lbl_advisers_feedback.modulate = Color(0.4, 1.0, 0.4)
-		onboarding_completed.emit(res)
+		_enter_campaign_hq()
 	else:
 		if lbl_advisers_feedback:
 			lbl_advisers_feedback.text = str(res.get("message", "Failed to induct Advisory Council."))
 			lbl_advisers_feedback.modulate = Color(1.0, 0.4, 0.4)
+
+
+# ==============================================================================
+# Step 10: Presidential Campaign Headquarters & Election (Phase 5)
+# ==============================================================================
+func _on_back_to_advisers_pressed() -> void:
+	_show_stage(ScreenStage.ADVISERS)
+
+func _enter_campaign_hq() -> void:
+	if is_processing: return
+	is_processing = true
+	if lbl_campaign_feedback: lbl_campaign_feedback.text = "Setting up Campaign Headquarters..."
+
+	var req := {
+		"action": "enter_campaign_hq",
+		"request_id": "onboarding_hq_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+
+	if res.get("success", false) and res.get("result", "") == "Success":
+		_populate_campaign_hq_view(res)
+		_show_stage(ScreenStage.CAMPAIGN_HQ)
+	else:
+		# Fallback to local snapshot if present
+		var file := FileAccess.open(ProjectSettings.globalize_path(active_state_path), FileAccess.READ)
+		if file != null:
+			var txt := file.get_as_text()
+			file.close()
+			var parsed = JSON.parse_string(txt)
+			if parsed != null and typeof(parsed) == TYPE_DICTIONARY:
+				_populate_campaign_hq_view(parsed)
+		_show_stage(ScreenStage.CAMPAIGN_HQ)
+
+func _format_number(val: float) -> String:
+	var s := String.num(val, 0)
+	var res := ""
+	var count := 0
+	for i in range(s.length() - 1, -1, -1):
+		res = s[i] + res
+		count += 1
+		if count % 3 == 0 and i > 0:
+			res = "," + res
+	return res
+
+func _populate_campaign_hq_view(data: Dictionary) -> void:
+	active_campaign_data = data
+	var purse := float(data.get("campaign_purse", 5000000.0))
+	var polling := float(data.get("campaign_polling", 35.0))
+	var accountant = data.get("campaign_accountant_general", {})
+
+	if lbl_campaign_purse:
+		var formatted := str(data.get("formatted_campaign_purse", ""))
+		if not formatted.is_empty():
+			lbl_campaign_purse.text = "Campaign Purse: %s" % [formatted]
+		else:
+			lbl_campaign_purse.text = "Campaign Purse: R %s REPU" % [_format_number(purse)]
+	if lbl_campaign_polling:
+		lbl_campaign_polling.text = "National Polling: %.1f%%" % [polling]
+
+	if typeof(accountant) == TYPE_DICTIONARY:
+		var acct_name := str(accountant.get("name", "Kaelen Thorne"))
+		var acct_audit := str(accountant.get("audit_status", "Clean Audit"))
+		if lbl_campaign_audit:
+			lbl_campaign_audit.text = "Audit: %s (%s)" % [acct_audit, acct_name]
+		if lbl_team_accountant:
+			var adv := str(accountant.get("financial_advice", "Strict financial controls in place."))
+			lbl_team_accountant.text = "• %s (Accountant General): %s" % [acct_name, adv]
+
+	var gen_adv = data.get("general_adviser", {})
+	if typeof(gen_adv) == TYPE_DICTIONARY and lbl_team_general:
+		var g_adv := str(gen_adv.get("strategic_guidance", "Balance outreach across capital and labor to build electoral momentum."))
+		lbl_team_general.text = "• Marcus Vance (General Adviser): %s" % [g_adv]
+
+	var press = data.get("press_secretary", {})
+	if typeof(press) == TYPE_DICTIONARY and lbl_team_press:
+		var p_adv := str(press.get("briefing_summary", "Campaign rallies and media tours are elevating public recognition."))
+		lbl_team_press.text = "• Elena Vance (Press Secretary): %s" % [p_adv]
+
+	# Populate Decision Cards
+	if decisions_box:
+		for child in decisions_box.get_children():
+			child.queue_free()
+
+		var decisions = data.get("available_campaign_decisions", [])
+		if typeof(decisions) == TYPE_ARRAY:
+			for d in decisions:
+				if typeof(d) == TYPE_DICTIONARY:
+					_create_decision_card(d)
+
+	# Election Night Status
+	var election_resolved := bool(data.get("election_resolved", false))
+	var election_won := bool(data.get("election_won", false))
+	var election_tally := float(data.get("election_tally", 0.0))
+	var election_summary := str(data.get("election_summary", ""))
+
+	if lbl_election_tally:
+		lbl_election_tally.text = "Election Readiness: Polling Support %.1f%% (Target: 50.0%% to Win)" % [polling]
+
+	if election_resolved:
+		if lbl_election_result:
+			lbl_election_result.text = election_summary
+			lbl_election_result.modulate = Color(0.4, 1.0, 0.4) if election_won else Color(1.0, 0.4, 0.4)
+		if btn_assume_office:
+			btn_assume_office.visible = election_won
+		if btn_contest_election:
+			btn_contest_election.disabled = election_won
+	else:
+		if lbl_election_result:
+			lbl_election_result.text = "Election Status: Campaign in progress. Build public support before contesting election night."
+			lbl_election_result.modulate = Color(0.9, 0.9, 0.6)
+		if btn_assume_office:
+			btn_assume_office.visible = false
+		if btn_contest_election:
+			btn_contest_election.disabled = false
+
+func _create_decision_card(d: Dictionary) -> void:
+	var dec_id := str(d.get("id", d.get("Id", "")))
+	var title := str(d.get("title", d.get("Title", "")))
+	var category := str(d.get("category", d.get("Category", "Campaign")))
+	var desc := str(d.get("description", d.get("Description", "")))
+	var pos := str(d.get("foreseeable_positive_consequence", d.get("ForeseeablePositiveConsequence", "")))
+	var neg := str(d.get("foreseeable_negative_consequence", d.get("ForeseeableNegativeConsequence", "")))
+	var cost := float(d.get("cost_repu", d.get("CostRepu", 0.0)))
+	var is_net_pos := bool(d.get("is_net_positive", d.get("IsNetPositive", true)))
+
+	var panel := PanelContainer.new()
+	var vbox := VBoxContainer.new()
+	vbox.set("theme_override_constants/separation", 4)
+	panel.add_child(vbox)
+
+	var hbox_hdr := HBoxContainer.new()
+	vbox.add_child(hbox_hdr)
+
+	var lbl_t := Label.new()
+	lbl_t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl_t.text = "%s [%s]" % [title, category]
+	lbl_t.modulate = Color(0.85, 0.72, 0.35)
+	hbox_hdr.add_child(lbl_t)
+
+	var btn_exec := Button.new()
+	btn_exec.custom_minimum_size = Vector2(170, 26)
+	btn_exec.text = "Approve (R %s)" % [_format_number(cost)]
+	hbox_hdr.add_child(btn_exec)
+	btn_exec.pressed.connect(_on_decision_clicked.bind(dec_id))
+
+	var lbl_d := Label.new()
+	lbl_d.text = desc
+	lbl_d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(lbl_d)
+
+	var lbl_pos := Label.new()
+	lbl_pos.text = "• Positive Consequence: " + pos
+	lbl_pos.modulate = Color(0.4, 0.9, 0.4)
+	lbl_pos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(lbl_pos)
+
+	var lbl_neg := Label.new()
+	lbl_neg.text = "• Negative Consequence: " + neg
+	lbl_neg.modulate = Color(1.0, 0.6, 0.4)
+	lbl_neg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(lbl_neg)
+
+	decisions_box.add_child(panel)
+
+func _on_decision_clicked(dec_id: String) -> void:
+	if is_processing: return
+	is_processing = true
+	if lbl_campaign_feedback: lbl_campaign_feedback.text = "Executing campaign decision..."
+
+	var req := {
+		"action": "execute_campaign_decision",
+		"decision_id": dec_id,
+		"request_id": "onboarding_dec_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+
+	if res.get("success", false) and res.get("result", "") == "Success":
+		if lbl_campaign_feedback:
+			lbl_campaign_feedback.text = str(res.get("message", "Decision enacted."))
+			lbl_campaign_feedback.modulate = Color(0.4, 1.0, 0.4)
+		_populate_campaign_hq_view(res)
+	else:
+		if lbl_campaign_feedback:
+			lbl_campaign_feedback.text = str(res.get("message", "Failed to execute decision."))
+			lbl_campaign_feedback.modulate = Color(1.0, 0.4, 0.4)
+
+func _on_contest_election_pressed() -> void:
+	if is_processing: return
+	is_processing = true
+	if btn_contest_election: btn_contest_election.disabled = true
+	if lbl_campaign_feedback: lbl_campaign_feedback.text = "Tabulating national election night votes..."
+
+	var req := {
+		"action": "resolve_campaign_election",
+		"request_id": "onboarding_elect_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+
+	if res.get("success", false):
+		_populate_campaign_hq_view(res)
+		var won := bool(res.get("election_won", false))
+		if won:
+			if lbl_campaign_feedback:
+				lbl_campaign_feedback.text = "ELECTION VICTORY! Democratic mandate established."
+				lbl_campaign_feedback.modulate = Color(0.4, 1.0, 0.4)
+		else:
+			if btn_contest_election: btn_contest_election.disabled = false
+			if lbl_campaign_feedback:
+				lbl_campaign_feedback.text = "Electoral shortfall: Tally fell below 50.0%. Execute further campaign actions or rally."
+				lbl_campaign_feedback.modulate = Color(1.0, 0.4, 0.4)
+	else:
+		if btn_contest_election: btn_contest_election.disabled = false
+		if lbl_campaign_feedback:
+			lbl_campaign_feedback.text = str(res.get("message", "Failed to resolve election."))
+			lbl_campaign_feedback.modulate = Color(1.0, 0.4, 0.4)
+
+func _on_assume_office_pressed() -> void:
+	if is_processing: return
+	is_processing = true
+	if btn_assume_office: btn_assume_office.disabled = true
+	if lbl_campaign_feedback: lbl_campaign_feedback.text = "Administering presidential oath of office..."
+
+	var req := {
+		"action": "assume_office",
+		"request_id": "onboarding_inaug_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+
+	if res.get("success", false):
+		if lbl_campaign_feedback:
+			lbl_campaign_feedback.text = "Inauguration complete! Welcome to the Presidential Executive Office."
+			lbl_campaign_feedback.modulate = Color(0.4, 1.0, 0.4)
+		onboarding_completed.emit(res)
+	else:
+		if btn_assume_office: btn_assume_office.disabled = false
+		if lbl_campaign_feedback:
+			lbl_campaign_feedback.text = str(res.get("message", "Failed to assume office."))
+			lbl_campaign_feedback.modulate = Color(1.0, 0.4, 0.4)

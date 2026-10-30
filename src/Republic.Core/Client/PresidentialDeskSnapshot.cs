@@ -11,6 +11,8 @@ using Republic.Core.Government.Officials.Models;
 using Republic.Core.Government.Officials.Services;
 using Republic.Core.Government.Advisers.Models;
 using Republic.Core.Government.Advisers.Services;
+using Republic.Core.Government;
+using Republic.Core.Government.Campaign.Services;
 using System.Linq;
 using Republic.Core.Identity.Models;
 using Republic.Core.Media.Models;
@@ -627,6 +629,66 @@ public sealed record PresidentialDeskSnapshot
     /// </summary>
     [JsonPropertyName("sovereign_gems")]
     public int SovereignGems { get; init; } = 500;
+
+    /// <summary>
+    /// Gets the current presidential campaign purse in REPU.
+    /// </summary>
+    [JsonPropertyName("campaign_purse")]
+    public decimal CampaignPurse { get; init; } = 5_000_000m;
+
+    /// <summary>
+    /// Gets the formatted presidential campaign purse string.
+    /// </summary>
+    [JsonPropertyName("campaign_purse_formatted")]
+    public string CampaignPurseFormatted { get; init; } = "R 5,000,000 REPU";
+
+    /// <summary>
+    /// Gets the campaign polling support percentage.
+    /// </summary>
+    [JsonPropertyName("campaign_polling")]
+    public decimal CampaignPolling { get; init; } = 35.0m;
+
+    /// <summary>
+    /// Gets the Campaign Accountant General overseeing campaign finances and compliance.
+    /// </summary>
+    [JsonPropertyName("campaign_accountant_general")]
+    public CampaignAccountantGeneral AccountantGeneral { get; init; } = new();
+
+    /// <summary>
+    /// Gets the available campaign decisions reflecting the 70:30 consequence design principle.
+    /// </summary>
+    [JsonPropertyName("available_campaign_decisions")]
+    public IReadOnlyList<CampaignDecision> AvailableCampaignDecisions { get; init; } = Array.Empty<CampaignDecision>();
+
+    /// <summary>
+    /// Gets the completed campaign decisions and their executed consequences.
+    /// </summary>
+    [JsonPropertyName("completed_campaign_decisions")]
+    public IReadOnlyList<CampaignDecision> CompletedCampaignDecisions { get; init; } = Array.Empty<CampaignDecision>();
+
+    /// <summary>
+    /// Gets whether national election night has been resolved.
+    /// </summary>
+    [JsonPropertyName("election_resolved")]
+    public bool ElectionResolved { get; init; }
+
+    /// <summary>
+    /// Gets whether the presidential campaign won election night.
+    /// </summary>
+    [JsonPropertyName("election_won")]
+    public bool ElectionWon { get; init; }
+
+    /// <summary>
+    /// Gets the final election night vote percentage tally.
+    /// </summary>
+    [JsonPropertyName("election_tally")]
+    public decimal ElectionTally { get; init; }
+
+    /// <summary>
+    /// Gets the descriptive outcome summary of election night.
+    /// </summary>
+    [JsonPropertyName("election_summary")]
+    public string ElectionSummary { get; init; } = string.Empty;
 
     [JsonPropertyName("is_registered")]
     public bool IsRegistered { get; init; } = true;
@@ -1339,6 +1401,7 @@ public sealed record PresidentialDeskSnapshot
         var foreignNames = allWorldCountries.Where(c => c.Id != country.Id).Select(c => c.Name).ToList();
 
         AdviserService.SynchronizeAdvisers(country);
+        CampaignService.InitializeCampaign(country);
 
         return new PresidentialDeskSnapshot
         {
@@ -1473,6 +1536,16 @@ public sealed record PresidentialDeskSnapshot
             PressSecretary = country.PressSecretary ?? new PresidentialPressSecretary(),
             SpecialAdvisers = country.SpecialAdvisers != null ? country.SpecialAdvisers.ToList().AsReadOnly() : SpecialAdviserSlot.CreateDefaultRoster().AsReadOnly(),
             SovereignGems = country.SovereignGems,
+            CampaignPurse = country.CampaignOffice?.Purse ?? 5_000_000m,
+            CampaignPurseFormatted = $"R {country.CampaignOffice?.Purse ?? 5_000_000m:N0} REPU",
+            CampaignPolling = country.CampaignOffice?.Polling ?? 35.0m,
+            AccountantGeneral = country.CampaignOffice?.AccountantGeneral ?? new CampaignAccountantGeneral(),
+            AvailableCampaignDecisions = country.CampaignOffice?.AvailableDecisions != null ? country.CampaignOffice.AvailableDecisions.ToList().AsReadOnly() : Array.Empty<CampaignDecision>(),
+            CompletedCampaignDecisions = country.CampaignOffice?.CompletedDecisions != null ? country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly() : Array.Empty<CampaignDecision>(),
+            ElectionResolved = country.CampaignOffice?.ElectionResolved ?? false,
+            ElectionWon = country.CampaignOffice?.ElectionWon ?? false,
+            ElectionTally = country.CampaignOffice?.ElectionTally ?? 0m,
+            ElectionSummary = country.CampaignOffice?.ElectionSummary ?? string.Empty,
 
             LastAiDecision = resolvedAiDecision
         };

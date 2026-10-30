@@ -18,6 +18,8 @@ using Republic.Core.Government.Officials.Models;
 using Republic.Core.Government.Officials.Services;
 using Republic.Core.Government.Advisers.Models;
 using Republic.Core.Government.Advisers.Services;
+using Republic.Core.Government;
+using Republic.Core.Government.Campaign.Services;
 using Republic.Core.Intelligence.Models;
 using Republic.Core.Intelligence.Services;
 using Republic.Core.Media.Services;
@@ -2169,6 +2171,513 @@ public static class PresidentialDeskBridge
             PressSecretary = country.PressSecretary,
             SpecialAdvisers = country.SpecialAdvisers.ToList().AsReadOnly(),
             SovereignGems = country.SovereignGems
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    
+
+    /// <summary>
+    /// Transitions player to Campaign Headquarters, initializing the R 5,000,000 purse and campaign decisions.
+    /// </summary>
+    public static PresidentialActionResult EnterCampaignHeadquartersDecision(
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null || envelope.State.OnboardingStep < OnboardingStep.AdvisersIntroduced)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "You must induct your presidential advisers before entering Campaign Headquarters.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestingAccountId) &&
+            !string.Equals(requestingAccountId, envelope.State.Account.AccountId, StringComparison.OrdinalIgnoreCase))
+        {
+            var unauthorizedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not have permission to modify another player's campaign headquarters.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, unauthorizedResult);
+            return unauthorizedResult;
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetCountryId) &&
+            !string.IsNullOrWhiteSpace(envelope.State.Account.OwnedCountryId) &&
+            !string.Equals(targetCountryId, envelope.State.Account.OwnedCountryId, StringComparison.OrdinalIgnoreCase))
+        {
+            var forbiddenResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not own this sovereign country.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, forbiddenResult);
+            return forbiddenResult;
+        }
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country != null)
+        {
+            CampaignService.InitializeCampaign(country);
+        }
+
+        envelope.State.OnboardingStep = OnboardingStep.CampaignHeadquarters;
+        envelope.State.Account.CurrentStep = OnboardingStep.CampaignHeadquarters;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        if (country != null)
+        {
+            var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+            ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: "Campaign Headquarters established with R 5,000,000 REPU purse.");
+        }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = "Campaign Headquarters established with R 5,000,000 REPU purse.",
+            OnboardingStep = OnboardingStep.CampaignHeadquarters.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country?.Name ?? string.Empty,
+            CampaignPurse = country?.CampaignOffice?.Purse ?? 5_000_000m,
+            CampaignPurseFormatted = $"R {country?.CampaignOffice?.Purse ?? 5_000_000m:N0} REPU",
+            CampaignPolling = country?.CampaignOffice?.Polling ?? 35.0m,
+            AccountantGeneral = country?.CampaignOffice?.AccountantGeneral,
+            AvailableCampaignDecisions = country?.CampaignOffice?.AvailableDecisions != null ? country.CampaignOffice.AvailableDecisions.ToList().AsReadOnly() : Array.Empty<CampaignDecision>(),
+            CompletedCampaignDecisions = country?.CampaignOffice?.CompletedDecisions != null ? country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly() : Array.Empty<CampaignDecision>(),
+            GeneralAdviser = country?.GeneralAdviser,
+            PressSecretary = country?.PressSecretary
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes a campaign decision with balanced 70:30 consequences, deducting from the campaign purse.
+    /// </summary>
+    public static PresidentialActionResult ExecuteCampaignDecisionAction(
+        string decisionId,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null || envelope.State.OnboardingStep < OnboardingStep.AdvisersIntroduced)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "You must enter Campaign Headquarters before making campaign decisions.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestingAccountId) &&
+            !string.Equals(requestingAccountId, envelope.State.Account.AccountId, StringComparison.OrdinalIgnoreCase))
+        {
+            var unauthorizedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not have permission to execute decisions for another player's campaign.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, unauthorizedResult);
+            return unauthorizedResult;
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetCountryId) &&
+            !string.IsNullOrWhiteSpace(envelope.State.Account.OwnedCountryId) &&
+            !string.Equals(targetCountryId, envelope.State.Account.OwnedCountryId, StringComparison.OrdinalIgnoreCase))
+        {
+            var forbiddenResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not own this sovereign country.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, forbiddenResult);
+            return forbiddenResult;
+        }
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country == null)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CountryNotFound",
+                Message = "Sovereign nation state not found in authoritative save.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        var (execSuccess, execMsg, executedDec) = CampaignService.ExecuteDecision(country, decisionId);
+        if (!execSuccess)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CampaignDecisionFailed",
+                Message = execMsg,
+                OnboardingStep = envelope.State.OnboardingStep.ToString(),
+                CampaignPurse = country.CampaignOffice?.Purse ?? 0m,
+                CampaignPurseFormatted = $"R {country.CampaignOffice?.Purse ?? 0m:N0} REPU",
+                CampaignPolling = country.CampaignOffice?.Polling ?? 0m,
+                AccountantGeneral = country.CampaignOffice?.AccountantGeneral
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        envelope.State.OnboardingStep = OnboardingStep.CampaignHeadquarters;
+        envelope.State.Account.CurrentStep = OnboardingStep.CampaignHeadquarters;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+        ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: execMsg);
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = execMsg,
+            OnboardingStep = OnboardingStep.CampaignHeadquarters.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country.Name,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            CampaignPurse = country.CampaignOffice.Purse,
+            CampaignPurseFormatted = $"R {country.CampaignOffice.Purse:N0} REPU",
+            CampaignPolling = country.CampaignOffice.Polling,
+            AccountantGeneral = country.CampaignOffice.AccountantGeneral,
+            AvailableCampaignDecisions = country.CampaignOffice.AvailableDecisions.ToList().AsReadOnly(),
+            CompletedCampaignDecisions = country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly(),
+            GeneralAdviser = country.GeneralAdviser,
+            PressSecretary = country.PressSecretary
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Resolves national election night. If tally >= 50%, the player wins the presidential election!
+    /// </summary>
+    public static PresidentialActionResult ResolveElectionDecisionAction(
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null || envelope.State.OnboardingStep < OnboardingStep.AdvisersIntroduced)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "You must complete campaign activities before contesting national election night.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestingAccountId) &&
+            !string.Equals(requestingAccountId, envelope.State.Account.AccountId, StringComparison.OrdinalIgnoreCase))
+        {
+            var unauthorizedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not have permission to contest election night for another player's sovereign nation.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, unauthorizedResult);
+            return unauthorizedResult;
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetCountryId) &&
+            !string.IsNullOrWhiteSpace(envelope.State.Account.OwnedCountryId) &&
+            !string.Equals(targetCountryId, envelope.State.Account.OwnedCountryId, StringComparison.OrdinalIgnoreCase))
+        {
+            var forbiddenResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not own this sovereign country.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, forbiddenResult);
+            return forbiddenResult;
+        }
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country == null)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CountryNotFound",
+                Message = "Sovereign nation state not found in authoritative save.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        var (won, electionSummary, tally) = CampaignService.ResolveElectionNight(country);
+
+        if (won)
+        {
+            envelope.State.OnboardingStep = OnboardingStep.InOffice;
+            envelope.State.Account.CurrentStep = OnboardingStep.InOffice;
+        }
+
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+        ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: electionSummary);
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = won ? "Victory" : "Defeat",
+            Message = electionSummary,
+            OnboardingStep = envelope.State.OnboardingStep.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country.Name,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            CampaignPurse = country.CampaignOffice.Purse,
+            CampaignPurseFormatted = $"R {country.CampaignOffice.Purse:N0} REPU",
+            CampaignPolling = country.CampaignOffice.Polling,
+            ElectionResolved = true,
+            ElectionWon = won,
+            ElectionTally = tally,
+            ElectionSummary = electionSummary,
+            AccountantGeneral = country.CampaignOffice.AccountantGeneral,
+            AvailableCampaignDecisions = country.CampaignOffice.AvailableDecisions.ToList().AsReadOnly(),
+            CompletedCampaignDecisions = country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly()
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Assumes office in the Presidential Executive Office after winning election night.
+    /// </summary>
+    public static PresidentialActionResult AssumeOfficeDecisionAction(
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "Authoritative state or player account missing.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country == null)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CountryNotFound",
+                Message = "Sovereign nation state not found in authoritative save.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        envelope.State.OnboardingStep = OnboardingStep.InOffice;
+        envelope.State.Account.CurrentStep = OnboardingStep.InOffice;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+        ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: "Inaugural Presidential Oath of Office administered. Executive Desk operational.");
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = "Inaugural Presidential Oath of Office administered. Executive Desk operational.",
+            OnboardingStep = OnboardingStep.InOffice.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country.Name,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -7214,6 +7723,92 @@ public static class PresidentialDeskBridge
                         }
                     }
 
+                    if (normalizedAction is "enter_campaign_hq" or "enter_campaign" or "campaign_hq")
+                    {
+                        string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
+                        string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid) && root.TryGetProperty("target_country_id", out var tcidEl))
+                        {
+                            reqCid = tcidEl.GetString();
+                        }
+
+                        try
+                        {
+                            return EnterCampaignHeadquartersDecision(targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "execute_campaign_decision" or "campaign_decision")
+                    {
+                        string decId = "";
+                        if (root.TryGetProperty("decision_id", out var dEl) && dEl.ValueKind == JsonValueKind.String)
+                        {
+                            decId = dEl.GetString()!;
+                        }
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            decId = idEl.GetString()!;
+                        }
+
+                        string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
+                        string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid) && root.TryGetProperty("target_country_id", out var tcidEl))
+                        {
+                            reqCid = tcidEl.GetString();
+                        }
+
+                        try
+                        {
+                            return ExecuteCampaignDecisionAction(decId, targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "resolve_campaign_election" or "resolve_election" or "election_night")
+                    {
+                        string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
+                        string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid) && root.TryGetProperty("target_country_id", out var tcidEl))
+                        {
+                            reqCid = tcidEl.GetString();
+                        }
+
+                        try
+                        {
+                            return ResolveElectionDecisionAction(targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "assume_office" or "in_office")
+                    {
+                        string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
+                        string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid) && root.TryGetProperty("target_country_id", out var tcidEl))
+                        {
+                            reqCid = tcidEl.GetString();
+                        }
+
+                        try
+                        {
+                            return AssumeOfficeDecisionAction(targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
                     if (normalizedAction is "introduce_advisers" or "confirm_advisers" or "advisers_introduced")
                     {
                         string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
@@ -8629,4 +9224,34 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("sovereign_gems")]
     public int SovereignGems { get; init; }
+
+    [JsonPropertyName("campaign_purse")]
+    public decimal CampaignPurse { get; init; } = 5_000_000m;
+
+    [JsonPropertyName("campaign_purse_formatted")]
+    public string CampaignPurseFormatted { get; init; } = "R 5,000,000 REPU";
+
+    [JsonPropertyName("campaign_polling")]
+    public decimal CampaignPolling { get; init; } = 35.0m;
+
+    [JsonPropertyName("campaign_accountant_general")]
+    public CampaignAccountantGeneral? AccountantGeneral { get; init; }
+
+    [JsonPropertyName("available_campaign_decisions")]
+    public IReadOnlyList<CampaignDecision> AvailableCampaignDecisions { get; init; } = Array.Empty<CampaignDecision>();
+
+    [JsonPropertyName("completed_campaign_decisions")]
+    public IReadOnlyList<CampaignDecision> CompletedCampaignDecisions { get; init; } = Array.Empty<CampaignDecision>();
+
+    [JsonPropertyName("election_resolved")]
+    public bool ElectionResolved { get; init; }
+
+    [JsonPropertyName("election_won")]
+    public bool ElectionWon { get; init; }
+
+    [JsonPropertyName("election_tally")]
+    public decimal ElectionTally { get; init; }
+
+    [JsonPropertyName("election_summary")]
+    public string ElectionSummary { get; init; } = string.Empty;
 }

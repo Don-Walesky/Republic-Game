@@ -7,6 +7,7 @@ using Republic.Core.Economy.PrivateSector.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Advisers.Models;
+using Republic.Core.Government;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Identity.Models;
 using Republic.Core.Media.Models;
@@ -1951,6 +1952,13 @@ public sealed class Country
     /// </summary>
     [JsonPropertyName("sovereign_gems")]
     public int SovereignGems { get; set; } = 500;
+
+    /// <summary>
+    /// Gets or sets the presidential campaign office state managing campaign headquarters,
+    /// purse expenditures, voting bloc alignment, and election night.
+    /// </summary>
+    [JsonPropertyName("campaign_office")]
+    public CampaignOfficeState CampaignOffice { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the base military progression level before operational bonuses (1 to 30).
