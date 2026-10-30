@@ -66,4 +66,35 @@ public interface IPlayerIdentityService
     /// Generates a secure, human-friendly 6-character alphanumeric verification token.
     /// </summary>
     string GenerateVerificationToken();
+
+    /// <summary>
+    /// Validates prospective leadership archetype selection.
+    /// Requires exactly two distinct canonical archetypes.
+    /// </summary>
+    (bool IsValid, string Message, IReadOnlyList<LeadershipArchetype> Archetypes, string DoctrineTitle) ValidateLeadershipSelection(
+        IEnumerable<string>? archetypeInputs);
+
+    /// <summary>
+    /// Applies the validated two leadership archetypes to the player account, setting the doctrine title
+    /// and advancing onboarding progression to LeadershipSelected.
+    /// </summary>
+    PlayerAccount ApplyLeadershipSelection(
+        PlayerAccount account,
+        IReadOnlyList<LeadershipArchetype> archetypes,
+        string? doctrineTitle = null);
+
+    /// <summary>
+    /// Validates prospective national development priorities selection.
+    /// Requires exactly four distinct canonical priorities.
+    /// </summary>
+    (bool IsValid, string Message, IReadOnlyList<NationalDevelopmentPriority> Priorities) ValidateDevelopmentPlansSelection(
+        IEnumerable<string>? planInputs);
+
+    /// <summary>
+    /// Applies the validated four national development priorities to the player account,
+    /// advancing onboarding progression to DevelopmentPlansSelected.
+    /// </summary>
+    PlayerAccount ApplyDevelopmentPlansSelection(
+        PlayerAccount account,
+        IReadOnlyList<NationalDevelopmentPriority> priorities);
 }

@@ -317,4 +317,141 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
         var code = RandomNumberGenerator.GetInt32(100000, 1000000);
         return code.ToString("D6");
     }
+
+    /// <inheritdoc />
+    public (bool IsValid, string Message, IReadOnlyList<LeadershipArchetype> Archetypes, string DoctrineTitle) ValidateLeadershipSelection(
+        IEnumerable<string>? archetypeInputs)
+    {
+        if (archetypeInputs == null)
+        {
+            return (false, "Please select exactly two leadership archetypes to define your executive doctrine.", Array.Empty<LeadershipArchetype>(), string.Empty);
+        }
+
+        var rawList = archetypeInputs.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).ToList();
+        if (rawList.Count == 0)
+        {
+            return (false, "Please select exactly two leadership archetypes to define your executive doctrine.", Array.Empty<LeadershipArchetype>(), string.Empty);
+        }
+
+        var parsed = new List<LeadershipArchetype>();
+        foreach (var item in rawList)
+        {
+            if (!LeadershipArchetypeRegistry.TryGet(item, out var def) || def == null || def.Archetype == LeadershipArchetype.None)
+            {
+                var validArchetypes = string.Join(", ", LeadershipArchetypeRegistry.All.Select(a => a.DisplayName));
+                return (false, $"Unrecognized leadership archetype '{item}'. Valid archetypes are: {validArchetypes}.", Array.Empty<LeadershipArchetype>(), string.Empty);
+            }
+
+            parsed.Add(def.Archetype);
+        }
+
+        var distinct = parsed.Distinct().ToList();
+        if (distinct.Count != parsed.Count)
+        {
+            return (false, "Leadership selection contains duplicate archetypes. You must select two distinct archetypes.", Array.Empty<LeadershipArchetype>(), string.Empty);
+        }
+
+        if (distinct.Count != 2)
+        {
+            return (false, $"Exactly two leadership archetypes must be selected (you provided {distinct.Count}).", Array.Empty<LeadershipArchetype>(), string.Empty);
+        }
+
+        var doctrineTitle = LeadershipArchetypeRegistry.ComputeDoctrineTitle(distinct[0], distinct[1]);
+        return (true, $"Leadership doctrine '{doctrineTitle}' validated successfully.", distinct, doctrineTitle);
+    }
+
+    /// <inheritdoc />
+    public PlayerAccount ApplyLeadershipSelection(
+        PlayerAccount account,
+        IReadOnlyList<LeadershipArchetype> archetypes,
+        string? doctrineTitle = null)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        ArgumentNullException.ThrowIfNull(archetypes);
+
+        var distinct = archetypes.Where(a => a != LeadershipArchetype.None).Distinct().ToList();
+        if (distinct.Count != 2)
+        {
+            throw new ArgumentException($"Exactly two distinct leadership archetypes must be provided, got {distinct.Count}.", nameof(archetypes));
+        }
+
+        var title = string.IsNullOrWhiteSpace(doctrineTitle)
+            ? LeadershipArchetypeRegistry.ComputeDoctrineTitle(distinct[0], distinct[1])
+            : doctrineTitle.Trim();
+
+        account.SelectedLeadershipArchetypes = distinct;
+        account.LeadershipDoctrineTitle = title;
+
+        if (account.CurrentStep < OnboardingStep.LeadershipSelected)
+        {
+            account.CurrentStep = OnboardingStep.LeadershipSelected;
+        }
+
+        return account;
+    }
+
+    /// <inheritdoc />
+    public (bool IsValid, string Message, IReadOnlyList<NationalDevelopmentPriority> Priorities) ValidateDevelopmentPlansSelection(
+        IEnumerable<string>? planInputs)
+    {
+        if (planInputs == null)
+        {
+            return (false, "Please select exactly four national development priorities to establish your administration's inaugural agenda.", Array.Empty<NationalDevelopmentPriority>());
+        }
+
+        var rawList = planInputs.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).ToList();
+        if (rawList.Count == 0)
+        {
+            return (false, "Please select exactly four national development priorities to establish your administration's inaugural agenda.", Array.Empty<NationalDevelopmentPriority>());
+        }
+
+        var parsed = new List<NationalDevelopmentPriority>();
+        foreach (var item in rawList)
+        {
+            if (!NationalDevelopmentPlanRegistry.TryGet(item, out var def) || def == null || def.Priority == NationalDevelopmentPriority.None)
+            {
+                var validPlans = string.Join(", ", NationalDevelopmentPlanRegistry.All.Select(p => p.DisplayName));
+                return (false, $"Unrecognized national development priority '{item}'. Valid priorities are: {validPlans}.", Array.Empty<NationalDevelopmentPriority>());
+            }
+
+            parsed.Add(def.Priority);
+        }
+
+        var distinct = parsed.Distinct().ToList();
+        if (distinct.Count != parsed.Count)
+        {
+            return (false, "Development plan selection contains duplicate priorities. You must select four distinct priorities.", Array.Empty<NationalDevelopmentPriority>());
+        }
+
+        if (distinct.Count != 4)
+        {
+            return (false, $"Exactly four national development priorities must be selected (you provided {distinct.Count}).", Array.Empty<NationalDevelopmentPriority>());
+        }
+
+        return (true, "National development agenda with 4 priorities validated successfully.", distinct);
+    }
+
+    /// <inheritdoc />
+    public PlayerAccount ApplyDevelopmentPlansSelection(
+        PlayerAccount account,
+        IReadOnlyList<NationalDevelopmentPriority> priorities)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        ArgumentNullException.ThrowIfNull(priorities);
+
+        var distinct = priorities.Where(p => p != NationalDevelopmentPriority.None).Distinct().ToList();
+        if (distinct.Count != 4)
+        {
+            throw new ArgumentException($"Exactly four distinct national development priorities must be provided, got {distinct.Count}.", nameof(priorities));
+        }
+
+        account.SelectedDevelopmentPlans = distinct;
+
+        if (account.CurrentStep < OnboardingStep.DevelopmentPlansSelected)
+        {
+            account.CurrentStep = OnboardingStep.DevelopmentPlansSelected;
+        }
+
+        return account;
+    }
 }

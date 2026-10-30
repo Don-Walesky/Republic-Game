@@ -9,6 +9,8 @@ using Republic.Core.Economy.PrivateSector.Services;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Government.Officials.Services;
+using System.Linq;
+using Republic.Core.Identity.Models;
 using Republic.Core.Media.Models;
 using Republic.Core.Media.Services;
 using Republic.Core.Intelligence.Models;
@@ -582,6 +584,18 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("onboarding_step")]
     public string OnboardingStep { get; init; } = "InOffice";
 
+    [JsonPropertyName("selected_leadership_archetypes")]
+    public IReadOnlyList<string> SelectedLeadershipArchetypes { get; init; } = Array.Empty<string>();
+
+    [JsonPropertyName("leadership_doctrine_title")]
+    public string LeadershipDoctrineTitle { get; init; } = string.Empty;
+
+    [JsonPropertyName("selected_development_plans")]
+    public IReadOnlyList<string> SelectedDevelopmentPlans { get; init; } = Array.Empty<string>();
+
+    [JsonPropertyName("selected_development_plan_names")]
+    public IReadOnlyList<string> SelectedDevelopmentPlanNames { get; init; } = Array.Empty<string>();
+
     [JsonPropertyName("is_registered")]
     public bool IsRegistered { get; init; } = true;
 
@@ -642,6 +656,10 @@ public sealed record PresidentialDeskSnapshot
 
         string playerDisplayName = string.Empty;
         string verificationToken = string.Empty;
+        var selectedLeadership = new List<string>();
+        string leadershipDoctrine = string.Empty;
+        var selectedPlans = new List<string>();
+        var selectedPlanNames = new List<string>();
 
 
 
@@ -673,6 +691,18 @@ public sealed record PresidentialDeskSnapshot
 
 
                         playerDisplayName = envelope.State.Account.GetPublicIdentity();
+
+                        if (envelope.State.Account.SelectedLeadershipArchetypes != null && envelope.State.Account.SelectedLeadershipArchetypes.Count > 0)
+                        {
+                            selectedLeadership = envelope.State.Account.SelectedLeadershipArchetypes.Select(a => a.ToString()).ToList();
+                            leadershipDoctrine = envelope.State.Account.LeadershipDoctrineTitle;
+                        }
+
+                        if (envelope.State.Account.SelectedDevelopmentPlans != null && envelope.State.Account.SelectedDevelopmentPlans.Count > 0)
+                        {
+                            selectedPlans = envelope.State.Account.SelectedDevelopmentPlans.Select(p => p.ToString()).ToList();
+                            selectedPlanNames = envelope.State.Account.SelectedDevelopmentPlans.Select(p => NationalDevelopmentPlanRegistry.Get(p).DisplayName).ToList();
+                        }
 
                     }
 
@@ -1399,6 +1429,10 @@ public sealed record PresidentialDeskSnapshot
 
             PrimaryResource = country.Profile?.PrimaryResource ?? "Mineral Reserves",
             VerificationToken = verificationToken,
+            SelectedLeadershipArchetypes = selectedLeadership.AsReadOnly(),
+            LeadershipDoctrineTitle = leadershipDoctrine,
+            SelectedDevelopmentPlans = selectedPlans.AsReadOnly(),
+            SelectedDevelopmentPlanNames = selectedPlanNames.AsReadOnly(),
 
             LastAiDecision = resolvedAiDecision
         };

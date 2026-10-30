@@ -398,3 +398,602 @@ horizontal_alignment = 1
 layout_mode = 2
 custom_minimum_size = Vector2(0, 38)
 text = "Verify Saved Progress & Reload"
+
+[node name="BtnProceedLeadership" type="Button" parent="PanelContainer/VBox/ScreenConfirmed"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Proceed to Leadership Selection"
+
+[node name="ScreenLeadership" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LblLeadershipTitle" type="Label" parent="PanelContainer/VBox/ScreenLeadership"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "CHOOSE YOUR LEADERSHIP IDENTITY"
+horizontal_alignment = 1
+
+[node name="LblLeadershipSub" type="Label" parent="PanelContainer/VBox/ScreenLeadership"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+text = "Select exactly 2 of 5 leadership archetypes to define your presidential executive doctrine."
+horizontal_alignment = 1
+
+[node name="LblLeaderCount" type="Label" parent="PanelContainer/VBox/ScreenLeadership"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "Selected: 0 / 2 (Select 2 to continue)"
+horizontal_alignment = 1
+
+[node name="ScrollLeadership" type="ScrollContainer" parent="PanelContainer/VBox/ScreenLeadership"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 240)
+
+[node name="CardsBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="CardTechnocrat" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBoxHeader" type="HBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat/VBox/HBoxHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Technocrat"
+
+[node name="BtnSelectTechnocrat" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat/VBox/HBoxHeader"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 28)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Data-driven governance: +15% State Capacity & Civil Service Quality, +10% Science & Tech | Tradeoff: -5% Populist Sensitivity | Synergies: Finance & Education"
+autowrap_mode = 2
+
+[node name="CardPopulist" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBoxHeader" type="HBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist/VBox/HBoxHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Populist Reformer"
+
+[node name="BtnSelectPopulist" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist/VBox/HBoxHeader"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 28)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Popular mandate: +10% Base Public Approval, +15% Campaign Rally Effectiveness | Tradeoff: -5% Foreign Diplomatic Standing | Synergies: Interior & Labor"
+autowrap_mode = 2
+
+[node name="CardVisionary" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBoxHeader" type="HBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary/VBox/HBoxHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Economic Visionary"
+
+[node name="BtnSelectVisionary" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary/VBox/HBoxHeader"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 28)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Market innovation: +10% Private Investment & National Yield, +10% REPU Treasury Generation | Tradeoff: -5% Environmental Stability | Synergies: Commerce & Resources"
+autowrap_mode = 2
+
+[node name="CardStatist" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBoxHeader" type="HBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist/VBox/HBoxHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Statist Builder"
+
+[node name="BtnSelectStatist" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist/VBox/HBoxHeader"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 28)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Monumental infrastructure: +15% Infrastructure Construction Speed, +10% National Stability | Tradeoff: +5% Public Works Maintenance | Synergies: Infrastructure & Transport"
+autowrap_mode = 2
+
+[node name="CardDiplomat" type="PanelContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBoxHeader" type="HBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat/VBox/HBoxHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Diplomatic Strategist"
+
+[node name="BtnSelectDiplomat" type="Button" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat/VBox/HBoxHeader"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 28)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Sovereign diplomacy: +15% Bilateral Trade Yields, +10% Alliance Approval & Regional Influence | Tradeoff: -5% Aggressive Deterrence | Synergies: Foreign Affairs"
+autowrap_mode = 2
+
+[node name="LblDoctrinePreview" type="Label" parent="PanelContainer/VBox/ScreenLeadership"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Executive Doctrine: None (Select 2 archetypes)"
+horizontal_alignment = 1
+
+[node name="BtnConfirmLeadership" type="Button" parent="PanelContainer/VBox/ScreenLeadership"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+disabled = true
+text = "Confirm Leadership Doctrine"
+
+[node name="LblFeedback" type="Label" parent="PanelContainer/VBox/ScreenLeadership"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="ScreenDevelopmentPlans" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LblPlansTitle" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "SET YOUR INAUGURAL DEVELOPMENT AGENDA"
+horizontal_alignment = 1
+
+[node name="LblPlansSub" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+text = "Select exactly 4 of 10 national development priorities to establish your administration's inaugural projects."
+horizontal_alignment = 1
+
+[node name="LblPlansCount" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "Selected: 0 / 4 (Select 4 to continue)"
+horizontal_alignment = 1
+
+[node name="ScrollPlans" type="ScrollContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 240)
+
+[node name="PlansBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CardPlan1" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Agrarian Self-Sufficiency (Agriculture & Food Security)"
+
+[node name="BtnPlan1" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Food security, rural farming cooperatives, and grain stockpile resilience (+15% Food Security, +10% Rural Stability)."
+
+[node name="CardPlan2" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan2"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan2/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan2/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Mineral & Heavy Industrialization (Industry & Mining)"
+
+[node name="BtnPlan2" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan2/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan2/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "State smelters, raw mineral processing mills, and equipment plants (+20% Mineral Capacity, +15% Industrial Exports)."
+
+[node name="CardPlan3" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan3"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan3/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan3/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Renewable Power Grid & Energy Sovereignty (Energy & Utilities)"
+
+[node name="BtnPlan3" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan3/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan3/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Solar, wind, and hydro grid with battery storage (+25% Clean Energy Output, +15% Electrical Grid Reliability)."
+
+[node name="CardPlan4" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan4"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan4/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan4/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Higher Education & Academic Research (Education & Science)"
+
+[node name="BtnPlan4" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan4/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan4/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Technical universities, research grants, and STEM fellowships (+20% Science & Tech Output, +10% Skilled Labor)."
+
+[node name="CardPlan5" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan5"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan5/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan5/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Border Security & Territorial Defense (Defense & Border)"
+
+[node name="BtnPlan5" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan5/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan5/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Border observation outposts, DEFCON readiness, and counter-espionage (+15% DEFCON Readiness, +25% Counter-Espionage)."
+
+[node name="CardPlan6" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan6"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan6/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan6/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Maritime Trade & Deepwater Ports (Trade & Logistics)"
+
+[node name="BtnPlan6" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan6/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan6/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Container ports, automated customs berths, and merchant cargo throughput (+20% Maritime Export, +15% Tariff Revenue)."
+
+[node name="CardPlan7" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan7"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan7/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan7/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Digital Infrastructure & Cyber Defense (Technology & Cyber)"
+
+[node name="BtnPlan7" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan7/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan7/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Fiber-optic networks, sovereign cloud data centers, and cyber defense (+20% Digital Capacity, +30% Cyber Resilience)."
+
+[node name="CardPlan8" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan8"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan8/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan8/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Universal Healthcare Foundation (Health & Social Welfare)"
+
+[node name="BtnPlan8" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan8/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan8/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Regional clinics, essential pharmaceutical supplies, and citizen healthcare (+15% Citizen Welfare, +10% Health Resilience)."
+
+[node name="CardPlan9" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan9"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan9/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan9/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Fiscal Reserve Fortress (Finance & Reserves)"
+
+[node name="BtnPlan9" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan9/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan9/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Bullion reserves, counter-cyclical capital cushions, and treasury yield (+10% Treasury Yield, +20% Shock Mitigation)."
+
+[node name="CardPlan10" type="PanelContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan10"]
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan10/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan10/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "High-Speed Transit & Rail Arteries (Transport & Public Works)"
+
+[node name="BtnPlan10" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan10/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(90, 26)
+text = "Select"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan10/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Electrified rail corridors connecting inland manufacturing to cities (+25% Transit Speed, -15% Logistics Costs)."
+
+[node name="BtnConfirmDevelopmentPlans" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+disabled = true
+text = "Ratify National Development Agenda"
+
+[node name="LblFeedback" type="Label" parent="PanelContainer/VBox/ScreenDevelopmentPlans"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="ScreenPhase3Summary" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="LblTitle" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "PHASE 3 COMPLETE: SOVEREIGN CHARTER & NATIONAL AGENDA"
+horizontal_alignment = 1
+
+[node name="Grid" type="GridContainer" parent="PanelContainer/VBox/ScreenPhase3Summary"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 6
+
+[node name="LblCountry" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+text = "Sovereign Nation:"
+
+[node name="LblCountryVal" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+text = "Republic of Solaria"
+
+[node name="LblCapital" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+text = "Capital City:"
+
+[node name="LblCapitalVal" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+text = "Solaria Prime"
+
+[node name="LblLeader" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+text = "Elected President:"
+
+[node name="LblLeaderVal" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+text = "Elena Okafor"
+
+[node name="LblDoctrine" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+text = "Executive Doctrine:"
+
+[node name="LblDoctrineVal" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+text = "Technocratic Builder"
+
+[node name="LblArchetypes" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+text = "Leadership Archetypes:"
+
+[node name="LblArchetypesVal" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1.0, 1)
+text = "Technocrat, Statist Builder"
+
+[node name="LblPlans" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+text = "Inaugural Priorities (4):"
+
+[node name="LblPlansVal" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1.0, 1)
+text = "Agrarian, Renewable Power, Higher Education, Digital Cyber"
+
+[node name="StatusPhase3" type="Label" parent="PanelContainer/VBox/ScreenPhase3Summary"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "Phase 3 Ratified! Executive doctrine and national development priorities are established. Ready for Phase 4 (Advisers)."
+horizontal_alignment = 1
+
+[node name="HBoxActions" type="HBoxContainer" parent="PanelContainer/VBox/ScreenPhase3Summary"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnVerifyPhase3Reload" type="Button" parent="PanelContainer/VBox/ScreenPhase3Summary/HBoxActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "Verify Saved Progress & Reload"
+
+[node name="BtnProceedPhase4" type="Button" parent="PanelContainer/VBox/ScreenPhase3Summary/HBoxActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "Proceed to Presidential Advisers (Phase 4)"

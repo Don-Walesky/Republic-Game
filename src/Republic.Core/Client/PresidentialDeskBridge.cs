@@ -1896,11 +1896,266 @@ public static class PresidentialDeskBridge
             IsRegistered = account != null,
             IsEmailVerified = account?.PersonalIdentity?.IsEmailVerified ?? false,
             PlayerDisplayName = account?.GetPublicIdentity() ?? string.Empty,
-            CountryName = country?.Name ?? string.Empty
+            CountryName = country?.Name ?? string.Empty,
+            SelectedLeadershipArchetypes = account?.SelectedLeadershipArchetypes?.Select(a => a.ToString()).ToList() ?? (IReadOnlyList<string>)Array.Empty<string>(),
+            LeadershipDoctrineTitle = account?.LeadershipDoctrineTitle ?? string.Empty,
+            SelectedDevelopmentPlans = account?.SelectedDevelopmentPlans?.Select(p => p.ToString()).ToList() ?? (IReadOnlyList<string>)Array.Empty<string>(),
+            SelectedDevelopmentPlanNames = account?.SelectedDevelopmentPlans?.Select(p => NationalDevelopmentPlanRegistry.Get(p).DisplayName).ToList() ?? (IReadOnlyList<string>)Array.Empty<string>()
         };
 
         TryWriteResultFile(targetStatePath, result);
         return result;
+    }
+
+    /// <summary>
+    /// Resumes a game session from an authoritative save file, projecting the sovereign state
+    /// <summary>
+    /// Validates and records the player's choice of exactly two leadership archetypes,
+    /// ratifying their presidential executive doctrine and advancing onboarding to LeadershipSelected.
+    /// </summary>
+    public static PresidentialActionResult SelectLeadershipDecision(
+        IReadOnlyList<string>? archetypes,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null || envelope.State.OnboardingStep < OnboardingStep.CountryCreated)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "You must register, verify your email, and found your sovereign country before selecting leadership archetypes.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        var identityService = new PlayerIdentityService();
+        var (isValid, validationMessage, parsedArchetypes, doctrineTitle) = identityService.ValidateLeadershipSelection(archetypes);
+        if (!isValid)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "ValidationFailed",
+                Message = validationMessage,
+                OnboardingStep = envelope.State.OnboardingStep.ToString(),
+                IsRegistered = true,
+                IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+                PlayerDisplayName = envelope.State.Account.GetPublicIdentity()
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        identityService.ApplyLeadershipSelection(envelope.State.Account, parsedArchetypes, doctrineTitle);
+        envelope.State.OnboardingStep = OnboardingStep.LeadershipSelected;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country != null)
+        {
+            // Apply executive doctrine stat bonuses to live country
+            foreach (var arch in parsedArchetypes)
+            {
+                switch (arch)
+                {
+                    case LeadershipArchetype.Technocrat:
+                        if (country.StateCapacity != null)
+                        {
+                            var csq = country.StateCapacity.CivilServiceQuality ?? 0.6;
+                            var ge = country.StateCapacity.GovernmentEffectiveness ?? 0.6;
+                            var ac = country.StateCapacity.AdministrativeCompetence ?? 0.6;
+                            country.StateCapacity.CivilServiceQuality = Math.Min(1.0, csq * 1.15);
+                            country.StateCapacity.GovernmentEffectiveness = Math.Min(1.0, ge * 1.15);
+                            country.StateCapacity.AdministrativeCompetence = Math.Min(1.0, ac * 1.10);
+                        }
+                        break;
+                    case LeadershipArchetype.PopulistReformer:
+                        country.HappinessRating = Math.Min(100.0, country.HappinessRating + 10.0);
+                        break;
+                    case LeadershipArchetype.EconomicVisionary:
+                        var treasuryBonus = country.Treasury.Balance * 0.10;
+                        if (treasuryBonus > 0)
+                        {
+                            country.Treasury.Deposit(treasuryBonus);
+                        }
+                        break;
+                    case LeadershipArchetype.StatistBuilder:
+                        country.BaselineStability = Math.Min(100.0, country.BaselineStability + 10.0);
+                        break;
+                    case LeadershipArchetype.DiplomaticStrategist:
+                        break;
+                }
+            }
+        }
+
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        if (country != null)
+        {
+            var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+            ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: $"Executive doctrine ratified: '{doctrineTitle}'.");
+        }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = $"Executive doctrine ratified: '{doctrineTitle}'. Leadership archetypes established.",
+            OnboardingStep = OnboardingStep.LeadershipSelected.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country?.Name ?? string.Empty,
+            SelectedLeadershipArchetypes = parsedArchetypes.Select(a => a.ToString()).ToList(),
+            LeadershipDoctrineTitle = doctrineTitle
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Validates and records the player's choice of exactly four national development priorities,
+    /// establishing their inaugural legislative focus and advancing onboarding to DevelopmentPlansSelected.
+    /// </summary>
+    public static PresidentialActionResult SelectDevelopmentPlansDecision(
+        IReadOnlyList<string>? plans,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null || envelope.State.OnboardingStep < OnboardingStep.LeadershipSelected)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "You must select your leadership identity before establishing national development priorities.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        var identityService = new PlayerIdentityService();
+        var (isValid, validationMessage, parsedPriorities) = identityService.ValidateDevelopmentPlansSelection(plans);
+        if (!isValid)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "ValidationFailed",
+                Message = validationMessage,
+                OnboardingStep = envelope.State.OnboardingStep.ToString(),
+                IsRegistered = true,
+                IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+                PlayerDisplayName = envelope.State.Account.GetPublicIdentity()
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        identityService.ApplyDevelopmentPlansSelection(envelope.State.Account, parsedPriorities);
+        envelope.State.OnboardingStep = OnboardingStep.DevelopmentPlansSelected;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        var planNames = parsedPriorities.Select(p => NationalDevelopmentPlanRegistry.Get(p).DisplayName).ToList();
+        var planSectors = parsedPriorities.Select(p => NationalDevelopmentPlanRegistry.Get(p).Sector).Distinct().ToList();
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country != null)
+        {
+            country.StrategyProfile ??= new NationalStrategyProfile();
+            country.StrategyProfile.PrioritySectors = planSectors;
+            country.StrategyProfile.FocusStatement = $"Inaugural development focus: {string.Join(", ", planNames)}";
+        }
+
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        if (country != null)
+        {
+            var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+            ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: $"National development agenda ratified: {string.Join(", ", planNames)}.");
+        }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = $"Inaugural national development agenda ratified with 4 priorities: {string.Join(", ", planNames)}.",
+            OnboardingStep = OnboardingStep.DevelopmentPlansSelected.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country?.Name ?? string.Empty,
+            SelectedLeadershipArchetypes = envelope.State.Account.SelectedLeadershipArchetypes.Select(a => a.ToString()).ToList(),
+            LeadershipDoctrineTitle = envelope.State.Account.LeadershipDoctrineTitle,
+            SelectedDevelopmentPlans = parsedPriorities.Select(p => p.ToString()).ToList(),
+            SelectedDevelopmentPlanNames = planNames
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
     }
 
     /// <summary>
@@ -6510,6 +6765,104 @@ public static class PresidentialDeskBridge
                         }
                     }
 
+                    if (normalizedAction is "select_leadership" or "select_leadership_identity" or "leadership_selection")
+                    {
+                        var archetypesList = new List<string>();
+
+                        if (root.TryGetProperty("archetypes", out var archEl) && archEl.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in archEl.EnumerateArray())
+                            {
+                                if (item.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(item.GetString()))
+                                {
+                                    archetypesList.Add(item.GetString()!.Trim());
+                                }
+                            }
+                        }
+                        else if (root.TryGetProperty("selected_archetypes", out var saEl) && saEl.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in saEl.EnumerateArray())
+                            {
+                                if (item.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(item.GetString()))
+                                {
+                                    archetypesList.Add(item.GetString()!.Trim());
+                                }
+                            }
+                        }
+
+                        if (root.TryGetProperty("archetype1", out var a1El) && a1El.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(a1El.GetString()))
+                        {
+                            archetypesList.Add(a1El.GetString()!.Trim());
+                        }
+
+                        if (root.TryGetProperty("archetype2", out var a2El) && a2El.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(a2El.GetString()))
+                        {
+                            archetypesList.Add(a2El.GetString()!.Trim());
+                        }
+
+                        try
+                        {
+                            return SelectLeadershipDecision(archetypesList, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "select_development_plans" or "select_development_plan" or "development_plans_selection" or "development_agenda")
+                    {
+                        var plansList = new List<string>();
+
+                        if (root.TryGetProperty("plans", out var plansEl) && plansEl.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in plansEl.EnumerateArray())
+                            {
+                                if (item.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(item.GetString()))
+                                {
+                                    plansList.Add(item.GetString()!.Trim());
+                                }
+                            }
+                        }
+                        else if (root.TryGetProperty("development_plans", out var dpEl) && dpEl.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in dpEl.EnumerateArray())
+                            {
+                                if (item.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(item.GetString()))
+                                {
+                                    plansList.Add(item.GetString()!.Trim());
+                                }
+                            }
+                        }
+                        else if (root.TryGetProperty("selected_plans", out var spEl) && spEl.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in spEl.EnumerateArray())
+                            {
+                                if (item.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(item.GetString()))
+                                {
+                                    plansList.Add(item.GetString()!.Trim());
+                                }
+                            }
+                        }
+
+                        for (int i = 1; i <= 4; i++)
+                        {
+                            if (root.TryGetProperty($"plan{i}", out var pEl) && pEl.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(pEl.GetString()))
+                            {
+                                plansList.Add(pEl.GetString()!.Trim());
+                            }
+                        }
+
+                        try
+                        {
+                            return SelectDevelopmentPlansDecision(plansList, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
                     if (normalizedAction is "load_save" or "resume_save")
                     {
                         string? specifiedSave = null;
@@ -7777,4 +8130,16 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("constitution_name")]
     public string ConstitutionName { get; init; } = string.Empty;
+
+    [JsonPropertyName("selected_leadership_archetypes")]
+    public IReadOnlyList<string> SelectedLeadershipArchetypes { get; init; } = Array.Empty<string>();
+
+    [JsonPropertyName("leadership_doctrine_title")]
+    public string LeadershipDoctrineTitle { get; init; } = string.Empty;
+
+    [JsonPropertyName("selected_development_plans")]
+    public IReadOnlyList<string> SelectedDevelopmentPlans { get; init; } = Array.Empty<string>();
+
+    [JsonPropertyName("selected_development_plan_names")]
+    public IReadOnlyList<string> SelectedDevelopmentPlanNames { get; init; } = Array.Empty<string>();
 }

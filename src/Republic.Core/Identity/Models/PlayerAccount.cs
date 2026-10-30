@@ -24,6 +24,15 @@ public sealed class PlayerAccount
     [JsonPropertyName("owned_country_id")]
     public string? OwnedCountryId { get; set; }
 
+    [JsonPropertyName("selected_leadership_archetypes")]
+    public List<LeadershipArchetype> SelectedLeadershipArchetypes { get; set; } = new();
+
+    [JsonPropertyName("leadership_doctrine_title")]
+    public string LeadershipDoctrineTitle { get; set; } = string.Empty;
+
+    [JsonPropertyName("selected_development_plans")]
+    public List<NationalDevelopmentPriority> SelectedDevelopmentPlans { get; set; } = new();
+
     [JsonPropertyName("last_login_utc")]
     public DateTimeOffset LastLoginUtc { get; set; } = DateTimeOffset.UtcNow;
 

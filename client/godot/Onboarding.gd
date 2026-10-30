@@ -1,11 +1,14 @@
 # ==============================================================================
-# Republic - New Player Onboarding Controller (Phase 2)
-# Handles the 5-stage onboarding sequence:
-# 1. Account Registration (First/Last name, Email, DOB - No password, PII isolated)
-# 2. Email Verification (Official dispatch display, "Verify Email" button, token input, resend)
-# 3. Country Naming (Validation, 'Republic' requirement, confirmation step)
+# Republic - New Player Onboarding Controller (Phase 2 & Phase 3)
+# Handles the complete onboarding sequence:
+# 1. Account Registration (First/Last name, Email, DOB - PII isolated)
+# 2. Email Verification (Official dispatch display, "Verify Email" button, code input, resend)
+# 3. Country Naming (Validation, 'Republic' requirement, confirmation modal)
 # 4. Procedural Country Generation (Animated progress, 50M REPU, 60% approval, 10M pop)
 # 5. Country Creation Confirmation (Ratified sovereign profile, persists & resumes)
+# 6. Leadership Identity Selection (Exactly 2 of 5 archetypes -> dual-trait doctrine)
+# 7. National Development Agenda (Exactly 4 of 10 priorities -> inaugural focus)
+# 8. Phase 3 Ratification Summary (Sovereign charter ratified, ready for Phase 4)
 # ==============================================================================
 class_name OnboardingController
 extends Control
@@ -18,7 +21,10 @@ enum ScreenStage {
 	VERIFY_EMAIL,
 	COUNTRY_NAME,
 	GENERATING,
-	CONFIRMED
+	CONFIRMED,
+	LEADERSHIP,
+	DEVELOPMENT_PLANS,
+	PHASE3_SUMMARY
 }
 
 var current_stage: ScreenStage = ScreenStage.REGISTER
@@ -36,15 +42,24 @@ var verification_token: String = ""
 var verification_email_data: Dictionary = {}
 var created_country_data: Dictionary = {}
 
+# Phase 3 selections
+var selected_archetypes: Array[String] = []
+var selected_plans: Array[String] = []
+var selected_doctrine_title: String = ""
+var selected_plan_names: Array[String] = []
+
 var is_processing: bool = false
 var resend_cooldown_timer: float = 0.0
 
-# Node References
+# Screen Panels
 @onready var register_panel: Control = $PanelContainer/VBox/ScreenRegister
 @onready var verify_panel: Control = $PanelContainer/VBox/ScreenVerify
 @onready var name_panel: Control = $PanelContainer/VBox/ScreenCountryName
 @onready var generating_panel: Control = $PanelContainer/VBox/ScreenGenerating
 @onready var confirmed_panel: Control = $PanelContainer/VBox/ScreenConfirmed
+@onready var leadership_panel: Control = $PanelContainer/VBox/ScreenLeadership
+@onready var plans_panel: Control = $PanelContainer/VBox/ScreenDevelopmentPlans
+@onready var summary_panel: Control = $PanelContainer/VBox/ScreenPhase3Summary
 
 # Registration Nodes
 @onready var input_first_name: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/FirstNameInput
@@ -92,11 +107,49 @@ var resend_cooldown_timer: float = 0.0
 @onready var lbl_stat_constitution: Label = $PanelContainer/VBox/ScreenConfirmed/Grid/LblConstitutionVal
 @onready var lbl_stat_resource: Label = $PanelContainer/VBox/ScreenConfirmed/Grid/LblResourceVal
 @onready var btn_resume_session: Button = $PanelContainer/VBox/ScreenConfirmed/BtnResumeSession
+@onready var btn_proceed_leadership: Button = $PanelContainer/VBox/ScreenConfirmed/BtnProceedLeadership
+
+# Leadership Selection Nodes
+@onready var lbl_leader_count: Label = $PanelContainer/VBox/ScreenLeadership/LblLeaderCount
+@onready var lbl_doctrine_preview: Label = $PanelContainer/VBox/ScreenLeadership/LblDoctrinePreview
+@onready var btn_confirm_leadership: Button = $PanelContainer/VBox/ScreenLeadership/BtnConfirmLeadership
+@onready var lbl_leadership_feedback: Label = $PanelContainer/VBox/ScreenLeadership/LblFeedback
+@onready var btn_arch_technocrat: Button = $PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat/VBox/HBoxHeader/BtnSelectTechnocrat
+@onready var btn_arch_populist: Button = $PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist/VBox/HBoxHeader/BtnSelectPopulist
+@onready var btn_arch_visionary: Button = $PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary/VBox/HBoxHeader/BtnSelectVisionary
+@onready var btn_arch_statist: Button = $PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist/VBox/HBoxHeader/BtnSelectStatist
+@onready var btn_arch_diplomat: Button = $PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat/VBox/HBoxHeader/BtnSelectDiplomat
+
+# Development Plans Nodes
+@onready var lbl_plans_count: Label = $PanelContainer/VBox/ScreenDevelopmentPlans/LblPlansCount
+@onready var btn_confirm_plans: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/BtnConfirmDevelopmentPlans
+@onready var lbl_plans_feedback: Label = $PanelContainer/VBox/ScreenDevelopmentPlans/LblFeedback
+@onready var btn_plan_1: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1/VBox/HBox/BtnPlan1
+@onready var btn_plan_2: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan2/VBox/HBox/BtnPlan2
+@onready var btn_plan_3: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan3/VBox/HBox/BtnPlan3
+@onready var btn_plan_4: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan4/VBox/HBox/BtnPlan4
+@onready var btn_plan_5: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan5/VBox/HBox/BtnPlan5
+@onready var btn_plan_6: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan6/VBox/HBox/BtnPlan6
+@onready var btn_plan_7: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan7/VBox/HBox/BtnPlan7
+@onready var btn_plan_8: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan8/VBox/HBox/BtnPlan8
+@onready var btn_plan_9: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan9/VBox/HBox/BtnPlan9
+@onready var btn_plan_10: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan10/VBox/HBox/BtnPlan10
+
+# Phase 3 Summary Nodes
+@onready var lbl_summary_title: Label = $PanelContainer/VBox/ScreenPhase3Summary/LblTitle
+@onready var lbl_summary_country: Label = $PanelContainer/VBox/ScreenPhase3Summary/Grid/LblCountryVal
+@onready var lbl_summary_capital: Label = $PanelContainer/VBox/ScreenPhase3Summary/Grid/LblCapitalVal
+@onready var lbl_summary_leader: Label = $PanelContainer/VBox/ScreenPhase3Summary/Grid/LblLeaderVal
+@onready var lbl_summary_doctrine: Label = $PanelContainer/VBox/ScreenPhase3Summary/Grid/LblDoctrineVal
+@onready var lbl_summary_archetypes: Label = $PanelContainer/VBox/ScreenPhase3Summary/Grid/LblArchetypesVal
+@onready var lbl_summary_plans: Label = $PanelContainer/VBox/ScreenPhase3Summary/Grid/LblPlansVal
+@onready var btn_verify_phase3_reload: Button = $PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnVerifyPhase3Reload
+@onready var btn_proceed_phase4: Button = $PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnProceedPhase4
 
 func _ready() -> void:
 	_init_controls()
 	_connect_signals()
-	_show_stage(ScreenStage.REGISTER)
+	_load_initial_stage()
 
 func _init_controls() -> void:
 	if register_panel == null: register_panel = get_node_or_null("PanelContainer/VBox/ScreenRegister")
@@ -104,6 +157,9 @@ func _init_controls() -> void:
 	if name_panel == null: name_panel = get_node_or_null("PanelContainer/VBox/ScreenCountryName")
 	if generating_panel == null: generating_panel = get_node_or_null("PanelContainer/VBox/ScreenGenerating")
 	if confirmed_panel == null: confirmed_panel = get_node_or_null("PanelContainer/VBox/ScreenConfirmed")
+	if leadership_panel == null: leadership_panel = get_node_or_null("PanelContainer/VBox/ScreenLeadership")
+	if plans_panel == null: plans_panel = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans")
+	if summary_panel == null: summary_panel = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary")
 
 	if input_first_name == null: input_first_name = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/FirstNameInput")
 	if input_last_name == null: input_last_name = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/LastNameInput")
@@ -146,6 +202,46 @@ func _init_controls() -> void:
 	if lbl_stat_constitution == null: lbl_stat_constitution = get_node_or_null("PanelContainer/VBox/ScreenConfirmed/Grid/LblConstitutionVal")
 	if lbl_stat_resource == null: lbl_stat_resource = get_node_or_null("PanelContainer/VBox/ScreenConfirmed/Grid/LblResourceVal")
 	if btn_resume_session == null: btn_resume_session = get_node_or_null("PanelContainer/VBox/ScreenConfirmed/BtnResumeSession")
+	if btn_proceed_leadership == null: btn_proceed_leadership = get_node_or_null("PanelContainer/VBox/ScreenConfirmed/BtnProceedLeadership")
+
+	# Leadership Nodes
+	if lbl_leader_count == null: lbl_leader_count = get_node_or_null("PanelContainer/VBox/ScreenLeadership/LblLeaderCount")
+	if lbl_doctrine_preview == null: lbl_doctrine_preview = get_node_or_null("PanelContainer/VBox/ScreenLeadership/LblDoctrinePreview")
+	if btn_confirm_leadership == null: btn_confirm_leadership = get_node_or_null("PanelContainer/VBox/ScreenLeadership/BtnConfirmLeadership")
+	if lbl_leadership_feedback == null: lbl_leadership_feedback = get_node_or_null("PanelContainer/VBox/ScreenLeadership/LblFeedback")
+
+	if btn_arch_technocrat == null: btn_arch_technocrat = get_node_or_null("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat/VBox/HBoxHeader/BtnSelectTechnocrat")
+	if btn_arch_populist == null: btn_arch_populist = get_node_or_null("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist/VBox/HBoxHeader/BtnSelectPopulist")
+	if btn_arch_visionary == null: btn_arch_visionary = get_node_or_null("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary/VBox/HBoxHeader/BtnSelectVisionary")
+	if btn_arch_statist == null: btn_arch_statist = get_node_or_null("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist/VBox/HBoxHeader/BtnSelectStatist")
+	if btn_arch_diplomat == null: btn_arch_diplomat = get_node_or_null("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat/VBox/HBoxHeader/BtnSelectDiplomat")
+
+	# Development Plans Nodes
+	if lbl_plans_count == null: lbl_plans_count = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/LblPlansCount")
+	if btn_confirm_plans == null: btn_confirm_plans = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/BtnConfirmDevelopmentPlans")
+	if lbl_plans_feedback == null: lbl_plans_feedback = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/LblFeedback")
+
+	if btn_plan_1 == null: btn_plan_1 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1/VBox/HBox/BtnPlan1")
+	if btn_plan_2 == null: btn_plan_2 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan2/VBox/HBox/BtnPlan2")
+	if btn_plan_3 == null: btn_plan_3 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan3/VBox/HBox/BtnPlan3")
+	if btn_plan_4 == null: btn_plan_4 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan4/VBox/HBox/BtnPlan4")
+	if btn_plan_5 == null: btn_plan_5 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan5/VBox/HBox/BtnPlan5")
+	if btn_plan_6 == null: btn_plan_6 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan6/VBox/HBox/BtnPlan6")
+	if btn_plan_7 == null: btn_plan_7 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan7/VBox/HBox/BtnPlan7")
+	if btn_plan_8 == null: btn_plan_8 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan8/VBox/HBox/BtnPlan8")
+	if btn_plan_9 == null: btn_plan_9 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan9/VBox/HBox/BtnPlan9")
+	if btn_plan_10 == null: btn_plan_10 = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan10/VBox/HBox/BtnPlan10")
+
+	# Summary Nodes
+	if lbl_summary_title == null: lbl_summary_title = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/LblTitle")
+	if lbl_summary_country == null: lbl_summary_country = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/Grid/LblCountryVal")
+	if lbl_summary_capital == null: lbl_summary_capital = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/Grid/LblCapitalVal")
+	if lbl_summary_leader == null: lbl_summary_leader = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/Grid/LblLeaderVal")
+	if lbl_summary_doctrine == null: lbl_summary_doctrine = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/Grid/LblDoctrineVal")
+	if lbl_summary_archetypes == null: lbl_summary_archetypes = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/Grid/LblArchetypesVal")
+	if lbl_summary_plans == null: lbl_summary_plans = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/Grid/LblPlansVal")
+	if btn_verify_phase3_reload == null: btn_verify_phase3_reload = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnVerifyPhase3Reload")
+	if btn_proceed_phase4 == null: btn_proceed_phase4 = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnProceedPhase4")
 
 func _process(delta: float) -> void:
 	if resend_cooldown_timer > 0.0:
@@ -175,6 +271,75 @@ func _connect_signals() -> void:
 		btn_cancel_modal.pressed.connect(_on_cancel_modal_pressed)
 	if btn_resume_session and not btn_resume_session.pressed.is_connected(_on_resume_session_pressed):
 		btn_resume_session.pressed.connect(_on_resume_session_pressed)
+	if btn_proceed_leadership and not btn_proceed_leadership.pressed.is_connected(_on_proceed_leadership_pressed):
+		btn_proceed_leadership.pressed.connect(_on_proceed_leadership_pressed)
+
+	# Leadership buttons
+	if btn_arch_technocrat and not btn_arch_technocrat.pressed.is_connected(_on_technocrat_toggled):
+		btn_arch_technocrat.pressed.connect(_on_technocrat_toggled)
+	if btn_arch_populist and not btn_arch_populist.pressed.is_connected(_on_populist_toggled):
+		btn_arch_populist.pressed.connect(_on_populist_toggled)
+	if btn_arch_visionary and not btn_arch_visionary.pressed.is_connected(_on_visionary_toggled):
+		btn_arch_visionary.pressed.connect(_on_visionary_toggled)
+	if btn_arch_statist and not btn_arch_statist.pressed.is_connected(_on_statist_toggled):
+		btn_arch_statist.pressed.connect(_on_statist_toggled)
+	if btn_arch_diplomat and not btn_arch_diplomat.pressed.is_connected(_on_diplomat_toggled):
+		btn_arch_diplomat.pressed.connect(_on_diplomat_toggled)
+	if btn_confirm_leadership and not btn_confirm_leadership.pressed.is_connected(_on_confirm_leadership_pressed):
+		btn_confirm_leadership.pressed.connect(_on_confirm_leadership_pressed)
+
+	# Development Plan buttons
+	_connect_plan_button(btn_plan_1, "agrarian_self_sufficiency")
+	_connect_plan_button(btn_plan_2, "mineral_industrialization")
+	_connect_plan_button(btn_plan_3, "renewable_power_grid")
+	_connect_plan_button(btn_plan_4, "higher_education_research")
+	_connect_plan_button(btn_plan_5, "border_security_defense")
+	_connect_plan_button(btn_plan_6, "maritime_trade_ports")
+	_connect_plan_button(btn_plan_7, "digital_infrastructure_cyber")
+	_connect_plan_button(btn_plan_8, "universal_healthcare")
+	_connect_plan_button(btn_plan_9, "fiscal_reserve_fortress")
+	_connect_plan_button(btn_plan_10, "transit_rail_arteries")
+	if btn_confirm_plans and not btn_confirm_plans.pressed.is_connected(_on_confirm_plans_pressed):
+		btn_confirm_plans.pressed.connect(_on_confirm_plans_pressed)
+
+	# Summary buttons
+	if btn_verify_phase3_reload and not btn_verify_phase3_reload.pressed.is_connected(_on_resume_session_pressed):
+		btn_verify_phase3_reload.pressed.connect(_on_resume_session_pressed)
+
+func _connect_plan_button(btn: Button, plan_key: String) -> void:
+	if btn and not btn.pressed.is_connected(_on_plan_clicked.bind(plan_key, btn)):
+		btn.pressed.connect(_on_plan_clicked.bind(plan_key, btn))
+
+func _load_initial_stage() -> void:
+	# Checks disk for existing authoritative session
+	var global_state := ProjectSettings.globalize_path(active_state_path)
+	if FileAccess.file_exists(global_state):
+		var file := FileAccess.open(global_state, FileAccess.READ)
+		if file != null:
+			var content := file.get_as_text()
+			file.close()
+			var parsed = JSON.parse_string(content)
+			if parsed != null and typeof(parsed) == TYPE_DICTIONARY:
+				var step: String = str(parsed.get("onboarding_step", "NotStarted"))
+				match step:
+					"NotStarted":
+						_show_stage(ScreenStage.REGISTER)
+					"AccountRegistered":
+						_show_stage(ScreenStage.VERIFY_EMAIL)
+					"EmailVerified":
+						_show_stage(ScreenStage.COUNTRY_NAME)
+					"CountryCreated":
+						_populate_confirmed_view(parsed)
+						_show_stage(ScreenStage.CONFIRMED)
+					"LeadershipSelected":
+						_show_stage(ScreenStage.DEVELOPMENT_PLANS)
+					"DevelopmentPlansSelected", "AdvisersIntroduced", "CampaignHeadquarters", "InOffice":
+						_populate_phase3_summary_view(parsed)
+						_show_stage(ScreenStage.PHASE3_SUMMARY)
+					_:
+						_show_stage(ScreenStage.REGISTER)
+				return
+	_show_stage(ScreenStage.REGISTER)
 
 func _show_stage(stage: ScreenStage) -> void:
 	current_stage = stage
@@ -185,6 +350,9 @@ func _show_stage(stage: ScreenStage) -> void:
 		if confirmation_modal: confirmation_modal.visible = false
 	if generating_panel: generating_panel.visible = (stage == ScreenStage.GENERATING)
 	if confirmed_panel: confirmed_panel.visible = (stage == ScreenStage.CONFIRMED)
+	if leadership_panel: leadership_panel.visible = (stage == ScreenStage.LEADERSHIP)
+	if plans_panel: plans_panel.visible = (stage == ScreenStage.DEVELOPMENT_PLANS)
+	if summary_panel: summary_panel.visible = (stage == ScreenStage.PHASE3_SUMMARY)
 
 	var stage_name := "Register"
 	match stage:
@@ -193,6 +361,9 @@ func _show_stage(stage: ScreenStage) -> void:
 		ScreenStage.COUNTRY_NAME: stage_name = "CountryName"
 		ScreenStage.GENERATING: stage_name = "Generating"
 		ScreenStage.CONFIRMED: stage_name = "Confirmed"
+		ScreenStage.LEADERSHIP: stage_name = "Leadership"
+		ScreenStage.DEVELOPMENT_PLANS: stage_name = "DevelopmentPlans"
+		ScreenStage.PHASE3_SUMMARY: stage_name = "Phase3Summary"
 
 	onboarding_step_changed.emit(stage_name)
 
@@ -406,7 +577,7 @@ func _run_procedural_generation_flow(country_name: String) -> void:
 		_display_name_error(str(res.get("message", "Country founding failed. Duplicate or invalid name.")))
 
 # ==============================================================================
-# Step 5: Country Creation Confirmed
+# Step 5: Country Creation Confirmed & Navigation to Phase 3
 # ==============================================================================
 func _populate_confirmed_view(data: Dictionary) -> void:
 	if lbl_confirmed_title:
@@ -421,6 +592,201 @@ func _populate_confirmed_view(data: Dictionary) -> void:
 	if lbl_stat_constitution: lbl_stat_constitution.text = str(data.get("constitution_name", "National Democratic Constitution"))
 	if lbl_stat_resource: lbl_stat_resource.text = str(data.get("primary_resource", "Strategic Minerals"))
 
+func _on_proceed_leadership_pressed() -> void:
+	_show_stage(ScreenStage.LEADERSHIP)
+
+# ==============================================================================
+# Step 6: Leadership Identity Selection (Phase 3 Part 1)
+# ==============================================================================
+func _on_technocrat_toggled() -> void:
+	_toggle_archetype("technocrat", btn_arch_technocrat)
+
+func _on_populist_toggled() -> void:
+	_toggle_archetype("populist_reformer", btn_arch_populist)
+
+func _on_visionary_toggled() -> void:
+	_toggle_archetype("economic_visionary", btn_arch_visionary)
+
+func _on_statist_toggled() -> void:
+	_toggle_archetype("statist_builder", btn_arch_statist)
+
+func _on_diplomat_toggled() -> void:
+	_toggle_archetype("diplomatic_strategist", btn_arch_diplomat)
+
+func _toggle_archetype(key: String, btn: Button) -> void:
+	if lbl_leadership_feedback: lbl_leadership_feedback.text = ""
+
+	if selected_archetypes.has(key):
+		selected_archetypes.erase(key)
+		if btn:
+			btn.text = "Select"
+			btn.modulate = Color(1.0, 1.0, 1.0)
+	else:
+		if selected_archetypes.size() >= 2:
+			if lbl_leadership_feedback:
+				lbl_leadership_feedback.text = "You may only select exactly 2 leadership archetypes. Deselect one first."
+				lbl_leadership_feedback.modulate = Color(1.0, 0.4, 0.4)
+			return
+		selected_archetypes.append(key)
+		if btn:
+			btn.text = "Selected ✓"
+			btn.modulate = Color(0.4, 1.0, 0.4)
+
+	var count := selected_archetypes.size()
+	if lbl_leader_count:
+		lbl_leader_count.text = "Selected: %d / 2%s" % [count, " (Ready to Confirm!)" if count == 2 else " (Select 2 to continue)"]
+		lbl_leader_count.modulate = Color(0.4, 1.0, 0.4) if count == 2 else Color(0.9, 0.8, 0.4)
+
+	var doc_title := _compute_doctrine_title(selected_archetypes)
+	if lbl_doctrine_preview:
+		lbl_doctrine_preview.text = "Executive Doctrine: " + doc_title
+
+	if btn_confirm_leadership:
+		btn_confirm_leadership.disabled = (count != 2)
+
+func _compute_doctrine_title(archetypes: Array[String]) -> String:
+	if archetypes.size() != 2:
+		return "None (Select 2 archetypes)"
+
+	var set := {}
+	for a in archetypes:
+		set[a] = true
+
+	if set.has("technocrat") and set.has("economic_visionary"): return "Technocratic Visionary"
+	if set.has("technocrat") and set.has("statist_builder"): return "Technocratic Builder"
+	if set.has("technocrat") and set.has("diplomatic_strategist"): return "Technocratic Diplomat"
+	if set.has("technocrat") and set.has("populist_reformer"): return "Technocratic Reformer"
+	if set.has("populist_reformer") and set.has("statist_builder"): return "Populist Builder"
+	if set.has("populist_reformer") and set.has("economic_visionary"): return "Populist Visionary"
+	if set.has("populist_reformer") and set.has("diplomatic_strategist"): return "Populist Diplomat"
+	if set.has("economic_visionary") and set.has("statist_builder"): return "Visionary Builder"
+	if set.has("economic_visionary") and set.has("diplomatic_strategist"): return "Visionary Diplomat"
+	if set.has("statist_builder") and set.has("diplomatic_strategist"): return "Strategic Builder"
+
+	return archetypes[0].capitalize() + "-" + archetypes[1].capitalize()
+
+func _on_confirm_leadership_pressed() -> void:
+	if is_processing or selected_archetypes.size() != 2: return
+	is_processing = true
+	if btn_confirm_leadership: btn_confirm_leadership.disabled = true
+	if lbl_leadership_feedback: lbl_leadership_feedback.text = "Ratifying executive leadership doctrine..."
+
+	var req := {
+		"action": "select_leadership",
+		"archetypes": selected_archetypes,
+		"request_id": "onboarding_lead_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+	if btn_confirm_leadership: btn_confirm_leadership.disabled = false
+
+	if res.get("success", false) and res.get("result", "") == "Success":
+		selected_doctrine_title = str(res.get("leadership_doctrine_title", _compute_doctrine_title(selected_archetypes)))
+		if lbl_leadership_feedback:
+			lbl_leadership_feedback.text = "Leadership doctrine established! Proceeding to national development agenda..."
+			lbl_leadership_feedback.modulate = Color(0.4, 1.0, 0.4)
+		_show_stage(ScreenStage.DEVELOPMENT_PLANS)
+	else:
+		if lbl_leadership_feedback:
+			lbl_leadership_feedback.text = str(res.get("message", "Failed to ratify leadership doctrine."))
+			lbl_leadership_feedback.modulate = Color(1.0, 0.4, 0.4)
+
+# ==============================================================================
+# Step 7: National Development Agenda (Phase 3 Part 2)
+# ==============================================================================
+func _on_plan_clicked(plan_key: String, btn: Button) -> void:
+	if lbl_plans_feedback: lbl_plans_feedback.text = ""
+
+	if selected_plans.has(plan_key):
+		selected_plans.erase(plan_key)
+		if btn:
+			btn.text = "Select"
+			btn.modulate = Color(1.0, 1.0, 1.0)
+	else:
+		if selected_plans.size() >= 4:
+			if lbl_plans_feedback:
+				lbl_plans_feedback.text = "You may only select exactly 4 priorities. Deselect one first."
+				lbl_plans_feedback.modulate = Color(1.0, 0.4, 0.4)
+			return
+		selected_plans.append(plan_key)
+		if btn:
+			btn.text = "Selected ✓"
+			btn.modulate = Color(0.4, 1.0, 0.4)
+
+	var count := selected_plans.size()
+	if lbl_plans_count:
+		lbl_plans_count.text = "Selected: %d / 4%s" % [count, " (Ready to Ratify!)" if count == 4 else " (Select 4 to continue)"]
+		lbl_plans_count.modulate = Color(0.4, 1.0, 0.4) if count == 4 else Color(0.9, 0.8, 0.4)
+
+	if btn_confirm_plans:
+		btn_confirm_plans.disabled = (count != 4)
+
+func _on_confirm_plans_pressed() -> void:
+	if is_processing or selected_plans.size() != 4: return
+	is_processing = true
+	if btn_confirm_plans: btn_confirm_plans.disabled = true
+	if lbl_plans_feedback: lbl_plans_feedback.text = "Ratifying inaugural national development agenda..."
+
+	var req := {
+		"action": "select_development_plans",
+		"plans": selected_plans,
+		"request_id": "onboarding_plans_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+	if btn_confirm_plans: btn_confirm_plans.disabled = false
+
+	if res.get("success", false) and res.get("result", "") == "Success":
+		_populate_phase3_summary_view(res)
+		_show_stage(ScreenStage.PHASE3_SUMMARY)
+	else:
+		if lbl_plans_feedback:
+			lbl_plans_feedback.text = str(res.get("message", "Failed to ratify national development agenda."))
+			lbl_plans_feedback.modulate = Color(1.0, 0.4, 0.4)
+
+# ==============================================================================
+# Step 8: Phase 3 Completion Summary
+# ==============================================================================
+func _populate_phase3_summary_view(data: Dictionary) -> void:
+	var c_name := str(data.get("country_name", ""))
+	if c_name.is_empty(): c_name = str(created_country_data.get("country_name", "Republic of Solaria"))
+
+	var leader := str(data.get("player_display_name", ""))
+	if leader.is_empty(): leader = registered_first_name + " " + registered_last_name
+	if leader.strip_edges().is_empty(): leader = "Elena Okafor"
+
+	var doctrine := str(data.get("leadership_doctrine_title", selected_doctrine_title))
+	if doctrine.is_empty(): doctrine = "Technocratic Builder"
+
+	var archetypes_raw = data.get("selected_leadership_archetypes", selected_archetypes)
+	var archetypes_str := ""
+	if typeof(archetypes_raw) == TYPE_ARRAY:
+		var items: Array = archetypes_raw
+		archetypes_str = ", ".join(items)
+	if archetypes_str.is_empty(): archetypes_str = "Technocrat, Statist Builder"
+
+	var plans_raw = data.get("selected_development_plan_names", [])
+	var plans_str := ""
+	if typeof(plans_raw) == TYPE_ARRAY and plans_raw.size() > 0:
+		var p_items: Array = plans_raw
+		plans_str = ", ".join(p_items)
+	else:
+		var p_keys = data.get("selected_development_plans", selected_plans)
+		if typeof(p_keys) == TYPE_ARRAY:
+			var p_keys_arr: Array = p_keys
+			plans_str = ", ".join(p_keys_arr)
+	if plans_str.is_empty(): plans_str = "Agrarian Self-Sufficiency, Renewable Power Grid, Higher Education, Digital Cyber"
+
+	if lbl_summary_title: lbl_summary_title.text = "PHASE 3 COMPLETE: " + c_name
+	if lbl_summary_country: lbl_summary_country.text = c_name
+	if lbl_summary_capital: lbl_summary_capital.text = str(data.get("capital_city", "Solaria Prime"))
+	if lbl_summary_leader: lbl_summary_leader.text = leader
+	if lbl_summary_doctrine: lbl_summary_doctrine.text = doctrine
+	if lbl_summary_archetypes: lbl_summary_archetypes.text = archetypes_str
+	if lbl_summary_plans: lbl_summary_plans.text = plans_str
+
 func _on_resume_session_pressed() -> void:
 	# Reloads state from disk to confirm persistent survival across restart
 	var file := FileAccess.open(ProjectSettings.globalize_path(active_state_path), FileAccess.READ)
@@ -430,6 +796,7 @@ func _on_resume_session_pressed() -> void:
 		var parsed = JSON.parse_string(text)
 		if parsed != null and typeof(parsed) == TYPE_DICTIONARY:
 			_populate_confirmed_view(parsed)
+			_populate_phase3_summary_view(parsed)
 			print("[ONBOARDING]: Authoritative state successfully verified from disk.")
 
 # ==============================================================================
