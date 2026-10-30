@@ -20,6 +20,7 @@ using Republic.Core.NationalStrategy.Services;
 using Republic.Core.Persistence;
 using Republic.Core.Persistence.Models;
 using Republic.Core.Persistence.Services;
+using Republic.Core.Politics;
 using Republic.Core.Time;
 using Republic.Core.World;
 using Republic.Core.World.Factories;
@@ -1779,6 +1780,16 @@ public static class PresidentialDeskBridge
                  string.Equals(projectType, "National University", StringComparison.OrdinalIgnoreCase))
         {
             outcome = PresidentialWorkspaceHandler.InitiateUniversityProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "Refinery", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "National Refinery", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateRefineryProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "Mine", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "National Mine", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateMineProject(country, simTime, confirmed: true);
         }
         else
         {
@@ -5339,6 +5350,427 @@ public static class PresidentialDeskBridge
     /// ensures the updated state file is exported, deletes the request file, and returns the action result.
     /// Returns null if no request file exists.
     /// </summary>
+    /// <summary>
+    /// Executes a hostile military directive or attack against a foreign target nation.
+    /// Deducts deployment costs, calculates combat outcome, casualties, and systemic repercussions.
+    /// </summary>
+    public static PresidentialActionResult ApplyMilitaryOperation(
+        string targetCountryName,
+        string operationType = "Airstrike",
+        int troopsCommitted = 1000,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "execute military operation");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (string.IsNullOrWhiteSpace(targetCountryName))
+        {
+            var noTarget = CreateInvalidInputResult(targetStatePath, "Military operation requires a valid foreign target country.", requestId);
+            TryWriteResultFile(targetStatePath, noTarget);
+            return noTarget;
+        }
+
+        if (string.Equals(targetCountryName, country!.Name, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(targetCountryName, country.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            var selfAttack = CreateInvalidInputResult(targetStatePath, "Cannot launch hostile military operations against your own sovereign territory.", requestId);
+            TryWriteResultFile(targetStatePath, selfAttack);
+            return selfAttack;
+        }
+
+        if (troopsCommitted <= 0)
+        {
+            var invalidTroops = CreateInvalidInputResult(targetStatePath, "Troop commitment must be greater than zero.", requestId);
+            TryWriteResultFile(targetStatePath, invalidTroops);
+            return invalidTroops;
+        }
+
+        int availablePersonnel = country.MilitaryLevel * 2500;
+        if (troopsCommitted > availablePersonnel)
+        {
+            var exceedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PrerequisitesNotMet",
+                Message = $"Troop commitment ({troopsCommitted:N0}) exceeds available standing armed forces personnel ({availablePersonnel:N0} at Military Level {country.MilitaryLevel}).",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, exceedResult);
+            return exceedResult;
+        }
+
+        decimal operationCost = troopsCommitted * 100m;
+        if (country.Treasury.Balance < (double)operationCost)
+        {
+            var brokeResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InsufficientFunds",
+                Message = $"Insufficient treasury reserves for military deployment. Required: {RepuTreasury.Format((double)operationCost)}, Available: {country.Treasury.FormattedBalance}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, brokeResult);
+            return brokeResult;
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Ready to launch {operationType} targeting {targetCountryName}. Deployment Cost: {RepuTreasury.Format((double)operationCost)}. Confirmation required.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        // Deduct treasury deployment cost
+        country.Treasury.TryWithdraw((double)operationCost);
+
+        // Calculate simulation combat outcome
+        var defMinister = country.GetMinister(CabinetPortfolio.Defense);
+        double ministerBonus = (defMinister != null && defMinister.IsAppointed) ? (defMinister.Competence * 0.15) : 0.0;
+        double baseOdds = Math.Min(0.85, 0.40 + (country.MilitaryLevel * 0.015) + ministerBonus);
+
+        int seed = Math.Abs(HashCode.Combine(country.Id, targetCountryName, operationType, (int)tick));
+        bool success = (seed % 100) < (int)(baseOdds * 100);
+
+        int casualties = success ? (int)(troopsCommitted * 0.04) : (int)(troopsCommitted * 0.15);
+        int enemyCasualties = success ? (int)(troopsCommitted * 0.20) : (int)(troopsCommitted * 0.06);
+
+        string outcomeMsg;
+        if (success)
+        {
+            country.HappinessRating = Math.Clamp(country.HappinessRating + 3.0, 0.0, 100.0);
+            country.GrossDomesticProduct += 1_500_000.0;
+            outcomeMsg = $"Operation {operationType} against {targetCountryName} succeeded! Strategic objectives secured. Target casualties: {enemyCasualties:N0}. Friendly losses: {casualties:N0}. Cost: {RepuTreasury.Format((double)operationCost)}.";
+        }
+        else
+        {
+            country.HappinessRating = Math.Clamp(country.HappinessRating - 5.0, 0.0, 100.0);
+            country.BaselineStability = Math.Clamp(country.BaselineStability - 3.0, 0.0, 100.0);
+            outcomeMsg = $"Operation {operationType} against {targetCountryName} encountered fierce defensive resistance. Tactical retreat ordered. Friendly losses: {casualties:N0}. Target casualties: {enemyCasualties:N0}. Cost: {RepuTreasury.Format((double)operationCost)}.";
+        }
+
+        // Persist authoritative save file
+        if (envelope?.State != null && !string.IsNullOrWhiteSpace(targetSavePath))
+        {
+            envelope.State.CurrentTick = tick + 1;
+            envelope.SavedAt = DateTimeOffset.UtcNow;
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var world = envelope?.State?.World;
+            var snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMsg)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath, latestDecisionResult: outcomeMsg);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var result = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = success,
+            Result = success ? "Success" : "TacticalDefeat",
+            Message = outcomeMsg,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+
+        TryWriteResultFile(targetStatePath, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Proposes a new legislative bill with 50:50 consequence balance to Parliament.
+    /// </summary>
+    public static PresidentialActionResult ApplyProposeBillDecision(
+        string title,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "propose legislative bill");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            var noTitle = CreateInvalidInputResult(targetStatePath, "Cannot propose bill: Bill title cannot be empty.", requestId);
+            TryWriteResultFile(targetStatePath, noTitle);
+            return noTitle;
+        }
+
+        if (country!.PendingBill != null)
+        {
+            var alreadyPending = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AlreadyActive",
+                Message = $"A legislative bill ('{country.PendingBill.Title}') is already pending a parliamentary vote.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, alreadyPending);
+            return alreadyPending;
+        }
+
+        var bill = country.ProposeBill(title);
+        if (bill == null)
+        {
+            var fail = CreateInvalidInputResult(targetStatePath, "Failed to submit bill to parliament.", requestId);
+            TryWriteResultFile(targetStatePath, fail);
+            return fail;
+        }
+
+        if (envelope?.State != null && !string.IsNullOrWhiteSpace(targetSavePath))
+        {
+            envelope.State.CurrentTick = tick + 1;
+            envelope.SavedAt = DateTimeOffset.UtcNow;
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var world = envelope?.State?.World;
+            var snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var result = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = $"Bill '{bill.Title}' submitted to Parliament. Category: {bill.Category}. Trade-off: {bill.PositiveConsequence} vs {bill.NegativeConsequence}.",
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+
+        TryWriteResultFile(targetStatePath, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Conducts a roll-call vote on a pending bill using the deterministic anti-save-scumming difficulty engine.
+    /// </summary>
+    public static PresidentialActionResult ApplyVoteBillDecision(
+        string? title = null,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "vote legislative bill");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        var targetBill = string.IsNullOrWhiteSpace(title) ? country!.PendingBill : country!.Bills.FirstOrDefault(b => b.Title.Equals(title.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (targetBill == null)
+        {
+            var noBill = CreateInvalidInputResult(targetStatePath, "No pending legislative bill found to vote upon.", requestId);
+            TryWriteResultFile(targetStatePath, noBill);
+            return noBill;
+        }
+
+        var voted = country!.VoteBill(targetBill, simTime);
+        if (voted == null || voted.Status == CountryBillStatus.Pending)
+        {
+            var voteFail = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Failed",
+                Message = "Parliamentary vote failed to conduct. Ensure an active ruling party is established.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, voteFail);
+            return voteFail;
+        }
+
+        if (envelope?.State != null && !string.IsNullOrWhiteSpace(targetSavePath))
+        {
+            envelope.State.CurrentTick = tick + 1;
+            envelope.SavedAt = DateTimeOffset.UtcNow;
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var world = envelope?.State?.World;
+            var snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var result = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = voted.IsPassed,
+            Result = voted.IsPassed ? "Passed" : "Defeated",
+            Message = voted.IsPassed
+                ? $"Bill '{voted.Title}' PASSED Parliament ({voted.AyesCount}/{voted.TotalVotes} Ayes). Enacted consequences applied: {voted.PositiveConsequence} | {voted.NegativeConsequence}."
+                : $"Bill '{voted.Title}' DEFEATED in Parliament ({voted.AyesCount}/{voted.TotalVotes} Ayes, required {voted.RequiredMajorityPercentage}%).",
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+
+        TryWriteResultFile(targetStatePath, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Exercises executive presidential veto on an enacted bill.
+    /// </summary>
+    public static PresidentialActionResult ApplyVetoBillDecision(
+        string title,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "veto legislative bill");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            var noTitle = CreateInvalidInputResult(targetStatePath, "Veto requires a specific enacted bill title.", requestId);
+            TryWriteResultFile(targetStatePath, noTitle);
+            return noTitle;
+        }
+
+        bool vetoSucceeded = country!.VetoBill(title, out var msg);
+
+        if (envelope?.State != null && !string.IsNullOrWhiteSpace(targetSavePath))
+        {
+            envelope.State.CurrentTick = tick + 1;
+            envelope.SavedAt = DateTimeOffset.UtcNow;
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var world = envelope?.State?.World;
+            var snapshot = world != null
+                ? PresidentialDeskSnapshot.Create(world, country!, simTime, tick + 1, targetSavePath)
+                : PresidentialDeskSnapshot.Create(country!, simTime, tick + 1, targetSavePath);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var result = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = vetoSucceeded,
+            Result = vetoSucceeded ? "VetoSustained" : "VetoOverridden",
+            Message = msg,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+
+        TryWriteResultFile(targetStatePath, result);
+        return result;
+    }
+
     public static PresidentialActionResult? ProcessPendingDecisionRequest(
         string? stateFilePath = null,
         string? saveFilePath = null,
@@ -6170,6 +6602,126 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyCounterintelligenceSweep(sweepConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "military_attack" or "military_directive" or "military_operation" or "attack")
+                    {
+                        string targetCountryName = string.Empty;
+                        if (root.TryGetProperty("target_country", out var tcEl) && tcEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryName = tcEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("target", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            targetCountryName = tEl.GetString() ?? string.Empty;
+                        }
+
+                        string opType = "Airstrike";
+                        if (root.TryGetProperty("operation_type", out var otEl) && otEl.ValueKind == JsonValueKind.String)
+                        {
+                            opType = otEl.GetString() ?? "Airstrike";
+                        }
+                        else if (root.TryGetProperty("op_type", out var opEl) && opEl.ValueKind == JsonValueKind.String)
+                        {
+                            opType = opEl.GetString() ?? "Airstrike";
+                        }
+
+                        int troops = 1000;
+                        if (root.TryGetProperty("troops_committed", out var trEl) && trEl.ValueKind == JsonValueKind.Number)
+                        {
+                            troops = trEl.GetInt32();
+                        }
+                        else if (root.TryGetProperty("troops", out var tNumEl) && tNumEl.ValueKind == JsonValueKind.Number)
+                        {
+                            troops = tNumEl.GetInt32();
+                        }
+
+                        bool milConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var mcEl) && (mcEl.ValueKind == JsonValueKind.True || mcEl.ValueKind == JsonValueKind.False))
+                        {
+                            milConfirmed = mcEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyMilitaryOperation(targetCountryName, opType, troops, milConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "propose_bill" or "legislature_propose" or "bill_propose")
+                    {
+                        string title = string.Empty;
+                        if (root.TryGetProperty("title", out var titleEl) && titleEl.ValueKind == JsonValueKind.String)
+                        {
+                            title = titleEl.GetString() ?? string.Empty;
+                        }
+
+                        bool bConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var bcEl) && (bcEl.ValueKind == JsonValueKind.True || bcEl.ValueKind == JsonValueKind.False))
+                        {
+                            bConfirmed = bcEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyProposeBillDecision(title, bConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "vote_bill" or "legislature_vote" or "bill_vote")
+                    {
+                        string? title = null;
+                        if (root.TryGetProperty("title", out var titleEl) && titleEl.ValueKind == JsonValueKind.String)
+                        {
+                            title = titleEl.GetString();
+                        }
+
+                        bool bConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var bcEl) && (bcEl.ValueKind == JsonValueKind.True || bcEl.ValueKind == JsonValueKind.False))
+                        {
+                            bConfirmed = bcEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyVoteBillDecision(title, bConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "veto_bill" or "legislature_veto" or "bill_veto")
+                    {
+                        string title = string.Empty;
+                        if (root.TryGetProperty("title", out var titleEl) && titleEl.ValueKind == JsonValueKind.String)
+                        {
+                            title = titleEl.GetString() ?? string.Empty;
+                        }
+
+                        bool bConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var bcEl) && (bcEl.ValueKind == JsonValueKind.True || bcEl.ValueKind == JsonValueKind.False))
+                        {
+                            bConfirmed = bcEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyVetoBillDecision(title, bConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

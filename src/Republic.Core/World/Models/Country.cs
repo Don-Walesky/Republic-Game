@@ -709,12 +709,27 @@ public sealed class Country
             return bill;
         }
 
+        // Anti-save-scumming deterministic voting
+        int seed = Math.Abs(HashCode.Combine(Id, bill.Title, votedBoundary.DayNumber));
+        int ayes = 55 + (seed % 25); // 55 to 79
+        int nays = 100 - ayes;
+        bool passed = ayes >= (int)bill.RequiredMajorityPercentage;
+
         // If the ruling party exists, the bill passes
         var passedBill = bill with
         {
-            Status = CountryBillStatus.Passed,
-            VotedBoundary = votedBoundary
+            Status = passed ? CountryBillStatus.Passed : CountryBillStatus.Failed,
+            VotedBoundary = votedBoundary,
+            TotalVotes = 100,
+            AyesCount = ayes,
+            NaysCount = nays,
+            AbstentionsCount = 0
         };
+
+        if (passed)
+        {
+            ApplyLegislativeBillEffects(passedBill);
+        }
 
         var index = _bills.FindIndex(b => b.Title.Equals(bill.Title, StringComparison.OrdinalIgnoreCase));
         if (index >= 0)
@@ -787,6 +802,131 @@ public sealed class Country
     {
         ArgumentNullException.ThrowIfNull(clock);
         return VoteBill(title, clock.CurrentTime);
+    }
+
+    /// <summary>
+    /// Exercises the constitutional presidential veto power to reject an enacted bill.
+    /// Simulates parliamentary supermajority checks and balances.
+    /// </summary>
+    public bool VetoBill(string title, out string outcomeMessage)
+    {
+        var bill = _bills.FirstOrDefault(b => b.Title.Equals(title.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (bill == null)
+        {
+            outcomeMessage = $"Bill '{title}' was not found in legislative record.";
+            return false;
+        }
+
+        if (bill.Status != CountryBillStatus.Passed)
+        {
+            outcomeMessage = $"Bill '{title}' is not an enacted law and cannot be vetoed (current status: {bill.Status}).";
+            return false;
+        }
+
+        if (bill.IsVetoed)
+        {
+            outcomeMessage = $"Bill '{title}' has already been vetoed.";
+            return false;
+        }
+
+        // Check if parliament overrides the veto with a supermajority (e.g. >= 66.7%)
+        if (bill.AyesCount >= (int)bill.VetoThresholdPercentage)
+        {
+            var overriddenBill = bill with { VetoOverridden = true };
+            var idx = _bills.FindIndex(b => b.Title.Equals(bill.Title, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0) _bills[idx] = overriddenBill;
+            outcomeMessage = $"Executive veto overridden! Parliament sustained the bill with a supermajority of {bill.AyesCount}/100 votes (Constitutional Checks & Balances).";
+            return false;
+        }
+
+        var vetoedBill = bill with { Status = CountryBillStatus.Vetoed, IsVetoed = true };
+        var index = _bills.FindIndex(b => b.Title.Equals(bill.Title, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0) _bills[index] = vetoedBill;
+
+        RollbackLegislativeBillEffects(bill);
+
+        outcomeMessage = $"Executive veto sustained. Bill '{bill.Title}' nullified and removed from active statutory law.";
+        return true;
+    }
+
+    private void ApplyLegislativeBillEffects(CountryBill bill)
+    {
+        var cat = bill.Category?.ToLowerInvariant() ?? "";
+        if (cat.Contains("infra"))
+        {
+            StateCapacity.InfrastructureCondition = Math.Clamp((StateCapacity.InfrastructureCondition ?? 0.3) + 0.05, 0.0, 1.0);
+            Treasury.TryWithdraw(350_000.0);
+        }
+        else if (cat.Contains("health"))
+        {
+            HappinessRating = Math.Clamp(HappinessRating + 3.0, 0.0, 100.0);
+            Treasury.TryWithdraw(200_000.0);
+        }
+        else if (cat.Contains("security") || cat.Contains("defense"))
+        {
+            BaselineStability = Math.Clamp(BaselineStability + 4.0, 0.0, 100.0);
+            Treasury.TryWithdraw(400_000.0);
+        }
+        else if (cat.Contains("econ"))
+        {
+            Treasury.Deposit(450_000.0);
+            HappinessRating = Math.Clamp(HappinessRating - 2.0, 0.0, 100.0);
+        }
+        else if (cat.Contains("energy"))
+        {
+            Yield.EnergyCapacity += 5.0;
+            Treasury.TryWithdraw(300_000.0);
+        }
+        else if (cat.Contains("education"))
+        {
+            Yield.ScienceCapacity += 5.0;
+            Treasury.TryWithdraw(250_000.0);
+        }
+        else
+        {
+            StateCapacity.CivilServiceQuality = Math.Clamp((StateCapacity.CivilServiceQuality ?? 0.3) + 0.03, 0.0, 1.0);
+            Treasury.TryWithdraw(150_000.0);
+        }
+    }
+
+    private void RollbackLegislativeBillEffects(CountryBill bill)
+    {
+        var cat = bill.Category?.ToLowerInvariant() ?? "";
+        if (cat.Contains("infra"))
+        {
+            StateCapacity.InfrastructureCondition = Math.Clamp((StateCapacity.InfrastructureCondition ?? 0.3) - 0.05, 0.0, 1.0);
+            Treasury.Deposit(350_000.0);
+        }
+        else if (cat.Contains("health"))
+        {
+            HappinessRating = Math.Clamp(HappinessRating - 3.0, 0.0, 100.0);
+            Treasury.Deposit(200_000.0);
+        }
+        else if (cat.Contains("security") || cat.Contains("defense"))
+        {
+            BaselineStability = Math.Clamp(BaselineStability - 4.0, 0.0, 100.0);
+            Treasury.Deposit(400_000.0);
+        }
+        else if (cat.Contains("econ"))
+        {
+            Treasury.TryWithdraw(450_000.0);
+            HappinessRating = Math.Clamp(HappinessRating + 2.0, 0.0, 100.0);
+        }
+        else if (cat.Contains("energy"))
+        {
+            Yield.EnergyCapacity = Math.Max(0.0, Yield.EnergyCapacity - 5.0);
+            Treasury.Deposit(300_000.0);
+        }
+        else if (cat.Contains("education"))
+        {
+            Yield.ScienceCapacity = Math.Max(0.0, Yield.ScienceCapacity - 5.0);
+            Treasury.Deposit(250_000.0);
+        }
+        else
+        {
+            StateCapacity.CivilServiceQuality = Math.Clamp((StateCapacity.CivilServiceQuality ?? 0.3) - 0.03, 0.0, 1.0);
+            Treasury.Deposit(150_000.0);
+        }
     }
 
     private readonly List<CountryElection> _elections = new();
@@ -2401,6 +2541,56 @@ public sealed class Country
     {
         ArgumentNullException.ThrowIfNull(clock);
         return StartPowerPlantProject(clock.CurrentTime, cost);
+    }
+
+    /// <summary>
+    /// Initiates a National Refinery development project starting from the specified boundary/simulation time.
+    /// Costs R1,200,000, withdrawn once from this country\'s RepuTreasury.
+    /// Takes 10 six-hour boundaries (60 hours on the Republic clock) from the start boundary.
+    /// </summary>
+    public NationalRefineryProject? StartRefineryProject(RepublicTime startedBoundary, double cost = NationalRefineryProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id))
+        {
+            return null;
+        }
+
+        var project = new NationalRefineryProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    /// <summary>
+    /// Overload for starting a national refinery project using an authoritative Republic clock.
+    /// </summary>
+    public NationalRefineryProject? StartRefineryProject(IRepublicClock clock, double cost = NationalRefineryProject.StandardCost)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return StartRefineryProject(clock.CurrentTime, cost);
+    }
+
+    /// <summary>
+    /// Initiates a National Mine development project starting from the specified boundary/simulation time.
+    /// Costs R800,000, withdrawn once from this country\'s RepuTreasury.
+    /// Takes 8 six-hour boundaries (48 hours on the Republic clock) from the start boundary.
+    /// </summary>
+    public NationalMineProject? StartMineProject(RepublicTime startedBoundary, double cost = NationalMineProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id))
+        {
+            return null;
+        }
+
+        var project = new NationalMineProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    /// <summary>
+    /// Overload for starting a national mine project using an authoritative Republic clock.
+    /// </summary>
+    public NationalMineProject? StartMineProject(IRepublicClock clock, double cost = NationalMineProject.StandardCost)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        return StartMineProject(clock.CurrentTime, cost);
     }
 
     /// <summary>

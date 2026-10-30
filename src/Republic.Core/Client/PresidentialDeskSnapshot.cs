@@ -531,6 +531,54 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("acquired_intelligence_dossiers")]
     public IReadOnlyList<IntelligenceDossierSnapshot> AcquiredIntelligenceDossiers { get; init; } = Array.Empty<IntelligenceDossierSnapshot>();
 
+    [JsonPropertyName("emails")]
+    public IReadOnlyList<EmailSnapshot> Emails { get; init; } = Array.Empty<EmailSnapshot>();
+
+    [JsonPropertyName("unread_email_count")]
+    public int UnreadEmailCount { get; init; }
+
+    [JsonPropertyName("press_secretary_name")]
+    public string PressSecretaryName { get; init; } = "Elena Vance";
+
+    [JsonPropertyName("press_briefing_headline")]
+    public string PressBriefingHeadline { get; init; } = string.Empty;
+
+    [JsonPropertyName("press_briefing_summary")]
+    public string PressBriefingSummary { get; init; } = string.Empty;
+
+    [JsonPropertyName("press_briefing_date")]
+    public string PressBriefingDate { get; init; } = string.Empty;
+
+    [JsonPropertyName("central_bank_governor_name")]
+    public string CentralBankGovernorName { get; init; } = "Dr. Marcus Thorne";
+
+    [JsonPropertyName("central_bank_interest_rate")]
+    public double CentralBankInterestRate { get; init; } = 4.5;
+
+    [JsonPropertyName("central_bank_foreign_reserves")]
+    public double CentralBankForeignReserves { get; init; }
+
+    [JsonPropertyName("bills")]
+    public IReadOnlyList<CountryBillSnapshot> Bills { get; init; } = Array.Empty<CountryBillSnapshot>();
+
+    [JsonPropertyName("pending_bill")]
+    public CountryBillSnapshot? PendingBill { get; init; }
+
+    [JsonPropertyName("military_personnel")]
+    public int MilitaryPersonnel { get; init; }
+
+    [JsonPropertyName("military_weapons_inventory")]
+    public int MilitaryWeaponsInventory { get; init; }
+
+    [JsonPropertyName("military_composite_readiness")]
+    public double MilitaryCompositeReadiness { get; init; } = 80.0;
+
+    [JsonPropertyName("military_recent_operations")]
+    public IReadOnlyList<MilitaryActionSnapshot> RecentMilitaryOperations { get; init; } = Array.Empty<MilitaryActionSnapshot>();
+
+    [JsonPropertyName("target_countries")]
+    public IReadOnlyList<string> TargetCountries { get; init; } = Array.Empty<string>();
+
     /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
     /// Reuses existing core models and services without duplicating domain rules.
@@ -1042,6 +1090,97 @@ public sealed record PresidentialDeskSnapshot
         var activeOpsCount = intelOpSnapshots.Count(o => o.Status is "Preparing" or "InProgress");
         var intelSummaryText = $"Intelligence: Level {country.MilitaryLevel} Armed Forces | {activeOpsCount} Active Operations | {dossierSnapshots.Count} Acquired Dossiers";
 
+        // Bills and legislative integration
+        var billSnapshots = country.Bills.Select(b => new CountryBillSnapshot
+        {
+            Title = b.Title,
+            Status = b.Status.ToString(),
+            Description = b.Description,
+            Category = b.Category,
+            PositiveConsequence = b.PositiveConsequence,
+            NegativeConsequence = b.NegativeConsequence,
+            GovernancePrinciple = b.GovernancePrinciple,
+            RequiredMajorityPercentage = b.RequiredMajorityPercentage,
+            VetoThresholdPercentage = b.VetoThresholdPercentage,
+            TotalVotes = b.TotalVotes,
+            AyesCount = b.AyesCount,
+            NaysCount = b.NaysCount,
+            IsPassed = b.IsPassed,
+            IsVetoed = b.IsVetoed,
+            VetoOverridden = b.VetoOverridden,
+            VotedBoundary = b.VotedBoundary?.ToString()
+        }).ToList();
+
+        CountryBillSnapshot? pendingBillSnapshot = null;
+        if (country.PendingBill != null)
+        {
+            var pb = country.PendingBill;
+            pendingBillSnapshot = new CountryBillSnapshot
+            {
+                Title = pb.Title,
+                Status = pb.Status.ToString(),
+                Description = pb.Description,
+                Category = pb.Category,
+                PositiveConsequence = pb.PositiveConsequence,
+                NegativeConsequence = pb.NegativeConsequence,
+                GovernancePrinciple = pb.GovernancePrinciple,
+                RequiredMajorityPercentage = pb.RequiredMajorityPercentage,
+                VetoThresholdPercentage = pb.VetoThresholdPercentage,
+                TotalVotes = pb.TotalVotes,
+                AyesCount = pb.AyesCount,
+                NaysCount = pb.NaysCount,
+                IsPassed = pb.IsPassed,
+                IsVetoed = pb.IsVetoed,
+                VetoOverridden = pb.VetoOverridden,
+                VotedBoundary = pb.VotedBoundary?.ToString()
+            };
+        }
+
+        // Executive Emails & Messaging integration
+        var emailList = new List<EmailSnapshot>
+        {
+            new EmailSnapshot
+            {
+                Id = "mail_speaker_1",
+                Sender = "Speaker of the House",
+                Recipient = "Presidential Desk",
+                Subject = "Legislative Calendar & Parliamentary Order",
+                Body = "Mr. President, the National Assembly stands ready for executive statutory proposals. Every bill undergoes rigorous committee review and roll-call voting.",
+                DateSent = conciseTime,
+                IsRead = false,
+                Folder = "Inbox",
+                ActionRequired = country.PendingBill != null
+            },
+            new EmailSnapshot
+            {
+                Id = "mail_cos_1",
+                Sender = "Chief of Staff",
+                Recipient = "Presidential Desk",
+                Subject = "Executive Briefing: Daily Priority Digest",
+                Body = $"All executive departments have submitted their cycle readiness status. Treasury Liquidity: {formattedTreasury} | Public Approval: {dashboard.Approval}.",
+                DateSent = conciseTime,
+                IsRead = true,
+                Folder = "Inbox",
+                ActionRequired = cosRecs.Any(r => r.IsUrgent)
+            },
+            new EmailSnapshot
+            {
+                Id = "mail_sec_1",
+                Sender = "Security Leadership Council",
+                Recipient = "Presidential Desk",
+                Subject = $"National Defense Posture: {defconLevelText}",
+                Body = $"Standing Armed Forces operating at {readinessText}. Command centers maintain full readiness across sovereign borders.",
+                DateSent = conciseTime,
+                IsRead = true,
+                Folder = "Inbox",
+                ActionRequired = false
+            }
+        };
+
+        string pressHeadline = country.MediaReports.FirstOrDefault(r => !r.IsSuppressed)?.Headline ?? "Executive Administration Advances National Strategic Priorities";
+        string pressSummary = country.MediaReports.FirstOrDefault(r => !r.IsSuppressed)?.ArticleSummary ?? "The Presidential Administration affirmed today's focus on fiscal stabilization, infrastructure expansion, and regional diplomatic stability.";
+        var foreignNames = allWorldCountries.Where(c => c.Id != country.Id).Select(c => c.Name).ToList();
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -1125,6 +1264,21 @@ public sealed record PresidentialDeskSnapshot
             IntelligenceSummary = intelSummaryText,
             ActiveIntelligenceOperations = intelOpSnapshots.AsReadOnly(),
             AcquiredIntelligenceDossiers = dossierSnapshots.AsReadOnly(),
+            Emails = emailList.AsReadOnly(),
+            UnreadEmailCount = emailList.Count(e => !e.IsRead),
+            PressSecretaryName = "Elena Vance",
+            PressBriefingHeadline = pressHeadline,
+            PressBriefingSummary = pressSummary,
+            PressBriefingDate = conciseTime,
+            CentralBankGovernorName = "Dr. Marcus Thorne",
+            CentralBankInterestRate = 4.5,
+            CentralBankForeignReserves = country.Treasury.Balance * 0.45,
+            Bills = billSnapshots.AsReadOnly(),
+            PendingBill = pendingBillSnapshot,
+            MilitaryPersonnel = country.MilitaryLevel * 2500,
+            MilitaryWeaponsInventory = country.MilitaryLevel * 85,
+            MilitaryCompositeReadiness = secAssessment.CompositeReadiness,
+            TargetCountries = foreignNames.AsReadOnly(),
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,

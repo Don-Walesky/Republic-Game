@@ -143,7 +143,7 @@ public sealed class ActiveOfficialsServiceTests
         });
 
         var advice = service.GenerateMinisterialAdvice(country, simTime);
-        Assert.Equal(6, advice.Count);
+        Assert.Equal(9, advice.Count);
 
         var interiorAdvice = advice.First(a => a.Portfolio == CabinetPortfolio.Interior);
         Assert.True(interiorAdvice.IsAppointed);

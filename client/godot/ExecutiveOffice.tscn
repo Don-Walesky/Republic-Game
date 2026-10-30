@@ -852,6 +852,7 @@ theme_override_font_sizes/font_size = 9
 text = "REPU Treasury"
 
 [node name="TreasuryDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox"]
+visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
 
@@ -859,7 +860,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 9
-text = "+12.4M / h"
+text = ""
 
 [node name="TreasuryLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox"]
 layout_mode = 2
@@ -894,6 +895,7 @@ theme_override_font_sizes/font_size = 9
 text = "Public Approval"
 
 [node name="ApprovalDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox"]
+visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
 
@@ -901,7 +903,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 9
-text = "+2%"
+text = ""
 
 [node name="ApprovalLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox"]
 layout_mode = 2
@@ -936,6 +938,7 @@ theme_override_font_sizes/font_size = 9
 text = "Stability"
 
 [node name="StabilityDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox"]
+visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
 
@@ -943,7 +946,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 9
-text = "+1%"
+text = ""
 
 [node name="StabilityLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox"]
 layout_mode = 2
@@ -978,6 +981,7 @@ theme_override_font_sizes/font_size = 9
 text = "Economy"
 
 [node name="EconomyDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox"]
+visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
 
@@ -985,7 +989,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 9
-text = "+1%"
+text = ""
 
 [node name="DefconLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox"]
 layout_mode = 2
@@ -1123,172 +1127,6 @@ text = "▲"
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 4
-
-[node name="SidebarNavVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
-layout_mode = 2
-theme_override_constants/separation = 3
-
-[node name="NavOverviewItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.45, 1)
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_active")
-text = "🏠  Overview"
-alignment = 0
-
-[node name="NavCabinetHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-
-[node name="NavCabinetItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCabinetHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "👥  Cabinet"
-alignment = 0
-
-[node name="BadgeCabinet" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCabinetHBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
-
-[node name="BadgeCabinetLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCabinetHBox/BadgeCabinet"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "2"
-
-[node name="NavEconomyHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-
-[node name="NavEconomyItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavEconomyHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "📈  Economy"
-alignment = 0
-
-[node name="BadgeEconomy" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavEconomyHBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
-
-[node name="BadgeEconomyLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavEconomyHBox/BadgeEconomy"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "3"
-
-[node name="NavCampaignHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-
-[node name="NavCampaignItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCampaignHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "📢  Campaign"
-alignment = 0
-
-[node name="BadgeCampaign" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCampaignHBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
-
-[node name="BadgeCampaignLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavCampaignHBox/BadgeCampaign"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "1"
-
-[node name="NavDiplomacyHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-
-[node name="NavDiplomacyItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDiplomacyHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "🌐  Diplomacy"
-alignment = 0
-
-[node name="BadgeDiplomacy" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDiplomacyHBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
-
-[node name="BadgeDiplomacyLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDiplomacyHBox/BadgeDiplomacy"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "2"
-
-[node name="NavDevHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-
-[node name="NavDevItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDevHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "⚙️  Development"
-alignment = 0
-
-[node name="BadgeDev" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDevHBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
-
-[node name="BadgeDevLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDevHBox/BadgeDev"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "4"
-
-[node name="NavIntelHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-
-[node name="NavIntelItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavIntelHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "👁  Intelligence"
-alignment = 0
-
-[node name="BadgeIntel" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavIntelHBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
-
-[node name="BadgeIntelLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavIntelHBox/BadgeIntel"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "1"
-
-[node name="NavDefenceHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-
-[node name="NavDefenceItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDefenceHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "🛡️  Defence"
-alignment = 0
-
-[node name="BadgeDefence" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDefenceHBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_badge_counter")
-
-[node name="BadgeDefenceLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox/NavDefenceHBox/BadgeDefence"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "1"
-
-[node name="NavWorldItem" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/SidebarNavVBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "🌍  World"
-alignment = 0
 
 [node name="HSeparator1" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
@@ -1624,8 +1462,186 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Appoint / Reassign ->"
 
+[node name="PortfolioCard_Education" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="EducationVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="EducationHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox"]
+layout_mode = 2
+
+[node name="EducationTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🎓 Education"
+
+[node name="EducationStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="EducationMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="EducationRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="EducationEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "Required for National University"
+autowrap_mode = 2
+
+[node name="AppointEducationButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Appoint / Reassign ->"
+
+[node name="PortfolioCard_OilAndGas" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="OilAndGasVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="OilAndGasHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox"]
+layout_mode = 2
+
+[node name="OilAndGasTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🛢️ Oil & Gas"
+
+[node name="OilAndGasStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="OilAndGasMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="OilAndGasRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="OilAndGasEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "Required for National Refinery"
+autowrap_mode = 2
+
+[node name="AppointOilAndGasButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Appoint / Reassign ->"
+
+[node name="PortfolioCard_Resources" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ResourcesVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ResourcesHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox"]
+layout_mode = 2
+
+[node name="ResourcesTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "⛏️ Resources"
+
+[node name="ResourcesStatusLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Vacant"
+
+[node name="ResourcesMinisterLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Vacant"
+autowrap_mode = 2
+
+[node name="ResourcesRatingsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "[No Ratings - Vacant]"
+
+[node name="ResourcesEffectLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.7, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "Required for National Mine"
+autowrap_mode = 2
+
+[node name="AppointResourcesButton" type="Button" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Appoint / Reassign ->"
+
 [node name="HSeparator4" type="HSeparator" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 layout_mode = 2
+
+[node name="PressSecretaryCard" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="PressSecVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="PressSecHeader" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox"]
+layout_mode = 2
+
+[node name="PressSecTitle" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressSecHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🎙️ Press Secretary"
+
+[node name="PressSecNameLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Official: [No State Loaded]"
+
+[node name="PressBriefingHeadlineLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "Daily Briefing: [No State Loaded]"
+autowrap_mode = 2
+
+[node name="PressBriefingSummaryLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "No briefing available"
+autowrap_mode = 2
 
 [node name="CabinetFrictionPanel" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent"]
 visible = false
@@ -1717,191 +1733,16 @@ theme_override_colors/font_color = Color(0.56, 0.68, 0.82, 1)
 theme_override_font_sizes/font_size = 9
 text = "View All →"
 
-[node name="EventItem1" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
+[node name="EmptyEventsLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
 layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="EvIcon1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "📢"
-
-[node name="EvVBox1" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="EvTitle1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1/EvVBox1"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 9
-text = "Election campaign rally scheduled"
+text = "[No recent simulation events or intelligence briefings logged]"
+autowrap_mode = 2
 
-[node name="EvSub1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1/EvVBox1"]
+[node name="DynamicEventsVBox" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "Next rally in 3 days - East District"
-
-[node name="EvTime1" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem1"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "2h ago"
-
-[node name="EventItem2" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="EvIcon2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "⇄"
-
-[node name="EvVBox2" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="EvTitle2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2/EvVBox2"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "Trade proposal from Southland"
-
-[node name="EvSub2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2/EvVBox2"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "Requesting 12.5M REPU in raw materials"
-
-[node name="EvTime2" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem2"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "4h ago"
-
-[node name="EventItem3" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="EvIcon3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "🏛️"
-
-[node name="EvVBox3" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="EvTitle3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3/EvVBox3"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "Cabinet report - Finance"
-
-[node name="EvSub3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3/EvVBox3"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "Tax revenue up 8% this cycle"
-
-[node name="EvTime3" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem3"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "6h ago"
-
-[node name="EventItem4" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="EvIcon4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "🔬"
-
-[node name="EvVBox4" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="EvTitle4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4/EvVBox4"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "Research completed"
-
-[node name="EvSub4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4/EvVBox4"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "Renewable Energy (Level 1)"
-
-[node name="EvTime4" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem4"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "8h ago"
-
-[node name="EventItem5" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="EvIcon5" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "🌐"
-
-[node name="EvVBox5" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="EvTitle5" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5/EvVBox5"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "Diplomatic message"
-
-[node name="EvSub5" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5/EvVBox5"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "Alliance proposal from Westoria"
-
-[node name="EvTime5" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem5"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "12h ago"
-
-[node name="EventItem6" type="HBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="EvIcon6" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "⚙️"
-
-[node name="EvVBox6" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="EvTitle6" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6/EvVBox6"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 9
-text = "Construction update"
-
-[node name="EvSub6" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6/EvVBox6"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "Port Expansion - 45% complete"
-
-[node name="EvTime6" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventItem6"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "18h ago"
+theme_override_constants/separation = 4
 
 [node name="CardObjectives" type="PanelContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
 layout_mode = 2
@@ -1950,7 +1791,7 @@ text = "Increase public approval to 70%"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 9
-text = "67%"
+text = "[Unavailable]"
 
 [node name="ObjBar1" type="ProgressBar" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem1"]
 custom_minimum_size = Vector2(0, 4)
@@ -1983,14 +1824,14 @@ text = "Complete Port Expansion project"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 9
-text = "45%"
+text = "[Unavailable]"
 
 [node name="ObjBar2" type="ProgressBar" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem2"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
-value = 45.0
+value = 0.0
 show_percentage = false
 
 [node name="ObjItem3" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox"]
@@ -2015,14 +1856,14 @@ text = "Prepare for national election"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 9
-text = "71 days"
+text = "[Unavailable]"
 
 [node name="ObjBar3" type="ProgressBar" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem3"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
-value = 50.0
+value = 0.0
 show_percentage = false
 
 [node name="ObjItem4" type="VBoxContainer" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox"]
@@ -2048,14 +1889,14 @@ text = "Maintain treasury above 300M REPU"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 9
-text = "452.8M"
+text = "[Unavailable]"
 
 [node name="ObjBar4" type="ProgressBar" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives/ObjVBox/ObjItem4"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
-value = 100.0
+value = 0.0
 show_percentage = false
 
 [node name="OfflineBriefingLabel" type="Label" parent="InterfaceLayer/RightDock/RightDockVBox/RightDockContent"]
@@ -2174,13 +2015,13 @@ text = "National Yield"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
 theme_override_font_sizes/font_size = 13
-text = "184.7M / cycle"
+text = "[Unavailable]"
 
 [node name="YieldDelta" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 9
-text = "+6.2%"
+text = ""
 
 [node name="YieldChartHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox"]
 custom_minimum_size = Vector2(0, 16)
@@ -2279,13 +2120,13 @@ text = "Tax Revenue"
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 13
-text = "96.3M / cycle"
+text = "[Unavailable]"
 
 [node name="TaxDelta" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 9
-text = "+8.1%"
+text = ""
 
 [node name="TaxChartHBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard/TaxCardVBox"]
 custom_minimum_size = Vector2(0, 16)
@@ -2384,20 +2225,20 @@ text = "State Capacity"
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 13
-text = "71%"
+text = "[Unavailable]"
 
 [node name="CapDelta" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 9
-text = "+2%"
+text = ""
 
 [node name="CapBar" type="ProgressBar" parent="InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard/CapCardVBox"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
-value = 71.0
+value = 0.0
 show_percentage = false
 
 [node name="DeckWelfareCard" type="PanelContainer" parent="InterfaceLayer/FloatingTelemetryDeck"]
@@ -2429,20 +2270,20 @@ text = "Citizen Welfare"
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 13
-text = "68%"
+text = "[Unavailable]"
 
 [node name="WelfareDelta" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 9
-text = "+1%"
+text = ""
 
 [node name="WelfareBar" type="ProgressBar" parent="InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard/WelfareCardVBox"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
-value = 68.0
+value = 0.0
 show_percentage = false
 
 [node name="DeckDecisionsCard" type="PanelContainer" parent="InterfaceLayer/FloatingTelemetryDeck"]
@@ -2492,13 +2333,13 @@ text = "Tax Rate Adjustment"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
 theme_override_font_sizes/font_size = 8
-text = "Approved"
+text = "Idle"
 
 [node name="DecTime1" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem1HBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 8
-text = "2h ago"
+text = ""
 
 [node name="DecItem2HBox" type="HBoxContainer" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox"]
 layout_mode = 2
@@ -2522,13 +2363,13 @@ text = "Infrastructure Project"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.56, 0.72, 0.95, 1)
 theme_override_font_sizes/font_size = 8
-text = "In Progress"
+text = "Idle"
 
 [node name="DecTime2" type="Label" parent="InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard/DecCardVBox/DecItem2HBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 8
-text = "6h ago"
+text = ""
 
 [node name="BottomDock" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
@@ -2536,53 +2377,72 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -44.0
+offset_top = -66.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_bottomdock")
 
 [node name="BottomDockHBox" type="HBoxContainer" parent="InterfaceLayer/BottomDock"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
-[node name="ChatPill" type="PanelContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+[node name="ChatShortcutButton" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+custom_minimum_size = Vector2(230, 52)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+theme_override_styles/normal = SubResource("StyleBoxFlat_card")
 
-[node name="ChatPillHBox" type="HBoxContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatPill"]
-layout_mode = 2
+[node name="ChatShortcutHBox" type="HBoxContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 4.0
+offset_right = -6.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/separation = 6
 
-[node name="ChatIcon" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatPill/ChatPillHBox"]
+[node name="ChatIcon" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton/ChatShortcutHBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 12
 text = "💬"
 
-[node name="StatusTickerLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatPill/ChatPillHBox"]
+[node name="StatusTickerLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton/ChatShortcutHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Executive Briefing: Presidential office online."
+autowrap_mode = 2
+
+[node name="ChatUnreadBadge" type="PanelContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton/ChatShortcutHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_badge")
+
+[node name="ChatUnreadCountLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton/ChatShortcutHBox/ChatUnreadBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 10
-text = "Executive Briefing: Presidential executive office online."
-
-[node name="ChatMembers" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox/ChatPill/ChatPillHBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
-theme_override_font_sizes/font_size = 10
-text = "👥 22 >"
+theme_override_font_sizes/font_size = 9
+text = "2"
 
 [node name="StateStatusLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 9
 text = "Status: Waiting for state file"
 
 [node name="ActiveProjectLabel" type="Label" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.701961, 0.0313726, 1)
 theme_override_font_sizes/font_size = 10
 text = "Active Project: None"
 
 [node name="OpenProjectsButton" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Projects ->"
@@ -2593,61 +2453,88 @@ size_flags_horizontal = 3
 alignment = 1
 theme_override_constants/separation = 4
 
-[node name="BtnBtmOverview" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavOverview" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(68, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_active")
-text = "🏠 Overview"
+text = "🏠
+Overview"
 
-[node name="BtnBtmGov" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavGovernment" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(72, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "🏛️ Government"
+text = "👥
+Government"
 
-[node name="BtnBtmEcon" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavEconomy" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(68, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "📈 Economy"
+text = "📈
+Economy"
 
-[node name="BtnBtmCamp" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavPolicy" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(68, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "📢 Campaign"
+text = "📜
+Policy"
 
-[node name="BtnBtmDip" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavDevelopment" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(72, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "🌐 Diplomacy"
+text = "🏗️
+Development"
 
-[node name="BtnBtmDev" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavDiplomacy" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(68, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "⚙️ Development"
+text = "🌐
+Diplomacy"
 
-[node name="BtnBtmIntel" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavSecurity" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(68, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "👁 Intelligence"
+text = "🛡️
+Security"
 
-[node name="BtnBtmDef" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavMessages" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(68, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "🛡️ Defence"
+text = "✉️
+Messages"
 
-[node name="BtnBtmWorld" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+[node name="BtnNavBuffs" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(64, 52)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
-text = "🌍 World"
+text = "⚡
+Buffs"
+
+[node name="BtnNavCommand" type="Button" parent="InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills"]
+custom_minimum_size = Vector2(72, 52)
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+theme_override_styles/normal = SubResource("StyleBoxFlat_nav_inactive")
+text = "⚔️
+Command"
 
 [node name="SloganCard" type="PanelContainer" parent="InterfaceLayer/BottomDock/BottomDockHBox"]
+custom_minimum_size = Vector2(170, 52)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -3417,3 +3304,668 @@ text = "Confirm & Enact Decree"
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Cancel"
+
+[node name="ChatPopupModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -220.0
+offset_right = 260.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="ChatPopupVBox" type="VBoxContainer" parent="InterfaceLayer/ChatPopupModal"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ChatPopupHeader" type="HBoxContainer" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox"]
+layout_mode = 2
+
+[node name="ChatPopupTitle" type="Label" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatPopupHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "💬 Presidential Alliance & Player Chat"
+
+[node name="CloseChatPopupXButton" type="Button" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatPopupHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = " ✕ "
+
+[node name="ChatPopupScroll" type="ScrollContainer" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ChatMessagesVBox" type="VBoxContainer" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatPopupScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ChatWelcomeLabel" type="Label" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatPopupScroll/ChatMessagesVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 10
+text = "[Secure Alliance Line: Connected to 22 allied leaders]"
+
+[node name="ChatInputHBox" type="HBoxContainer" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ChatLineEdit" type="LineEdit" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatInputHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+placeholder_text = "Broadcast message to alliance leaders..."
+
+[node name="SendChatButton" type="Button" parent="InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatInputHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Send"
+
+[node name="CommandCentreModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -240.0
+offset_right = 340.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="CmdVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CmdHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox"]
+layout_mode = 2
+
+[node name="CmdTitleLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "⚔️ Supreme Military Command & Warfare Operations"
+
+[node name="CloseCmdXButton" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = " ✕ "
+
+[node name="CmdBodyHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="CmdReadinessCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ReadinessVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ReadinessHeader" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "National Armed Forces Readiness"
+
+[node name="MilitaryReadinessStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Readiness: [Unavailable]"
+
+[node name="MilitaryPersonnelStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Active Personnel: [Unavailable]"
+
+[node name="WeaponsInventoryStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Weapons Inventory: [Unavailable]"
+
+[node name="DefconPostureStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "DEFCON Posture: [Unavailable]"
+
+[node name="CmdOperationsCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="OpsVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="OpsTargetLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "Select Sovereign Target:"
+
+[node name="TargetCountryOption" type="OptionButton" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+
+[node name="OpsTypeLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "Operation Directive Type:"
+
+[node name="OperationTypeOption" type="OptionButton" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+
+[node name="TroopsSliderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+
+[node name="TroopsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Committed Personnel: 5,000"
+
+[node name="TroopsSlider" type="HSlider" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+min_value = 500.0
+max_value = 50000.0
+step = 500.0
+value = 5000.0
+
+[node name="CmdWarningLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.65, 0.25, 1)
+theme_override_font_sizes/font_size = 8
+text = "Hostile operations consume military supplies, risk DEFCON escalation, and are authoritatively processed in Republic.Core."
+autowrap_mode = 2
+
+[node name="ExecuteAttackButton" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "🚀 Authorize Military Directive"
+
+[node name="CmdResultLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Tactical Status: Awaiting orders."
+autowrap_mode = 2
+
+[node name="DevelopmentModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -240.0
+offset_right = 340.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="DevVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DevHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox"]
+layout_mode = 2
+
+[node name="DevTitleLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "🏗️ National Infrastructure & Major Construction Projects"
+
+[node name="CloseDevXButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = " ✕ "
+
+[node name="DevProjectsScroll" type="ScrollContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ProjectsListVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CardProjectRoads" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="RoadsHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRoads"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RoadsInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRoads/RoadsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RoadsTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRoads/RoadsHBox/RoadsInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🛣️ National Highway & Logistics Network"
+
+[node name="RoadsDesc" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRoads/RoadsHBox/RoadsInfoVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Cost: 25M REPU | Duration: 60 days | Requirement: None"
+
+[node name="StartRoadsButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRoads/RoadsHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Roads"
+
+[node name="CardProjectUniversity" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="UniHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="UniInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="UniTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox/UniInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🎓 National University of Science & Technology"
+
+[node name="UniRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox/UniInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Requires Appointed Minister of Education"
+
+[node name="StartUniversityButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate University"
+
+[node name="CardProjectRefinery" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="RefHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RefInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RefTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox/RefInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🛢️ Sovereign Petrochemical Refinery"
+
+[node name="RefRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox/RefInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Requires Appointed Minister of Oil & Gas"
+
+[node name="StartRefineryButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Refinery"
+
+[node name="CardProjectMine" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="MineHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MineInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MineTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox/MineInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "⛏️ Strategic Mineral & Resource Mine"
+
+[node name="MineRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox/MineInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 0.3, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Requires Appointed Minister of Resources"
+
+[node name="StartMineButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Mine"
+
+[node name="DevStatusLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Ready to authorize national works."
+autowrap_mode = 2
+
+[node name="PolicyModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -240.0
+offset_right = 340.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="PolVBox" type="VBoxContainer" parent="InterfaceLayer/PolicyModal"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PolHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox"]
+layout_mode = 2
+
+[node name="PolTitleLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/PolHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "📜 National Policy & Legislative Chamber (50:50 Engine)"
+
+[node name="ClosePolXButton" type="Button" parent="InterfaceLayer/PolicyModal/PolVBox/PolHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = " ✕ "
+
+[node name="PolBillCard" type="PanelContainer" parent="InterfaceLayer/PolicyModal/PolVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="BillVBox" type="VBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox/PolBillCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BillTitleLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "Pending Bill: National Healthcare Modernization Act"
+
+[node name="BillCategoryLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Category: Healthcare & Welfare | Required: 50% Majority"
+
+[node name="BillPositiveLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = "🟢 Positive: +15% healthcare capacity, improves citizen welfare."
+autowrap_mode = 2
+
+[node name="BillNegativeLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.35, 1)
+theme_override_font_sizes/font_size = 9
+text = "🔴 Negative: Increases national expenditure and public debt by 15M REPU/cycle."
+autowrap_mode = 2
+
+[node name="BillPrincipleLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.35, 1)
+theme_override_font_sizes/font_size = 9
+text = "📚 Principle: Welfare State Theory — Universal safety nets improve human capital but demand fiscal sustainability."
+autowrap_mode = 2
+
+[node name="BillVotesTallyLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Roll-Call Tally: Ayes: 54 | Nays: 46 (Passed)"
+
+[node name="PolActionsHBox" type="HBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ProposeBillButton" type="Button" parent="InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "Propose New Bill"
+
+[node name="VoteBillButton" type="Button" parent="InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "Roll-Call Vote"
+
+[node name="VetoBillButton" type="Button" parent="InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "Presidential Veto"
+
+[node name="PolStatusLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Legislative Chamber in regular session."
+
+[node name="EconomyModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -200.0
+offset_right = 300.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="EconVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EconHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox"]
+layout_mode = 2
+
+[node name="EconTitleLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "📈 National Treasury & Central Bank"
+
+[node name="CloseEconXButton" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = " ✕ "
+
+[node name="CentralBankCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="BankVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/CentralBankCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="GovernorNameLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "Central Bank Governor: [Unavailable]"
+
+[node name="InterestRateLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Benchmark Interest Rate: [Unavailable]"
+
+[node name="ForeignReservesLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Foreign Exchange Reserves: [Unavailable]"
+
+[node name="EconDeskLinkButton" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Open Tax & Fiscal Management Desk ->"
+
+[node name="MessagesModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -220.0
+offset_right = 300.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="MsgVBox" type="VBoxContainer" parent="InterfaceLayer/MessagesModal"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MsgHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/MessagesModal/MsgVBox"]
+layout_mode = 2
+
+[node name="MsgTitleLabel" type="Label" parent="InterfaceLayer/MessagesModal/MsgVBox/MsgHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "✉️ Executive Messages & Diplomatic Cables"
+
+[node name="CloseMsgXButton" type="Button" parent="InterfaceLayer/MessagesModal/MsgVBox/MsgHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = " ✕ "
+
+[node name="EmailsScroll" type="ScrollContainer" parent="InterfaceLayer/MessagesModal/MsgVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EmailsListVBox" type="VBoxContainer" parent="InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="EmptyEmailsLabel" type="Label" parent="InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 10
+text = "[No incoming presidential messages or cables]"
+
+[node name="BuffsModal" type="PanelContainer" parent="InterfaceLayer"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -200.0
+offset_right = 280.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="BuffsVBox" type="VBoxContainer" parent="InterfaceLayer/BuffsModal"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BuffsHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/BuffsModal/BuffsVBox"]
+layout_mode = 2
+
+[node name="BuffsTitleLabel" type="Label" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "⚡ Presidential Decrees & National Boosts"
+
+[node name="CloseBuffsXButton" type="Button" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = " ✕ "
+
+[node name="BuffsScroll" type="ScrollContainer" parent="InterfaceLayer/BuffsModal/BuffsVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BuffsListVBox" type="VBoxContainer" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CardBuff1" type="PanelContainer" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll/BuffsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="Buff1HBox" type="HBoxContainer" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll/BuffsListVBox/CardBuff1"]
+layout_mode = 2
+
+[node name="Buff1VBox" type="VBoxContainer" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll/BuffsListVBox/CardBuff1/Buff1HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Buff1Title" type="Label" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll/BuffsListVBox/CardBuff1/Buff1HBox/Buff1VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "⚡ Infrastructure Surge"
+
+[node name="Buff1Desc" type="Label" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll/BuffsListVBox/CardBuff1/Buff1HBox/Buff1VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "+25% construction speed for 30 days | Cost: 500 Credits"
+
+[node name="BuyBuff1Button" type="Button" parent="InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll/BuffsListVBox/CardBuff1/Buff1HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Activate Decree"
+

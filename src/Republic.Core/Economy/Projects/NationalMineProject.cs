@@ -1,0 +1,75 @@
+namespace Republic.Core.Economy.Projects;
+
+using System;
+using Republic.Core.Time;
+using Republic.Core.World.Models;
+
+/// <summary>
+/// Domain model representing a timed National Mine development project.
+/// Concrete implementation of the generic <see cref="DevelopmentProject"/> architecture.
+/// Costs R800,000, takes 8 six-hour cycle boundaries (48 hours on the Republic clock),
+/// and elevates national Industrial Capacity and Infrastructure Capacity on completion.
+/// Initiating this project requires an appointed Minister of Resources.
+/// </summary>
+public sealed class NationalMineProject : DevelopmentProject
+{
+    /// <summary>
+    /// Fixed cost in liquid REPU to initiate the National Mine (R800,000).
+    /// </summary>
+    public const double StandardCost = 800_000.0;
+
+    /// <summary>
+    /// Number of six-hour cycle boundaries required to complete construction (8 boundaries / 48 hours).
+    /// </summary>
+    public const int DurationBoundaries = 8;
+
+    /// <summary>
+    /// Total duration on the global Republic simulation clock (48 hours).
+    /// </summary>
+    public static readonly TimeSpan Duration = TimeSpan.FromHours(48);
+
+    /// <summary>
+    /// Increase applied to the sovereign nation's Industrial Capacity upon completion (+5.0).
+    /// </summary>
+    public const double IndustrialCapacityBonus = 5.0;
+
+    /// <summary>
+    /// Increase applied to the sovereign nation's Infrastructure Capacity upon completion (+2.0).
+    /// </summary>
+    public const double InfrastructureCapacityBonus = 2.0;
+
+    /// <inheritdoc />
+    public override DevelopmentProjectType ProjectType => DevelopmentProjectType.Mine;
+
+    /// <inheritdoc />
+    public override string Name => "National Mine";
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NationalMineProject"/> class with default standard cost.
+    /// Parameterless constructor required for polymorphic JSON deserialization.
+    /// </summary>
+    public NationalMineProject()
+    {
+        Cost = StandardCost;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NationalMineProject"/> class with explicit ownership and timing boundaries.
+    /// </summary>
+    public NationalMineProject(string countryId, RepublicTime startedBoundary, double cost = StandardCost) : this()
+    {
+        CountryId = countryId;
+        StartedBoundary = startedBoundary;
+        FinishBoundary = startedBoundary.Add(Duration);
+        Cost = cost;
+    }
+
+    /// <inheritdoc />
+    protected override void ApplyCompletionEffect(Country country)
+    {
+        ArgumentNullException.ThrowIfNull(country);
+
+        country.Yield.IndustrialCapacity = Math.Max(0.0, country.Yield.IndustrialCapacity + IndustrialCapacityBonus);
+        country.Yield.InfrastructureCapacity = Math.Max(0.0, country.Yield.InfrastructureCapacity + InfrastructureCapacityBonus);
+    }
+}

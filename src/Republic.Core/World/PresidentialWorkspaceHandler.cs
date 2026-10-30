@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.Budget.Services;
 using Republic.Core.Economy.Projects;
@@ -179,6 +180,14 @@ public static class PresidentialWorkspaceHandler
                 "Project initiation cancelled by executive order. Zero funds deducted.");
         }
 
+        var eduMinister = country.GetMinister(CabinetPortfolio.Education);
+        if (eduMinister == null || !eduMinister.IsAppointed)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.PrerequisitesNotMet,
+                "Cannot initiate National University project: requires an appointed Minister of Education.");
+        }
+
         if (country.Projects.OfType<NationalUniversityProject>().Any(p => p.IsActive))
         {
             return new ExecutiveActionOutcome(
@@ -204,6 +213,120 @@ public static class PresidentialWorkspaceHandler
         return new ExecutiveActionOutcome(
             ExecutiveActionResult.Success,
             $"National University construction commenced. Deducted {RepuTreasury.Format(project.Cost)} from sovereign treasury. Scheduled completion: {project.FinishBoundary}.",
+            project);
+    }
+
+    /// <summary>
+    /// Initiates a National Refinery development project for the specified sovereign country.
+    /// Validates fund availability and requires an appointed Minister of Oil & Gas.
+    /// Costs R1,200,000 and requires 10 six-hour boundaries (60 hours).
+    /// </summary>
+    public static ExecutiveActionOutcome InitiateRefineryProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidCountry,
+                "Cannot initiate development project: invalid or missing sovereign country.");
+        }
+
+        if (!confirmed)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.Cancelled,
+                "Project initiation cancelled by executive order. Zero funds deducted.");
+        }
+
+        var oilMinister = country.GetMinister(CabinetPortfolio.OilAndGas);
+        if (oilMinister == null || !oilMinister.IsAppointed)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.PrerequisitesNotMet,
+                "Cannot initiate National Refinery project: requires an appointed Minister of Oil & Gas.");
+        }
+
+        if (country.Projects.OfType<NationalRefineryProject>().Any(p => p.IsActive))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.AlreadyActive,
+                "A National Refinery is already under active construction.");
+        }
+
+        if (country.Treasury.Balance < NationalRefineryProject.StandardCost)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InsufficientFunds,
+                $"Insufficient sovereign funds. Required: {RepuTreasury.Format(NationalRefineryProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        }
+
+        var project = country.StartRefineryProject(simulationTime);
+        if (project == null)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.PrerequisitesNotMet,
+                "Unable to start National Refinery. Verify sovereign treasury and country prerequisites.");
+        }
+
+        return new ExecutiveActionOutcome(
+            ExecutiveActionResult.Success,
+            $"National Refinery construction commenced. Deducted {RepuTreasury.Format(project.Cost)} from sovereign treasury. Scheduled completion: {project.FinishBoundary}.",
+            project);
+    }
+
+    /// <summary>
+    /// Initiates a National Mine development project for the specified sovereign country.
+    /// Validates fund availability and requires an appointed Minister of Resources.
+    /// Costs R800,000 and requires 8 six-hour boundaries (48 hours).
+    /// </summary>
+    public static ExecutiveActionOutcome InitiateMineProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InvalidCountry,
+                "Cannot initiate development project: invalid or missing sovereign country.");
+        }
+
+        if (!confirmed)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.Cancelled,
+                "Project initiation cancelled by executive order. Zero funds deducted.");
+        }
+
+        var resMinister = country.GetMinister(CabinetPortfolio.Resources);
+        if (resMinister == null || !resMinister.IsAppointed)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.PrerequisitesNotMet,
+                "Cannot initiate National Mine project: requires an appointed Minister of Resources.");
+        }
+
+        if (country.Projects.OfType<NationalMineProject>().Any(p => p.IsActive))
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.AlreadyActive,
+                "A National Mine is already under active construction.");
+        }
+
+        if (country.Treasury.Balance < NationalMineProject.StandardCost)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.InsufficientFunds,
+                $"Insufficient sovereign funds. Required: {RepuTreasury.Format(NationalMineProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        }
+
+        var project = country.StartMineProject(simulationTime);
+        if (project == null)
+        {
+            return new ExecutiveActionOutcome(
+                ExecutiveActionResult.PrerequisitesNotMet,
+                "Unable to start National Mine. Verify sovereign treasury and country prerequisites.");
+        }
+
+        return new ExecutiveActionOutcome(
+            ExecutiveActionResult.Success,
+            $"National Mine construction commenced. Deducted {RepuTreasury.Format(project.Cost)} from sovereign treasury. Scheduled completion: {project.FinishBoundary}.",
             project);
     }
 

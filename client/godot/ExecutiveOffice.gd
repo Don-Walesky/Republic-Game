@@ -14,7 +14,7 @@ signal customization_applied(customization: Dictionary)
 signal customization_saved(customization: Dictionary)
 
 ## Navigation Sections matching PresidentialDesk.Section enum
-enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS, CUSTOMISE }
+enum Section { OVERVIEW, CABINET, ECONOMY, CAMPAIGN, DIPLOMACY, BRIEFINGS, CUSTOMISE, GOVERNMENT, POLICY, DEVELOPMENT, SECURITY, MESSAGES, BUFFS, COMMAND_CENTRE }
 var active_nav_section: Section = Section.OVERVIEW
 
 # ==============================================================================
@@ -331,6 +331,124 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var confirm_appointment_button: Button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox/ConfirmAppointmentButton") as Button
 @onready var cancel_appointment_button: Button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox/CancelAppointmentButton") as Button
 
+# TopBar Delta Pills
+@onready var top_treasury_delta: Control = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox/TreasuryDelta") as Control
+@onready var top_treasury_delta_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox/TreasuryDelta/TreasuryDeltaLabel") as Label
+@onready var top_approval_delta: Control = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox/ApprovalDelta") as Control
+@onready var top_approval_delta_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox/ApprovalDelta/ApprovalDeltaLabel") as Label
+@onready var top_stability_delta: Control = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox/StabilityDelta") as Control
+@onready var top_stability_delta_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox/StabilityDelta/StabilityDeltaLabel") as Label
+@onready var top_economy_delta: Control = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox/EconomyDelta") as Control
+@onready var top_economy_delta_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox/EconomyDelta/EconomyDeltaLabel") as Label
+@onready var top_capacity_delta: Control = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity/CapacityVBox/CapacityHeaderHBox/CapacityDelta") as Control
+@onready var top_capacity_delta_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity/CapacityVBox/CapacityHeaderHBox/CapacityDelta/CapacityDeltaLabel") as Label
+
+# Persistent Chat Shortcut & Badge
+@onready var chat_shortcut_button: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton") as Button
+@onready var chat_unread_badge: Control = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton/ChatShortcutHBox/ChatUnreadBadge") as Control
+@onready var chat_unread_count_label: Label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton/ChatShortcutHBox/ChatUnreadBadge/ChatUnreadCountLabel") as Label
+
+# BottomDock 10 Primary Navigation Buttons
+@onready var btn_nav_overview: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavOverview") as Button
+@onready var btn_nav_government: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavGovernment") as Button
+@onready var btn_nav_economy: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavEconomy") as Button
+@onready var btn_nav_policy: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavPolicy") as Button
+@onready var btn_nav_development: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavDevelopment") as Button
+@onready var btn_nav_diplomacy: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavDiplomacy") as Button
+@onready var btn_nav_security: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavSecurity") as Button
+@onready var btn_nav_messages: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavMessages") as Button
+@onready var btn_nav_buffs: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavBuffs") as Button
+@onready var btn_nav_command: Button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavCommand") as Button
+
+# LeftDock Constitutional Portfolio Additions: Education, Oil & Gas, Resources
+@onready var education_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationHeaderHBox/EducationStatusLabel") as Label
+@onready var education_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationMinisterLabel") as Label
+@onready var education_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationRatingsLabel") as Label
+@onready var education_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationEffectLabel") as Label
+@onready var appoint_education_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/AppointEducationButton") as Button
+
+@onready var oil_and_gas_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasHeaderHBox/OilAndGasStatusLabel") as Label
+@onready var oil_and_gas_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasMinisterLabel") as Label
+@onready var oil_and_gas_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasRatingsLabel") as Label
+@onready var oil_and_gas_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasEffectLabel") as Label
+@onready var appoint_oil_and_gas_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/AppointOilAndGasButton") as Button
+
+@onready var resources_status_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesHeaderHBox/ResourcesStatusLabel") as Label
+@onready var resources_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesMinisterLabel") as Label
+@onready var resources_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesRatingsLabel") as Label
+@onready var resources_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesEffectLabel") as Label
+@onready var appoint_resources_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/AppointResourcesButton") as Button
+
+# Press Secretary Bindings
+@onready var press_sec_name_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressSecNameLabel") as Label
+@onready var press_briefing_headline_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressBriefingHeadlineLabel") as Label
+@onready var press_briefing_summary_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressBriefingSummaryLabel") as Label
+
+# Dynamic Events References
+@onready var empty_events_label: Label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EmptyEventsLabel") as Label
+@onready var dynamic_events_vbox: VBoxContainer = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/DynamicEventsVBox") as VBoxContainer
+
+# Modals
+@onready var chat_popup_modal: PanelContainer = _get_node_safe("InterfaceLayer/ChatPopupModal") as PanelContainer
+@onready var close_chat_popup_x_button: Button = _get_node_safe("InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatPopupHeader/CloseChatPopupXButton") as Button
+@onready var chat_messages_vbox: VBoxContainer = _get_node_safe("InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatPopupScroll/ChatMessagesVBox") as VBoxContainer
+@onready var chat_line_edit: LineEdit = _get_node_safe("InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatInputHBox/ChatLineEdit") as LineEdit
+@onready var send_chat_button: Button = _get_node_safe("InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatInputHBox/SendChatButton") as Button
+
+@onready var command_centre_modal: PanelContainer = _get_node_safe("InterfaceLayer/CommandCentreModal") as PanelContainer
+@onready var close_cmd_x_button: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdHeaderHBox/CloseCmdXButton") as Button
+@onready var military_readiness_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryReadinessStatLabel") as Label
+@onready var military_personnel_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryPersonnelStatLabel") as Label
+@onready var weapons_inventory_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/WeaponsInventoryStatLabel") as Label
+@onready var defcon_posture_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/DefconPostureStatLabel") as Label
+@onready var target_country_option: OptionButton = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TargetCountryOption") as OptionButton
+@onready var operation_type_option: OptionButton = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/OperationTypeOption") as OptionButton
+@onready var troops_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox/TroopsLabel") as Label
+@onready var troops_slider: HSlider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSlider") as HSlider
+@onready var execute_attack_button: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/ExecuteAttackButton") as Button
+@onready var cmd_result_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/CmdResultLabel") as Label
+
+@onready var development_modal: PanelContainer = _get_node_safe("InterfaceLayer/DevelopmentModal") as PanelContainer
+@onready var close_dev_x_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevHeaderHBox/CloseDevXButton") as Button
+@onready var uni_requirement_label: Label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox/UniInfoVBox/UniRequirementLabel") as Label
+@onready var ref_requirement_label: Label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox/RefInfoVBox/RefRequirementLabel") as Label
+@onready var mine_requirement_label: Label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox/MineInfoVBox/MineRequirementLabel") as Label
+@onready var start_roads_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRoads/RoadsHBox/StartRoadsButton") as Button
+@onready var start_university_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox/StartUniversityButton") as Button
+@onready var start_refinery_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox/StartRefineryButton") as Button
+@onready var start_mine_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox/StartMineButton") as Button
+@onready var dev_status_label: Label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevStatusLabel") as Label
+
+@onready var policy_modal: PanelContainer = _get_node_safe("InterfaceLayer/PolicyModal") as PanelContainer
+@onready var close_pol_x_button: Button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolHeaderHBox/ClosePolXButton") as Button
+@onready var bill_title_label: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillTitleLabel") as Label
+@onready var bill_category_label: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillCategoryLabel") as Label
+@onready var bill_positive_label: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillPositiveLabel") as Label
+@onready var bill_negative_label: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillNegativeLabel") as Label
+@onready var bill_principle_label: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillPrincipleLabel") as Label
+@onready var bill_votes_tally_label: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillVotesTallyLabel") as Label
+@onready var propose_bill_button: Button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox/ProposeBillButton") as Button
+@onready var vote_bill_button: Button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox/VoteBillButton") as Button
+@onready var veto_bill_button: Button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox/VetoBillButton") as Button
+@onready var pol_status_label: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolStatusLabel") as Label
+
+@onready var economy_modal: PanelContainer = _get_node_safe("InterfaceLayer/EconomyModal") as PanelContainer
+@onready var close_econ_x_button: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconHeaderHBox/CloseEconXButton") as Button
+@onready var governor_name_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/GovernorNameLabel") as Label
+@onready var interest_rate_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/InterestRateLabel") as Label
+@onready var foreign_reserves_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/ForeignReservesLabel") as Label
+@onready var econ_desk_link_button: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconDeskLinkButton") as Button
+
+@onready var messages_modal: PanelContainer = _get_node_safe("InterfaceLayer/MessagesModal") as PanelContainer
+@onready var close_msg_x_button: Button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgHeaderHBox/CloseMsgXButton") as Button
+@onready var emails_list_vbox: VBoxContainer = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox") as VBoxContainer
+@onready var empty_emails_label: Label = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox/EmptyEmailsLabel") as Label
+
+@onready var buffs_modal: PanelContainer = _get_node_safe("InterfaceLayer/BuffsModal") as PanelContainer
+@onready var close_buffs_x_button: Button = _get_node_safe("InterfaceLayer/BuffsModal/BuffsVBox/BuffsHeaderHBox/CloseBuffsXButton") as Button
+@onready var buy_buff1_button: Button = _get_node_safe("InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll/BuffsListVBox/CardBuff1/Buff1HBox/BuyBuff1Button") as Button
+
+
 # ==============================================================================
 # 4. STATE & PERSISTENCE VARIABLES
 # ==============================================================================
@@ -476,6 +594,105 @@ const CANDIDATE_DEFINITIONS := {
 			"connections": 0.0,
 			"salary": 0,
 			"consequences": "• Infrastructure Condition: Reverts to emergency baseline (30%)\n• Ministerial salary removed (R 0/mo)\n• Public Approval & Polling: No immediate delta."
+		}
+	},
+	"Education": {
+		"capacity_metric": "Educational Quality",
+		"technocrat": {
+			"name": "Dr. Beatrice Ward",
+			"competence": 0.92,
+			"integrity": 0.90,
+			"loyalty": 0.50,
+			"experience": 0.85,
+			"connections": 0.40,
+			"salary": 150000,
+			"consequences": "• Required to construct National University.\n• Boosts academic innovation and research rate.\n• Meritocratic administration."
+		},
+		"loyalist": {
+			"name": "Director Marcus Cole",
+			"competence": 0.50,
+			"integrity": 0.50,
+			"loyalty": 0.92,
+			"experience": 0.55,
+			"connections": 0.88,
+			"salary": 150000,
+			"consequences": "• Required to construct National University.\n• High party alignment with moderate educational rigor."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Prevents initiation of National University projects.\n• Ministerial salary removed."
+		}
+	},
+	"OilAndGas": {
+		"capacity_metric": "Energy & Petrochemical Yield",
+		"technocrat": {
+			"name": "Eng. Tariq Al-Mansoor",
+			"competence": 0.94,
+			"integrity": 0.88,
+			"loyalty": 0.45,
+			"experience": 0.90,
+			"connections": 0.50,
+			"salary": 180000,
+			"consequences": "• Required to construct Sovereign Petrochemical Refinery.\n• Maximizes refinery throughput and energy reserves."
+		},
+		"loyalist": {
+			"name": "Chief Executive Victor Sterling",
+			"competence": 0.48,
+			"integrity": 0.45,
+			"loyalty": 0.95,
+			"experience": 0.50,
+			"connections": 0.92,
+			"salary": 180000,
+			"consequences": "• Required to construct Sovereign Petrochemical Refinery.\n• Party patronage and strategic loyalty."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Prevents initiation of National Refinery projects.\n• Ministerial salary removed."
+		}
+	},
+	"Resources": {
+		"capacity_metric": "Mineral & Resource Extraction",
+		"technocrat": {
+			"name": "Dr. Nathaniel Vance",
+			"competence": 0.90,
+			"integrity": 0.90,
+			"loyalty": 0.48,
+			"experience": 0.86,
+			"connections": 0.45,
+			"salary": 160000,
+			"consequences": "• Required to construct Strategic Mineral & Resource Mine.\n• Optimizes national mining output and resource exports."
+		},
+		"loyalist": {
+			"name": "Commissioner James Kelly",
+			"competence": 0.46,
+			"integrity": 0.48,
+			"loyalty": 0.94,
+			"experience": 0.52,
+			"connections": 0.90,
+			"salary": 160000,
+			"consequences": "• Required to construct Strategic Mineral & Resource Mine.\n• Political alignment with resource workers union."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Prevents initiation of Strategic Mine projects.\n• Ministerial salary removed."
 		}
 	}
 }
@@ -991,6 +1208,218 @@ func _init_controls() -> void:
 	if austerity_decree_button == null:
 		austerity_decree_button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/AusterityDecreeButton") as Button
 
+	# TopBar Deltas
+	if top_treasury_delta == null:
+		top_treasury_delta = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox/TreasuryDelta") as Control
+	if top_treasury_delta_label == null:
+		top_treasury_delta_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTreasury/TreasuryVBox/TreasuryHeaderHBox/TreasuryDelta/TreasuryDeltaLabel") as Label
+	if top_approval_delta == null:
+		top_approval_delta = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox/ApprovalDelta") as Control
+	if top_approval_delta_label == null:
+		top_approval_delta_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval/ApprovalVBox/ApprovalHeaderHBox/ApprovalDelta/ApprovalDeltaLabel") as Label
+	if top_stability_delta == null:
+		top_stability_delta = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox/StabilityDelta") as Control
+	if top_stability_delta_label == null:
+		top_stability_delta_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability/StabilityVBox/StabilityHeaderHBox/StabilityDelta/StabilityDeltaLabel") as Label
+	if top_economy_delta == null:
+		top_economy_delta = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox/EconomyDelta") as Control
+	if top_economy_delta_label == null:
+		top_economy_delta_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy/EconomyVBox/EconomyHeaderHBox/EconomyDelta/EconomyDeltaLabel") as Label
+	if top_capacity_delta == null:
+		top_capacity_delta = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity/CapacityVBox/CapacityHeaderHBox/CapacityDelta") as Control
+	if top_capacity_delta_label == null:
+		top_capacity_delta_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity/CapacityVBox/CapacityHeaderHBox/CapacityDelta/CapacityDeltaLabel") as Label
+
+	# Chat Shortcut
+	if chat_shortcut_button == null:
+		chat_shortcut_button = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton") as Button
+	if chat_unread_badge == null:
+		chat_unread_badge = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton/ChatShortcutHBox/ChatUnreadBadge") as Control
+	if chat_unread_count_label == null:
+		chat_unread_count_label = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/ChatShortcutButton/ChatShortcutHBox/ChatUnreadBadge/ChatUnreadCountLabel") as Label
+
+	# 10 Bottom Navigation Buttons
+	if btn_nav_overview == null:
+		btn_nav_overview = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavOverview") as Button
+	if btn_nav_government == null:
+		btn_nav_government = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavGovernment") as Button
+	if btn_nav_economy == null:
+		btn_nav_economy = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavEconomy") as Button
+	if btn_nav_policy == null:
+		btn_nav_policy = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavPolicy") as Button
+	if btn_nav_development == null:
+		btn_nav_development = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavDevelopment") as Button
+	if btn_nav_diplomacy == null:
+		btn_nav_diplomacy = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavDiplomacy") as Button
+	if btn_nav_security == null:
+		btn_nav_security = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavSecurity") as Button
+	if btn_nav_messages == null:
+		btn_nav_messages = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavMessages") as Button
+	if btn_nav_buffs == null:
+		btn_nav_buffs = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavBuffs") as Button
+	if btn_nav_command == null:
+		btn_nav_command = _get_node_safe("InterfaceLayer/BottomDock/BottomDockHBox/BottomNavPills/BtnNavCommand") as Button
+
+	# LeftDock New Portfolios
+	if appoint_education_button == null:
+		appoint_education_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/AppointEducationButton") as Button
+	if education_status_label == null:
+		education_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationHeaderHBox/EducationStatusLabel") as Label
+	if education_minister_label == null:
+		education_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationMinisterLabel") as Label
+	if education_ratings_label == null:
+		education_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationRatingsLabel") as Label
+	if education_effect_label == null:
+		education_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Education/EducationVBox/EducationEffectLabel") as Label
+
+	if appoint_oil_and_gas_button == null:
+		appoint_oil_and_gas_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/AppointOilAndGasButton") as Button
+	if oil_and_gas_status_label == null:
+		oil_and_gas_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasHeaderHBox/OilAndGasStatusLabel") as Label
+	if oil_and_gas_minister_label == null:
+		oil_and_gas_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasMinisterLabel") as Label
+	if oil_and_gas_ratings_label == null:
+		oil_and_gas_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasRatingsLabel") as Label
+	if oil_and_gas_effect_label == null:
+		oil_and_gas_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_OilAndGas/OilAndGasVBox/OilAndGasEffectLabel") as Label
+
+	if appoint_resources_button == null:
+		appoint_resources_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/AppointResourcesButton") as Button
+	if resources_status_label == null:
+		resources_status_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesHeaderHBox/ResourcesStatusLabel") as Label
+	if resources_minister_label == null:
+		resources_minister_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesMinisterLabel") as Label
+	if resources_ratings_label == null:
+		resources_ratings_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesRatingsLabel") as Label
+	if resources_effect_label == null:
+		resources_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesEffectLabel") as Label
+
+	# Press Secretary
+	if press_sec_name_label == null:
+		press_sec_name_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressSecNameLabel") as Label
+	if press_briefing_headline_label == null:
+		press_briefing_headline_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressBriefingHeadlineLabel") as Label
+	if press_briefing_summary_label == null:
+		press_briefing_summary_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressBriefingSummaryLabel") as Label
+
+	# Dynamic Events
+	if empty_events_label == null:
+		empty_events_label = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EmptyEventsLabel") as Label
+	if dynamic_events_vbox == null:
+		dynamic_events_vbox = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/DynamicEventsVBox") as VBoxContainer
+
+	# Modals
+	if chat_popup_modal == null:
+		chat_popup_modal = _get_node_safe("InterfaceLayer/ChatPopupModal") as PanelContainer
+	if close_chat_popup_x_button == null:
+		close_chat_popup_x_button = _get_node_safe("InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatPopupHeader/CloseChatPopupXButton") as Button
+	if chat_messages_vbox == null:
+		chat_messages_vbox = _get_node_safe("InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatPopupScroll/ChatMessagesVBox") as VBoxContainer
+	if chat_line_edit == null:
+		chat_line_edit = _get_node_safe("InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatInputHBox/ChatLineEdit") as LineEdit
+	if send_chat_button == null:
+		send_chat_button = _get_node_safe("InterfaceLayer/ChatPopupModal/ChatPopupVBox/ChatInputHBox/SendChatButton") as Button
+
+	if command_centre_modal == null:
+		command_centre_modal = _get_node_safe("InterfaceLayer/CommandCentreModal") as PanelContainer
+	if close_cmd_x_button == null:
+		close_cmd_x_button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdHeaderHBox/CloseCmdXButton") as Button
+	if military_readiness_stat_label == null:
+		military_readiness_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryReadinessStatLabel") as Label
+	if military_personnel_stat_label == null:
+		military_personnel_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryPersonnelStatLabel") as Label
+	if weapons_inventory_stat_label == null:
+		weapons_inventory_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/WeaponsInventoryStatLabel") as Label
+	if defcon_posture_stat_label == null:
+		defcon_posture_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/DefconPostureStatLabel") as Label
+	if target_country_option == null:
+		target_country_option = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TargetCountryOption") as OptionButton
+	if operation_type_option == null:
+		operation_type_option = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/OperationTypeOption") as OptionButton
+	if troops_label == null:
+		troops_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox/TroopsLabel") as Label
+	if troops_slider == null:
+		troops_slider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSlider") as HSlider
+	if execute_attack_button == null:
+		execute_attack_button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/ExecuteAttackButton") as Button
+	if cmd_result_label == null:
+		cmd_result_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/CmdResultLabel") as Label
+
+	if development_modal == null:
+		development_modal = _get_node_safe("InterfaceLayer/DevelopmentModal") as PanelContainer
+	if close_dev_x_button == null:
+		close_dev_x_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevHeaderHBox/CloseDevXButton") as Button
+	if uni_requirement_label == null:
+		uni_requirement_label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox/UniInfoVBox/UniRequirementLabel") as Label
+	if ref_requirement_label == null:
+		ref_requirement_label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox/RefInfoVBox/RefRequirementLabel") as Label
+	if mine_requirement_label == null:
+		mine_requirement_label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox/MineInfoVBox/MineRequirementLabel") as Label
+	if start_roads_button == null:
+		start_roads_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRoads/RoadsHBox/StartRoadsButton") as Button
+	if start_university_button == null:
+		start_university_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox/StartUniversityButton") as Button
+	if start_refinery_button == null:
+		start_refinery_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox/StartRefineryButton") as Button
+	if start_mine_button == null:
+		start_mine_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox/StartMineButton") as Button
+	if dev_status_label == null:
+		dev_status_label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevStatusLabel") as Label
+
+	if policy_modal == null:
+		policy_modal = _get_node_safe("InterfaceLayer/PolicyModal") as PanelContainer
+	if close_pol_x_button == null:
+		close_pol_x_button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolHeaderHBox/ClosePolXButton") as Button
+	if bill_title_label == null:
+		bill_title_label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillTitleLabel") as Label
+	if bill_category_label == null:
+		bill_category_label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillCategoryLabel") as Label
+	if bill_positive_label == null:
+		bill_positive_label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillPositiveLabel") as Label
+	if bill_negative_label == null:
+		bill_negative_label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillNegativeLabel") as Label
+	if bill_principle_label == null:
+		bill_principle_label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillPrincipleLabel") as Label
+	if bill_votes_tally_label == null:
+		bill_votes_tally_label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolBillCard/BillVBox/BillVotesTallyLabel") as Label
+	if propose_bill_button == null:
+		propose_bill_button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox/ProposeBillButton") as Button
+	if vote_bill_button == null:
+		vote_bill_button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox/VoteBillButton") as Button
+	if veto_bill_button == null:
+		veto_bill_button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolActionsHBox/VetoBillButton") as Button
+	if pol_status_label == null:
+		pol_status_label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/PolStatusLabel") as Label
+
+	if economy_modal == null:
+		economy_modal = _get_node_safe("InterfaceLayer/EconomyModal") as PanelContainer
+	if close_econ_x_button == null:
+		close_econ_x_button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconHeaderHBox/CloseEconXButton") as Button
+	if governor_name_label == null:
+		governor_name_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/GovernorNameLabel") as Label
+	if interest_rate_label == null:
+		interest_rate_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/InterestRateLabel") as Label
+	if foreign_reserves_label == null:
+		foreign_reserves_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/ForeignReservesLabel") as Label
+	if econ_desk_link_button == null:
+		econ_desk_link_button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconDeskLinkButton") as Button
+
+	if messages_modal == null:
+		messages_modal = _get_node_safe("InterfaceLayer/MessagesModal") as PanelContainer
+	if close_msg_x_button == null:
+		close_msg_x_button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgHeaderHBox/CloseMsgXButton") as Button
+	if emails_list_vbox == null:
+		emails_list_vbox = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox") as VBoxContainer
+	if empty_emails_label == null:
+		empty_emails_label = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox/EmptyEmailsLabel") as Label
+
+	if buffs_modal == null:
+		buffs_modal = _get_node_safe("InterfaceLayer/BuffsModal") as PanelContainer
+	if close_buffs_x_button == null:
+		close_buffs_x_button = _get_node_safe("InterfaceLayer/BuffsModal/BuffsVBox/BuffsHeaderHBox/CloseBuffsXButton") as Button
+	if buy_buff1_button == null:
+		buy_buff1_button = _get_node_safe("InterfaceLayer/BuffsModal/BuffsVBox/BuffsScroll/BuffsListVBox/CardBuff1/Buff1HBox/BuyBuff1Button") as Button
+
 func _ready() -> void:
 	_init_controls()
 	_connect_signals()
@@ -1232,6 +1661,82 @@ func _connect_signals() -> void:
 		civic_relief_button.pressed.connect(_on_civic_relief_pressed)
 	if austerity_decree_button and not austerity_decree_button.pressed.is_connected(_on_austerity_decree_pressed):
 		austerity_decree_button.pressed.connect(_on_austerity_decree_pressed)
+
+	# Chat Shortcut
+	if chat_shortcut_button and not chat_shortcut_button.pressed.is_connected(_on_chat_shortcut_pressed):
+		chat_shortcut_button.pressed.connect(_on_chat_shortcut_pressed)
+	if close_chat_popup_x_button and not close_chat_popup_x_button.pressed.is_connected(close_all_modals):
+		close_chat_popup_x_button.pressed.connect(close_all_modals)
+	if send_chat_button and not send_chat_button.pressed.is_connected(_on_send_chat_button_pressed):
+		send_chat_button.pressed.connect(_on_send_chat_button_pressed)
+
+	# 10 Bottom Navigation Buttons
+	if btn_nav_overview and not btn_nav_overview.pressed.is_connected(_on_btn_nav_overview_pressed):
+		btn_nav_overview.pressed.connect(_on_btn_nav_overview_pressed)
+	if btn_nav_government and not btn_nav_government.pressed.is_connected(_on_btn_nav_government_pressed):
+		btn_nav_government.pressed.connect(_on_btn_nav_government_pressed)
+	if btn_nav_economy and not btn_nav_economy.pressed.is_connected(_on_btn_nav_economy_pressed):
+		btn_nav_economy.pressed.connect(_on_btn_nav_economy_pressed)
+	if btn_nav_policy and not btn_nav_policy.pressed.is_connected(_on_btn_nav_policy_pressed):
+		btn_nav_policy.pressed.connect(_on_btn_nav_policy_pressed)
+	if btn_nav_development and not btn_nav_development.pressed.is_connected(_on_btn_nav_development_pressed):
+		btn_nav_development.pressed.connect(_on_btn_nav_development_pressed)
+	if btn_nav_diplomacy and not btn_nav_diplomacy.pressed.is_connected(_on_btn_nav_diplomacy_pressed):
+		btn_nav_diplomacy.pressed.connect(_on_btn_nav_diplomacy_pressed)
+	if btn_nav_security and not btn_nav_security.pressed.is_connected(_on_btn_nav_security_pressed):
+		btn_nav_security.pressed.connect(_on_btn_nav_security_pressed)
+	if btn_nav_messages and not btn_nav_messages.pressed.is_connected(_on_btn_nav_messages_pressed):
+		btn_nav_messages.pressed.connect(_on_btn_nav_messages_pressed)
+	if btn_nav_buffs and not btn_nav_buffs.pressed.is_connected(_on_btn_nav_buffs_pressed):
+		btn_nav_buffs.pressed.connect(_on_btn_nav_buffs_pressed)
+	if btn_nav_command and not btn_nav_command.pressed.is_connected(_on_btn_nav_command_pressed):
+		btn_nav_command.pressed.connect(_on_btn_nav_command_pressed)
+
+	# New Constitutional Portfolio Buttons
+	if appoint_education_button and not appoint_education_button.pressed.is_connected(_on_appoint_education_pressed):
+		appoint_education_button.pressed.connect(_on_appoint_education_pressed)
+	if appoint_oil_and_gas_button and not appoint_oil_and_gas_button.pressed.is_connected(_on_appoint_oil_and_gas_pressed):
+		appoint_oil_and_gas_button.pressed.connect(_on_appoint_oil_and_gas_pressed)
+	if appoint_resources_button and not appoint_resources_button.pressed.is_connected(_on_appoint_resources_pressed):
+		appoint_resources_button.pressed.connect(_on_appoint_resources_pressed)
+
+	# Modal Dismiss Buttons
+	if close_cmd_x_button and not close_cmd_x_button.pressed.is_connected(close_all_modals):
+		close_cmd_x_button.pressed.connect(close_all_modals)
+	if close_dev_x_button and not close_dev_x_button.pressed.is_connected(close_all_modals):
+		close_dev_x_button.pressed.connect(close_all_modals)
+	if close_pol_x_button and not close_pol_x_button.pressed.is_connected(close_all_modals):
+		close_pol_x_button.pressed.connect(close_all_modals)
+	if close_econ_x_button and not close_econ_x_button.pressed.is_connected(close_all_modals):
+		close_econ_x_button.pressed.connect(close_all_modals)
+	if close_msg_x_button and not close_msg_x_button.pressed.is_connected(close_all_modals):
+		close_msg_x_button.pressed.connect(close_all_modals)
+	if close_buffs_x_button and not close_buffs_x_button.pressed.is_connected(close_all_modals):
+		close_buffs_x_button.pressed.connect(close_all_modals)
+
+	# Modal Action Buttons
+	if execute_attack_button and not execute_attack_button.pressed.is_connected(_on_execute_attack_pressed):
+		execute_attack_button.pressed.connect(_on_execute_attack_pressed)
+	if start_roads_button and not start_roads_button.pressed.is_connected(_on_start_roads_pressed):
+		start_roads_button.pressed.connect(_on_start_roads_pressed)
+	if start_university_button and not start_university_button.pressed.is_connected(_on_start_university_pressed):
+		start_university_button.pressed.connect(_on_start_university_pressed)
+	if start_refinery_button and not start_refinery_button.pressed.is_connected(_on_start_refinery_pressed):
+		start_refinery_button.pressed.connect(_on_start_refinery_pressed)
+	if start_mine_button and not start_mine_button.pressed.is_connected(_on_start_mine_pressed):
+		start_mine_button.pressed.connect(_on_start_mine_pressed)
+	if propose_bill_button and not propose_bill_button.pressed.is_connected(_on_propose_bill_pressed):
+		propose_bill_button.pressed.connect(_on_propose_bill_pressed)
+	if vote_bill_button and not vote_bill_button.pressed.is_connected(_on_vote_bill_pressed):
+		vote_bill_button.pressed.connect(_on_vote_bill_pressed)
+	if veto_bill_button and not veto_bill_button.pressed.is_connected(_on_veto_bill_pressed):
+		veto_bill_button.pressed.connect(_on_veto_bill_pressed)
+	if buy_buff1_button and not buy_buff1_button.pressed.is_connected(_on_buy_buff1_pressed):
+		buy_buff1_button.pressed.connect(_on_buy_buff1_pressed)
+	if econ_desk_link_button and not econ_desk_link_button.pressed.is_connected(_on_econ_desk_link_pressed):
+		econ_desk_link_button.pressed.connect(_on_econ_desk_link_pressed)
+	if troops_slider and not troops_slider.value_changed.is_connected(_on_troops_slider_changed):
+		troops_slider.value_changed.connect(_on_troops_slider_changed)
 
 func _apply_tooltips() -> void:
 	if window_button:
@@ -1683,94 +2188,514 @@ func _update_modern_office_visuals(state: Dictionary) -> void:
 	if top_president_name:
 		var p_name := str(state.get("president_name", "")).strip_edges()
 		if p_name.is_empty():
-			var p_id: String = str(active_customization.get("selected_portrait_id", "portrait_m1"))
-			var p: Dictionary = ExecutiveOfficeCatalog.get_portrait(p_id)
-			p_name = str(p.get("name", "Daniel M. Okafor"))
-		top_president_name.text = p_name
+			top_president_name.text = "[Unavailable]"
+		else:
+			top_president_name.text = p_name
 
 	if top_president_term:
-		var sim_day: int = int(state.get("simulation_day", 0))
-		var year_start: int = 2026 + int(sim_day / 365)
-		top_president_term.text = "Term 1 | %d - %d" % [year_start, year_start + 4]
+		if state.has("simulation_day"):
+			var sim_day: int = int(state.get("simulation_day", 0))
+			var year_start: int = 2026 + int(sim_day / 365)
+			top_president_term.text = "Term 1 | %d - %d" % [year_start, year_start + 4]
+		else:
+			top_president_term.text = "[Unavailable]"
 
-	# 2. Floating Telemetry Deck
+	# 2. Honest TopBar Delta Pills (Computed dynamically against previous_state; zero mock numbers)
+	_update_topbar_delta_pills(state)
+
+	# 3. Floating Telemetry Deck (Zero mock numbers; honest data display)
 	if deck_yield_val:
-		var y_val := str(state.get("gdp_formatted", ""))
-		if y_val.is_empty():
-			y_val = "184.7M / cycle"
-		deck_yield_val.text = y_val
+		var y_val := str(state.get("gdp_formatted", "")).strip_edges()
+		deck_yield_val.text = y_val if not y_val.is_empty() else "[Unavailable]"
 
 	if deck_tax_val:
-		var tax_rate := str(state.get("income_tax_rate_formatted", ""))
-		if not tax_rate.is_empty():
-			deck_tax_val.text = tax_rate + " (96.3M / cycle)"
+		var tax_rate := str(state.get("income_tax_rate_formatted", "")).strip_edges()
+		var tax_rev := str(state.get("tax_revenue_formatted", "")).strip_edges()
+		if not tax_rate.is_empty() and not tax_rev.is_empty():
+			deck_tax_val.text = "%s (%s)" % [tax_rate, tax_rev]
+		elif not tax_rate.is_empty():
+			deck_tax_val.text = tax_rate
 		else:
-			deck_tax_val.text = "96.3M / cycle"
+			deck_tax_val.text = "[Unavailable]"
 
 	if deck_cap_val and deck_cap_bar:
-		var cs_val: float = float(state.get("civil_service_quality", 0.71)) * 100.0
-		deck_cap_val.text = "%0.0f%%" % cs_val
-		deck_cap_bar.value = cs_val
+		if state.has("civil_service_quality"):
+			var cs_val: float = float(state.get("civil_service_quality", 0.0)) * 100.0
+			deck_cap_val.text = "%0.0f%%" % cs_val
+			deck_cap_bar.value = cs_val
+		else:
+			deck_cap_val.text = "[Unavailable]"
+			deck_cap_bar.value = 0.0
 
 	if deck_welfare_val and deck_welfare_bar:
-		var app_val: float = float(state.get("approval_rating", 68.0))
-		deck_welfare_val.text = "%0.0f%%" % app_val
-		deck_welfare_bar.value = app_val
+		if state.has("approval_rating"):
+			var app_val: float = float(state.get("approval_rating", 0.0))
+			deck_welfare_val.text = "%0.0f%%" % app_val
+			deck_welfare_bar.value = app_val
+		else:
+			deck_welfare_val.text = "[Unavailable]"
+			deck_welfare_bar.value = 0.0
 
 	if deck_dec_name1 and deck_dec_status1:
-		var latest_dec := str(state.get("latest_decision_result", "Tax Rate Adjustment"))
-		if latest_dec.length() > 24:
-			latest_dec = latest_dec.substr(0, 24) + "..."
-		deck_dec_name1.text = latest_dec
-		deck_dec_status1.text = "Approved"
+		var latest_dec := str(state.get("latest_decision_result", "")).strip_edges()
+		if latest_dec.is_empty() or latest_dec == "None":
+			deck_dec_name1.text = "[No Decisions]"
+			deck_dec_status1.text = "Idle"
+		else:
+			deck_dec_name1.text = latest_dec if latest_dec.length() <= 26 else (latest_dec.substr(0, 23) + "...")
+			deck_dec_status1.text = "Processed"
 
 	if deck_dec_name2 and deck_dec_status2:
-		var active_p := str(state.get("active_project", "Infrastructure Project"))
-		deck_dec_name2.text = active_p
-		deck_dec_status2.text = "In Progress" if active_p != "None" else "Idle"
+		var active_p := str(state.get("active_project", "")).strip_edges()
+		if active_p.is_empty() or active_p == "None":
+			deck_dec_name2.text = "None"
+			deck_dec_status2.text = "Idle"
+		else:
+			deck_dec_name2.text = active_p
+			deck_dec_status2.text = "In Progress"
 
-	# 3. Right Side Current Objectives
+	# 4. Right Side Current Objectives (Honest states without mock fallbacks)
 	if obj_val1 and obj_bar1:
-		var cur_app: float = float(state.get("approval_rating", 67.0))
-		obj_val1.text = "%0.0f%%" % cur_app
-		obj_bar1.value = min(100.0, (cur_app / 70.0) * 100.0)
+		if state.has("approval_rating"):
+			var cur_app: float = float(state.get("approval_rating", 0.0))
+			obj_val1.text = "%0.0f%%" % cur_app
+			obj_bar1.value = min(100.0, (cur_app / 70.0) * 100.0)
+		else:
+			obj_val1.text = "[Unavailable]"
+			obj_bar1.value = 0.0
 
 	if obj_val2 and obj_bar2:
-		var p_name := str(state.get("active_project", "None"))
-		if p_name != "None":
-			var p_prog: float = float(state.get("active_project_progress", 45.0))
+		var p_name := str(state.get("active_project", "")).strip_edges()
+		if not p_name.is_empty() and p_name != "None":
+			var p_prog: float = float(state.get("active_project_progress", 0.0))
 			obj_val2.text = "%0.0f%%" % p_prog
 			obj_bar2.value = p_prog
+		elif p_name == "None":
+			obj_val2.text = "None"
+			obj_bar2.value = 0.0
 		else:
-			obj_val2.text = "100%"
-			obj_bar2.value = 100.0
+			obj_val2.text = "[Unavailable]"
+			obj_bar2.value = 0.0
 
 	if obj_val3 and obj_bar3:
-		var sim_d: int = int(state.get("simulation_day", 0))
-		var next_e: int = int(state.get("next_election_day", 71))
-		var days_rem: int = max(0, next_e - sim_d)
-		obj_val3.text = "%d days" % days_rem
-		obj_bar3.value = max(0.0, min(100.0, (1.0 - (float(days_rem) / max(1.0, float(next_e)))) * 100.0))
+		if state.has("next_election_day") and state.has("simulation_day"):
+			var sim_d: int = int(state.get("simulation_day", 0))
+			var next_e: int = int(state.get("next_election_day", 0))
+			var days_rem: int = max(0, next_e - sim_d)
+			obj_val3.text = "%d days" % days_rem
+			obj_bar3.value = max(0.0, min(100.0, (1.0 - (float(days_rem) / max(1.0, float(next_e)))) * 100.0))
+		else:
+			obj_val3.text = "[Unavailable]"
+			obj_bar3.value = 0.0
 
 	if obj_val4 and obj_bar4:
-		var treas_bal: float = float(state.get("treasury_balance", 452800000.0))
-		var t_millions: float = treas_bal / 1000000.0
-		obj_val4.text = "%0.1fM" % t_millions
-		obj_bar4.value = min(100.0, (treas_bal / 300000000.0) * 100.0)
+		if state.has("treasury_balance"):
+			var treas_bal: float = float(state.get("treasury_balance", 0.0))
+			var t_millions: float = treas_bal / 1000000.0
+			obj_val4.text = "%0.1fM" % t_millions
+			obj_bar4.value = min(100.0, (treas_bal / 300000000.0) * 100.0)
+		else:
+			obj_val4.text = "[Unavailable]"
+			obj_bar4.value = 0.0
+
+	# 5. Populate Dynamic Events
+	_populate_dynamic_events(state)
+
+	# 6. Update Constitutional Portfolios: Education, Oil & Gas, Resources
+	_update_portfolio_card_education(state)
+	_update_portfolio_card_oil_and_gas(state)
+	_update_portfolio_card_resources(state)
+
+	# 7. Update Press Secretary Section
+	_update_press_secretary(state)
+
+	# 8. Update Subsystem Modals
+	_update_command_centre_modal(state)
+	_update_development_modal_requirements(state)
+	_update_policy_and_bills_modal(state)
+	_update_economy_central_bank_modal(state)
+	_update_messages_modal(state)
+
+func _update_topbar_delta_pills(state: Dictionary) -> void:
+	if previous_state.is_empty():
+		if top_treasury_delta: top_treasury_delta.visible = false
+		if top_approval_delta: top_approval_delta.visible = false
+		if top_stability_delta: top_stability_delta.visible = false
+		if top_economy_delta: top_economy_delta.visible = false
+		if top_capacity_delta: top_capacity_delta.visible = false
+		return
+
+	# Treasury Delta
+	if top_treasury_delta and top_treasury_delta_label:
+		if previous_state.has("treasury_balance") and state.has("treasury_balance"):
+			var diff: float = float(state["treasury_balance"]) - float(previous_state["treasury_balance"])
+			if abs(diff) >= 1000.0:
+				var diff_m := diff / 1000000.0
+				top_treasury_delta_label.text = ("+%.1fM" % diff_m) if diff > 0 else ("%.1fM" % diff_m)
+				top_treasury_delta.visible = true
+			else:
+				top_treasury_delta.visible = false
+		else:
+			top_treasury_delta.visible = false
+
+	# Approval Delta
+	if top_approval_delta and top_approval_delta_label:
+		if previous_state.has("approval_rating") and state.has("approval_rating"):
+			var diff_a: float = float(state["approval_rating"]) - float(previous_state["approval_rating"])
+			if abs(diff_a) >= 0.1:
+				top_approval_delta_label.text = ("+%.1f%%" % diff_a) if diff_a > 0 else ("%.1f%%" % diff_a)
+				top_approval_delta.visible = true
+			else:
+				top_approval_delta.visible = false
+		else:
+			top_approval_delta.visible = false
+
+	# Stability Delta
+	if top_stability_delta and top_stability_delta_label:
+		if previous_state.has("stability_score") and state.has("stability_score"):
+			var diff_s: float = float(state["stability_score"]) - float(previous_state["stability_score"])
+			if abs(diff_s) >= 0.1:
+				top_stability_delta_label.text = ("+%.1f%%" % diff_s) if diff_s > 0 else ("%.1f%%" % diff_s)
+				top_stability_delta.visible = true
+			else:
+				top_stability_delta.visible = false
+		else:
+			top_stability_delta.visible = false
+
+	# Economy Delta
+	if top_economy_delta and top_economy_delta_label:
+		if previous_state.has("gdp_value") and state.has("gdp_value"):
+			var diff_e: float = float(state["gdp_value"]) - float(previous_state["gdp_value"])
+			if abs(diff_e) >= 1000.0:
+				top_economy_delta_label.text = ("+%.1fM" % (diff_e / 1000000.0)) if diff_e > 0 else ("%.1fM" % (diff_e / 1000000.0))
+				top_economy_delta.visible = true
+			else:
+				top_economy_delta.visible = false
+		else:
+			top_economy_delta.visible = false
+
+	# Capacity Delta
+	if top_capacity_delta and top_capacity_delta_label:
+		if previous_state.has("civil_service_quality") and state.has("civil_service_quality"):
+			var diff_c: float = (float(state["civil_service_quality"]) - float(previous_state["civil_service_quality"])) * 100.0
+			if abs(diff_c) >= 0.1:
+				top_capacity_delta_label.text = ("+%.0f%%" % diff_c) if diff_c > 0 else ("%.0f%%" % diff_c)
+				top_capacity_delta.visible = true
+			else:
+				top_capacity_delta.visible = false
+		else:
+			top_capacity_delta.visible = false
+
+func _populate_dynamic_events(state: Dictionary) -> void:
+	if dynamic_events_vbox == null or empty_events_label == null:
+		return
+
+	# Clear existing dynamic events
+	for child in dynamic_events_vbox.get_children():
+		child.queue_free()
+
+	var events_count: int = 0
+
+	# 1. Press Secretary Briefing
+	var press_headline := str(state.get("press_briefing_headline", "")).strip_edges()
+	var press_summary := str(state.get("press_briefing_summary", "")).strip_edges()
+	if not press_headline.is_empty():
+		var card := _create_event_card("🎙️", press_headline, press_summary, "Today")
+		dynamic_events_vbox.add_child(card)
+		events_count += 1
+
+	# 2. Latest Decision Result
+	var latest_dec := str(state.get("latest_decision_result", "")).strip_edges()
+	if not latest_dec.is_empty() and latest_dec != "None":
+		var card := _create_event_card("⚖️", "Executive Action Enacted", latest_dec, "Recent")
+		dynamic_events_vbox.add_child(card)
+		events_count += 1
+
+	# 3. Active Project Progress
+	var active_p := str(state.get("active_project", "")).strip_edges()
+	if not active_p.is_empty() and active_p != "None":
+		var p_prog: float = float(state.get("active_project_progress", 0.0))
+		var card := _create_event_card("🏗️", "Construction Update", "%s: %0.0f%% complete" % [active_p, p_prog], "Active")
+		dynamic_events_vbox.add_child(card)
+		events_count += 1
+
+	# 4. Diplomatic Proposals
+	var proposals = state.get("diplomatic_proposals", [])
+	if proposals is Array and not proposals.is_empty():
+		for prop in proposals:
+			if prop is Dictionary:
+				var sender := str(prop.get("from_country", "Foreign State"))
+				var card := _create_event_card("🌐", "Diplomatic Proposal", "Bilateral terms received from %s" % sender, "Pending")
+				dynamic_events_vbox.add_child(card)
+				events_count += 1
+				break
+
+	empty_events_label.visible = (events_count == 0)
+
+func _create_event_card(icon: String, title: String, subtitle: String, timestamp: String) -> Control:
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 6)
+
+	var ic_lbl := Label.new()
+	ic_lbl.text = icon
+	ic_lbl.add_theme_font_size_override("font_size", 11)
+	hbox.add_child(ic_lbl)
+
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var t_lbl := Label.new()
+	t_lbl.text = title
+	t_lbl.add_theme_font_size_override("font_size", 9)
+	t_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	vbox.add_child(t_lbl)
+
+	var s_lbl := Label.new()
+	s_lbl.text = subtitle
+	s_lbl.add_theme_font_size_override("font_size", 8)
+	s_lbl.add_theme_color_override("font_color", Color(0.65, 0.75, 0.85, 1))
+	s_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(s_lbl)
+	hbox.add_child(vbox)
+
+	var time_lbl := Label.new()
+	time_lbl.text = timestamp
+	time_lbl.add_theme_font_size_override("font_size", 8)
+	time_lbl.add_theme_color_override("font_color", Color(0.55, 0.65, 0.75, 1))
+	hbox.add_child(time_lbl)
+
+	return hbox
+
+func _update_portfolio_card_education(state: Dictionary) -> void:
+	var is_app: bool = has_minister("Education", state)
+	var m_name := _get_minister_name("Education", state)
+	if education_status_label:
+		education_status_label.text = "Appointed" if is_app else "Vacant"
+		education_status_label.modulate = Color(0.2, 0.9, 0.4, 1.0) if is_app else Color(0.85, 0.4, 0.4, 1.0)
+	if education_minister_label:
+		education_minister_label.text = m_name if is_app else "Vacant"
+	if education_ratings_label:
+		education_ratings_label.text = "Competence: 92% | Integrity: 90%" if is_app else "[No Ratings - Vacant]"
+	if education_effect_label:
+		education_effect_label.text = "✅ Enables National University" if is_app else "⚠️ Required for National University"
+
+func _update_portfolio_card_oil_and_gas(state: Dictionary) -> void:
+	var is_app: bool = has_minister("OilAndGas", state)
+	var m_name := _get_minister_name("OilAndGas", state)
+	if oil_and_gas_status_label:
+		oil_and_gas_status_label.text = "Appointed" if is_app else "Vacant"
+		oil_and_gas_status_label.modulate = Color(0.2, 0.9, 0.4, 1.0) if is_app else Color(0.85, 0.4, 0.4, 1.0)
+	if oil_and_gas_minister_label:
+		oil_and_gas_minister_label.text = m_name if is_app else "Vacant"
+	if oil_and_gas_ratings_label:
+		oil_and_gas_ratings_label.text = "Competence: 94% | Integrity: 88%" if is_app else "[No Ratings - Vacant]"
+	if oil_and_gas_effect_label:
+		oil_and_gas_effect_label.text = "✅ Enables National Refinery" if is_app else "⚠️ Required for National Refinery"
+
+func _update_portfolio_card_resources(state: Dictionary) -> void:
+	var is_app: bool = has_minister("Resources", state)
+	var m_name := _get_minister_name("Resources", state)
+	if resources_status_label:
+		resources_status_label.text = "Appointed" if is_app else "Vacant"
+		resources_status_label.modulate = Color(0.2, 0.9, 0.4, 1.0) if is_app else Color(0.85, 0.4, 0.4, 1.0)
+	if resources_minister_label:
+		resources_minister_label.text = m_name if is_app else "Vacant"
+	if resources_ratings_label:
+		resources_ratings_label.text = "Competence: 90% | Integrity: 90%" if is_app else "[No Ratings - Vacant]"
+	if resources_effect_label:
+		resources_effect_label.text = "✅ Enables National Mine" if is_app else "⚠️ Required for National Mine"
+
+func _update_press_secretary(state: Dictionary) -> void:
+	var sec_name := str(state.get("press_secretary_name", "Elena Vance")).strip_edges()
+	var headline := str(state.get("press_briefing_headline", "Executive Briefing")).strip_edges()
+	var summary := str(state.get("press_briefing_summary", "Government operations proceeding normally.")).strip_edges()
+	if press_sec_name_label: press_sec_name_label.text = "Press Secretary: %s" % sec_name
+	if press_briefing_headline_label: press_briefing_headline_label.text = headline
+	if press_briefing_summary_label: press_briefing_summary_label.text = summary
+
+func _update_command_centre_modal(state: Dictionary) -> void:
+	if military_readiness_stat_label:
+		var r_val := str(state.get("military_composite_readiness", state.get("defense_posture", "Operational")))
+		military_readiness_stat_label.text = "Readiness: %s" % r_val
+	if military_personnel_stat_label:
+		var p_val := str(state.get("military_personnel", "125,000 Active Personnel"))
+		military_personnel_stat_label.text = "Armed Forces: %s" % p_val
+	if weapons_inventory_stat_label:
+		var w_val := str(state.get("military_weapons_inventory", "Standard Arsenal (Grade A)"))
+		weapons_inventory_stat_label.text = "Weapons Inventory: %s" % w_val
+	if defcon_posture_stat_label:
+		var def_val := str(state.get("defcon_level", "DEFCON 5 (Peacetime)"))
+		defcon_posture_stat_label.text = "DEFCON Posture: %s" % def_val
+
+	if target_country_option and target_country_option.item_count == 0:
+		var targets = state.get("target_countries", ["Republic of Azuria", "Kingdom of Westoria", "Federation of Southland", "Ostmark"])
+		if targets is Array:
+			for t in targets:
+				target_country_option.add_item(str(t))
+
+	if operation_type_option and operation_type_option.item_count == 0:
+		operation_type_option.add_item("Reconnaissance")
+		operation_type_option.add_item("BorderIncursion")
+		operation_type_option.add_item("AirStrike")
+		operation_type_option.add_item("CovertSabotage")
+		operation_type_option.add_item("FullScaleAssault")
+
+func _update_development_modal_requirements(state: Dictionary) -> void:
+	# 1. National University requires Minister of Education
+	var has_edu := has_minister("Education", state)
+	if uni_requirement_label:
+		if has_edu:
+			uni_requirement_label.text = "✅ Minister of Education Appointed"
+			uni_requirement_label.modulate = Color(0.2, 0.9, 0.4, 1.0)
+		else:
+			uni_requirement_label.text = "⚠️ Requires Appointed Minister of Education"
+			uni_requirement_label.modulate = Color(1.0, 0.7, 0.3, 1.0)
+	if start_university_button:
+		start_university_button.disabled = not has_edu
+
+	# 2. National Refinery requires Minister of Oil & Gas
+	var has_oil := has_minister("OilAndGas", state)
+	if ref_requirement_label:
+		if has_oil:
+			ref_requirement_label.text = "✅ Minister of Oil & Gas Appointed"
+			ref_requirement_label.modulate = Color(0.2, 0.9, 0.4, 1.0)
+		else:
+			ref_requirement_label.text = "⚠️ Requires Appointed Minister of Oil & Gas"
+			ref_requirement_label.modulate = Color(1.0, 0.7, 0.3, 1.0)
+	if start_refinery_button:
+		start_refinery_button.disabled = not has_oil
+
+	# 3. National Mine requires Minister of Resources
+	var has_res := has_minister("Resources", state)
+	if mine_requirement_label:
+		if has_res:
+			mine_requirement_label.text = "✅ Minister of Resources Appointed"
+			mine_requirement_label.modulate = Color(0.2, 0.9, 0.4, 1.0)
+		else:
+			mine_requirement_label.text = "⚠️ Requires Appointed Minister of Resources"
+			mine_requirement_label.modulate = Color(1.0, 0.7, 0.3, 1.0)
+	if start_mine_button:
+		start_mine_button.disabled = not has_res
+
+func _update_policy_and_bills_modal(state: Dictionary) -> void:
+	var pending_bill = state.get("pending_bill", null)
+	if pending_bill is Dictionary:
+		if bill_title_label: bill_title_label.text = "Pending Bill: %s" % str(pending_bill.get("title", "National Policy Act"))
+		if bill_category_label: bill_category_label.text = "Category: %s | Required: %d%% Majority" % [str(pending_bill.get("category", "General")), int(pending_bill.get("required_majority", 50))]
+		if bill_positive_label: bill_positive_label.text = "🟢 Positive: %s" % str(pending_bill.get("positive_consequence", "Improves national metrics."))
+		if bill_negative_label: bill_negative_label.text = "🔴 Negative: %s" % str(pending_bill.get("negative_consequence", "Increases public expenditure."))
+		if bill_principle_label: bill_principle_label.text = "📚 Principle: %s" % str(pending_bill.get("governance_principle", "Democratic Governance"))
+		if bill_votes_tally_label:
+			var ayes: int = int(pending_bill.get("ayes_count", 0))
+			var nays: int = int(pending_bill.get("nays_count", 0))
+			if ayes > 0 or nays > 0:
+				bill_votes_tally_label.text = "Roll-Call Tally: Ayes: %d | Nays: %d" % [ayes, nays]
+			else:
+				bill_votes_tally_label.text = "Roll-Call Status: Awaiting legislative vote."
+
+func _update_economy_central_bank_modal(state: Dictionary) -> void:
+	if governor_name_label:
+		var gov := str(state.get("central_bank_governor_name", "Dr. Marcus Thorne"))
+		governor_name_label.text = "Central Bank Governor: %s" % gov
+	if interest_rate_label:
+		var rate := str(state.get("central_bank_interest_rate", "5.25% Benchmark Rate"))
+		interest_rate_label.text = "Benchmark Interest Rate: %s" % rate
+	if foreign_reserves_label:
+		var res := str(state.get("central_bank_foreign_reserves", "R 42.8B Foreign Reserves"))
+		foreign_reserves_label.text = "Foreign Reserves: %s" % res
+
+func _update_messages_modal(state: Dictionary) -> void:
+	var emails = state.get("emails", [])
+	var unread: int = int(state.get("unread_email_count", 0))
+	if chat_unread_count_label:
+		chat_unread_count_label.text = str(max(1, unread))
+		if chat_unread_badge:
+			chat_unread_badge.visible = unread > 0
+
+	if emails_list_vbox and empty_emails_label:
+		for child in emails_list_vbox.get_children():
+			if child != empty_emails_label:
+				child.queue_free()
+
+		if emails is Array and not emails.is_empty():
+			empty_emails_label.visible = false
+			for em in emails:
+				if em is Dictionary:
+					var card := _create_email_item(em)
+					emails_list_vbox.add_child(card)
+		else:
+			empty_emails_label.visible = true
+
+func _create_email_item(email: Dictionary) -> Control:
+	var p := PanelContainer.new()
+	var vb := VBoxContainer.new()
+	var subj := Label.new()
+	subj.text = "✉️ %s — from %s" % [str(email.get("subject", "Executive Memo")), str(email.get("sender", "Official"))]
+	subj.add_theme_font_size_override("font_size", 10)
+	subj.add_theme_color_override("font_color", Color(0.92, 0.85, 0.4, 1))
+	vb.add_child(subj)
+
+	var body := Label.new()
+	body.text = str(email.get("body", ""))
+	body.add_theme_font_size_override("font_size", 9)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vb.add_child(body)
+	p.add_child(vb)
+	return p
+
+func has_minister(portfolio_name: String, state: Dictionary) -> bool:
+	var cab = state.get("cabinet", [])
+	if cab is Array:
+		for m in cab:
+			if m is Dictionary:
+				var p: String = str(m.get("portfolio", "")).to_lower().replace(" ", "").replace("&", "and")
+				var target: String = portfolio_name.to_lower().replace(" ", "").replace("&", "and")
+				if p == target:
+					var m_name: String = str(m.get("minister_name", ""))
+					var is_app: bool = bool(m.get("is_appointed", false))
+					return is_app and not m_name.is_empty() and m_name != "Vacant"
+	var field := portfolio_name.to_lower() + "_minister"
+	if state.has(field):
+		var val := str(state[field])
+		return not val.is_empty() and val != "Vacant"
+	return false
+
+func _get_minister_name(portfolio_name: String, state: Dictionary) -> String:
+	var cab = state.get("cabinet", [])
+	if cab is Array:
+		for m in cab:
+			if m is Dictionary:
+				var p: String = str(m.get("portfolio", "")).to_lower().replace(" ", "").replace("&", "and")
+				var target: String = portfolio_name.to_lower().replace(" ", "").replace("&", "and")
+				if p == target:
+					return str(m.get("minister_name", "Vacant"))
+	var field := portfolio_name.to_lower() + "_minister"
+	if state.has(field):
+		return str(state[field])
+	return "Vacant"
 
 func _reset_modern_office_visuals_to_missing() -> void:
 	if top_president_name:
 		top_president_name.text = "[No State Loaded]"
 	if top_president_term:
 		top_president_term.text = "[No State Loaded]"
+	if top_treasury_delta: top_treasury_delta.visible = false
+	if top_approval_delta: top_approval_delta.visible = false
+	if top_stability_delta: top_stability_delta.visible = false
+	if top_economy_delta: top_economy_delta.visible = false
+	if top_capacity_delta: top_capacity_delta.visible = false
 	if deck_yield_val:
-		deck_yield_val.text = "[No State Loaded]"
+		deck_yield_val.text = "[Unavailable]"
 	if deck_tax_val:
-		deck_tax_val.text = "[No State Loaded]"
+		deck_tax_val.text = "[Unavailable]"
 	if deck_cap_val:
-		deck_cap_val.text = "[No State Loaded]"
+		deck_cap_val.text = "[Unavailable]"
+	if deck_cap_bar:
+		deck_cap_bar.value = 0.0
 	if deck_welfare_val:
-		deck_welfare_val.text = "[No State Loaded]"
+		deck_welfare_val.text = "[Unavailable]"
+	if deck_welfare_bar:
+		deck_welfare_bar.value = 0.0
 	if deck_dec_name1:
 		deck_dec_name1.text = "[No Decisions]"
 	if deck_dec_status1:
@@ -1780,13 +2705,26 @@ func _reset_modern_office_visuals_to_missing() -> void:
 	if deck_dec_status2:
 		deck_dec_status2.text = "Idle"
 	if obj_val1:
-		obj_val1.text = "[No State]"
+		obj_val1.text = "[Unavailable]"
+	if obj_bar1:
+		obj_bar1.value = 0.0
 	if obj_val2:
-		obj_val2.text = "[No State]"
+		obj_val2.text = "[Unavailable]"
+	if obj_bar2:
+		obj_bar2.value = 0.0
 	if obj_val3:
-		obj_val3.text = "[No State]"
+		obj_val3.text = "[Unavailable]"
+	if obj_bar3:
+		obj_bar3.value = 0.0
 	if obj_val4:
-		obj_val4.text = "[No State]"
+		obj_val4.text = "[Unavailable]"
+	if obj_bar4:
+		obj_bar4.value = 0.0
+	if empty_events_label:
+		empty_events_label.visible = true
+	if dynamic_events_vbox:
+		for child in dynamic_events_vbox.get_children():
+			child.queue_free()
 
 func _on_poll_timer_timeout() -> void:
 	check_for_decision_results()
@@ -2242,6 +3180,47 @@ func navigate_to_section(section: Section) -> void:
 			status_ticker_label.text = "Executive Office: Main presidential workspace and situational telemetry."
 		return
 
+	if section == Section.GOVERNMENT or section == Section.CABINET:
+		close_all_modals()
+		set_left_dock_expanded(true)
+		if status_ticker_label:
+			status_ticker_label.text = "Government: Reviewing Executive Cabinet, Constitutional Portfolios, and Press Briefings."
+		return
+
+	if section == Section.ECONOMY:
+		open_economy_modal()
+		return
+
+	if section == Section.POLICY or section == Section.CAMPAIGN:
+		open_policy_modal()
+		return
+
+	if section == Section.DEVELOPMENT:
+		open_development_modal()
+		return
+
+	if section == Section.DIPLOMACY:
+		close_all_modals()
+		set_right_dock_expanded(true)
+		open_dossier_modal()
+		return
+
+	if section == Section.SECURITY:
+		open_security_modal()
+		return
+
+	if section == Section.MESSAGES:
+		open_messages_modal()
+		return
+
+	if section == Section.BUFFS:
+		open_buffs_modal()
+		return
+
+	if section == Section.COMMAND_CENTRE:
+		open_command_centre_modal()
+		return
+
 	if section == Section.BRIEFINGS:
 		open_briefing_modal()
 		return
@@ -2257,18 +3236,55 @@ func navigate_to_section(section: Section) -> void:
 	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
 
 func _update_nav_button_highlights() -> void:
-	var buttons := [nav_overview_button, nav_cabinet_button, nav_economy_button, nav_campaign_button, nav_diplomacy_button, nav_briefings_button, nav_customise_button]
-	for i in range(buttons.size()):
-		var b: Button = buttons[i]
+	# Primary 10 Bottom Nav Buttons
+	var btm_buttons := [
+		btn_nav_overview,
+		btn_nav_government,
+		btn_nav_economy,
+		btn_nav_policy,
+		btn_nav_development,
+		btn_nav_diplomacy,
+		btn_nav_security,
+		btn_nav_messages,
+		btn_nav_buffs,
+		btn_nav_command
+	]
+
+	var section_to_btm_idx := {
+		Section.OVERVIEW: 0,
+		Section.GOVERNMENT: 1,
+		Section.CABINET: 1,
+		Section.ECONOMY: 2,
+		Section.POLICY: 3,
+		Section.CAMPAIGN: 3,
+		Section.DEVELOPMENT: 4,
+		Section.DIPLOMACY: 5,
+		Section.SECURITY: 6,
+		Section.MESSAGES: 7,
+		Section.BUFFS: 8,
+		Section.COMMAND_CENTRE: 9
+	}
+
+	var active_btm_idx = section_to_btm_idx.get(active_nav_section, 0)
+	for i in range(btm_buttons.size()):
+		var btn: Button = btm_buttons[i]
+		if btn:
+			if i == active_btm_idx:
+				btn.modulate = Color(1.0, 0.9, 0.4, 1.0)
+			else:
+				btn.modulate = Color(0.85, 0.9, 0.95, 1.0)
+
+	# Compatibility top buttons
+	var top_buttons := [nav_overview_button, nav_cabinet_button, nav_economy_button, nav_campaign_button, nav_diplomacy_button, nav_briefings_button, nav_customise_button]
+	for i in range(top_buttons.size()):
+		var b: Button = top_buttons[i]
 		if b:
 			if i == int(active_nav_section):
 				b.modulate = Color(1.0, 0.85, 0.3, 1.0)
 			else:
 				b.modulate = Color(0.85, 0.9, 0.95, 1.0)
 
-# ==============================================================================
-# 9. OFFICE CONTROLS & MODAL DIALOGS
-# ==============================================================================
+
 func _on_hotline_phone_pressed() -> void:
 	set_hotline_badge(false)
 	hotline_badge_dismissed = true
@@ -2364,22 +3380,21 @@ func close_customisation_modal() -> void:
 	_update_nav_button_highlights()
 
 func close_all_modals() -> void:
-	if modal_backdrop:
-		modal_backdrop.visible = false
-	if briefing_modal:
-		briefing_modal.visible = false
-	if hotline_modal:
-		hotline_modal.visible = false
-	if dossier_modal:
-		dossier_modal.visible = false
-	if customisation_modal:
-		customisation_modal.visible = false
-	if purchase_confirm_modal:
-		purchase_confirm_modal.visible = false
-	if cabinet_appointment_modal:
-		cabinet_appointment_modal.visible = false
-	if capital_project_card:
-		capital_project_card.visible = false
+	if modal_backdrop: modal_backdrop.visible = false
+	if briefing_modal: briefing_modal.visible = false
+	if hotline_modal: hotline_modal.visible = false
+	if dossier_modal: dossier_modal.visible = false
+	if customisation_modal: customisation_modal.visible = false
+	if purchase_confirm_modal: purchase_confirm_modal.visible = false
+	if cabinet_appointment_modal: cabinet_appointment_modal.visible = false
+	if capital_project_card: capital_project_card.visible = false
+	if chat_popup_modal: chat_popup_modal.visible = false
+	if command_centre_modal: command_centre_modal.visible = false
+	if development_modal: development_modal.visible = false
+	if policy_modal: policy_modal.visible = false
+	if economy_modal: economy_modal.visible = false
+	if messages_modal: messages_modal.visible = false
+	if buffs_modal: buffs_modal.visible = false
 	active_nav_section = Section.OVERVIEW
 	_update_nav_button_highlights()
 
@@ -2390,7 +3405,274 @@ func is_any_modal_open() -> bool:
 		(customisation_modal and customisation_modal.visible) or \
 		(purchase_confirm_modal and purchase_confirm_modal.visible) or \
 		(cabinet_appointment_modal and cabinet_appointment_modal.visible) or \
-		(capital_project_card and capital_project_card.visible)
+		(capital_project_card and capital_project_card.visible) or \
+		(chat_popup_modal and chat_popup_modal.visible) or \
+		(command_centre_modal and command_centre_modal.visible) or \
+		(development_modal and development_modal.visible) or \
+		(policy_modal and policy_modal.visible) or \
+		(economy_modal and economy_modal.visible) or \
+		(messages_modal and messages_modal.visible) or \
+		(buffs_modal and buffs_modal.visible)
+
+func open_chat_popup_modal() -> void:
+	close_all_modals()
+	if modal_backdrop: modal_backdrop.visible = true
+	if chat_popup_modal: chat_popup_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Alliance Chat: Secure messaging console opened."
+
+func open_command_centre_modal() -> void:
+	close_all_modals()
+	active_nav_section = Section.COMMAND_CENTRE
+	_update_nav_button_highlights()
+	if modal_backdrop: modal_backdrop.visible = true
+	if command_centre_modal: command_centre_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Warfare Command: Supreme military operations console opened."
+
+func open_development_modal() -> void:
+	close_all_modals()
+	active_nav_section = Section.DEVELOPMENT
+	_update_nav_button_highlights()
+	if modal_backdrop: modal_backdrop.visible = true
+	if development_modal: development_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Development Desk: National infrastructure and major capital works."
+
+func open_policy_modal() -> void:
+	close_all_modals()
+	active_nav_section = Section.POLICY
+	_update_nav_button_highlights()
+	if modal_backdrop: modal_backdrop.visible = true
+	if policy_modal: policy_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Legislative Chamber: Reviewing national policies and 50:50 systemic bills."
+
+func open_economy_modal() -> void:
+	close_all_modals()
+	active_nav_section = Section.ECONOMY
+	_update_nav_button_highlights()
+	if modal_backdrop: modal_backdrop.visible = true
+	if economy_modal: economy_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Economy & Treasury: Central Bank and national fiscal telemetry."
+
+func open_security_modal() -> void:
+	close_all_modals()
+	active_nav_section = Section.SECURITY
+	_update_nav_button_highlights()
+	open_dossier_modal()
+	if status_ticker_label:
+		status_ticker_label.text = "National Security: Reviewing intelligence dossiers and defense posture."
+
+func open_messages_modal() -> void:
+	close_all_modals()
+	active_nav_section = Section.MESSAGES
+	_update_nav_button_highlights()
+	if modal_backdrop: modal_backdrop.visible = true
+	if messages_modal: messages_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Executive Messages: Reviewing diplomatic cables and executive inbox."
+
+func open_buffs_modal() -> void:
+	close_all_modals()
+	active_nav_section = Section.BUFFS
+	_update_nav_button_highlights()
+	if modal_backdrop: modal_backdrop.visible = true
+	if buffs_modal: buffs_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Presidential Decrees: Reviewing national buffs and executive orders."
+
+# Handlers for Primary Navigation
+func _on_chat_shortcut_pressed() -> void:
+	if chat_popup_modal and chat_popup_modal.visible:
+		close_all_modals()
+	else:
+		open_chat_popup_modal()
+
+func _on_send_chat_button_pressed() -> void:
+	if chat_line_edit == null or chat_messages_vbox == null: return
+	var msg := chat_line_edit.text.strip_edges()
+	if msg.is_empty(): return
+	var p := Label.new()
+	p.text = "President Okafor: %s" % msg
+	p.add_theme_font_size_override("font_size", 9)
+	p.add_theme_color_override("font_color", Color(0.92, 0.85, 0.4, 1))
+	chat_messages_vbox.add_child(p)
+	chat_line_edit.text = ""
+
+func _on_btn_nav_overview_pressed() -> void:
+	navigate_to_section(Section.OVERVIEW)
+
+func _on_btn_nav_government_pressed() -> void:
+	navigate_to_section(Section.GOVERNMENT)
+
+func _on_btn_nav_economy_pressed() -> void:
+	navigate_to_section(Section.ECONOMY)
+
+func _on_btn_nav_policy_pressed() -> void:
+	navigate_to_section(Section.POLICY)
+
+func _on_btn_nav_development_pressed() -> void:
+	navigate_to_section(Section.DEVELOPMENT)
+
+func _on_btn_nav_diplomacy_pressed() -> void:
+	navigate_to_section(Section.DIPLOMACY)
+
+func _on_btn_nav_security_pressed() -> void:
+	navigate_to_section(Section.SECURITY)
+
+func _on_btn_nav_messages_pressed() -> void:
+	navigate_to_section(Section.MESSAGES)
+
+func _on_btn_nav_buffs_pressed() -> void:
+	navigate_to_section(Section.BUFFS)
+
+func _on_btn_nav_command_pressed() -> void:
+	navigate_to_section(Section.COMMAND_CENTRE)
+
+# Handlers for New Portfolios
+func _on_appoint_education_pressed() -> void:
+	open_appointment_modal("Education")
+
+func _on_appoint_oil_and_gas_pressed() -> void:
+	open_appointment_modal("OilAndGas")
+
+func _on_appoint_resources_pressed() -> void:
+	open_appointment_modal("Resources")
+
+# Handlers for Command Centre
+func _on_troops_slider_changed(val: float) -> void:
+	if troops_label:
+		troops_label.text = "Committed Personnel: %s" % _format_number_commas(int(val))
+
+func _on_execute_attack_pressed() -> void:
+	var target := "Republic of Azuria"
+	if target_country_option and target_country_option.selected >= 0:
+		target = target_country_option.get_item_text(target_country_option.selected)
+	var op_type := "BorderIncursion"
+	if operation_type_option and operation_type_option.selected >= 0:
+		op_type = operation_type_option.get_item_text(operation_type_option.selected)
+	var troops := 5000
+	if troops_slider:
+		troops = int(troops_slider.value)
+
+	var req_id := "req_war_" + str(Time.get_unix_time_from_system())
+	var req_dict := {
+		"request_id": req_id,
+		"action": "military_attack",
+		"target_country": target,
+		"operation_type": op_type,
+		"troops_committed": troops,
+		"client_timestamp": Time.get_datetime_string_from_system()
+	}
+	_write_request_file(req_dict)
+	if cmd_result_label:
+		cmd_result_label.text = "Tactical Status: Military directive dispatched to armed forces command. Awaiting simulation result."
+	if status_ticker_label:
+		status_ticker_label.text = "Warfare Directive: Authorized %s against %s with %s troops." % [op_type, target, _format_number_commas(troops)]
+
+# Handlers for Development Projects
+func _on_start_roads_pressed() -> void:
+	_initiate_project("Roads")
+
+func _on_start_university_pressed() -> void:
+	if not has_minister("Education", latest_state):
+		if dev_status_label:
+			dev_status_label.text = "❌ Cannot initiate National University: Requires an appointed Minister of Education!"
+		return
+	_initiate_project("University")
+
+func _on_start_refinery_pressed() -> void:
+	if not has_minister("OilAndGas", latest_state):
+		if dev_status_label:
+			dev_status_label.text = "❌ Cannot initiate Sovereign Refinery: Requires an appointed Minister of Oil & Gas!"
+		return
+	_initiate_project("Refinery")
+
+func _on_start_mine_pressed() -> void:
+	if not has_minister("Resources", latest_state):
+		if dev_status_label:
+			dev_status_label.text = "❌ Cannot initiate Strategic Mine: Requires an appointed Minister of Resources!"
+		return
+	_initiate_project("Mine")
+
+func _initiate_project(proj_type: String) -> void:
+	var req_id := "req_proj_" + str(Time.get_unix_time_from_system())
+	var req_dict := {
+		"request_id": req_id,
+		"action": "start_project",
+		"project_type": proj_type,
+		"client_timestamp": Time.get_datetime_string_from_system()
+	}
+	_write_request_file(req_dict)
+	if dev_status_label:
+		dev_status_label.text = "Authorized capital project: %s. Commissioning teams." % proj_type
+	if status_ticker_label:
+		status_ticker_label.text = "Development Directive: Commenced %s project." % proj_type
+
+# Handlers for Policy & Legislative Chamber
+func _on_propose_bill_pressed() -> void:
+	var req_id := "req_bill_" + str(Time.get_unix_time_from_system())
+	var req_dict := {
+		"request_id": req_id,
+		"action": "propose_bill",
+		"title": "National Infrastructure Modernization Act",
+		"client_timestamp": Time.get_datetime_string_from_system()
+	}
+	_write_request_file(req_dict)
+	if pol_status_label:
+		pol_status_label.text = "Legislative bill proposed: National Infrastructure Modernization Act."
+
+func _on_vote_bill_pressed() -> void:
+	var req_id := "req_vote_" + str(Time.get_unix_time_from_system())
+	var req_dict := {
+		"request_id": req_id,
+		"action": "vote_bill",
+		"client_timestamp": Time.get_datetime_string_from_system()
+	}
+	_write_request_file(req_dict)
+	if pol_status_label:
+		pol_status_label.text = "Roll-call voting conducted in parliament."
+
+func _on_veto_bill_pressed() -> void:
+	var req_id := "req_veto_" + str(Time.get_unix_time_from_system())
+	var req_dict := {
+		"request_id": req_id,
+		"action": "veto_bill",
+		"client_timestamp": Time.get_datetime_string_from_system()
+	}
+	_write_request_file(req_dict)
+	if pol_status_label:
+		pol_status_label.text = "Executive veto exercised against legislative bill."
+
+func _on_buy_buff1_pressed() -> void:
+	var req_id := "req_buff_" + str(Time.get_unix_time_from_system())
+	var req_dict := {
+		"request_id": req_id,
+		"action": "buy_buff",
+		"buff_id": "infrastructure_surge",
+		"client_timestamp": Time.get_datetime_string_from_system()
+	}
+	_write_request_file(req_dict)
+	if status_ticker_label:
+		status_ticker_label.text = "Presidential Decree: Infrastructure Surge enacted."
+
+func _on_econ_desk_link_pressed() -> void:
+	var desk_script = load("res://PresidentialDesk.gd")
+	if desk_script and "requested_section" in desk_script:
+		desk_script.requested_section = 2
+	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
+
+func _write_request_file(req_dict: Dictionary) -> bool:
+	var req_path := _resolve_request_path()
+	var file := FileAccess.open(req_path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(req_dict, "	"))
+	file.close()
+	_try_run_cli_request_processor()
+	return true
 
 func _on_modal_backdrop_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:

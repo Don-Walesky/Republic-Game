@@ -10,5 +10,8 @@ public enum CabinetPortfolio
     ForeignAffairs,
     Interior,
     Health,
-    Infrastructure
+    Infrastructure,
+    Education,
+    OilAndGas,
+    Resources
 }

@@ -2,7 +2,7 @@ namespace Republic.Core.Economy.Projects;
 
 /// <summary>
 /// Categorical enumeration of executive development project types in Republic.
-/// In this slice, Road and University are active types; establishes the foundational enum for future infrastructure expansion.
+/// In this slice, Road, University, PowerPlant, PrivateInvestment, Refinery, and Mine are active types.
 /// </summary>
 public enum DevelopmentProjectType
 {
@@ -24,6 +24,15 @@ public enum DevelopmentProjectType
     /// <summary>
     /// Private-sector co-investment or commercial facility project.
     /// </summary>
-    PrivateInvestment = 3
-}
+    PrivateInvestment = 3,
 
+    /// <summary>
+    /// National oil refinery and petrochemical processing facility.
+    /// </summary>
+    Refinery = 4,
+
+    /// <summary>
+    /// National mineral extraction and mining facility.
+    /// </summary>
+    Mine = 5
+}

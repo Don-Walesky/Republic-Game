@@ -384,6 +384,30 @@ public sealed class ActiveOfficialsService : IActiveOfficialsService
                     }
                     break;
 
+                case CabinetPortfolio.Education:
+                    headline = "Academic Curricula & Higher Education Standards";
+                    details = $"Ministry of Education reports academic research index at {comp:0.#}%. Higher education accreditation aligned with national standards.";
+                    risk = "Low";
+                    action = "commission_university";
+                    cost = 750_000.0;
+                    break;
+
+                case CabinetPortfolio.OilAndGas:
+                    headline = "Petrochemical & Hydrocarbon Refinement Status";
+                    details = $"Energy processing facilities operating at {comp:0.#}% operational throughput. Refining capacity reserves adequate.";
+                    risk = "Low";
+                    action = "commission_refinery";
+                    cost = 1_200_000.0;
+                    break;
+
+                case CabinetPortfolio.Resources:
+                    headline = "Mineral Concessions & Strategic Extraction";
+                    details = $"Raw material yields monitored at {comp:0.#}% efficiency. Subsurface geological surveys complete.";
+                    risk = "Low";
+                    action = "commission_mine";
+                    cost = 800_000.0;
+                    break;
+
                 default:
                     headline = $"Ministry of {p} Review";
                     details = "Standard administrative operations proceeding according to constitutional mandates.";

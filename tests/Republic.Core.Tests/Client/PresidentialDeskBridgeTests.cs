@@ -2741,6 +2741,12 @@ public sealed class PresidentialDeskBridgeTests
             var time = CreateTime(1);
             var country = Country.Found("Republic of Eldoria", time, "eldoria");
             country.Treasury.Deposit(1_500_000.0);
+            country.AppointMinister(new Minister
+            {
+                Name = "Prof. Marcus Vance",
+                Portfolio = CabinetPortfolio.Education,
+                Competence = 0.85
+            }, CabinetPortfolio.Education);
             var initialTreasury = country.Treasury.Balance;
             PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
 
@@ -2942,7 +2948,7 @@ public sealed class PresidentialDeskBridgeTests
 
         // Assert - Structured Cabinet Collection contains all 6 constitutional portfolios
         Assert.NotNull(snapshot.Cabinet);
-        Assert.Equal(6, snapshot.Cabinet.Count);
+        Assert.Equal(9, snapshot.Cabinet.Count);
 
         // Finance (Appointed)
         var finSnap = snapshot.Cabinet.FirstOrDefault(c => c.Portfolio == "Finance");
@@ -3030,7 +3036,7 @@ public sealed class PresidentialDeskBridgeTests
         var root = doc.RootElement;
         Assert.True(root.TryGetProperty("cabinet", out var cabinetProp));
         Assert.Equal(System.Text.Json.JsonValueKind.Array, cabinetProp.ValueKind);
-        Assert.Equal(6, cabinetProp.GetArrayLength());
+        Assert.Equal(9, cabinetProp.GetArrayLength());
 
         Assert.True(root.TryGetProperty("infrastructure_condition", out var infraCondProp));
         Assert.Equal(0.3, infraCondProp.GetDouble());
@@ -3055,7 +3061,7 @@ public sealed class PresidentialDeskBridgeTests
         Assert.Equal(original.DefenseMinister, deserialized.DefenseMinister);
         Assert.Equal(original.InfrastructureCondition, deserialized.InfrastructureCondition);
         Assert.NotNull(deserialized.Cabinet);
-        Assert.Equal(6, deserialized.Cabinet.Count);
+        Assert.Equal(9, deserialized.Cabinet.Count);
 
         var deserializedFinance = deserialized.Cabinet.First(c => c.Portfolio == "Finance");
         Assert.True(deserializedFinance.IsAppointed);
