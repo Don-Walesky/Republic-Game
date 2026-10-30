@@ -1003,3 +1003,282 @@ layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 38)
 text = "Proceed to Presidential Advisers (Phase 4)"
+
+
+[node name="ScreenAdvisers" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LblTitle" type="Label" parent="PanelContainer/VBox/ScreenAdvisers"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "PRESIDENTIAL ADVISORY COUNCIL (PHASE 4)"
+horizontal_alignment = 1
+
+[node name="LblSub" type="Label" parent="PanelContainer/VBox/ScreenAdvisers"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "Your General Adviser and Press Secretary guide executive strategy and media relations. 1 Special Adviser is active; 4 additional portfolios remain locked and can be activated with Sovereign Gems or designated national buffs."
+autowrap_mode = 2
+horizontal_alignment = 1
+
+[node name="ScrollAdvisers" type="ScrollContainer" parent="PanelContainer/VBox/ScreenAdvisers"]
+custom_minimum_size = Vector2(0, 360)
+layout_mode = 2
+
+[node name="AdvisersBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="CardGeneralAdviser" type="PanelContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox"]
+layout_mode = 2
+
+[node name="NameTitle" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Marcus Vance — General Adviser to the President"
+
+[node name="Badge" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "[PRINCIPAL STRATEGIC GUIDE • ACTIVE]"
+
+[node name="LblGuidance" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Strategic overview aligned with executive leadership doctrine and development priorities."
+autowrap_mode = 2
+
+[node name="LblRecommendations" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1.0, 1)
+theme_override_font_sizes/font_size = 11
+text = "• Strategic recommendations will appear here."
+autowrap_mode = 2
+
+[node name="CardPressSecretary" type="PanelContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox"]
+layout_mode = 2
+
+[node name="NameTitle" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "Elena Vance — Presidential Press Secretary"
+
+[node name="Badge" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "[OFFICIAL SPOKESPERSON • ACTIVE]"
+
+[node name="LblHeadline" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "Administration Advances National Strategic Priorities"
+
+[node name="LblSummary" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Press corps briefing confirming national priority implementation and civic communication channels."
+autowrap_mode = 2
+
+[node name="HBoxSpecialHeader" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox"]
+layout_mode = 2
+
+[node name="LblSpecialTitle" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/HBoxSpecialHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Special Adviser Positions (1 Active, 4 Locked)"
+
+[node name="LblGems" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/HBoxSpecialHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Sovereign Gems: 500 💎"
+
+[node name="CardSlot1" type="PanelContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot1"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot1/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot1/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Dr. Kemi Adeleke — Special Adviser on Political & Social Affairs"
+
+[node name="Badge" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot1/VBox/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "[ACTIVE • SLOT 1]"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot1/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Focus: Public sentiment, voting bloc alignment, civic cohesion, and social stability.\nAdvice: Prioritise coalition stability and maintain strong ties with labor and civic associations."
+autowrap_mode = 2
+
+[node name="CardSlot2" type="PanelContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Economic Strategy & Investment (Slot 2)"
+
+[node name="BtnUnlockSlot2" type="Button" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 26)
+text = "Unlock (500 Gems)"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Status: Vacant (Position Locked) • Requirement: 500 Sovereign Gems or Economic Modernisation Buff."
+autowrap_mode = 2
+
+[node name="CardSlot3" type="PanelContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "National Security & Intelligence (Slot 3)"
+
+[node name="BtnUnlockSlot3" type="Button" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 26)
+text = "Unlock (1,000 Gems)"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Status: Vacant (Position Locked) • Requirement: 1,000 Sovereign Gems or Strategic Defense Buff."
+autowrap_mode = 2
+
+[node name="CardSlot4" type="PanelContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Infrastructure & Digital Innovation (Slot 4)"
+
+[node name="BtnUnlockSlot4" type="Button" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 26)
+text = "Unlock (1,500 Gems)"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Status: Vacant (Position Locked) • Requirement: 1,500 Sovereign Gems or Infrastructure Drive Buff."
+autowrap_mode = 2
+
+[node name="CardSlot5" type="PanelContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Diplomacy & International Commerce (Slot 5)"
+
+[node name="BtnUnlockSlot5" type="Button" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 26)
+text = "Unlock (2,500 Gems)"
+
+[node name="Desc" type="Label" parent="PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Status: Vacant (Position Locked) • Requirement: 2,500 Sovereign Gems or Global Diplomatic Buff."
+autowrap_mode = 2
+
+[node name="LblAdvisersFeedback" type="Label" parent="PanelContainer/VBox/ScreenAdvisers"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="HBoxAdvisersActions" type="HBoxContainer" parent="PanelContainer/VBox/ScreenAdvisers"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnBackToSummary" type="Button" parent="PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "Back to Charter Summary"
+
+[node name="BtnConfirmAdvisers" type="Button" parent="PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "Induct Advisory Council & Enter Campaign Headquarters"

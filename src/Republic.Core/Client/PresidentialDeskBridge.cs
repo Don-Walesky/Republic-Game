@@ -16,6 +16,8 @@ using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Government.Officials.Services;
+using Republic.Core.Government.Advisers.Models;
+using Republic.Core.Government.Advisers.Services;
 using Republic.Core.Intelligence.Models;
 using Republic.Core.Intelligence.Services;
 using Republic.Core.Media.Services;
@@ -1907,6 +1909,272 @@ public static class PresidentialDeskBridge
         return result;
     }
 
+    
+
+    /// <summary>
+    /// Confirms the player's inaugural presidential advisory council,
+    /// advancing the onboarding journey to AdvisersIntroduced.
+    /// </summary>
+    public static PresidentialActionResult IntroduceAdvisersDecision(
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null || envelope.State.OnboardingStep < OnboardingStep.DevelopmentPlansSelected)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "You must select your national development plans before inducting your advisory council.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestingAccountId) &&
+            !string.Equals(requestingAccountId, envelope.State.Account.AccountId, StringComparison.OrdinalIgnoreCase))
+        {
+            var unauthorizedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not have permission to modify another player's sovereign advisory council.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, unauthorizedResult);
+            return unauthorizedResult;
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetCountryId) &&
+            !string.IsNullOrWhiteSpace(envelope.State.Account.OwnedCountryId) &&
+            !string.Equals(targetCountryId, envelope.State.Account.OwnedCountryId, StringComparison.OrdinalIgnoreCase))
+        {
+            var forbiddenResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not own this sovereign country.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, forbiddenResult);
+            return forbiddenResult;
+        }
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country != null)
+        {
+            AdviserService.SynchronizeAdvisers(country);
+        }
+
+        envelope.State.OnboardingStep = OnboardingStep.AdvisersIntroduced;
+        envelope.State.Account.CurrentStep = OnboardingStep.AdvisersIntroduced;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        if (country != null)
+        {
+            AdviserService.SynchronizeAdvisers(country);
+            var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+            ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: "Inaugural presidential advisory council inducted.");
+        }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = "Inaugural presidential advisory council inducted. Principal Strategic Guide and Press Secretary active.",
+            OnboardingStep = OnboardingStep.AdvisersIntroduced.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country?.Name ?? string.Empty,
+            GeneralAdviser = country?.GeneralAdviser,
+            PressSecretary = country?.PressSecretary,
+            SpecialAdvisers = country?.SpecialAdvisers != null ? country.SpecialAdvisers.ToList().AsReadOnly() : SpecialAdviserSlot.CreateDefaultRoster().AsReadOnly(),
+            SovereignGems = country?.SovereignGems ?? 500
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Unlocks a locked Special Adviser position using Sovereign Gems or designated buffs.
+    /// </summary>
+    public static PresidentialActionResult UnlockSpecialAdviserDecision(
+        int slotNumber,
+        string? unlockMethod = null,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null || envelope.State.OnboardingStep < OnboardingStep.CountryCreated)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "A sovereign country must be established before unlocking Special Adviser positions.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestingAccountId) &&
+            !string.Equals(requestingAccountId, envelope.State.Account.AccountId, StringComparison.OrdinalIgnoreCase))
+        {
+            var unauthorizedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not have permission to modify another player's sovereign advisers.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, unauthorizedResult);
+            return unauthorizedResult;
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetCountryId) &&
+            !string.IsNullOrWhiteSpace(envelope.State.Account.OwnedCountryId) &&
+            !string.Equals(targetCountryId, envelope.State.Account.OwnedCountryId, StringComparison.OrdinalIgnoreCase))
+        {
+            var forbiddenResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Unauthorized",
+                Message = "You do not own this sovereign country.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, forbiddenResult);
+            return forbiddenResult;
+        }
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country == null)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CountryNotFound",
+                Message = "Sovereign nation state not found in authoritative save.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        var (unlockSuccess, unlockMsg) = AdviserService.UnlockSpecialAdviser(country, slotNumber, unlockMethod ?? "gems");
+        if (!unlockSuccess)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "UnlockFailed",
+                Message = unlockMsg,
+                OnboardingStep = envelope.State.OnboardingStep.ToString(),
+                GeneralAdviser = country.GeneralAdviser,
+                PressSecretary = country.PressSecretary,
+                SpecialAdvisers = country.SpecialAdvisers.ToList().AsReadOnly(),
+                SovereignGems = country.SovereignGems
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+        ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: unlockMsg);
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = unlockMsg,
+            OnboardingStep = envelope.State.OnboardingStep.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country.Name,
+            GeneralAdviser = country.GeneralAdviser,
+            PressSecretary = country.PressSecretary,
+            SpecialAdvisers = country.SpecialAdvisers.ToList().AsReadOnly(),
+            SovereignGems = country.SovereignGems
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
     /// <summary>
     /// Resumes a game session from an authoritative save file, projecting the sovereign state
     /// <summary>
@@ -2100,7 +2368,11 @@ public static class PresidentialDeskBridge
             CountryName = country?.Name ?? string.Empty,
             SelectedLeadershipArchetypes = parsedArchetypes.Select(a => a.ToString()).ToList(),
             LeadershipDoctrineTitle = doctrineTitle,
-            StrategicOpportunities = country?.Opportunities != null ? country.Opportunities.ToList().AsReadOnly() : Array.Empty<StrategicOpportunity>()
+            StrategicOpportunities = country?.Opportunities != null ? country.Opportunities.ToList().AsReadOnly() : Array.Empty<StrategicOpportunity>(),
+            GeneralAdviser = country?.GeneralAdviser,
+            PressSecretary = country?.PressSecretary,
+            SpecialAdvisers = country?.SpecialAdvisers != null ? country.SpecialAdvisers.ToList().AsReadOnly() : SpecialAdviserSlot.CreateDefaultRoster().AsReadOnly(),
+            SovereignGems = country?.SovereignGems ?? 500
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -6942,6 +7214,64 @@ public static class PresidentialDeskBridge
                         }
                     }
 
+                    if (normalizedAction is "introduce_advisers" or "confirm_advisers" or "advisers_introduced")
+                    {
+                        string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
+                        string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid) && root.TryGetProperty("target_country_id", out var tcidEl))
+                        {
+                            reqCid = tcidEl.GetString();
+                        }
+
+                        try
+                        {
+                            return IntroduceAdvisersDecision(targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "unlock_special_adviser" or "unlock_adviser")
+                    {
+                        int slotNum = 2;
+                        if (root.TryGetProperty("slot_number", out var snEl) && snEl.TryGetInt32(out var parsedSlot))
+                        {
+                            slotNum = parsedSlot;
+                        }
+                        else if (root.TryGetProperty("slot", out var sEl) && sEl.TryGetInt32(out var parsedSlot2))
+                        {
+                            slotNum = parsedSlot2;
+                        }
+
+                        string method = "gems";
+                        if (root.TryGetProperty("unlock_method", out var mEl) && mEl.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(mEl.GetString()))
+                        {
+                            method = mEl.GetString()!.Trim();
+                        }
+                        else if (root.TryGetProperty("method", out var mEl2) && mEl2.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(mEl2.GetString()))
+                        {
+                            method = mEl2.GetString()!.Trim();
+                        }
+
+                        string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
+                        string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid) && root.TryGetProperty("target_country_id", out var tcidEl))
+                        {
+                            reqCid = tcidEl.GetString();
+                        }
+
+                        try
+                        {
+                            return UnlockSpecialAdviserDecision(slotNum, method, targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
                     if (normalizedAction is "select_development_plans" or "select_development_plan" or "development_plans_selection" or "development_agenda")
                     {
                         var plansList = new List<string>();
@@ -8287,4 +8617,16 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("strategic_opportunities")]
     public IReadOnlyList<StrategicOpportunity> StrategicOpportunities { get; init; } = Array.Empty<StrategicOpportunity>();
+
+    [JsonPropertyName("general_adviser")]
+    public GeneralAdviser? GeneralAdviser { get; init; }
+
+    [JsonPropertyName("press_secretary")]
+    public PresidentialPressSecretary? PressSecretary { get; init; }
+
+    [JsonPropertyName("special_advisers")]
+    public IReadOnlyList<SpecialAdviserSlot> SpecialAdvisers { get; init; } = Array.Empty<SpecialAdviserSlot>();
+
+    [JsonPropertyName("sovereign_gems")]
+    public int SovereignGems { get; init; }
 }

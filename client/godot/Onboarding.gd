@@ -24,7 +24,8 @@ enum ScreenStage {
 	CONFIRMED,
 	LEADERSHIP,
 	DEVELOPMENT_PLANS,
-	PHASE3_SUMMARY
+	PHASE3_SUMMARY,
+	ADVISERS
 }
 
 var current_stage: ScreenStage = ScreenStage.REGISTER
@@ -47,6 +48,8 @@ var selected_archetypes: Array[String] = []
 var selected_plans: Array[String] = []
 var selected_doctrine_title: String = ""
 var selected_plan_names: Array[String] = []
+var active_advisers_data: Dictionary = {}
+var sovereign_gems_count: int = 500
 
 var is_processing: bool = false
 var resend_cooldown_timer: float = 0.0
@@ -147,6 +150,30 @@ var resend_cooldown_timer: float = 0.0
 @onready var btn_change_selections: Button = $PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnChangeSelections
 @onready var btn_proceed_phase4: Button = $PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnProceedPhase4
 
+# Phase 4 Advisers Nodes
+@onready var advisers_panel: Control = $PanelContainer/VBox/ScreenAdvisers
+@onready var lbl_advisers_title: Label = $PanelContainer/VBox/ScreenAdvisers/LblTitle
+@onready var lbl_general_guidance: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox/LblGuidance
+@onready var lbl_general_recs: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox/LblRecommendations
+@onready var lbl_press_headline: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox/LblHeadline
+@onready var lbl_press_summary: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox/LblSummary
+@onready var lbl_special_gems: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/HBoxSpecialHeader/LblGems
+@onready var btn_unlock_slot2: Button = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox/HBox/BtnUnlockSlot2
+@onready var lbl_slot2_title: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox/HBox/Title
+@onready var lbl_slot2_desc: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox/Desc
+@onready var btn_unlock_slot3: Button = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox/HBox/BtnUnlockSlot3
+@onready var lbl_slot3_title: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox/HBox/Title
+@onready var lbl_slot3_desc: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox/Desc
+@onready var btn_unlock_slot4: Button = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox/HBox/BtnUnlockSlot4
+@onready var lbl_slot4_title: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox/HBox/Title
+@onready var lbl_slot4_desc: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox/Desc
+@onready var btn_unlock_slot5: Button = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox/HBox/BtnUnlockSlot5
+@onready var lbl_slot5_title: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox/HBox/Title
+@onready var lbl_slot5_desc: Label = $PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox/Desc
+@onready var lbl_advisers_feedback: Label = $PanelContainer/VBox/ScreenAdvisers/LblAdvisersFeedback
+@onready var btn_back_to_summary: Button = $PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions/BtnBackToSummary
+@onready var btn_confirm_advisers: Button = $PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions/BtnConfirmAdvisers
+
 func _ready() -> void:
 	_init_controls()
 	_connect_signals()
@@ -244,6 +271,28 @@ func _init_controls() -> void:
 	if btn_verify_phase3_reload == null: btn_verify_phase3_reload = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnVerifyPhase3Reload")
 	if btn_change_selections == null: btn_change_selections = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnChangeSelections")
 	if btn_proceed_phase4 == null: btn_proceed_phase4 = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary/HBoxActions/BtnProceedPhase4")
+	if advisers_panel == null: advisers_panel = get_node_or_null("PanelContainer/VBox/ScreenAdvisers")
+	if lbl_advisers_title == null: lbl_advisers_title = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/LblTitle")
+	if lbl_general_guidance == null: lbl_general_guidance = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox/LblGuidance")
+	if lbl_general_recs == null: lbl_general_recs = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardGeneralAdviser/VBox/LblRecommendations")
+	if lbl_press_headline == null: lbl_press_headline = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox/LblHeadline")
+	if lbl_press_summary == null: lbl_press_summary = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardPressSecretary/VBox/LblSummary")
+	if lbl_special_gems == null: lbl_special_gems = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/HBoxSpecialHeader/LblGems")
+	if btn_unlock_slot2 == null: btn_unlock_slot2 = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox/HBox/BtnUnlockSlot2")
+	if lbl_slot2_title == null: lbl_slot2_title = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox/HBox/Title")
+	if lbl_slot2_desc == null: lbl_slot2_desc = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot2/VBox/Desc")
+	if btn_unlock_slot3 == null: btn_unlock_slot3 = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox/HBox/BtnUnlockSlot3")
+	if lbl_slot3_title == null: lbl_slot3_title = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox/HBox/Title")
+	if lbl_slot3_desc == null: lbl_slot3_desc = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot3/VBox/Desc")
+	if btn_unlock_slot4 == null: btn_unlock_slot4 = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox/HBox/BtnUnlockSlot4")
+	if lbl_slot4_title == null: lbl_slot4_title = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox/HBox/Title")
+	if lbl_slot4_desc == null: lbl_slot4_desc = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot4/VBox/Desc")
+	if btn_unlock_slot5 == null: btn_unlock_slot5 = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox/HBox/BtnUnlockSlot5")
+	if lbl_slot5_title == null: lbl_slot5_title = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox/HBox/Title")
+	if lbl_slot5_desc == null: lbl_slot5_desc = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/ScrollAdvisers/AdvisersBox/CardSlot5/VBox/Desc")
+	if lbl_advisers_feedback == null: lbl_advisers_feedback = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/LblAdvisersFeedback")
+	if btn_back_to_summary == null: btn_back_to_summary = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions/BtnBackToSummary")
+	if btn_confirm_advisers == null: btn_confirm_advisers = get_node_or_null("PanelContainer/VBox/ScreenAdvisers/HBoxAdvisersActions/BtnConfirmAdvisers")
 
 func _process(delta: float) -> void:
 	if resend_cooldown_timer > 0.0:
@@ -275,6 +324,20 @@ func _connect_signals() -> void:
 		btn_resume_session.pressed.connect(_on_resume_session_pressed)
 	if btn_change_selections and not btn_change_selections.pressed.is_connected(_on_change_selections_pressed):
 		btn_change_selections.pressed.connect(_on_change_selections_pressed)
+	if btn_proceed_phase4 and not btn_proceed_phase4.pressed.is_connected(_on_proceed_phase4_pressed):
+		btn_proceed_phase4.pressed.connect(_on_proceed_phase4_pressed)
+	if btn_back_to_summary and not btn_back_to_summary.pressed.is_connected(_on_back_to_summary_pressed):
+		btn_back_to_summary.pressed.connect(_on_back_to_summary_pressed)
+	if btn_confirm_advisers and not btn_confirm_advisers.pressed.is_connected(_on_confirm_advisers_pressed):
+		btn_confirm_advisers.pressed.connect(_on_confirm_advisers_pressed)
+	if btn_unlock_slot2 and not btn_unlock_slot2.pressed.is_connected(_on_unlock_slot2_pressed):
+		btn_unlock_slot2.pressed.connect(_on_unlock_slot2_pressed)
+	if btn_unlock_slot3 and not btn_unlock_slot3.pressed.is_connected(_on_unlock_slot3_pressed):
+		btn_unlock_slot3.pressed.connect(_on_unlock_slot3_pressed)
+	if btn_unlock_slot4 and not btn_unlock_slot4.pressed.is_connected(_on_unlock_slot4_pressed):
+		btn_unlock_slot4.pressed.connect(_on_unlock_slot4_pressed)
+	if btn_unlock_slot5 and not btn_unlock_slot5.pressed.is_connected(_on_unlock_slot5_pressed):
+		btn_unlock_slot5.pressed.connect(_on_unlock_slot5_pressed)
 	if btn_proceed_leadership and not btn_proceed_leadership.pressed.is_connected(_on_proceed_leadership_pressed):
 		btn_proceed_leadership.pressed.connect(_on_proceed_leadership_pressed)
 
@@ -357,6 +420,7 @@ func _show_stage(stage: ScreenStage) -> void:
 	if leadership_panel: leadership_panel.visible = (stage == ScreenStage.LEADERSHIP)
 	if plans_panel: plans_panel.visible = (stage == ScreenStage.DEVELOPMENT_PLANS)
 	if summary_panel: summary_panel.visible = (stage == ScreenStage.PHASE3_SUMMARY)
+	if advisers_panel: advisers_panel.visible = (stage == ScreenStage.ADVISERS)
 
 	var stage_name := "Register"
 	match stage:
@@ -368,6 +432,7 @@ func _show_stage(stage: ScreenStage) -> void:
 		ScreenStage.LEADERSHIP: stage_name = "Leadership"
 		ScreenStage.DEVELOPMENT_PLANS: stage_name = "DevelopmentPlans"
 		ScreenStage.PHASE3_SUMMARY: stage_name = "Phase3Summary"
+		ScreenStage.ADVISERS: stage_name = "Advisers"
 
 	onboarding_step_changed.emit(stage_name)
 
@@ -864,3 +929,168 @@ func _submit_request_and_wait(req: Dictionary) -> Dictionary:
 			return parsed
 
 	return { "success": false, "result": "Timeout", "message": "Simulation did not respond with result file." }
+
+
+# ==============================================================================
+# Step 9: Presidential Advisory Council (Phase 4)
+# ==============================================================================
+func _on_proceed_phase4_pressed() -> void:
+	var file := FileAccess.open(ProjectSettings.globalize_path(active_state_path), FileAccess.READ)
+	if file != null:
+		var txt := file.get_as_text()
+		file.close()
+		var parsed = JSON.parse_string(txt)
+		if parsed != null and typeof(parsed) == TYPE_DICTIONARY:
+			_populate_advisers_view(parsed)
+	_show_stage(ScreenStage.ADVISERS)
+
+func _on_back_to_summary_pressed() -> void:
+	_show_stage(ScreenStage.PHASE3_SUMMARY)
+
+func _populate_advisers_view(data: Dictionary) -> void:
+	active_advisers_data = data
+	sovereign_gems_count = int(data.get("sovereign_gems", 500))
+	if lbl_special_gems:
+		lbl_special_gems.text = "Sovereign Gems: %d 💎" % sovereign_gems_count
+
+	var gen_adv = data.get("general_adviser", {})
+	if typeof(gen_adv) == TYPE_DICTIONARY:
+		var guidance := str(gen_adv.get("strategic_guidance", ""))
+		if guidance.is_empty():
+			guidance = "As your General Adviser, I stand ready to assist your administration in balancing national priorities and preserving macroeconomic stability."
+		if lbl_general_guidance: lbl_general_guidance.text = guidance
+
+		var recs = gen_adv.get("recommendations", [])
+		if typeof(recs) == TYPE_ARRAY and recs.size() > 0:
+			var formatted_recs: Array[String] = []
+			for r in recs:
+				formatted_recs.append("• " + str(r))
+			if lbl_general_recs: lbl_general_recs.text = "\n".join(formatted_recs)
+
+	var press = data.get("press_secretary", {})
+	if typeof(press) == TYPE_DICTIONARY:
+		var headline := str(press.get("briefing_headline", "Administration Advances National Strategic Priorities"))
+		var summary := str(press.get("briefing_summary", "Official press briefing confirming readiness for national governance."))
+		if lbl_press_headline: lbl_press_headline.text = headline
+		if lbl_press_summary: lbl_press_summary.text = summary
+
+	var slots = data.get("special_advisers", [])
+	if typeof(slots) == TYPE_ARRAY:
+		for s in slots:
+			if typeof(s) == TYPE_DICTIONARY:
+				var s_num := int(s.get("slot_number", 0))
+				var s_status := int(s.get("status", 1))
+				var is_active := (s_status == 0)
+				var portfolio := str(s.get("portfolio", ""))
+				var adv_name := str(s.get("adviser_name", ""))
+				var advice := str(s.get("advice", ""))
+				var req_text := str(s.get("unlock_requirement", ""))
+
+				match s_num:
+					2:
+						if is_active:
+							if lbl_slot2_title: lbl_slot2_title.text = "%s — %s [ACTIVE]" % [adv_name, portfolio]
+							if lbl_slot2_desc: lbl_slot2_desc.text = "Advice: %s" % advice
+							if btn_unlock_slot2:
+								btn_unlock_slot2.text = "Unlocked ✓"
+								btn_unlock_slot2.disabled = true
+						else:
+							if lbl_slot2_title: lbl_slot2_title.text = "%s (Slot 2)" % portfolio
+							if lbl_slot2_desc: lbl_slot2_desc.text = "Status: Vacant (Position Locked) • Requirement: %s" % req_text
+							if btn_unlock_slot2:
+								btn_unlock_slot2.text = "Unlock (500 Gems)"
+								btn_unlock_slot2.disabled = (sovereign_gems_count < 500)
+					3:
+						if is_active:
+							if lbl_slot3_title: lbl_slot3_title.text = "%s — %s [ACTIVE]" % [adv_name, portfolio]
+							if lbl_slot3_desc: lbl_slot3_desc.text = "Advice: %s" % advice
+							if btn_unlock_slot3:
+								btn_unlock_slot3.text = "Unlocked ✓"
+								btn_unlock_slot3.disabled = true
+						else:
+							if lbl_slot3_title: lbl_slot3_title.text = "%s (Slot 3)" % portfolio
+							if lbl_slot3_desc: lbl_slot3_desc.text = "Status: Vacant (Position Locked) • Requirement: %s" % req_text
+							if btn_unlock_slot3:
+								btn_unlock_slot3.text = "Unlock (1,000 Gems)"
+								btn_unlock_slot3.disabled = (sovereign_gems_count < 1000)
+					4:
+						if is_active:
+							if lbl_slot4_title: lbl_slot4_title.text = "%s — %s [ACTIVE]" % [adv_name, portfolio]
+							if lbl_slot4_desc: lbl_slot4_desc.text = "Advice: %s" % advice
+							if btn_unlock_slot4:
+								btn_unlock_slot4.text = "Unlocked ✓"
+								btn_unlock_slot4.disabled = true
+						else:
+							if lbl_slot4_title: lbl_slot4_title.text = "%s (Slot 4)" % portfolio
+							if lbl_slot4_desc: lbl_slot4_desc.text = "Status: Vacant (Position Locked) • Requirement: %s" % req_text
+							if btn_unlock_slot4:
+								btn_unlock_slot4.text = "Unlock (1,500 Gems)"
+								btn_unlock_slot4.disabled = (sovereign_gems_count < 1500)
+					5:
+						if is_active:
+							if lbl_slot5_title: lbl_slot5_title.text = "%s — %s [ACTIVE]" % [adv_name, portfolio]
+							if lbl_slot5_desc: lbl_slot5_desc.text = "Advice: %s" % advice
+							if btn_unlock_slot5:
+								btn_unlock_slot5.text = "Unlocked ✓"
+								btn_unlock_slot5.disabled = true
+						else:
+							if lbl_slot5_title: lbl_slot5_title.text = "%s (Slot 5)" % portfolio
+							if lbl_slot5_desc: lbl_slot5_desc.text = "Status: Vacant (Position Locked) • Requirement: %s" % req_text
+							if btn_unlock_slot5:
+								btn_unlock_slot5.text = "Unlock (2,500 Gems)"
+								btn_unlock_slot5.disabled = (sovereign_gems_count < 2500)
+
+func _on_unlock_slot2_pressed() -> void: _unlock_slot(2)
+func _on_unlock_slot3_pressed() -> void: _unlock_slot(3)
+func _on_unlock_slot4_pressed() -> void: _unlock_slot(4)
+func _on_unlock_slot5_pressed() -> void: _unlock_slot(5)
+
+func _unlock_slot(slot_num: int) -> void:
+	if is_processing: return
+	is_processing = true
+	if lbl_advisers_feedback: lbl_advisers_feedback.text = "Unlocking Special Adviser Slot %d..." % slot_num
+
+	var req := {
+		"action": "unlock_special_adviser",
+		"slot_number": slot_num,
+		"unlock_method": "gems",
+		"request_id": "onboarding_unlock_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+
+	if res.get("success", false) and res.get("result", "") == "Success":
+		if lbl_advisers_feedback:
+			lbl_advisers_feedback.text = str(res.get("message", "Slot unlocked successfully!"))
+			lbl_advisers_feedback.modulate = Color(0.4, 1.0, 0.4)
+		_populate_advisers_view(res)
+	else:
+		if lbl_advisers_feedback:
+			lbl_advisers_feedback.text = str(res.get("message", "Failed to unlock Special Adviser slot."))
+			lbl_advisers_feedback.modulate = Color(1.0, 0.4, 0.4)
+
+func _on_confirm_advisers_pressed() -> void:
+	if is_processing: return
+	is_processing = true
+	if btn_confirm_advisers: btn_confirm_advisers.disabled = true
+	if lbl_advisers_feedback: lbl_advisers_feedback.text = "Inducting Presidential Advisory Council..."
+
+	var req := {
+		"action": "introduce_advisers",
+		"request_id": "onboarding_adv_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+	if btn_confirm_advisers: btn_confirm_advisers.disabled = false
+
+	if res.get("success", false) and res.get("result", "") == "Success":
+		if lbl_advisers_feedback:
+			lbl_advisers_feedback.text = "Presidential Advisory Council Inducted! Entering Campaign Headquarters..."
+			lbl_advisers_feedback.modulate = Color(0.4, 1.0, 0.4)
+		onboarding_completed.emit(res)
+	else:
+		if lbl_advisers_feedback:
+			lbl_advisers_feedback.text = str(res.get("message", "Failed to induct Advisory Council."))
+			lbl_advisers_feedback.modulate = Color(1.0, 0.4, 0.4)

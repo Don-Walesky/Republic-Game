@@ -9,6 +9,8 @@ using Republic.Core.Economy.PrivateSector.Services;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Government.Officials.Services;
+using Republic.Core.Government.Advisers.Models;
+using Republic.Core.Government.Advisers.Services;
 using System.Linq;
 using Republic.Core.Identity.Models;
 using Republic.Core.Media.Models;
@@ -601,6 +603,30 @@ public sealed record PresidentialDeskSnapshot
 
     [JsonPropertyName("strategic_opportunities")]
     public IReadOnlyList<StrategicOpportunity> StrategicOpportunities { get; init; } = Array.Empty<StrategicOpportunity>();
+
+    /// <summary>
+    /// Gets the President's General Adviser (Principal Strategic Guide).
+    /// </summary>
+    [JsonPropertyName("general_adviser")]
+    public GeneralAdviser GeneralAdviser { get; init; } = new();
+
+    /// <summary>
+    /// Gets the Presidential Press Secretary (Media & Communications).
+    /// </summary>
+    [JsonPropertyName("press_secretary")]
+    public PresidentialPressSecretary PressSecretary { get; init; } = new();
+
+    /// <summary>
+    /// Gets the 5 Special Adviser slots (Slot 1 active, Slots 2-5 locked).
+    /// </summary>
+    [JsonPropertyName("special_advisers")]
+    public IReadOnlyList<SpecialAdviserSlot> SpecialAdvisers { get; init; } = Array.Empty<SpecialAdviserSlot>();
+
+    /// <summary>
+    /// Gets the sovereign gems available for unlocking special adviser positions and buffs.
+    /// </summary>
+    [JsonPropertyName("sovereign_gems")]
+    public int SovereignGems { get; init; } = 500;
 
     [JsonPropertyName("is_registered")]
     public bool IsRegistered { get; init; } = true;
@@ -1312,6 +1338,8 @@ public sealed record PresidentialDeskSnapshot
         string pressSummary = country.MediaReports.FirstOrDefault(r => !r.IsSuppressed)?.ArticleSummary ?? "The Presidential Administration affirmed today's focus on fiscal stabilization, infrastructure expansion, and regional diplomatic stability.";
         var foreignNames = allWorldCountries.Where(c => c.Id != country.Id).Select(c => c.Name).ToList();
 
+        AdviserService.SynchronizeAdvisers(country);
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -1441,6 +1469,10 @@ public sealed record PresidentialDeskSnapshot
             SelectedDevelopmentPlanNames = selectedPlanNames.AsReadOnly(),
             StartingObjectives = country.StartingObjectives != null ? country.StartingObjectives.ToList().AsReadOnly() : Array.Empty<NationalObjective>(),
             StrategicOpportunities = country.Opportunities != null ? country.Opportunities.ToList().AsReadOnly() : Array.Empty<StrategicOpportunity>(),
+            GeneralAdviser = country.GeneralAdviser ?? new GeneralAdviser(),
+            PressSecretary = country.PressSecretary ?? new PresidentialPressSecretary(),
+            SpecialAdvisers = country.SpecialAdvisers != null ? country.SpecialAdvisers.ToList().AsReadOnly() : SpecialAdviserSlot.CreateDefaultRoster().AsReadOnly(),
+            SovereignGems = country.SovereignGems,
 
             LastAiDecision = resolvedAiDecision
         };

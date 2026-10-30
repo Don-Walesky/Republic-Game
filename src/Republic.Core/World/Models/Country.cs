@@ -6,6 +6,7 @@ using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.PrivateSector.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
+using Republic.Core.Government.Advisers.Models;
 using Republic.Core.Government.Officials.Models;
 using Republic.Core.Identity.Models;
 using Republic.Core.Media.Models;
@@ -1926,6 +1927,30 @@ public sealed class Country
     /// </summary>
     [JsonPropertyName("opportunities")]
     public List<StrategicOpportunity> Opportunities { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the President's General Adviser (Principal Strategic Guide).
+    /// </summary>
+    [JsonPropertyName("general_adviser")]
+    public GeneralAdviser GeneralAdviser { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the Presidential Press Secretary (Media & Communications).
+    /// </summary>
+    [JsonPropertyName("press_secretary")]
+    public PresidentialPressSecretary PressSecretary { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the 5 Special Adviser slots (Slot 1 active, Slots 2-5 locked).
+    /// </summary>
+    [JsonPropertyName("special_advisers")]
+    public List<SpecialAdviserSlot> SpecialAdvisers { get; set; } = SpecialAdviserSlot.CreateDefaultRoster();
+
+    /// <summary>
+    /// Gets or sets the sovereign gems available for unlocking special adviser positions and premium buffs.
+    /// </summary>
+    [JsonPropertyName("sovereign_gems")]
+    public int SovereignGems { get; set; } = 500;
 
     /// <summary>
     /// Gets or sets the base military progression level before operational bonuses (1 to 30).
