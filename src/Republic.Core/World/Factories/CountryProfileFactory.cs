@@ -134,9 +134,79 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
     }
 
     /// <inheritdoc />
+    public CountryProfile CreateProfile(string officialName, int seed, RepublicTime foundingTime = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(officialName);
+        var validatedName = _countryNameRule.Validate(officialName.Trim());
+
+        var rng = new Random(seed);
+        var capital = Capitals[rng.Next(Capitals.Length)];
+        var region = (CountryRegion)rng.Next(0, 5);
+        var population = (long)rng.Next(1_500_000, 65_000_000);
+        var language = Languages[rng.Next(Languages.Length)];
+        var govForm = (GovernmentForm)rng.Next(0, 4);
+        var constitution = Constitutions[rng.Next(Constitutions.Length)];
+        var resource = Resources[rng.Next(Resources.Length)];
+        var culture = PoliticalCultures[rng.Next(PoliticalCultures.Length)];
+
+        return new CountryProfile(
+            officialName: validatedName,
+            capital: capital,
+            region: region,
+            population: population,
+            dominantLanguage: language,
+            governmentForm: govForm,
+            constitutionName: constitution,
+            primaryResource: resource,
+            politicalCulture: culture,
+            foundingTime: foundingTime);
+    }
+
+    /// <inheritdoc />
     public Country CreateCountry(int seed, RepublicTime foundingTime = default, string? id = null, double startingTreasury = 1_000_000.0)
     {
         var profile = CreateProfile(seed, foundingTime);
+        var countryId = id ?? $"country-{seed:x8}";
+
+        var inventory = new ResourceInventory();
+        if (!string.IsNullOrWhiteSpace(profile.PrimaryResource) && profile.PrimaryResource != CountryProfile.DefaultUnspecified)
+        {
+            inventory.Add(profile.PrimaryResource, 1_000.0);
+        }
+
+        var country = Country.Found(
+            name: profile.OfficialName,
+            foundingTime: foundingTime,
+            id: countryId,
+            capitalCity: profile.Capital,
+            governmentType: profile.GovernmentForm.ToString(),
+            treasury: new RepuTreasury(startingTreasury, countryId),
+            profile: profile,
+            inventory: inventory);
+
+        if (!string.IsNullOrWhiteSpace(profile.PrimaryResource) && profile.PrimaryResource != CountryProfile.DefaultUnspecified)
+        {
+            var primaryNode = new ResourceNode
+            {
+                Id = $"node-{countryId}-primary",
+                Name = $"{profile.OfficialName} {profile.PrimaryResource} Reserve",
+                ResourceType = profile.PrimaryResource,
+                Abundance = 25000.0,
+                ExtractionRate = ResourceNode.DefaultProductionRate,
+                IsRenewable = false,
+                CountryId = countryId,
+                IsActive = true
+            };
+            country.AssociateResourceNode(primaryNode);
+        }
+
+        return country;
+    }
+
+    /// <inheritdoc />
+    public Country CreateCountry(string officialName, int seed, RepublicTime foundingTime = default, string? id = null, double startingTreasury = 1_000_000.0)
+    {
+        var profile = CreateProfile(officialName, seed, foundingTime);
         var countryId = id ?? $"country-{seed:x8}";
 
         var inventory = new ResourceInventory();

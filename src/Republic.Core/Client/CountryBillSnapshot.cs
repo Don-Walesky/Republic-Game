@@ -55,3 +55,4 @@ public sealed record CountryBillSnapshot
     [JsonPropertyName("voted_boundary")]
     public string? VotedBoundary { get; init; }
 }
+

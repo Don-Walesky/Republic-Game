@@ -1,5 +1,8 @@
 namespace Republic.Core.Persistence.Models;
 
+using System;
+using System.Collections.Generic;
+using Republic.Core.Identity.Models;
 using Republic.Core.Narrative.Models;
 using Republic.Core.Tasks.Models;
 using Republic.Core.World;
@@ -18,4 +21,6 @@ public sealed class FullGameState
     public NarrativeSnapshot Narrative { get; set; } = new();
     public List<ScheduledTask> ActiveTasks { get; set; } = new();
     public List<ScheduledTask> CompletedTasks { get; set; } = new();
+    public PlayerAccount? Account { get; set; }
+    public OnboardingStep OnboardingStep { get; set; } = OnboardingStep.NotStarted;
 }

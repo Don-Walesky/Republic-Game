@@ -34,3 +34,4 @@ public sealed record EmailSnapshot
     [JsonPropertyName("action_required")]
     public bool ActionRequired { get; init; }
 }
+

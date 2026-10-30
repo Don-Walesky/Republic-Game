@@ -73,3 +73,4 @@ public sealed class NationalRefineryProject : DevelopmentProject
         country.Yield.IndustrialCapacity = Math.Max(0.0, country.Yield.IndustrialCapacity + IndustrialCapacityBonus);
     }
 }
+

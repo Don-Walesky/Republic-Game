@@ -28,3 +28,4 @@ public sealed record MilitaryActionSnapshot
     [JsonPropertyName("message")]
     public string Message { get; init; } = string.Empty;
 }
+

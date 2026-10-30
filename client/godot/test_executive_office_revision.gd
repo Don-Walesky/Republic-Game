@@ -319,3 +319,4 @@ func test_legislature_5050_consequence_engine(office: Control) -> bool:
 
 	print("  [OK]: 50:50 Consequence Engine and trade-off educational transparency verified.")
 	return true
+

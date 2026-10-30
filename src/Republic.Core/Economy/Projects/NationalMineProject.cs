@@ -73,3 +73,4 @@ public sealed class NationalMineProject : DevelopmentProject
         country.Yield.InfrastructureCapacity = Math.Max(0.0, country.Yield.InfrastructureCapacity + InfrastructureCapacityBonus);
     }
 }
+

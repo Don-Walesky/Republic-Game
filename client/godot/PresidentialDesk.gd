@@ -1697,6 +1697,106 @@ func execute_tax_decision(proposed_rate_percent: float, confirmed: bool) -> Dict
 	}
 
 
+
+
+## Submits an account registration request
+func execute_register_account(first_name: String, last_name: String, email: String, dob: String) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_reg_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "register_account",
+		"first_name": first_name,
+		"last_name": last_name,
+		"email": email,
+		"date_of_birth": dob,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create request file: " + request_path
+		_active_request_id = ""
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	var submit_msg := "Account registration request submitted. Awaiting simulation..."
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Registration request written", "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
+
+## Submits an email verification token request
+func execute_verify_email(token: String) -> Dictionary:
+	_user_is_adjusting = false
+	if _is_waiting_for_decision:
+		return {
+			"success": false,
+			"result": "Pending",
+			"message": "A decision request is already being processed. Please wait."
+		}
+
+	var state_path := _resolve_state_path()
+	var request_path := _resolve_request_path(state_path)
+	var stale_result_path := _resolve_result_path(state_path)
+	if FileAccess.file_exists(stale_result_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_result_path))
+
+	var req_id := "req_ver_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_active_request_id = req_id
+	var timestamp_str := Time.get_datetime_string_from_system()
+	var request_dict := {
+		"request_id": req_id,
+		"action": "verify_email",
+		"token": token,
+		"timestamp": timestamp_str,
+		"requested_at": timestamp_str
+	}
+
+	var req_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if req_file == null:
+		var err_msg := "Failed to create request file: " + request_path
+		_active_request_id = ""
+		return { "success": false, "result": "Error", "message": err_msg }
+
+	req_file.store_string(JSON.stringify(request_dict, "\t"))
+	req_file.close()
+
+	_pending_request_path = request_path
+	_is_waiting_for_decision = true
+	_request_wait_timer = 0.0
+
+	var submit_msg := "Email verification token submitted. Awaiting simulation..."
+	if status_label:
+		status_label.text = _format_status_text("Status: [Pending] Email verification request written", "Pending")
+
+	_try_run_cli_request_processor()
+	return { "success": true, "result": "Pending", "message": submit_msg }
+
 ## Submits a request to create/found a sovereign country
 func execute_create_country(c_name: String) -> Dictionary:
 	_user_is_adjusting = false
@@ -2728,12 +2828,20 @@ func _handle_decision_result(result_dict: Dictionary) -> void:
 				formatted_result = "Decision Result: [Rejected] Missing or Corrupted Save - " + message
 			"PersistenceFailure":
 				formatted_result = "Decision Result: [Rejected] Persistence Failure - " + message
+			"EmailNotVerified":
+				formatted_result = "Decision Result: [Rejected] Email Not Verified - " + message
+			"DuplicateCountryCreation":
+				formatted_result = "Decision Result: [Rejected] Duplicate Country - " + message
+			"ValidationFailed":
+				formatted_result = "Decision Result: [Rejected] Validation Failed - " + message
+			"InvalidVerificationToken":
+				formatted_result = "Decision Result: [Rejected] Invalid Token - " + message
 			_:
 				formatted_result = "Decision Result: [Rejected] Rejected - " + message
 
 		if decision_result_label:
 			decision_result_label.text = formatted_result
-		if country_setup_status_label and (result_type == "InvalidName" or result_type == "InvalidInput"):
+		if country_setup_status_label and (result_type == "InvalidName" or result_type == "InvalidInput" or result_type == "EmailNotVerified" or result_type == "DuplicateCountryCreation" or result_type == "ValidationFailed"):
 			country_setup_status_label.text = "Founder Status: [Rejected] " + message
 		if project_status_label and (result_type == "Cancelled" or result_type == "InvalidInput" or result_type == "StateMissingOrCorrupt"):
 			project_status_label.text = "Project Status: [Rejected] " + message

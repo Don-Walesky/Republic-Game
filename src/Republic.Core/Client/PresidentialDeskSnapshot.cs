@@ -579,6 +579,36 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("target_countries")]
     public IReadOnlyList<string> TargetCountries { get; init; } = Array.Empty<string>();
 
+    [JsonPropertyName("onboarding_step")]
+    public string OnboardingStep { get; init; } = "InOffice";
+
+    [JsonPropertyName("is_registered")]
+    public bool IsRegistered { get; init; } = true;
+
+    [JsonPropertyName("is_email_verified")]
+    public bool IsEmailVerified { get; init; } = true;
+
+    [JsonPropertyName("player_display_name")]
+    public string PlayerDisplayName { get; init; } = string.Empty;
+
+    [JsonPropertyName("capital_city")]
+    public string CapitalCity { get; init; } = string.Empty;
+
+    [JsonPropertyName("geography")]
+    public string Geography { get; init; } = string.Empty;
+
+    [JsonPropertyName("demographics")]
+    public string Demographics { get; init; } = string.Empty;
+
+    [JsonPropertyName("political_culture")]
+    public string PoliticalCulture { get; init; } = string.Empty;
+
+    [JsonPropertyName("constitution")]
+    public string Constitution { get; init; } = string.Empty;
+
+    [JsonPropertyName("primary_resource")]
+    public string PrimaryResource { get; init; } = string.Empty;
+
     /// <summary>
     /// Factory helper to build a <see cref="PresidentialDeskSnapshot"/> from live simulation state.
     /// Reuses existing core models and services without duplicating domain rules.
@@ -595,7 +625,35 @@ public sealed record PresidentialDeskSnapshot
     {
         ArgumentNullException.ThrowIfNull(country);
 
-        var dashboard = country.GetDashboard(simulationTime);
+        var dashboard = country.GetDashboard(simulationTime);
+
+        string onboardingStep = "InOffice";
+        bool isRegistered = true;
+        bool isEmailVerified = true;
+        string playerDisplayName = string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(saveFilePath) && File.Exists(saveFilePath))
+        {
+            try
+            {
+                var envelope = PresidentialDeskBridge.LoadAuthoritativeState(saveFilePath);
+                if (envelope?.State != null)
+                {
+                    onboardingStep = envelope.State.OnboardingStep.ToString();
+                    if (envelope.State.Account != null)
+                    {
+                        isRegistered = true;
+                        isEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified;
+                        playerDisplayName = envelope.State.Account.GetPublicIdentity();
+                    }
+                }
+            }
+            catch
+            {
+                // keep defaults
+            }
+        }
+
 
         var rulingPartyName = country.RulingParty?.Name;
         if (string.IsNullOrWhiteSpace(rulingPartyName))
@@ -1282,7 +1340,17 @@ public sealed record PresidentialDeskSnapshot
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
             SimulationTick = simulationTick,
-            SaveFilePath = saveFilePath ?? string.Empty,
+            SaveFilePath = saveFilePath ?? string.Empty,
+            OnboardingStep = onboardingStep,
+            IsRegistered = isRegistered,
+            IsEmailVerified = isEmailVerified,
+            PlayerDisplayName = playerDisplayName,
+            CapitalCity = country.CapitalCity,
+            Geography = country.Profile?.Region.ToString() ?? "Temperate Coast",
+            Demographics = country.Profile != null ? $"{country.Profile.Population:N0} citizens ({country.Profile.DominantLanguage})" : string.Empty,
+            PoliticalCulture = country.Profile?.PoliticalCulture ?? string.Empty,
+            Constitution = country.Profile?.ConstitutionName ?? "National Democratic Constitution",
+            PrimaryResource = country.Profile?.PrimaryResource ?? "Mineral Reserves",
             LastAiDecision = resolvedAiDecision
         };
     }

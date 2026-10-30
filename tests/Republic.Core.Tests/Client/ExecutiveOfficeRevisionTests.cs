@@ -151,3 +151,4 @@ public sealed class ExecutiveOfficeRevisionTests
         Assert.True(snapshot.MilitaryPersonnel > 0);
     }
 }
+

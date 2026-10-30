@@ -15,7 +15,17 @@ public interface ICountryProfileFactory
     CountryProfile CreateProfile(int seed, RepublicTime foundingTime = default);
 
     /// <summary>
+    /// Generates a deterministic sovereign country profile with a custom official name validated against country naming rules.
+    /// </summary>
+    CountryProfile CreateProfile(string officialName, int seed, RepublicTime foundingTime = default);
+
+    /// <summary>
     /// Generates a fully initialized sovereign country with an attached deterministic profile.
     /// </summary>
     Country CreateCountry(int seed, RepublicTime foundingTime = default, string? id = null, double startingTreasury = 1_000_000.0);
+
+    /// <summary>
+    /// Generates a fully initialized sovereign country with a custom validated official name and attached deterministic profile.
+    /// </summary>
+    Country CreateCountry(string officialName, int seed, RepublicTime foundingTime = default, string? id = null, double startingTreasury = 1_000_000.0);
 }
