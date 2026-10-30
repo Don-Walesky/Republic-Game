@@ -34,10 +34,21 @@ public sealed class PlayerPersonalIdentity
     [JsonPropertyName("verification_token")]
     public string? VerificationToken { get; set; }
 
+    [JsonPropertyName("verification_token_expires_at_utc")]
+    public DateTimeOffset? VerificationTokenExpiresAtUtc { get; set; }
+
+    [JsonPropertyName("is_token_used")]
+    public bool IsTokenUsed { get; set; }
+
+    [JsonPropertyName("last_verification_request_utc")]
+    public DateTimeOffset? LastVerificationRequestUtc { get; set; }
+
+    [JsonPropertyName("pending_verification_email")]
+    public VerificationEmail? PendingVerificationEmail { get; set; }
+
     [JsonPropertyName("created_at_utc")]
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
     [JsonPropertyName("verified_at_utc")]
     public DateTimeOffset? VerifiedAtUtc { get; set; }
 }
-

@@ -1,0 +1,400 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8t5k3v2m7q1r"]
+
+[ext_resource type="Script" path="res://Onboarding.gd" id="1_onboarding_script"]
+
+[node name="Onboarding" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_onboarding_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.07, 0.12, 1)
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -480.0
+offset_top = -320.0
+offset_right = 480.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="VBoxContainer" parent="PanelContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 26
+text = "REPUBLIC — SOVEREIGN ONBOARDING"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="PanelContainer/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 14
+text = "Electoral Registry & Sovereign Founding Commission"
+horizontal_alignment = 1
+
+[node name="ScreenRegister" type="VBoxContainer" parent="PanelContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Instructions" type="Label" parent="PanelContainer/VBox/ScreenRegister"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Register candidate account credentials. Personal data is isolated and protected."
+horizontal_alignment = 1
+
+[node name="Form" type="VBoxContainer" parent="PanelContainer/VBox/ScreenRegister"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblFirst" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+text = "First Name:"
+
+[node name="FirstNameInput" type="LineEdit" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+placeholder_text = "Enter first name"
+
+[node name="LblLast" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+text = "Last Name:"
+
+[node name="LastNameInput" type="LineEdit" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+placeholder_text = "Enter last name"
+
+[node name="LblEmail" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+text = "Email Address:"
+
+[node name="EmailInput" type="LineEdit" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+placeholder_text = "Enter email address"
+
+[node name="LblDOB" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+text = "Date of Birth (Minimum age: 13):"
+
+[node name="HBoxDOB" type="HBoxContainer" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="YearLabel" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form/HBoxDOB"]
+layout_mode = 2
+text = "Year:"
+
+[node name="YearSpin" type="SpinBox" parent="PanelContainer/VBox/ScreenRegister/Form/HBoxDOB"]
+layout_mode = 2
+min_value = 1900.0
+max_value = 2027.0
+value = 1995.0
+
+[node name="MonthLabel" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form/HBoxDOB"]
+layout_mode = 2
+text = "Month:"
+
+[node name="MonthSpin" type="SpinBox" parent="PanelContainer/VBox/ScreenRegister/Form/HBoxDOB"]
+layout_mode = 2
+min_value = 1.0
+max_value = 12.0
+value = 6.0
+
+[node name="DayLabel" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form/HBoxDOB"]
+layout_mode = 2
+text = "Day:"
+
+[node name="DaySpin" type="SpinBox" parent="PanelContainer/VBox/ScreenRegister/Form/HBoxDOB"]
+layout_mode = 2
+min_value = 1.0
+max_value = 31.0
+value = 15.0
+
+[node name="BtnRegister" type="Button" parent="PanelContainer/VBox/ScreenRegister"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+text = "Register Executive Candidate"
+
+[node name="LblFeedback" type="Label" parent="PanelContainer/VBox/ScreenRegister"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+
+[node name="ScreenVerify" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Instructions" type="Label" parent="PanelContainer/VBox/ScreenVerify"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Official email verification is required before establishing a sovereign country."
+horizontal_alignment = 1
+
+[node name="CardEmail" type="PanelContainer" parent="PanelContainer/VBox/ScreenVerify"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenVerify/CardEmail"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblSender" type="Label" parent="PanelContainer/VBox/ScreenVerify/CardEmail"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "From: Republic Sovereign Electoral & National Registration Commission"
+
+[node name="LblRecipient" type="Label" parent="PanelContainer/VBox/ScreenVerify/CardEmail"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "To: candidate@republic.net"
+
+[node name="LblSubject" type="Label" parent="PanelContainer/VBox/ScreenVerify/CardEmail"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 13
+text = "Subject: Official Verification: Confirm Your Republic Sovereign Account"
+
+[node name="LblBody" type="Label" parent="PanelContainer/VBox/ScreenVerify/CardEmail"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Welcome to Republic. Please verify your email using the button below or manual code."
+autowrap_mode = 2
+
+[node name="BtnVerifyEmailAction" type="Button" parent="PanelContainer/VBox/ScreenVerify/CardEmail"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+text = "Verify Email"
+
+[node name="ManualVerify" type="HBoxContainer" parent="PanelContainer/VBox/ScreenVerify"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TokenInput" type="LineEdit" parent="PanelContainer/VBox/ScreenVerify/ManualVerify"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter 6-digit verification code"
+max_length = 6
+
+[node name="BtnSubmitCode" type="Button" parent="PanelContainer/VBox/ScreenVerify/ManualVerify"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+text = "Submit Code"
+
+[node name="BtnResendEmail" type="Button" parent="PanelContainer/VBox/ScreenVerify"]
+layout_mode = 2
+text = "Resend Verification Email"
+
+[node name="LblFeedback" type="Label" parent="PanelContainer/VBox/ScreenVerify"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+
+[node name="ScreenCountryName" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Instructions" type="Label" parent="PanelContainer/VBox/ScreenCountryName"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Enter the sovereign name of your nation. Must contain the whole word 'Republic'."
+horizontal_alignment = 1
+
+[node name="InputCountryName" type="LineEdit" parent="PanelContainer/VBox/ScreenCountryName"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+placeholder_text = "e.g. Republic of Azuria"
+
+[node name="BtnReviewFounding" type="Button" parent="PanelContainer/VBox/ScreenCountryName"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
+text = "Review Sovereign Founding Charter"
+
+[node name="LblFeedback" type="Label" parent="PanelContainer/VBox/ScreenCountryName"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+
+[node name="ConfirmationModal" type="PanelContainer" parent="PanelContainer/VBox/ScreenCountryName"]
+visible = false
+layout_mode = 2
+
+[node name="Box" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCountryName/ConfirmationModal"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LblModalTitle" type="Label" parent="PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+text = "CONFIRM SOVEREIGN CHARTER RATIFICATION"
+horizontal_alignment = 1
+
+[node name="LblCountryPreview" type="Label" parent="PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box"]
+layout_mode = 2
+text = "Nation Name: Republic of Azuria"
+horizontal_alignment = 1
+
+[node name="LblTreatySpecs" type="Label" parent="PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "All leaders begin with identical standardized baseline metrics:\n• Sovereign Treasury: 50,000,000 REPU\n• Public Approval: 60.0%\n• National Stability: 70.0%\n• Baseline Population: 10,000,000 citizens\n• State Capacity: 70.0%"
+horizontal_alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BtnCancel" type="Button" parent="PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Edit Name"
+
+[node name="BtnConfirm" type="Button" parent="PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Confirm & Found Nation"
+
+[node name="ScreenGenerating" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LblStatus" type="Label" parent="PanelContainer/VBox/ScreenGenerating"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 18
+text = "Ratifying sovereign charter with Global Registry..."
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="PanelContainer/VBox/ScreenGenerating"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 24)
+value = 45.0
+
+[node name="ScreenConfirmed" type="VBoxContainer" parent="PanelContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="LblTitle" type="Label" parent="PanelContainer/VBox/ScreenConfirmed"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 20
+text = "SOVEREIGN NATION ESTABLISHED"
+horizontal_alignment = 1
+
+[node name="Grid" type="GridContainer" parent="PanelContainer/VBox/ScreenConfirmed"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 6
+
+[node name="LblCountry" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Official Nation:"
+
+[node name="LblCountryVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+text = "Republic of Azuria"
+
+[node name="LblCapital" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Capital City:"
+
+[node name="LblCapitalVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Solaria Prime"
+
+[node name="LblPop" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Population:"
+
+[node name="LblPopVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "10,000,000 citizens"
+
+[node name="LblTreasury" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Sovereign Treasury:"
+
+[node name="LblTreasuryVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "R 50,000,000 REPU"
+
+[node name="LblApproval" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Public Approval:"
+
+[node name="LblApprovalVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "60.0%"
+
+[node name="LblStability" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "National Stability:"
+
+[node name="LblStabilityVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "70.0%"
+
+[node name="LblLeader" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Head of State:"
+
+[node name="LblLeaderVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Elena Okafor"
+
+[node name="LblConstitution" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Constitution:"
+
+[node name="LblConstitutionVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "National Democratic Constitution"
+
+[node name="LblResource" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Primary Resource:"
+
+[node name="LblResourceVal" type="Label" parent="PanelContainer/VBox/ScreenConfirmed/Grid"]
+layout_mode = 2
+text = "Strategic Minerals"
+
+[node name="StatusPhase2" type="Label" parent="PanelContainer/VBox/ScreenConfirmed"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "Phase 2 Complete. Onboarding progress saved persistently. Awaiting Phase 3 (Leadership Identity Selection)."
+horizontal_alignment = 1
+
+[node name="BtnResumeSession" type="Button" parent="PanelContainer/VBox/ScreenConfirmed"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Verify Saved Progress & Reload"

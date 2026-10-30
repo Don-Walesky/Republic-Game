@@ -95,6 +95,12 @@ public sealed class PlayerIdentityServiceTests
         Assert.NotNull(account.PersonalIdentity.VerificationToken);
         Assert.Equal(6, account.PersonalIdentity.VerificationToken.Length);
         Assert.True(int.TryParse(account.PersonalIdentity.VerificationToken, out _));
+
+        // Verifies official drafted email dispatch
+        Assert.NotNull(account.PersonalIdentity.PendingVerificationEmail);
+        Assert.Equal("marcus@republic.org", account.PersonalIdentity.PendingVerificationEmail.RecipientEmail);
+        Assert.Equal("Verify Email", account.PersonalIdentity.PendingVerificationEmail.ButtonText);
+        Assert.Contains("Marcus Sterling", account.PersonalIdentity.PendingVerificationEmail.Body);
     }
 
     [Fact]
@@ -110,6 +116,8 @@ public sealed class PlayerIdentityServiceTests
         Assert.True(account.PersonalIdentity.IsEmailVerified);
         Assert.Equal(OnboardingStep.EmailVerified, account.CurrentStep);
         Assert.NotNull(account.PersonalIdentity.VerifiedAtUtc);
+        Assert.Null(account.PersonalIdentity.VerificationToken); // Single-use: cleared
+        Assert.True(account.PersonalIdentity.IsTokenUsed);
         Assert.Contains("verified successfully", message);
     }
 
@@ -128,17 +136,70 @@ public sealed class PlayerIdentityServiceTests
     }
 
     [Fact]
-    public void VerifyEmail_AlreadyVerified_ReturnsTrueWithoutError()
+    public void VerifyEmail_ExpiredToken_IsRejected()
     {
         var dob = new DateOnly(1995, 8, 24);
         var account = _service.RegisterAccount("Elena", "Vance", "elena@republic.org", dob, ReferenceDate);
         var token = account.PersonalIdentity.VerificationToken!;
-        _service.VerifyEmail(account, token);
 
-        var (success, message) = _service.VerifyEmail(account, token);
+        // Simulate verification attempt 25 hours later (exceeding 24h lifetime)
+        var expiredTime = DateTimeOffset.UtcNow.AddHours(25);
+        var (success, message) = _service.VerifyEmail(account, token, expiredTime);
 
-        Assert.True(success);
-        Assert.Equal("Email is already verified.", message);
+        Assert.False(success);
+        Assert.False(account.PersonalIdentity.IsEmailVerified);
+        Assert.Contains("expired", message);
+    }
+
+    [Fact]
+    public void VerifyEmail_ReusedToken_IsRejected()
+    {
+        var dob = new DateOnly(1995, 8, 24);
+        var account = _service.RegisterAccount("Elena", "Vance", "elena@republic.org", dob, ReferenceDate);
+        var token = account.PersonalIdentity.VerificationToken!;
+
+        // First verification succeeds
+        var (success1, _) = _service.VerifyEmail(account, token);
+        Assert.True(success1);
+
+        // Reset verification flag to simulate malicious re-verification replay
+        account.PersonalIdentity.IsEmailVerified = false;
+        var (success2, message) = _service.VerifyEmail(account, token);
+
+        Assert.False(success2);
+        Assert.Contains("already been used", message);
+    }
+
+    [Fact]
+    public void ResendVerificationEmail_EnforcesRateLimitCooldown()
+    {
+        var dob = new DateOnly(1995, 8, 24);
+        var account = _service.RegisterAccount("Elena", "Vance", "elena@republic.org", dob, ReferenceDate);
+        var initialToken = account.PersonalIdentity.VerificationToken;
+
+        // Immediate resend attempt (within 10s cooldown) -> Rejected
+        var (resendSuccess1, resendMsg1, _) = _service.ResendVerificationEmail(account, DateTimeOffset.UtcNow);
+        Assert.False(resendSuccess1);
+        Assert.Contains("wait", resendMsg1);
+
+        // Resend after cooldown elapsed (e.g. 15s later) -> Succeeds with new token
+        var (resendSuccess2, resendMsg2, newEmail) = _service.ResendVerificationEmail(account, DateTimeOffset.UtcNow.AddSeconds(15));
+        Assert.True(resendSuccess2);
+        Assert.NotNull(newEmail);
+        Assert.NotEqual(initialToken, account.PersonalIdentity.VerificationToken);
+        Assert.Equal("Verify Email", newEmail.ButtonText);
+    }
+
+    [Theory]
+    [InlineData("Republic of Azuria", true)]
+    [InlineData("Democratic Republic of Oakhaven", true)]
+    [InlineData("Azuria", false)] // Missing "Republic"
+    [InlineData("Rep", false)] // Too short (<4 chars)
+    [InlineData("Republic of <Script>Alert</Script>", false)] // Invalid characters
+    public void ValidateCountryName_EnforcesRules(string countryName, bool expectedValid)
+    {
+        var (isValid, _) = _service.ValidateCountryName(countryName);
+        Assert.Equal(expectedValid, isValid);
     }
 
     [Fact]
@@ -155,4 +216,3 @@ public sealed class PlayerIdentityServiceTests
         Assert.Equal("SecretFirst SecretLast", publicId);
     }
 }
-

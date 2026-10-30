@@ -4,20 +4,29 @@ using System;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Republic.Core.Identity.Models;
+using Republic.Core.World.Rules;
 
 /// <summary>
 /// Authoritative implementation of player registration, age-eligibility validation,
-/// and email verification token management.
+/// verification email generation, and email verification token management.
 /// </summary>
 public sealed class PlayerIdentityService : IPlayerIdentityService
 {
     public const int MinimumAgeYears = 13;
     public const int MaximumAgeYears = 125;
+    public static readonly TimeSpan VerificationTokenLifetime = TimeSpan.FromHours(24);
+    public static readonly TimeSpan ResendCooldown = TimeSpan.FromSeconds(10);
 
     // Strict standard RFC-compatible email pattern
     private static readonly Regex EmailRegex = new(
         @"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$",
         RegexOptions.Compiled | RegexOptions.IgnoreCase,
+        TimeSpan.FromMilliseconds(250));
+
+    // Permitted country name characters: letters, spaces, hyphens, apostrophes, commas, periods
+    private static readonly Regex PermittedCountryNameRegex = new(
+        @"^[a-zA-Z0-9\s\-',.]+$",
+        RegexOptions.Compiled,
         TimeSpan.FromMilliseconds(250));
 
     /// <inheritdoc />
@@ -90,6 +99,38 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
     }
 
     /// <inheritdoc />
+    public (bool IsValid, string Message) ValidateCountryName(string countryName)
+    {
+        if (string.IsNullOrWhiteSpace(countryName))
+        {
+            return (false, "Country name is required.");
+        }
+
+        var trimmed = countryName.Trim();
+        if (trimmed.Length < 4)
+        {
+            return (false, "Country name must be at least 4 characters.");
+        }
+
+        if (trimmed.Length > 60)
+        {
+            return (false, "Country name must not exceed 60 characters.");
+        }
+
+        if (!PermittedCountryNameRegex.IsMatch(trimmed))
+        {
+            return (false, "Country name contains invalid characters. Use letters, numbers, spaces, hyphens, and apostrophes.");
+        }
+
+        if (!CountryNameRule.Default.IsValid(trimmed))
+        {
+            return (false, "Country name must contain the whole word 'Republic'.");
+        }
+
+        return (true, "Country name is valid.");
+    }
+
+    /// <inheritdoc />
     public PlayerAccount RegisterAccount(
         string firstName,
         string lastName,
@@ -104,6 +145,7 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
             throw new ArgumentException($"Registration validation failed: {message}");
         }
 
+        var now = DateTimeOffset.UtcNow;
         var token = GenerateVerificationToken();
         var accountId = customAccountId ?? $"acc_{Guid.NewGuid():N}";
         var cleanFirst = firstName.Trim();
@@ -118,17 +160,97 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
             DateOfBirth = dateOfBirth,
             IsEmailVerified = false,
             VerificationToken = token,
-            CreatedAtUtc = DateTimeOffset.UtcNow
+            VerificationTokenExpiresAtUtc = now.Add(VerificationTokenLifetime),
+            IsTokenUsed = false,
+            LastVerificationRequestUtc = now,
+            CreatedAtUtc = now
         };
 
-        return new PlayerAccount
+        var account = new PlayerAccount
         {
             AccountId = accountId,
             DisplayName = $"{cleanFirst} {cleanLast}",
             CurrentStep = OnboardingStep.AccountRegistered,
             PersonalIdentity = identity,
-            LastLoginUtc = DateTimeOffset.UtcNow
+            LastLoginUtc = now
         };
+
+        var verificationEmail = DraftVerificationEmail(account, token, now);
+        identity.PendingVerificationEmail = verificationEmail;
+
+        return account;
+    }
+
+    /// <inheritdoc />
+    public VerificationEmail DraftVerificationEmail(
+        PlayerAccount account,
+        string? token = null,
+        DateTimeOffset? now = null)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+
+        var sentAt = now ?? DateTimeOffset.UtcNow;
+        var code = token ?? account.PersonalIdentity.VerificationToken ?? GenerateVerificationToken();
+        var expiresAt = sentAt.Add(VerificationTokenLifetime);
+        var fullName = $"{account.PersonalIdentity.FirstName} {account.PersonalIdentity.LastName}".Trim();
+
+        var body =
+            $"Greetings {fullName},\n\n" +
+            $"Welcome to Republic. Your executive account has been registered to this email address ({account.PersonalIdentity.EmailAddress}).\n\n" +
+            $"To finalize your credentials and proceed to founding your sovereign nation, please verify your email address.\n\n" +
+            $"Your 6-digit verification security code is: {code}\n" +
+            $"This code is valid for 24 hours and is single-use only.\n\n" +
+            $"You may also click the 'Verify Email' button in your console to complete verification immediately.\n\n" +
+            $"If you did not initiate this sovereign registration, please disregard this dispatch.\n\n" +
+            $"— Republic Sovereign Electoral & National Registration Commission";
+
+        return new VerificationEmail
+        {
+            RecipientEmail = account.PersonalIdentity.EmailAddress,
+            RecipientName = fullName,
+            Subject = "Official Verification: Confirm Your Republic Sovereign Account",
+            VerificationCode = code,
+            ButtonText = "Verify Email",
+            Body = body,
+            SentAtUtc = sentAt,
+            ExpiresAtUtc = expiresAt,
+            IsUsed = false
+        };
+    }
+
+    /// <inheritdoc />
+    public (bool Success, string Message, VerificationEmail? Email) ResendVerificationEmail(
+        PlayerAccount account,
+        DateTimeOffset? now = null)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+
+        if (account.PersonalIdentity.IsEmailVerified)
+        {
+            return (false, "Email address is already verified.", null);
+        }
+
+        var currentTime = now ?? DateTimeOffset.UtcNow;
+        if (account.PersonalIdentity.LastVerificationRequestUtc.HasValue)
+        {
+            var elapsed = currentTime - account.PersonalIdentity.LastVerificationRequestUtc.Value;
+            if (elapsed < ResendCooldown)
+            {
+                var remaining = (int)Math.Ceiling((ResendCooldown - elapsed).TotalSeconds);
+                return (false, $"Please wait {remaining} seconds before requesting another verification email.", null);
+            }
+        }
+
+        var token = GenerateVerificationToken();
+        account.PersonalIdentity.VerificationToken = token;
+        account.PersonalIdentity.VerificationTokenExpiresAtUtc = currentTime.Add(VerificationTokenLifetime);
+        account.PersonalIdentity.IsTokenUsed = false;
+        account.PersonalIdentity.LastVerificationRequestUtc = currentTime;
+
+        var email = DraftVerificationEmail(account, token, currentTime);
+        account.PersonalIdentity.PendingVerificationEmail = email;
+
+        return (true, "A new verification email has been dispatched.", email);
     }
 
     /// <inheritdoc />
@@ -149,6 +271,19 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
             return (false, "Verification token is required.");
         }
 
+        var refTime = verificationTime ?? DateTimeOffset.UtcNow;
+
+        if (account.PersonalIdentity.IsTokenUsed)
+        {
+            return (false, "Verification token has already been used. Please request a new verification code.");
+        }
+
+        if (account.PersonalIdentity.VerificationTokenExpiresAtUtc.HasValue &&
+            refTime > account.PersonalIdentity.VerificationTokenExpiresAtUtc.Value)
+        {
+            return (false, "Verification token has expired. Please request a new verification code.");
+        }
+
         var expected = account.PersonalIdentity.VerificationToken?.Trim();
         var actual = verificationToken.Trim();
 
@@ -158,7 +293,14 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
         }
 
         account.PersonalIdentity.IsEmailVerified = true;
-        account.PersonalIdentity.VerifiedAtUtc = verificationTime ?? DateTimeOffset.UtcNow;
+        account.PersonalIdentity.VerifiedAtUtc = refTime;
+        account.PersonalIdentity.IsTokenUsed = true;
+        account.PersonalIdentity.VerificationToken = null; // Single-use: cleared on successful verification
+
+        if (account.PersonalIdentity.PendingVerificationEmail != null)
+        {
+            account.PersonalIdentity.PendingVerificationEmail = account.PersonalIdentity.PendingVerificationEmail with { IsUsed = true };
+        }
 
         if (account.CurrentStep == OnboardingStep.AccountRegistered)
         {
@@ -176,4 +318,3 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
         return code.ToString("D6");
     }
 }
-

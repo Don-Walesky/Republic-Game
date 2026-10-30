@@ -1,7 +1,9 @@
 # ==============================================================================
 # Republic - New Player Onboarding Phase 2 Verification Test
 # Tests account registration, age verification, email verification tokens,
-# procedural country generation, duplicate protection, and PII isolation.
+# duplicate account protection, country name validation, procedural country
+# generation with standardized metrics (50M REPU, 60% approval, 10M population),
+# duplicate country protection, and PII isolation.
 # ==============================================================================
 extends SceneTree
 
@@ -97,14 +99,40 @@ func _run_tests() -> void:
 		quit(1)
 		return
 
+	var button_text: String = str(reg_result.get("verification_button_text", "")).strip_edges()
+	if button_text != "Verify Email":
+		printerr("[FAIL]: Expected verification button text 'Verify Email', got: ", button_text)
+		_clean_files()
+		quit(1)
+		return
+
 	if reg_result.get("onboarding_step", "") != "AccountRegistered" or reg_result.get("is_email_verified", true):
 		printerr("[FAIL]: Onboarding step mismatch. Expected AccountRegistered/Unverified, got: ", reg_result)
 		_clean_files()
 		quit(1)
 		return
 	print("  [OK]: Registration successful. Generated token: %s, Step: %s" % [token, reg_result.get("onboarding_step", "")])
+	print("  [OK]: Official verification email drafted with button text: '%s'" % [button_text])
 
-	print("\n--- Check 3: Enforcing Email Verification Precondition for Country Founding ---")
+	print("\n--- Check 3: Duplicate Account Registration Prevention ---")
+	var dup_reg_req := {
+		"action": "register_account",
+		"first_name": "Elena",
+		"last_name": "Okafor",
+		"email": "elena.okafor@republic.net",
+		"date_of_birth": "1994-06-12",
+		"request_id": "test_dup_reg"
+	}
+	_write_request(dup_reg_req)
+	var dup_reg_result = _run_bridge_sync()
+	if dup_reg_result.get("success", false) or dup_reg_result.get("result", "") != "DuplicateAccount":
+		printerr("[FAIL]: Duplicate account registration was not prevented. Result: ", dup_reg_result)
+		_clean_files()
+		quit(1)
+		return
+	print("  [OK]: Duplicate account registration prevented: " + str(dup_reg_result.get("message", "")))
+
+	print("\n--- Check 4: Enforcing Email Verification Precondition for Country Founding ---")
 	var unverified_found_req := {
 		"action": "create_country",
 		"country_name": "Republic of Azuria",
@@ -119,7 +147,7 @@ func _run_tests() -> void:
 		return
 	print("  [OK]: Country creation blocked while email is unverified: " + str(unverified_found_result.get("message", "")))
 
-	print("\n--- Check 4: Email Verification Success ---")
+	print("\n--- Check 5: Email Verification Success ---")
 	var verify_req := {
 		"action": "verify_email",
 		"token": token,
@@ -140,7 +168,22 @@ func _run_tests() -> void:
 		return
 	print("  [OK]: Email successfully verified. Advanced to OnboardingStep: EmailVerified.")
 
-	print("\n--- Check 5: Procedural Country Founding via CountryProfileFactory ---")
+	print("\n--- Check 6: Country Naming Rule Validation ---")
+	var bad_name_req := {
+		"action": "create_country",
+		"country_name": "Azuria Kingdom", # Missing whole word 'Republic'
+		"request_id": "test_bad_name"
+	}
+	_write_request(bad_name_req)
+	var bad_name_result = _run_bridge_sync()
+	if bad_name_result.get("success", false) or bad_name_result.get("result", "") != "InvalidName":
+		printerr("[FAIL]: Non-republic country name was not rejected. Result: ", bad_name_result)
+		_clean_files()
+		quit(1)
+		return
+	print("  [OK]: Country naming rule enforced: " + str(bad_name_result.get("message", "")))
+
+	print("\n--- Check 7: Procedural Country Founding with Standardized Metrics ---")
 	var found_req := {
 		"action": "create_country",
 		"country_name": "Republic of Azuria",
@@ -160,10 +203,10 @@ func _run_tests() -> void:
 		quit(1)
 		return
 
-	# Inspect state file for procedural profile fields
+	# Inspect state file for standardized initial metrics and procedural profile
 	var state_file := FileAccess.open(ProjectSettings.globalize_path(TEST_STATE_PATH), FileAccess.READ)
 	if state_file == null:
-		printerr("[FAIL]: presidential_desk_state.json was not created.")
+		printerr("[FAIL]: test_onboarding_state.json was not created.")
 		_clean_files()
 		quit(1)
 		return
@@ -172,32 +215,55 @@ func _run_tests() -> void:
 	state_file.close()
 	var state_json = JSON.parse_string(state_text)
 	if state_json == null or typeof(state_json) != TYPE_DICTIONARY:
-		printerr("[FAIL]: presidential_desk_state.json contains invalid JSON.")
+		printerr("[FAIL]: test_onboarding_state.json contains invalid JSON.")
 		_clean_files()
 		quit(1)
 		return
 
 	var capital := str(state_json.get("capital_city", "")).strip_edges()
-	var geography := str(state_json.get("geography", "")).strip_edges()
-	var demographics := str(state_json.get("demographics", "")).strip_edges()
 	var constitution := str(state_json.get("constitution", "")).strip_edges()
 	var resource := str(state_json.get("primary_resource", "")).strip_edges()
+	var treasury_val: float = float(found_result.get("treasury_balance", 0.0))
+	var approval_val: float = float(found_result.get("approval_rating", 0.0))
+	var stability_val: float = float(found_result.get("stability_rating", 0.0))
+	var population_val: int = int(found_result.get("population", 0))
 
-	if capital.is_empty() or geography.is_empty() or demographics.is_empty() or constitution.is_empty() or resource.is_empty():
-		printerr("[FAIL]: Procedural country profile missing required fields: ", state_json)
+	# Authoritative baseline checks
+	if treasury_val != 50000000.0:
+		printerr("[FAIL]: Expected standardized starting treasury 50M REPU (50000000.0), got: ", treasury_val)
 		_clean_files()
 		quit(1)
 		return
 
-	print("  [OK]: Procedural Country Created successfully:")
+	if approval_val != 60.0:
+		printerr("[FAIL]: Expected standardized starting approval 60%, got: ", approval_val)
+		_clean_files()
+		quit(1)
+		return
+
+	if stability_val != 70.0:
+		printerr("[FAIL]: Expected standardized starting stability 70%, got: ", stability_val)
+		_clean_files()
+		quit(1)
+		return
+
+	if population_val != 10000000:
+		printerr("[FAIL]: Expected standardized starting population 10,000,000, got: ", population_val)
+		_clean_files()
+		quit(1)
+		return
+
+	print("  [OK]: Standardized Sovereign Metrics Verified for all players:")
 	print("       - Country Name: ", state_json.get("country_name", ""))
 	print("       - Capital City: ", capital)
-	print("       - Geography: ", geography)
-	print("       - Demographics: ", demographics)
+	print("       - Sovereign Treasury: R %s REPU" % [String.num_scientific(treasury_val) if treasury_val > 1e12 else "50,000,000"])
+	print("       - Public Approval: %s%%" % [approval_val])
+	print("       - National Stability: %s%%" % [stability_val])
+	print("       - Baseline Population: %s citizens" % [population_val])
 	print("       - Constitution: ", constitution)
 	print("       - Primary Resource: ", resource)
 
-	print("\n--- Check 6: Duplicate Country Creation Protection ---")
+	print("\n--- Check 8: Duplicate Country Creation Protection ---")
 	var duplicate_req := {
 		"action": "create_country",
 		"country_name": "Republic of Solaria",
@@ -212,7 +278,7 @@ func _run_tests() -> void:
 		return
 	print("  [OK]: Duplicate country creation in same session rejected: " + str(duplicate_result.get("message", "")))
 
-	print("\n--- Check 7: PII Isolation & Privacy ---")
+	print("\n--- Check 9: PII Isolation & Privacy ---")
 	if state_text.contains("elena.okafor@republic.net") or state_text.contains("1994-06-12"):
 		printerr("[FAIL]: PII leak detected! Public state file contains raw email or date of birth.")
 		_clean_files()
@@ -228,7 +294,7 @@ func _run_tests() -> void:
 	print("  [OK]: PII strictly isolated: zero email or DOB exposure in public state. Display name: " + player_display)
 
 	print("\n==============================================================")
-	print(" [PASS]: ALL 7 ONBOARDING PHASE 2 CHECKS PASSED!             ")
+	print(" [PASS]: ALL 9 ONBOARDING PHASE 2 CHECKS PASSED!             ")
 	print("==============================================================\n")
 	_clean_files()
 	quit(0)

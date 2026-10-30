@@ -21,6 +21,9 @@ public sealed class PlayerAccount
     [JsonPropertyName("personal_identity")]
     public PlayerPersonalIdentity PersonalIdentity { get; set; } = new();
 
+    [JsonPropertyName("owned_country_id")]
+    public string? OwnedCountryId { get; set; }
+
     [JsonPropertyName("last_login_utc")]
     public DateTimeOffset LastLoginUtc { get; set; } = DateTimeOffset.UtcNow;
 

@@ -12,6 +12,16 @@ using Republic.Core.World.Rules;
 /// </summary>
 public sealed class CountryProfileFactory : ICountryProfileFactory
 {
+    public const double StandardStartingTreasury = 50_000_000.0;
+    public const double StandardStartingApproval = 60.0;
+    public const long StandardStartingPopulation = 10_000_000L;
+    public const double StandardStartingStability = 70.0;
+    public const double StandardStartingStateCapacity = 0.70;
+    public const double StandardStartingIncomeTaxRate = 0.25;
+    public const double StandardStartingCorporateTaxRate = 0.20;
+    public const double StandardStartingImportTariffRate = 0.10;
+    public const double StandardStartingCitizenWelfare = 65.0;
+
     private readonly ICountryNameRule _countryNameRule;
 
     /// <summary>
@@ -134,7 +144,7 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
     }
 
     /// <inheritdoc />
-    public CountryProfile CreateProfile(string officialName, int seed, RepublicTime foundingTime = default)
+    public CountryProfile CreateProfile(string officialName, int seed, RepublicTime foundingTime = default, long? startingPopulation = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(officialName);
         var validatedName = _countryNameRule.Validate(officialName.Trim());
@@ -142,7 +152,7 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
         var rng = new Random(seed);
         var capital = Capitals[rng.Next(Capitals.Length)];
         var region = (CountryRegion)rng.Next(0, 5);
-        var population = (long)rng.Next(1_500_000, 65_000_000);
+        var population = startingPopulation ?? StandardStartingPopulation;
         var language = Languages[rng.Next(Languages.Length)];
         var govForm = (GovernmentForm)rng.Next(0, 4);
         var constitution = Constitutions[rng.Next(Constitutions.Length)];
@@ -204,9 +214,9 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
     }
 
     /// <inheritdoc />
-    public Country CreateCountry(string officialName, int seed, RepublicTime foundingTime = default, string? id = null, double startingTreasury = 1_000_000.0)
+    public Country CreateCountry(string officialName, int seed, RepublicTime foundingTime = default, string? id = null, double startingTreasury = StandardStartingTreasury, long? startingPopulation = null)
     {
-        var profile = CreateProfile(officialName, seed, foundingTime);
+        var profile = CreateProfile(officialName, seed, foundingTime, startingPopulation ?? StandardStartingPopulation);
         var countryId = id ?? $"country-{seed:x8}";
 
         var inventory = new ResourceInventory();
@@ -224,6 +234,20 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
             treasury: new RepuTreasury(startingTreasury, countryId),
             profile: profile,
             inventory: inventory);
+
+        // Apply authoritative standardized baseline metrics
+        country.HappinessRating = StandardStartingApproval;
+        country.BaselineStability = StandardStartingStability;
+        if (country.StateCapacity != null)
+        {
+            country.StateCapacity.GovernmentEffectiveness = StandardStartingStateCapacity;
+            country.StateCapacity.AdministrativeCompetence = StandardStartingStateCapacity;
+            country.StateCapacity.CivilServiceQuality = StandardStartingStateCapacity;
+            country.StateCapacity.CorruptionControl = StandardStartingStateCapacity;
+        }
+        country.TaxPolicy.IncomeTaxRate = StandardStartingIncomeTaxRate;
+        country.TaxPolicy.CorporateTaxRate = StandardStartingCorporateTaxRate;
+        country.TaxPolicy.ImportTariffRate = StandardStartingImportTariffRate;
 
         if (!string.IsNullOrWhiteSpace(profile.PrimaryResource) && profile.PrimaryResource != CountryProfile.DefaultUnspecified)
         {

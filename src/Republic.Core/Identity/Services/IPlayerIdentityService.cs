@@ -22,6 +22,7 @@ public interface IPlayerIdentityService
 
     /// <summary>
     /// Registers a new player account with unverified email status and advances the onboarding state to AccountRegistered.
+    /// Generates the initial verification token and drafts the official verification email dispatch.
     /// </summary>
     PlayerAccount RegisterAccount(
         string firstName,
@@ -33,6 +34,7 @@ public interface IPlayerIdentityService
 
     /// <summary>
     /// Verifies the player's email address using a verification token.
+    /// Rejects expired or already used tokens.
     /// On success, advances the onboarding state to EmailVerified.
     /// </summary>
     (bool Success, string Message) VerifyEmail(
@@ -41,8 +43,27 @@ public interface IPlayerIdentityService
         DateTimeOffset? verificationTime = null);
 
     /// <summary>
+    /// Requests and issues a new single-use verification email dispatch with rate-limit protection.
+    /// </summary>
+    (bool Success, string Message, VerificationEmail? Email) ResendVerificationEmail(
+        PlayerAccount account,
+        DateTimeOffset? now = null);
+
+    /// <summary>
+    /// Drafts the authoritative verification email content with sender, recipient, token, and interactive button text.
+    /// </summary>
+    VerificationEmail DraftVerificationEmail(
+        PlayerAccount account,
+        string? token = null,
+        DateTimeOffset? now = null);
+
+    /// <summary>
+    /// Validates prospective country name length, permitted characters, and sovereign syntax.
+    /// </summary>
+    (bool IsValid, string Message) ValidateCountryName(string countryName);
+
+    /// <summary>
     /// Generates a secure, human-friendly 6-character alphanumeric verification token.
     /// </summary>
     string GenerateVerificationToken();
 }
-

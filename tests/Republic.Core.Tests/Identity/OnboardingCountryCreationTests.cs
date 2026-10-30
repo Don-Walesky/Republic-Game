@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using Republic.Core.Client;
 using Republic.Core.Identity.Models;
+using Republic.Core.World.Factories;
 using Xunit;
 
 public sealed class OnboardingCountryCreationTests : IDisposable
@@ -38,7 +39,7 @@ public sealed class OnboardingCountryCreationTests : IDisposable
     }
 
     [Fact]
-    public void FullOnboardingFlow_RegisterVerifyAndFound_SucceedsWithProceduralData()
+    public void FullOnboardingFlow_RegisterVerifyAndFound_SucceedsWithStandardizedMetricsAndOwnership()
     {
         var refDate = new DateOnly(2027, 2, 10);
 
@@ -58,8 +59,24 @@ public sealed class OnboardingCountryCreationTests : IDisposable
         Assert.Equal("AccountRegistered", regResult.OnboardingStep);
         Assert.False(regResult.IsEmailVerified);
         Assert.False(string.IsNullOrWhiteSpace(regResult.VerificationToken));
+        Assert.Equal("Verify Email", regResult.VerificationButtonText);
+        Assert.Contains("Elena Okafor", regResult.VerificationEmailBody);
 
-        // 2. Attempt Country Creation Before Verification -> Rejected
+        // 2. Prevent Duplicate Account Registration with Same Email
+        var dupResult = PresidentialDeskBridge.RegisterAccountDecision(
+            firstName: "Elena",
+            lastName: "Okafor",
+            email: "elena@republic.net",
+            dateOfBirthString: "1992-04-18",
+            stateFilePath: _statePath,
+            saveFilePath: _savePath,
+            requestId: "req_reg_dup",
+            referenceDate: refDate);
+
+        Assert.False(dupResult.Success);
+        Assert.Equal("DuplicateAccount", dupResult.Result);
+
+        // 3. Attempt Country Creation Before Verification -> Blocked
         var prematureResult = PresidentialDeskBridge.CreateOrLoadCountry(
             countryName: "Republic of Solaria",
             stateFilePath: _statePath,
@@ -70,7 +87,7 @@ public sealed class OnboardingCountryCreationTests : IDisposable
         Assert.Equal("EmailNotVerified", prematureResult.Result);
         Assert.Contains("Email verification must be completed", prematureResult.Message);
 
-        // 3. Verify Email with valid token
+        // 4. Verify Email with valid token
         var verifyResult = PresidentialDeskBridge.VerifyEmailDecision(
             token: regResult.VerificationToken,
             stateFilePath: _statePath,
@@ -82,7 +99,17 @@ public sealed class OnboardingCountryCreationTests : IDisposable
         Assert.Equal("EmailVerified", verifyResult.OnboardingStep);
         Assert.True(verifyResult.IsEmailVerified);
 
-        // 4. Country Creation After Verification -> Succeeds with procedural generation
+        // 5. Attempt Invalid Country Name (Missing 'Republic') -> Rejected
+        var invalidNameResult = PresidentialDeskBridge.CreateOrLoadCountry(
+            countryName: "Land of Nowhere",
+            stateFilePath: _statePath,
+            saveFilePath: _savePath,
+            requestId: "req_invalid_name");
+
+        Assert.False(invalidNameResult.Success);
+        Assert.Equal("InvalidName", invalidNameResult.Result);
+
+        // 6. Country Creation After Verification -> Succeeds with authoritative standardized metrics
         var foundResult = PresidentialDeskBridge.CreateOrLoadCountry(
             countryName: "Republic of Solaria",
             stateFilePath: _statePath,
@@ -93,8 +120,12 @@ public sealed class OnboardingCountryCreationTests : IDisposable
         Assert.Equal("Success", foundResult.Result);
         Assert.Equal("CountryCreated", foundResult.OnboardingStep);
         Assert.Equal("Republic of Solaria", foundResult.CountryName);
+        Assert.Equal(CountryProfileFactory.StandardStartingTreasury, foundResult.TreasuryBalance);
+        Assert.Equal(CountryProfileFactory.StandardStartingApproval, foundResult.ApprovalRating);
+        Assert.Equal(CountryProfileFactory.StandardStartingStability, foundResult.StabilityRating);
+        Assert.Equal(CountryProfileFactory.StandardStartingPopulation, foundResult.Population);
 
-        // 5. Verify authoritative persistent state has authentic procedural profile
+        // 7. Verify authoritative persistent state, player ownership link, and profile
         var envelope = PresidentialDeskBridge.LoadAuthoritativeState(_savePath);
         Assert.NotNull(envelope);
         Assert.NotNull(envelope.State);
@@ -104,30 +135,29 @@ public sealed class OnboardingCountryCreationTests : IDisposable
 
         var country = envelope.State.World.Countries[0];
         Assert.Equal("Republic of Solaria", country.Name);
+        Assert.Equal(country.Id, envelope.State.Account.OwnedCountryId);
         Assert.NotNull(country.Profile);
-        Assert.False(string.IsNullOrWhiteSpace(country.Profile.Capital));
-        Assert.False(string.IsNullOrWhiteSpace(country.Profile.ConstitutionName));
-        Assert.False(string.IsNullOrWhiteSpace(country.Profile.PoliticalCulture));
-        Assert.False(string.IsNullOrWhiteSpace(country.Profile.PrimaryResource));
-        Assert.True(country.Profile.Population >= 1_500_000);
-        Assert.Single(country.ResourceNodes);
+        Assert.Equal(CountryProfileFactory.StandardStartingPopulation, country.Profile.Population);
+        Assert.Equal(CountryProfileFactory.StandardStartingTreasury, country.Treasury.Balance);
+        Assert.Equal(CountryProfileFactory.StandardStartingApproval, country.HappinessRating);
+        Assert.Equal(CountryProfileFactory.StandardStartingStability, country.BaselineStability);
 
-        // 6. Attempt Duplicate Country Creation in Same Session -> Rejected
-        var duplicateResult = PresidentialDeskBridge.CreateOrLoadCountry(
+        // 8. Attempt Duplicate Country Creation in Same Session -> Prohibited
+        var duplicateFoundResult = PresidentialDeskBridge.CreateOrLoadCountry(
             countryName: "Republic of Azuria",
             stateFilePath: _statePath,
             saveFilePath: _savePath,
             requestId: "req_found_duplicate");
 
-        Assert.False(duplicateResult.Success);
-        Assert.Equal("DuplicateCountryCreation", duplicateResult.Result);
-        Assert.Contains("already been founded", duplicateResult.Message);
+        Assert.False(duplicateFoundResult.Success);
+        Assert.Equal("DuplicateCountryCreation", duplicateFoundResult.Result);
+        Assert.Contains("already been founded", duplicateFoundResult.Message);
     }
 
     [Fact]
-    public void ProcessPendingDecisionRequest_HandlesRegistrationAndVerificationRequests()
+    public void ProcessPendingDecisionRequest_HandlesRegistrationResendAndVerificationRequests()
     {
-        // Write registration request
+        // 1. Write registration request
         var regJson = """
         {
             "action": "register_account",
@@ -144,13 +174,13 @@ public sealed class OnboardingCountryCreationTests : IDisposable
         Assert.NotNull(regAction);
         Assert.True(regAction.Success);
         Assert.Equal("AccountRegistered", regAction.OnboardingStep);
-        var token = regAction.VerificationToken;
+        Assert.Equal("Verify Email", regAction.VerificationButtonText);
 
-        // Write verification request
+        // 2. Write verification request using the issued token
         var verJson = $$"""
         {
             "action": "verify_email",
-            "token": "{{token}}",
+            "token": "{{regAction.VerificationToken}}",
             "request_id": "req_ver_json"
         }
         """;
@@ -163,4 +193,3 @@ public sealed class OnboardingCountryCreationTests : IDisposable
         Assert.True(verAction.IsEmailVerified);
     }
 }
-

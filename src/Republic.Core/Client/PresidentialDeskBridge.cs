@@ -5,8 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Republic.Core.Identity.Models;
-using Republic.Core.Identity.Services;
+using Republic.Core.Identity.Models;
+
+using Republic.Core.Identity.Services;
+
 using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.PrivateSector.Services;
@@ -298,6 +300,11 @@ public static class PresidentialDeskBridge
                 {
                     fullState.Account.CurrentStep = OnboardingStep.CountryCreated;
                 }
+            }
+
+            if (fullState.Account != null && string.IsNullOrEmpty(fullState.Account.OwnedCountryId))
+            {
+                fullState.Account.OwnedCountryId = country.Id;
             }
 
             fullState.CurrentTick = simulationTick;
@@ -1408,14 +1415,16 @@ public static class PresidentialDeskBridge
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
 
-        if (string.IsNullOrWhiteSpace(countryName) || !CountryNameRule.Default.IsValid(countryName))
+        var nameIdentityService = new PlayerIdentityService();
+        var (isNameValid, nameValidationMsg) = nameIdentityService.ValidateCountryName(countryName);
+        if (!isNameValid)
         {
             var invalidNameResult = new PresidentialActionResult
             {
                 RequestId = requestId ?? string.Empty,
                 Success = false,
                 Result = "InvalidName",
-                Message = "Country name must contain the whole word 'Republic'.",
+                Message = nameValidationMsg,
                 CountryName = countryName ?? string.Empty
             };
             TryWriteResultFile(targetStatePath, invalidNameResult);
@@ -1480,20 +1489,28 @@ public static class PresidentialDeskBridge
         var simTime = new RepublicTime(launchEpoch, launchEpoch);
         var seed = Math.Abs(HashCode.Combine(countryName.Trim().ToUpperInvariant(), 1337));
 
-        // Procedural generation using authoritative CountryProfileFactory
+        // Procedural generation using authoritative CountryProfileFactory with standardized initial metrics
         var factory = new CountryProfileFactory();
         var country = factory.CreateCountry(
             officialName: countryName.Trim(),
             seed: seed,
             foundingTime: simTime,
             id: "player-country",
-            startingTreasury: 10_000_000_000.0);
+            startingTreasury: CountryProfileFactory.StandardStartingTreasury,
+            startingPopulation: CountryProfileFactory.StandardStartingPopulation);
 
-        country.HappinessRating = 70.0;
-        country.BaselineStability = 75.0;
-        country.TaxPolicy.IncomeTaxRate = 0.25;
-        country.TaxPolicy.CorporateTaxRate = 0.20;
-        country.TaxPolicy.ImportTariffRate = 0.10;
+        country.HappinessRating = CountryProfileFactory.StandardStartingApproval;
+        country.BaselineStability = CountryProfileFactory.StandardStartingStability;
+        if (country.StateCapacity != null)
+        {
+            country.StateCapacity.GovernmentEffectiveness = CountryProfileFactory.StandardStartingStateCapacity;
+            country.StateCapacity.AdministrativeCompetence = CountryProfileFactory.StandardStartingStateCapacity;
+            country.StateCapacity.CivilServiceQuality = CountryProfileFactory.StandardStartingStateCapacity;
+            country.StateCapacity.CorruptionControl = CountryProfileFactory.StandardStartingStateCapacity;
+        }
+        country.TaxPolicy.IncomeTaxRate = CountryProfileFactory.StandardStartingIncomeTaxRate;
+        country.TaxPolicy.CorporateTaxRate = CountryProfileFactory.StandardStartingCorporateTaxRate;
+        country.TaxPolicy.ImportTariffRate = CountryProfileFactory.StandardStartingImportTariffRate;
 
         // Establish inaugural democratic mandate: Ruling party and Opposition party
         country.FoundParty("Democratic Union", simTime, support: 55.0);
@@ -1509,6 +1526,7 @@ public static class PresidentialDeskBridge
             if (existingEnvelope.State.Account != null)
             {
                 existingEnvelope.State.Account.CurrentStep = OnboardingStep.CountryCreated;
+                existingEnvelope.State.Account.OwnedCountryId = country.Id;
             }
             existingEnvelope.State.OnboardingStep = OnboardingStep.CountryCreated;
         }
@@ -1523,6 +1541,10 @@ public static class PresidentialDeskBridge
             Result = "Success",
             Message = $"Successfully founded {country.Name}. Executive desk ready.",
             CountryName = country.Name,
+            CapitalCity = country.CapitalCity,
+            Population = country.Profile?.Population ?? CountryProfileFactory.StandardStartingPopulation,
+            PrimaryResource = country.Profile?.PrimaryResource ?? string.Empty,
+            ConstitutionName = country.Profile?.ConstitutionName ?? string.Empty,
             IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
             PreviousIncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
             ApprovalRating = country.HappinessRating,
@@ -1602,7 +1624,33 @@ public static class PresidentialDeskBridge
             }
         }
 
+        var cleanEmail = email.Trim().ToLowerInvariant();
+        if (envelope?.State?.Account != null &&
+            string.Equals(envelope.State.Account.PersonalIdentity.EmailAddress, cleanEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            var dupResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "DuplicateAccount",
+                Message = $"An account associated with '{cleanEmail}' already exists. Please verify your email or continue onboarding.",
+                IsRegistered = true,
+                IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+                OnboardingStep = envelope.State.OnboardingStep.ToString(),
+                PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+                VerificationToken = envelope.State.Account.PersonalIdentity.VerificationToken ?? string.Empty,
+                VerificationEmailSubject = envelope.State.Account.PersonalIdentity.PendingVerificationEmail?.Subject ?? string.Empty,
+                VerificationEmailBody = envelope.State.Account.PersonalIdentity.PendingVerificationEmail?.Body ?? string.Empty,
+                VerificationEmailSender = envelope.State.Account.PersonalIdentity.PendingVerificationEmail?.Sender ?? string.Empty,
+                VerificationEmailRecipient = envelope.State.Account.PersonalIdentity.PendingVerificationEmail?.RecipientEmail ?? cleanEmail,
+                VerificationButtonText = envelope.State.Account.PersonalIdentity.PendingVerificationEmail?.ButtonText ?? "Verify Email"
+            };
+            TryWriteResultFile(targetStatePath, dupResult);
+            return dupResult;
+        }
+
         var account = identityService.RegisterAccount(firstName, lastName, email, dob, referenceDate);
+        var pendingEmail = account.PersonalIdentity.PendingVerificationEmail;
 
         if (envelope?.State != null)
         {
@@ -1637,8 +1685,13 @@ public static class PresidentialDeskBridge
             RequestId = requestId ?? string.Empty,
             Success = true,
             Result = "Success",
-            Message = $"Account for {account.DisplayName} registered successfully. A verification code has been dispatched.",
+            Message = $"Account for {account.DisplayName} registered successfully. A verification code has been dispatched to {account.PersonalIdentity.EmailAddress}.",
             VerificationToken = account.PersonalIdentity.VerificationToken ?? string.Empty,
+            VerificationEmailSubject = pendingEmail?.Subject ?? string.Empty,
+            VerificationEmailBody = pendingEmail?.Body ?? string.Empty,
+            VerificationEmailSender = pendingEmail?.Sender ?? string.Empty,
+            VerificationEmailRecipient = pendingEmail?.RecipientEmail ?? account.PersonalIdentity.EmailAddress,
+            VerificationButtonText = pendingEmail?.ButtonText ?? "Verify Email",
             OnboardingStep = OnboardingStep.AccountRegistered.ToString(),
             IsRegistered = true,
             IsEmailVerified = false,
@@ -1725,6 +1778,84 @@ public static class PresidentialDeskBridge
 
         TryWriteResultFile(targetStatePath, successResult);
         return successResult;
+    }
+
+    /// <summary>
+    /// Dispatches a fresh verification email token to the registered account with rate-limit protection.
+    /// </summary>
+    public static PresidentialActionResult ResendVerificationEmailDecision(
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch { }
+        }
+
+        if (envelope?.State?.Account == null)
+        {
+            var noAcc = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AccountNotFound",
+                Message = "Cannot resend verification email: No registered account found in current session."
+            };
+            TryWriteResultFile(targetStatePath, noAcc);
+            return noAcc;
+        }
+
+        var identityService = new PlayerIdentityService();
+        var (success, msg, email) = identityService.ResendVerificationEmail(envelope.State.Account);
+        if (!success)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "ResendCooldown",
+                Message = msg,
+                IsRegistered = true,
+                IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+                OnboardingStep = envelope.State.OnboardingStep.ToString(),
+                PlayerDisplayName = envelope.State.Account.GetPublicIdentity()
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        var okResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = msg,
+            VerificationToken = envelope.State.Account.PersonalIdentity.VerificationToken ?? string.Empty,
+            VerificationEmailSubject = email?.Subject ?? string.Empty,
+            VerificationEmailBody = email?.Body ?? string.Empty,
+            VerificationEmailSender = email?.Sender ?? string.Empty,
+            VerificationEmailRecipient = email?.RecipientEmail ?? string.Empty,
+            VerificationButtonText = email?.ButtonText ?? "Verify Email",
+            OnboardingStep = envelope.State.OnboardingStep.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = false,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity()
+        };
+        TryWriteResultFile(targetStatePath, okResult);
+        return okResult;
     }
 
     /// <summary>
@@ -6181,88 +6312,182 @@ public static class PresidentialDeskBridge
                 if (!string.IsNullOrWhiteSpace(action))
                 {
                     var normalizedAction = action.Trim().ToLowerInvariant();
-                    if (normalizedAction is "register_account" or "register" or "account_registration")
-                    {
-                        string firstName = string.Empty;
-                        if (root.TryGetProperty("first_name", out var fnEl) && fnEl.ValueKind == JsonValueKind.String)
-                        {
-                            firstName = fnEl.GetString() ?? string.Empty;
-                        }
-
-                        string lastName = string.Empty;
-                        if (root.TryGetProperty("last_name", out var lnEl) && lnEl.ValueKind == JsonValueKind.String)
-                        {
-                            lastName = lnEl.GetString() ?? string.Empty;
-                        }
-
-                        string email = string.Empty;
-                        if (root.TryGetProperty("email", out var emEl) && emEl.ValueKind == JsonValueKind.String)
-                        {
-                            email = emEl.GetString() ?? string.Empty;
-                        }
-                        else if (root.TryGetProperty("email_address", out var emaEl) && emaEl.ValueKind == JsonValueKind.String)
-                        {
-                            email = emaEl.GetString() ?? string.Empty;
-                        }
-
-                        string dob = string.Empty;
-                        if (root.TryGetProperty("date_of_birth", out var dobEl) && dobEl.ValueKind == JsonValueKind.String)
-                        {
-                            dob = dobEl.GetString() ?? string.Empty;
-                        }
-                        else if (root.TryGetProperty("dob", out var dEl) && dEl.ValueKind == JsonValueKind.String)
-                        {
-                            dob = dEl.GetString() ?? string.Empty;
-                        }
-
-                        try
-                        {
-                            return RegisterAccountDecision(firstName, lastName, email, dob, targetStatePath, saveFilePath, requestId);
-                        }
-                        finally
-                        {
-                            TryDeleteFile(targetRequestPath);
-                        }
-                    }
-
-                    if (normalizedAction is "verify_email" or "verify_token" or "email_verification")
-                    {
-                        string token = string.Empty;
-                        if (root.TryGetProperty("token", out var tokEl) && tokEl.ValueKind == JsonValueKind.String)
-                        {
-                            token = tokEl.GetString() ?? string.Empty;
-                        }
-                        else if (root.TryGetProperty("code", out var codeEl) && codeEl.ValueKind == JsonValueKind.String)
-                        {
-                            token = codeEl.GetString() ?? string.Empty;
-                        }
-                        else if (root.TryGetProperty("verification_code", out var vcEl) && vcEl.ValueKind == JsonValueKind.String)
-                        {
-                            token = vcEl.GetString() ?? string.Empty;
-                        }
-
-                        try
-                        {
-                            return VerifyEmailDecision(token, targetStatePath, saveFilePath, requestId);
-                        }
-                        finally
-                        {
-                            TryDeleteFile(targetRequestPath);
-                        }
-                    }
-
-                    if (normalizedAction is "onboarding_status" or "get_onboarding_status")
-                    {
-                        try
-                        {
-                            return GetOnboardingStatusDecision(targetStatePath, saveFilePath, requestId);
-                        }
-                        finally
-                        {
-                            TryDeleteFile(targetRequestPath);
-                        }
-                    }
-
+                    if (normalizedAction is "register_account" or "register" or "account_registration")
+
+                    {
+
+                        string firstName = string.Empty;
+
+                        if (root.TryGetProperty("first_name", out var fnEl) && fnEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            firstName = fnEl.GetString() ?? string.Empty;
+
+                        }
+
+
+
+                        string lastName = string.Empty;
+
+                        if (root.TryGetProperty("last_name", out var lnEl) && lnEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            lastName = lnEl.GetString() ?? string.Empty;
+
+                        }
+
+
+
+                        string email = string.Empty;
+
+                        if (root.TryGetProperty("email", out var emEl) && emEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            email = emEl.GetString() ?? string.Empty;
+
+                        }
+
+                        else if (root.TryGetProperty("email_address", out var emaEl) && emaEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            email = emaEl.GetString() ?? string.Empty;
+
+                        }
+
+
+
+                        string dob = string.Empty;
+
+                        if (root.TryGetProperty("date_of_birth", out var dobEl) && dobEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            dob = dobEl.GetString() ?? string.Empty;
+
+                        }
+
+                        else if (root.TryGetProperty("dob", out var dEl) && dEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            dob = dEl.GetString() ?? string.Empty;
+
+                        }
+
+
+
+                        try
+
+                        {
+
+                            return RegisterAccountDecision(firstName, lastName, email, dob, targetStatePath, saveFilePath, requestId);
+
+                        }
+
+                        finally
+
+                        {
+
+                            TryDeleteFile(targetRequestPath);
+
+                        }
+
+                    }
+
+
+
+                    if (normalizedAction is "verify_email" or "verify_token" or "email_verification")
+
+                    {
+
+                        string token = string.Empty;
+
+                        if (root.TryGetProperty("token", out var tokEl) && tokEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            token = tokEl.GetString() ?? string.Empty;
+
+                        }
+
+                        else if (root.TryGetProperty("code", out var codeEl) && codeEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            token = codeEl.GetString() ?? string.Empty;
+
+                        }
+
+                        else if (root.TryGetProperty("verification_code", out var vcEl) && vcEl.ValueKind == JsonValueKind.String)
+
+                        {
+
+                            token = vcEl.GetString() ?? string.Empty;
+
+                        }
+
+
+
+                        try
+
+                        {
+
+                            return VerifyEmailDecision(token, targetStatePath, saveFilePath, requestId);
+
+                        }
+
+                        finally
+
+                        {
+
+                            TryDeleteFile(targetRequestPath);
+
+                        }
+
+                    }
+
+
+
+                                        if (normalizedAction is "resend_verification_email" or "resend_email" or "resend_token")
+                    {
+                        try
+                        {
+                            return ResendVerificationEmailDecision(targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "onboarding_status" or "get_onboarding_status")
+
+                    {
+
+                        try
+
+                        {
+
+                            return GetOnboardingStatusDecision(targetStatePath, saveFilePath, requestId);
+
+                        }
+
+                        finally
+
+                        {
+
+                            TryDeleteFile(targetRequestPath);
+
+                        }
+
+                    }
+
+
+
                     if (normalizedAction is "create_country" or "found_country")
                     {
                         string countryName = string.Empty;
@@ -7525,4 +7750,31 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("player_display_name")]
     public string PlayerDisplayName { get; init; } = string.Empty;
+
+    [JsonPropertyName("verification_email_subject")]
+    public string VerificationEmailSubject { get; init; } = string.Empty;
+
+    [JsonPropertyName("verification_email_body")]
+    public string VerificationEmailBody { get; init; } = string.Empty;
+
+    [JsonPropertyName("verification_email_sender")]
+    public string VerificationEmailSender { get; init; } = string.Empty;
+
+    [JsonPropertyName("verification_email_recipient")]
+    public string VerificationEmailRecipient { get; init; } = string.Empty;
+
+    [JsonPropertyName("verification_button_text")]
+    public string VerificationButtonText { get; init; } = "Verify Email";
+
+    [JsonPropertyName("capital_city")]
+    public string CapitalCity { get; init; } = string.Empty;
+
+    [JsonPropertyName("population")]
+    public long Population { get; init; }
+
+    [JsonPropertyName("primary_resource")]
+    public string PrimaryResource { get; init; } = string.Empty;
+
+    [JsonPropertyName("constitution_name")]
+    public string ConstitutionName { get; init; } = string.Empty;
 }
