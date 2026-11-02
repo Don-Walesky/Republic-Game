@@ -471,6 +471,19 @@ var pending_appointment_request_id: String = ""
 var pending_appointment_request_time: int = 0
 
 # Living Feedback & Notification State
+const DEFAULT_NOTIFICATION_LEDGER_PATH := "user://executive_office_notifications.json"
+const FALLBACK_NOTIFICATION_LEDGER_PATH := "res://client/godot/executive_office_notifications.json"
+
+var notification_save_path: String = ""
+var notification_ledger: Dictionary = {
+	"read_email_ids": [],
+	"read_recommendation_ids": [],
+	"inbox_dismissed": false,
+	"inbox_seen_decision": "",
+	"emails_dismissed": false,
+	"updated_at_utc": ""
+}
+
 var hotline_badge_dismissed: bool = false
 var dossier_badge_dismissed: bool = false
 var inbox_badge_dismissed: bool = false
@@ -1425,9 +1438,10 @@ func _ready() -> void:
 	_connect_signals()
 	_apply_tooltips()
 
-	# Customisation initialization
+	# Customisation & notification initialization
 	load_saved_customization()
 	apply_customization(active_customization)
+	load_notification_ledger()
 
 	# Setup 0.5s state polling
 	poll_timer = Timer.new()
@@ -2155,16 +2169,36 @@ func apply_state(state: Dictionary) -> void:
 	var dec_res := str(state.get("latest_decision_result", ""))
 	var has_pending := dec_res.contains("Pending") or state.has("pending_decision")
 	var recs_val = state.get("chief_of_staff_recommendations", [])
+	var read_recs: Array = notification_ledger.get("read_recommendation_ids", [])
 	var pending_cos_count := 0
+	var unread_cos_count := 0
 	if recs_val is Array:
 		for r in recs_val:
 			if r is Dictionary and str(r.get("status", "Pending")) == "Pending":
 				pending_cos_count += 1
+				var r_id := str(r.get("id", ""))
+				if r_id.is_empty():
+					r_id = str(r.get("title", ""))
+				if not read_recs.has(r_id):
+					unread_cos_count += 1
 
-	if has_pending or pending_cos_count > 0:
-		if not inbox_badge_dismissed:
-			var badge_text := str(max(1, pending_cos_count))
-			set_inbox_badge(true, badge_text)
+	var current_dec_sig := ""
+	if has_pending:
+		current_dec_sig = dec_res + "|" + str(state.get("active_crisis", "")) + "|" + str(state.get("pending_decision", ""))
+	var seen_dec_sig := str(notification_ledger.get("inbox_seen_decision", ""))
+	var has_new_pending_decision: bool = has_pending and (current_dec_sig != seen_dec_sig)
+
+	if unread_cos_count > 0 or has_new_pending_decision:
+		inbox_badge_dismissed = false
+		notification_ledger["inbox_dismissed"] = false
+
+	if (pending_cos_count > 0 or has_pending) and unread_cos_count == 0 and not has_new_pending_decision and bool(notification_ledger.get("inbox_dismissed", false)):
+		inbox_badge_dismissed = true
+
+	if not inbox_badge_dismissed and (has_pending or pending_cos_count > 0):
+		var effective_unread: int = unread_cos_count + (1 if has_new_pending_decision else 0)
+		var badge_count: int = int(max(1, effective_unread if effective_unread > 0 else pending_cos_count))
+		set_inbox_badge(true, str(badge_count))
 	else:
 		set_inbox_badge(false)
 
@@ -2606,11 +2640,11 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 
 func _update_messages_modal(state: Dictionary) -> void:
 	var emails = state.get("emails", [])
-	var unread: int = int(state.get("unread_email_count", 0))
+	var unread: int = get_unread_email_count(state)
 	if chat_unread_count_label:
 		chat_unread_count_label.text = str(max(1, unread))
-		if chat_unread_badge:
-			chat_unread_badge.visible = unread > 0
+	if chat_unread_badge:
+		chat_unread_badge.visible = unread > 0
 
 	if emails_list_vbox and empty_emails_label:
 		for child in emails_list_vbox.get_children():
@@ -2630,9 +2664,14 @@ func _create_email_item(email: Dictionary) -> Control:
 	var p := PanelContainer.new()
 	var vb := VBoxContainer.new()
 	var subj := Label.new()
-	subj.text = "✉️ %s — from %s" % [str(email.get("subject", "Executive Memo")), str(email.get("sender", "Official"))]
+	var is_read := is_email_read(email)
+	var icon := "📭" if is_read else "✉️"
+	subj.text = "%s %s — from %s" % [icon, str(email.get("subject", "Executive Memo")), str(email.get("sender", "Official"))]
 	subj.add_theme_font_size_override("font_size", 10)
-	subj.add_theme_color_override("font_color", Color(0.92, 0.85, 0.4, 1))
+	if is_read:
+		subj.add_theme_color_override("font_color", Color(0.70, 0.70, 0.75, 0.8))
+	else:
+		subj.add_theme_color_override("font_color", Color(0.92, 0.85, 0.4, 1.0))
 	vb.add_child(subj)
 
 	var body := Label.new()
@@ -2775,6 +2814,8 @@ func load_saved_customization(target_country_id: String = "") -> void:
 ## Saves current customisation choices to disk persistently
 func save_current_customization() -> bool:
 	var c_id := str(latest_state.get("country_id", "player-country"))
+	if active_customization != null:
+		active_customization["notification_ledger"] = notification_ledger.duplicate(true)
 	var success := ExecutiveOfficeCatalog.save_customization(active_customization, custom_save_path, c_id)
 	if success:
 		if customisation_status_label:
@@ -2791,6 +2832,23 @@ func save_current_customization() -> bool:
 func apply_customization(custom_data: Dictionary) -> void:
 	active_customization = custom_data
 
+	# Synchronize notification ledger if present in custom_data
+	if custom_data.has("notification_ledger") and custom_data["notification_ledger"] is Dictionary:
+		var n_dict: Dictionary = custom_data["notification_ledger"]
+		var email_ids = n_dict.get("read_email_ids", [])
+		if email_ids is Array and not email_ids.is_empty():
+			notification_ledger["read_email_ids"] = email_ids.duplicate()
+		var rec_ids = n_dict.get("read_recommendation_ids", [])
+		if rec_ids is Array and not rec_ids.is_empty():
+			notification_ledger["read_recommendation_ids"] = rec_ids.duplicate()
+		if n_dict.has("inbox_dismissed"):
+			notification_ledger["inbox_dismissed"] = bool(n_dict.get("inbox_dismissed", false))
+			inbox_badge_dismissed = notification_ledger["inbox_dismissed"]
+		if n_dict.has("inbox_seen_decision"):
+			notification_ledger["inbox_seen_decision"] = str(n_dict.get("inbox_seen_decision", ""))
+		if n_dict.has("emails_dismissed"):
+			notification_ledger["emails_dismissed"] = bool(n_dict.get("emails_dismissed", false))
+
 	# 1. Portrait
 	var portrait_id: String = str(custom_data.get("selected_portrait_id", "portrait_m1"))
 	set_portrait_by_id(portrait_id)
@@ -2806,6 +2864,169 @@ func apply_customization(custom_data: Dictionary) -> void:
 		_apply_item_visuals(item_id)
 
 	customization_applied.emit(active_customization)
+
+# ==============================================================================
+# NOTIFICATION & MESSAGE READ/UNREAD PERSISTENCE LEDGER
+# ==============================================================================
+
+func _resolve_notification_ledger_path(override_path: String = "") -> String:
+	if not override_path.is_empty():
+		return override_path
+	if not notification_save_path.is_empty():
+		return notification_save_path
+	if not custom_save_path.is_empty():
+		return custom_save_path.replace(".json", "_notifications.json")
+	return DEFAULT_NOTIFICATION_LEDGER_PATH
+
+func load_notification_ledger(custom_path: String = "") -> Dictionary:
+	var path := _resolve_notification_ledger_path(custom_path)
+	var loaded_data: Dictionary = {}
+	if FileAccess.file_exists(path):
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file:
+			var text := file.get_as_text()
+			file.close()
+			var parsed: Variant = JSON.parse_string(text)
+			if parsed is Dictionary:
+				loaded_data = parsed
+
+	if loaded_data.is_empty() and active_customization != null and active_customization.has("notification_ledger") and active_customization["notification_ledger"] is Dictionary:
+		loaded_data = active_customization["notification_ledger"]
+
+	var email_ids: Variant = loaded_data.get("read_email_ids", [])
+	notification_ledger["read_email_ids"] = (email_ids.duplicate() if email_ids is Array else [])
+	var rec_ids: Variant = loaded_data.get("read_recommendation_ids", [])
+	notification_ledger["read_recommendation_ids"] = (rec_ids.duplicate() if rec_ids is Array else [])
+	notification_ledger["inbox_dismissed"] = bool(loaded_data.get("inbox_dismissed", false))
+	notification_ledger["inbox_seen_decision"] = str(loaded_data.get("inbox_seen_decision", ""))
+	notification_ledger["emails_dismissed"] = bool(loaded_data.get("emails_dismissed", false))
+	notification_ledger["updated_at_utc"] = str(loaded_data.get("updated_at_utc", ""))
+
+	inbox_badge_dismissed = notification_ledger["inbox_dismissed"]
+	return notification_ledger
+
+func save_notification_ledger(custom_path: String = "") -> bool:
+	var path := _resolve_notification_ledger_path(custom_path)
+	notification_ledger["updated_at_utc"] = Time.get_datetime_string_from_system(true)
+	notification_ledger["inbox_dismissed"] = inbox_badge_dismissed
+
+	if active_customization != null:
+		active_customization["notification_ledger"] = notification_ledger.duplicate(true)
+
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		var fallback_path := FALLBACK_NOTIFICATION_LEDGER_PATH
+		file = FileAccess.open(fallback_path, FileAccess.WRITE)
+		if file == null:
+			return false
+
+	var json_str := JSON.stringify(notification_ledger, "\t")
+	file.store_string(json_str)
+	file.close()
+	return true
+
+func clear_notification_ledger(custom_path: String = "") -> void:
+	notification_ledger = {
+		"read_email_ids": [],
+		"read_recommendation_ids": [],
+		"inbox_dismissed": false,
+		"inbox_seen_decision": "",
+		"emails_dismissed": false,
+		"updated_at_utc": ""
+	}
+	inbox_badge_dismissed = false
+	var path := _resolve_notification_ledger_path(custom_path)
+	if FileAccess.file_exists(path):
+		var dir := DirAccess.open("user://")
+		if dir:
+			dir.remove(path.replace("user://", ""))
+
+func _get_email_id(email: Dictionary) -> String:
+	var id_val := str(email.get("id", "")).strip_edges()
+	if not id_val.is_empty():
+		return id_val
+	var subj := str(email.get("subject", "")).strip_edges()
+	var sender := str(email.get("sender", "")).strip_edges()
+	return subj + "_" + sender
+
+func is_email_read(email: Dictionary) -> bool:
+	var m_id := _get_email_id(email)
+	var read_ids: Array = notification_ledger.get("read_email_ids", [])
+	return bool(email.get("is_read", false)) or read_ids.has(m_id)
+
+func get_unread_email_count(state: Dictionary = {}) -> int:
+	var state_to_use: Dictionary = state if not state.is_empty() else latest_state
+	var emails: Variant = state_to_use.get("emails", [])
+	var read_ids: Array = notification_ledger.get("read_email_ids", [])
+	if emails is Array and not (emails as Array).is_empty():
+		var unread: int = 0
+		for em in (emails as Array):
+			if em is Dictionary:
+				var m_id: String = _get_email_id(em)
+				var is_read_in_email: bool = bool(em.get("is_read", false))
+				if not is_read_in_email and not read_ids.has(m_id):
+					unread += 1
+		return unread
+	else:
+		if bool(notification_ledger.get("emails_dismissed", false)):
+			return 0
+		return int(state_to_use.get("unread_email_count", 0))
+
+func mark_email_as_read(email_id: String) -> void:
+	if email_id.is_empty(): return
+	var read_ids: Array = notification_ledger.get("read_email_ids", [])
+	if not read_ids.has(email_id):
+		read_ids.append(email_id)
+		notification_ledger["read_email_ids"] = read_ids
+		save_notification_ledger()
+	var unread: int = get_unread_email_count(latest_state)
+	if chat_unread_count_label:
+		chat_unread_count_label.text = str(max(1, unread))
+	if chat_unread_badge:
+		chat_unread_badge.visible = unread > 0
+
+func mark_all_emails_as_read() -> void:
+	var emails: Variant = latest_state.get("emails", [])
+	var read_ids: Array = notification_ledger.get("read_email_ids", [])
+	if emails is Array and not (emails as Array).is_empty():
+		for em in (emails as Array):
+			if em is Dictionary:
+				var m_id: String = _get_email_id(em)
+				if not m_id.is_empty() and not read_ids.has(m_id):
+					read_ids.append(m_id)
+	notification_ledger["read_email_ids"] = read_ids
+	notification_ledger["emails_dismissed"] = true
+	save_notification_ledger()
+
+	if chat_unread_badge:
+		chat_unread_badge.visible = false
+	if chat_unread_count_label:
+		chat_unread_count_label.text = "1"
+
+func mark_inbox_as_read() -> void:
+	inbox_badge_dismissed = true
+	notification_ledger["inbox_dismissed"] = true
+	set_inbox_badge(false)
+
+	var recs_val: Variant = latest_state.get("chief_of_staff_recommendations", [])
+	var read_recs: Array = notification_ledger.get("read_recommendation_ids", [])
+	if recs_val is Array:
+		for r in (recs_val as Array):
+			if r is Dictionary:
+				var r_id: String = str(r.get("id", ""))
+				if r_id.is_empty():
+					r_id = str(r.get("title", ""))
+				if not r_id.is_empty() and not read_recs.has(r_id):
+					read_recs.append(r_id)
+	notification_ledger["read_recommendation_ids"] = read_recs
+
+	var dec_res := str(latest_state.get("latest_decision_result", ""))
+	var has_pending := dec_res.contains("Pending") or latest_state.has("pending_decision")
+	if has_pending:
+		var current_sig := dec_res + "|" + str(latest_state.get("active_crisis", "")) + "|" + str(latest_state.get("pending_decision", ""))
+		notification_ledger["inbox_seen_decision"] = current_sig
+
+	save_notification_ledger()
 
 ## Updates the office with a specific presidential portrait by catalogue ID (5 male, 3 female)
 func set_portrait_by_id(portrait_id: String) -> void:
@@ -3295,8 +3516,7 @@ func _on_hotline_phone_pressed() -> void:
 	open_hotline_modal()
 
 func _on_executive_inbox_pressed() -> void:
-	set_inbox_badge(false)
-	inbox_badge_dismissed = true
+	mark_inbox_as_read()
 	open_briefing_modal()
 
 func _on_intelligence_dossier_pressed() -> void:
@@ -3327,6 +3547,7 @@ func _on_presidential_portrait_pressed() -> void:
 	open_customisation_modal("portraits")
 
 func open_briefing_modal() -> void:
+	mark_inbox_as_read()
 	close_all_modals()
 	active_nav_section = Section.BRIEFINGS
 	_update_nav_button_highlights()
@@ -3422,6 +3643,7 @@ func open_chat_popup_modal() -> void:
 	close_all_modals()
 	if modal_backdrop: modal_backdrop.visible = true
 	if chat_popup_modal: chat_popup_modal.visible = true
+	mark_all_emails_as_read()
 	if status_ticker_label:
 		status_ticker_label.text = "Alliance Chat: Secure messaging console opened."
 
@@ -3475,6 +3697,7 @@ func open_messages_modal() -> void:
 	_update_nav_button_highlights()
 	if modal_backdrop: modal_backdrop.visible = true
 	if messages_modal: messages_modal.visible = true
+	mark_all_emails_as_read()
 	if status_ticker_label:
 		status_ticker_label.text = "Executive Messages: Reviewing diplomatic cables and executive inbox."
 

@@ -498,6 +498,14 @@ static func get_default_customization() -> Dictionary:
 			"decor_legal_archives",
 			"art_founding_charter"
 		],
+		"notification_ledger": {
+			"read_email_ids": [],
+			"read_recommendation_ids": [],
+			"inbox_dismissed": false,
+			"inbox_seen_decision": "",
+			"emails_dismissed": false,
+			"updated_at_utc": ""
+		},
 		"saved_at_utc": Time.get_datetime_string_from_system(true)
 	}
 
