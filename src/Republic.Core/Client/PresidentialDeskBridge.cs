@@ -35,6 +35,7 @@ using Republic.Core.World.Factories;
 using Republic.Core.World.Models;
 using Republic.Core.World.Rules;
 using Republic.Core.World.Services;
+using Republic.Core.Workspace.Models;
 
 /// <summary>
 /// Bridge service coordinating the live Republic simulation state connection to the Godot presidential desk client.
@@ -3810,6 +3811,412 @@ public static class PresidentialDeskBridge
             OppositionParty = country.OppositionParty?.Name ?? "None",
             ElectionResult = country.LastElection?.ToString() ?? string.Empty,
             IsReelected = true
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Enacts an authoritative executive office furniture procurement directive.
+    /// Validates item ID against OfficeFurnitureCatalog, checks that the authoritative treasury has sufficient funds,
+    /// deducts the cost exactly once upon successful purchase, updates persistent room state in the save file,
+    /// and exports an updated desk snapshot and structured action result.
+    /// </summary>
+    public static PresidentialActionResult ApplyPurchaseFurnitureDecision(
+        string itemId,
+        string? category = null,
+        double? price = null,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        string? snapshotCountryId = null;
+
+        string targetSavePath;
+        if (!string.IsNullOrWhiteSpace(saveFilePath))
+        {
+            targetSavePath = saveFilePath;
+        }
+        else if (targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase))
+        {
+            targetSavePath = targetStatePath;
+        }
+        else
+        {
+            if (!File.Exists(targetStatePath))
+            {
+                var missingResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply furniture procurement decision: Authoritative simulation state file '{targetStatePath}' does not exist. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, missingResult);
+                return missingResult;
+            }
+
+            string rawJson;
+            try
+            {
+                rawJson = File.ReadAllText(targetStatePath);
+            }
+            catch (Exception ex)
+            {
+                var ioResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply furniture procurement decision: Unable to read simulation state file '{targetStatePath}' ({ex.Message}). No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, ioResult);
+                return ioResult;
+            }
+
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                var emptyResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply furniture procurement decision: Simulation state file '{targetStatePath}' is empty. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, emptyResult);
+                return emptyResult;
+            }
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(rawJson);
+            }
+            catch (JsonException)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "StateMissingOrCorrupt",
+                    Message = $"Cannot apply furniture procurement decision: Simulation state file '{targetStatePath}' contains corrupted or invalid JSON. No changes enacted."
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+
+            using (doc)
+            {
+                if (doc.RootElement.TryGetProperty("state", out var stateEl) && stateEl.TryGetProperty("world", out _))
+                {
+                    targetSavePath = targetStatePath;
+                }
+                else
+                {
+                    string? snapshotSavePath = null;
+                    if (doc.RootElement.TryGetProperty("save_file_path", out var savePathEl))
+                    {
+                        snapshotSavePath = savePathEl.GetString();
+                    }
+
+                    if (doc.RootElement.TryGetProperty("country_id", out var cIdEl))
+                    {
+                        snapshotCountryId = cIdEl.GetString();
+                    }
+                    if (string.IsNullOrWhiteSpace(snapshotCountryId) && doc.RootElement.TryGetProperty("country_name", out var cNameEl))
+                    {
+                        snapshotCountryId = cNameEl.GetString();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(snapshotSavePath) && File.Exists(snapshotSavePath))
+                    {
+                        targetSavePath = snapshotSavePath;
+                    }
+                    else
+                    {
+                        var companion = Path.ChangeExtension(targetStatePath, ".sav");
+                        if (File.Exists(companion))
+                        {
+                            targetSavePath = companion;
+                        }
+                        else
+                        {
+                            var noSaveResult = new PresidentialActionResult
+                            {
+                                RequestId = requestId ?? string.Empty,
+                                Success = false,
+                                Result = "StateMissingOrCorrupt",
+                                Message = $"Cannot apply furniture procurement decision: Authoritative persistent simulation save file could not be found for dashboard snapshot '{targetStatePath}'. No changes enacted."
+                            };
+                            TryWriteResultFile(targetStatePath, noSaveResult);
+                            return noSaveResult;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply furniture procurement decision: Authoritative simulation save file '{targetSavePath}' does not exist. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, missingSaveResult);
+            return missingSaveResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            var savePayload = File.ReadAllText(targetSavePath);
+            var serializer = new JsonStateSerializer();
+            envelope = serializer.Deserialize<FullGameState>(savePayload);
+        }
+        catch (Exception ex)
+        {
+            var corruptSaveResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply furniture procurement decision: Authoritative simulation save file '{targetSavePath}' is corrupted or contains invalid data ({ex.Message}). No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, corruptSaveResult);
+            return corruptSaveResult;
+        }
+
+        if (envelope?.State?.World?.Countries == null || envelope.State.World.Countries.Count == 0)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissingOrCorrupt",
+                Message = $"Cannot apply furniture procurement decision: Authoritative save file '{targetSavePath}' does not contain a valid sovereign country. No changes enacted."
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        Country? country = null;
+        if (!string.IsNullOrWhiteSpace(snapshotCountryId))
+        {
+            country = envelope.State.World.Countries.FirstOrDefault(c =>
+                string.Equals(c.Id, snapshotCountryId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(c.Name, snapshotCountryId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        country ??= envelope.State.World.Countries.FirstOrDefault(c => c.Id == "player-country")
+            ?? envelope.State.World.Countries.First();
+
+        var launchEpoch = new DateTimeOffset(2027, 2, 10, 0, 0, 0, TimeSpan.FromHours(1));
+        var saveTime = envelope.State.SaveTimestamp != default ? envelope.State.SaveTimestamp : launchEpoch;
+        var simTime = new RepublicTime(saveTime, launchEpoch);
+        var tick = envelope.State.CurrentTick;
+
+        // 1. Validate item against OfficeFurnitureCatalog
+        if (string.IsNullOrWhiteSpace(itemId) || !OfficeFurnitureCatalog.TryGetItem(itemId, out var catalogItem))
+        {
+            var invalidResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidItem",
+                Message = $"Furniture purchase rejected: Item '{(string.IsNullOrWhiteSpace(itemId) ? "unknown" : itemId)}' is not recognized in the presidential office catalog. Zero funds deducted.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                ElectionResult = country.LastElection?.ToString() ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, invalidResult);
+            return invalidResult;
+        }
+
+        // 2. Validate price if specified
+        if (price.HasValue && price.Value >= 0 && Math.Abs(price.Value - catalogItem.PriceRepu) > 0.01)
+        {
+            var invalidPriceResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidPrice",
+                Message = $"Furniture purchase rejected: Specified price R {price.Value:N0} does not match authoritative catalog price {RepuTreasury.Format(catalogItem.PriceRepu)}. Zero funds deducted.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                ElectionResult = country.LastElection?.ToString() ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, invalidPriceResult);
+            return invalidPriceResult;
+        }
+
+        // 3. Check executive order confirmation
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = $"Procurement of '{catalogItem.Name}' cancelled by executive order. Zero funds deducted.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                ElectionResult = country.LastElection?.ToString() ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        // 4. Ensure workspace and room state are initialized
+        envelope.State.Workspace ??= new();
+        envelope.State.Workspace.RoomState ??= new();
+        envelope.State.Workspace.RoomState.OwnedFurniture ??= new();
+
+        // 5. Check if item is already owned (deduct cost exactly once)
+        if (envelope.State.Workspace.RoomState.OwnedFurniture.Contains(catalogItem.Id, StringComparer.OrdinalIgnoreCase))
+        {
+            var alreadyOwnedResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = true,
+                Result = "AlreadyOwned",
+                Message = $"Item '{catalogItem.Name}' is already owned by the presidential executive office. Zero additional funds deducted.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                ElectionResult = country.LastElection?.ToString() ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, alreadyOwnedResult);
+            return alreadyOwnedResult;
+        }
+
+        // 6. Check that authoritative treasury has sufficient funds
+        var itemCost = catalogItem.PriceRepu;
+        if (itemCost > 0 && country.Treasury.Balance < itemCost)
+        {
+            var noFundsResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InsufficientFunds",
+                Message = $"Insufficient sovereign treasury funds. Required: {RepuTreasury.Format(itemCost)}, Available: {country.Treasury.FormattedBalance}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+                OppositionParty = country.OppositionParty?.Name ?? "None",
+                ElectionResult = country.LastElection?.ToString() ?? string.Empty
+            };
+            TryWriteResultFile(targetStatePath, noFundsResult);
+            return noFundsResult;
+        }
+
+        // 7. Deduct cost exactly once and register ownership in persistent room state
+        if (itemCost > 0)
+        {
+            country.Treasury.Withdraw(itemCost);
+        }
+
+        if (!envelope.State.Workspace.RoomState.OwnedFurniture.Contains(catalogItem.Id, StringComparer.OrdinalIgnoreCase))
+        {
+            envelope.State.Workspace.RoomState.OwnedFurniture.Add(catalogItem.Id);
+        }
+
+        envelope.State.CurrentTick = tick + 1;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        try
+        {
+            var serializer = new JsonStateSerializer();
+            var updatedSavePayload = serializer.Serialize(envelope);
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, updatedSavePayload);
+        }
+        catch (Exception ex)
+        {
+            if (itemCost > 0)
+            {
+                country.Treasury.Deposit(itemCost);
+            }
+            envelope.State.Workspace.RoomState.OwnedFurniture.Remove(catalogItem.Id);
+
+            var persistFailResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "PersistenceFailure",
+                Message = $"Persistence error: Failed to save authoritative simulation state ({ex.Message}). Furniture procurement not recorded.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, persistFailResult);
+            return persistFailResult;
+        }
+
+        var message = itemCost > 0
+            ? $"Procurement order confirmed: Acquired '{catalogItem.Name}' for {RepuTreasury.Format(itemCost)} from sovereign treasury."
+            : $"Procurement order confirmed: Acquired '{catalogItem.Name}' at zero cost.";
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        try
+        {
+            var snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, latestDecisionResult: message);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { /* best-effort export */ }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = message,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            ElectionResult = country.LastElection?.ToString() ?? string.Empty
         };
 
         TryWriteResultFile(exportPath, successResult);
@@ -8758,6 +9165,50 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyVetoBillDecision(title, bConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "purchase_furniture" or "buy_furniture" or "procure_furniture")
+                    {
+                        string itemId = string.Empty;
+                        if (root.TryGetProperty("item_id", out var itIdEl) && itIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            itemId = itIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            itemId = idEl.GetString() ?? string.Empty;
+                        }
+
+                        string? category = null;
+                        if (root.TryGetProperty("category", out var catEl) && catEl.ValueKind == JsonValueKind.String)
+                        {
+                            category = catEl.GetString();
+                        }
+
+                        double? price = null;
+                        if (root.TryGetProperty("price_repu", out var prEl) && prEl.ValueKind == JsonValueKind.Number)
+                        {
+                            price = prEl.GetDouble();
+                        }
+                        else if (root.TryGetProperty("price", out var pEl) && pEl.ValueKind == JsonValueKind.Number)
+                        {
+                            price = pEl.GetDouble();
+                        }
+
+                        bool fConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var cfEl) && (cfEl.ValueKind == JsonValueKind.True || cfEl.ValueKind == JsonValueKind.False))
+                        {
+                            fConfirmed = cfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyPurchaseFurnitureDecision(itemId, category, price, fConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

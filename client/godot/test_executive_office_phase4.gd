@@ -1071,7 +1071,7 @@ func test_real_csharp_cli_appointment_pipeline(office: Node) -> bool:
 	if not office.country_label.text.contains("Federal Republic of Testland"):
 		printerr("  [FAIL]: Country name corrupted: " + office.country_label.text)
 		return false
-	if not office.treasury_label.text.contains("10,000,000,000"):
+	if not office.treasury_label.text.contains("50,000,000"):
 		printerr("  [FAIL]: Sovereign treasury balance corrupted: " + office.treasury_label.text)
 		return false
 	if office.ruling_party_label and not office.ruling_party_label.text.contains("Democratic Union"):

@@ -3048,6 +3048,10 @@ func confirm_purchase_pending_item() -> Dictionary:
 
 	# 1. Write authoritative request file to simulation pipeline
 	var req_path := DEFAULT_STATE_FILE.replace("presidential_desk_state.json", "presidential_desk_request.json")
+	if request_file_override != "":
+		req_path = request_file_override
+	elif not current_state_path.is_empty():
+		req_path = current_state_path.replace("presidential_desk_state.json", "presidential_desk_request.json")
 	var req_id := "req_furniture_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
 	var item_id_str: String = str(item.get("id", ""))
 	var item_cat_str: String = str(item.get("category", ""))

@@ -105,6 +105,20 @@ public static class Program
             return;
         }
 
+        // Handle CLI presidential furniture purchase decision request if specified
+        if (args != null && (args.Any(a => a.StartsWith("--purchase-furniture=") || a.StartsWith("--buy-furniture=")) || args.Contains("--cancel-furniture")))
+        {
+            var itemArg = args.FirstOrDefault(a => a.StartsWith("--purchase-furniture=") || a.StartsWith("--buy-furniture="));
+            var itemId = itemArg?.Split('=', 2)[1].Trim() ?? string.Empty;
+            var isConfirmed = !args.Contains("--cancel-furniture") && !args.Contains("--confirmed=false");
+            string? customStatePath = args.FirstOrDefault(a => a.StartsWith("--state-file="))?.Split('=', 2)[1].Trim();
+            string? customSavePath = args.FirstOrDefault(a => a.StartsWith("--save-file="))?.Split('=', 2)[1].Trim();
+
+            var result = PresidentialDeskBridge.ApplyPurchaseFurnitureDecision(itemId, confirmed: isConfirmed, stateFilePath: customStatePath, saveFilePath: customSavePath);
+            Console.WriteLine($"[FURNITURE DECISION]: Result={result.Result}, Success={result.Success}, Treasury=R {result.TreasuryBalance:N0}, Message=\"{result.Message}\"");
+            return;
+        }
+
         // Handle CLI presidential taxation decision request if specified
         if (args != null && (args.Any(a => a.StartsWith("--apply-tax=") || a.StartsWith("--tax-rate=")) || args.Contains("--cancel-tax")))
         {
