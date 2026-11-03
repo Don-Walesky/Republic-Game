@@ -69,6 +69,15 @@ var resend_cooldown_timer: float = 0.0
 # Registration Nodes
 @onready var btn_mode_new_republic: Button = $PanelContainer/VBox/ScreenRegister/SessionModeHBox/BtnModeNewRepublic
 @onready var btn_mode_resume: Button = $PanelContainer/VBox/ScreenRegister/SessionModeHBox/BtnModeResumeSession
+@onready var form_register: VBoxContainer = $PanelContainer/VBox/ScreenRegister/Form
+@onready var login_form: VBoxContainer = $PanelContainer/VBox/ScreenRegister/LoginForm
+@onready var lbl_session_details: Label = $PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox/LblSessionDetails
+@onready var lbl_session_phase: Label = $PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox/LblSessionPhase
+@onready var btn_quick_login: Button = $PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox/BtnQuickLogin
+@onready var input_login_email: LineEdit = $PanelContainer/VBox/ScreenRegister/LoginForm/ManualLoginVBox/LoginEmailInput
+@onready var btn_submit_login: Button = $PanelContainer/VBox/ScreenRegister/LoginForm/ManualLoginVBox/BtnSubmitLogin
+@onready var lbl_login_feedback: Label = $PanelContainer/VBox/ScreenRegister/LoginForm/LblLoginFeedback
+@onready var btn_campaign_signout: Button = $PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnCampaignSignOut
 @onready var input_first_name: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/FirstNameInput
 @onready var input_last_name: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/LastNameInput
 @onready var input_email: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/EmailInput
@@ -212,6 +221,15 @@ func _init_controls() -> void:
 
 	if btn_mode_new_republic == null: btn_mode_new_republic = get_node_or_null("PanelContainer/VBox/ScreenRegister/SessionModeHBox/BtnModeNewRepublic")
 	if btn_mode_resume == null: btn_mode_resume = get_node_or_null("PanelContainer/VBox/ScreenRegister/SessionModeHBox/BtnModeResumeSession")
+	if form_register == null: form_register = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form")
+	if login_form == null: login_form = get_node_or_null("PanelContainer/VBox/ScreenRegister/LoginForm")
+	if lbl_session_details == null: lbl_session_details = get_node_or_null("PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox/LblSessionDetails")
+	if lbl_session_phase == null: lbl_session_phase = get_node_or_null("PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox/LblSessionPhase")
+	if btn_quick_login == null: btn_quick_login = get_node_or_null("PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox/BtnQuickLogin")
+	if input_login_email == null: input_login_email = get_node_or_null("PanelContainer/VBox/ScreenRegister/LoginForm/ManualLoginVBox/LoginEmailInput")
+	if btn_submit_login == null: btn_submit_login = get_node_or_null("PanelContainer/VBox/ScreenRegister/LoginForm/ManualLoginVBox/BtnSubmitLogin")
+	if lbl_login_feedback == null: lbl_login_feedback = get_node_or_null("PanelContainer/VBox/ScreenRegister/LoginForm/LblLoginFeedback")
+	if btn_campaign_signout == null: btn_campaign_signout = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnCampaignSignOut")
 	if input_first_name == null: input_first_name = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/FirstNameInput")
 	if input_last_name == null: input_last_name = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/LastNameInput")
 	if input_email == null: input_email = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/EmailInput")
@@ -348,6 +366,12 @@ func _connect_signals() -> void:
 		btn_mode_new_republic.pressed.connect(_on_entry_new_republic_pressed)
 	if btn_mode_resume and not btn_mode_resume.pressed.is_connected(_on_entry_resume_pressed):
 		btn_mode_resume.pressed.connect(_on_entry_resume_pressed)
+	if btn_quick_login and not btn_quick_login.pressed.is_connected(_on_quick_login_pressed):
+		btn_quick_login.pressed.connect(_on_quick_login_pressed)
+	if btn_submit_login and not btn_submit_login.pressed.is_connected(_on_submit_login_pressed):
+		btn_submit_login.pressed.connect(_on_submit_login_pressed)
+	if btn_campaign_signout and not btn_campaign_signout.pressed.is_connected(_on_campaign_signout_pressed):
+		btn_campaign_signout.pressed.connect(_on_campaign_signout_pressed)
 	if btn_register and not btn_register.pressed.is_connected(_on_register_pressed):
 		btn_register.pressed.connect(_on_register_pressed)
 	if btn_verify_email_action and not btn_verify_email_action.pressed.is_connected(_on_verify_action_pressed):
@@ -426,35 +450,10 @@ func _connect_plan_button(btn: Button, plan_key: String) -> void:
 		btn.pressed.connect(_on_plan_clicked.bind(plan_key, btn))
 
 func _load_initial_stage() -> void:
-	# Checks disk for existing authoritative session
-	var global_state := ProjectSettings.globalize_path(active_state_path)
-	if FileAccess.file_exists(global_state):
-		var file := FileAccess.open(global_state, FileAccess.READ)
-		if file != null:
-			var content := file.get_as_text()
-			file.close()
-			var parsed = JSON.parse_string(content)
-			if parsed != null and typeof(parsed) == TYPE_DICTIONARY:
-				var step: String = str(parsed.get("onboarding_step", "NotStarted"))
-				match step:
-					"NotStarted":
-						_show_stage(ScreenStage.REGISTER)
-					"AccountRegistered":
-						_show_stage(ScreenStage.VERIFY_EMAIL)
-					"EmailVerified":
-						_show_stage(ScreenStage.COUNTRY_NAME)
-					"CountryCreated":
-						_populate_confirmed_view(parsed)
-						_show_stage(ScreenStage.CONFIRMED)
-					"LeadershipSelected":
-						_show_stage(ScreenStage.DEVELOPMENT_PLANS)
-					"DevelopmentPlansSelected", "AdvisersIntroduced", "CampaignHeadquarters", "InOffice":
-						_populate_phase3_summary_view(parsed)
-						_show_stage(ScreenStage.PHASE3_SUMMARY)
-					_:
-						_show_stage(ScreenStage.REGISTER)
-				return
+	# Initial start-of-game gateway: Always present Sign Up or Log In interface
 	_show_stage(ScreenStage.REGISTER)
+	_show_sign_up_mode()
+	_refresh_detected_session()
 
 func _show_stage(stage: ScreenStage) -> void:
 	current_stage = stage
@@ -487,46 +486,158 @@ func _show_stage(stage: ScreenStage) -> void:
 	onboarding_step_changed.emit(stage_name)
 
 # ==============================================================================
-# Entry Navigation: New Republic vs Resume / Log In
+# Entry Navigation: Sign Up vs Log In / Sign In
 # ==============================================================================
 func _on_entry_new_republic_pressed() -> void:
-	if input_first_name: input_first_name.text = ""
-	if input_last_name: input_last_name.text = ""
-	if input_email: input_email.text = ""
-	if lbl_register_feedback:
-		lbl_register_feedback.text = "Establish a New Republic. Enter candidate credentials below."
-		lbl_register_feedback.modulate = Color(0.9, 0.9, 0.9)
-	_update_session_mode_buttons(true)
-	_show_stage(ScreenStage.REGISTER)
+	_show_sign_up_mode()
 
 func _on_entry_resume_pressed() -> void:
+	_show_log_in_mode()
+
+func _show_sign_up_mode() -> void:
+	if form_register: form_register.visible = true
+	if btn_register: btn_register.visible = true
+	if login_form: login_form.visible = false
+	if lbl_register_feedback:
+		lbl_register_feedback.text = ""
+	_update_session_mode_buttons(true)
+
+func _show_log_in_mode() -> void:
+	if form_register: form_register.visible = false
+	if btn_register: btn_register.visible = false
+	if login_form: login_form.visible = true
+	if lbl_login_feedback:
+		lbl_login_feedback.text = ""
 	_update_session_mode_buttons(false)
+	_refresh_detected_session()
+
+func _refresh_detected_session() -> Dictionary:
 	var session_data := _check_authoritative_session()
 	if not session_data.is_empty():
-		var step: String = str(session_data.get("onboarding_step", ""))
-		if step == "InOffice" or (session_data.has("country_name") and (step.is_empty() or step == "InOffice") and session_data.has("treasury_balance")):
-			if lbl_register_feedback:
-				lbl_register_feedback.text = "Authoritative session found. Resuming presidency..."
-				lbl_register_feedback.modulate = Color(0.4, 1.0, 0.4)
-			if is_inside_tree() and get_tree() != null:
-				get_tree().change_scene_to_file("res://ExecutiveOffice.tscn")
-			return
-		elif not step.is_empty() and step != "NotStarted":
-			if lbl_register_feedback:
-				lbl_register_feedback.text = "Resuming in-progress founding journey (" + step + ")..."
-				lbl_register_feedback.modulate = Color(0.4, 1.0, 0.4)
-			_load_initial_stage()
-			return
+		var c_name: String = str(session_data.get("country_name", "Republic of Sovereign Nations"))
+		var leader: String = str(session_data.get("president_name", session_data.get("leader_name", session_data.get("registered_name", "Executive Leader"))))
+		var step: String = str(session_data.get("onboarding_step", "InOffice"))
+		
+		if lbl_session_details:
+			lbl_session_details.text = c_name + " (Leader: " + leader + ")"
+		
+		var phase_text := "Phase: In Office (Presidential Desk)"
+		var phase_color := Color(0.4, 1.0, 0.5)
+		var btn_text := "▶ Enter Executive Office"
+		if step == "CampaignHeadquarters" or step == "AdvisersIntroduced":
+			phase_text = "Phase: Campaign Headquarters (Presidential Campaign)"
+			phase_color = Color(1.0, 0.85, 0.3)
+			btn_text = "▶ Enter Campaign Headquarters"
+		elif step == "InOffice" or session_data.has("treasury_balance"):
+			phase_text = "Phase: In Office (Presidential Desk)"
+			phase_color = Color(0.4, 1.0, 0.5)
+			btn_text = "▶ Enter Executive Office"
+		else:
+			phase_text = "Phase: Sovereign Founding (" + step + ")"
+			phase_color = Color(0.6, 0.8, 1.0)
+			btn_text = "▶ Resume Republic Setup"
+		
+		if lbl_session_phase:
+			lbl_session_phase.text = phase_text
+			lbl_session_phase.modulate = phase_color
+		if btn_quick_login:
+			btn_quick_login.text = btn_text
+			btn_quick_login.disabled = false
+		return session_data
+	else:
+		if lbl_session_details:
+			lbl_session_details.text = "No saved Republic found on this system."
+		if lbl_session_phase:
+			lbl_session_phase.text = "Phase: None (Select 'Sign Up' to establish a Republic)"
+			lbl_session_phase.modulate = Color(0.7, 0.7, 0.7)
+		if btn_quick_login:
+			btn_quick_login.text = "▶ No Saved Republic"
+			btn_quick_login.disabled = true
+		return {}
 
-	if lbl_register_feedback:
-		lbl_register_feedback.text = "No saved Republic session found. Please register below to found a New Republic."
-		lbl_register_feedback.modulate = Color(1.0, 0.75, 0.3)
+func _on_quick_login_pressed() -> void:
+	var session_data := _refresh_detected_session()
+	if session_data.is_empty():
+		if lbl_login_feedback:
+			lbl_login_feedback.text = "No saved Republic found. Please Sign Up to create one."
+			lbl_login_feedback.modulate = Color(1.0, 0.5, 0.3)
+		return
+	if lbl_login_feedback:
+		lbl_login_feedback.text = "Session verified. Launching straight to office..."
+		lbl_login_feedback.modulate = Color(0.4, 1.0, 0.4)
+	_launch_to_office_or_resume(session_data)
+
+func _on_submit_login_pressed() -> void:
+	var email := input_login_email.text.strip_edges() if input_login_email else ""
+	if email.is_empty():
+		if lbl_login_feedback:
+			lbl_login_feedback.text = "Please enter your registered email address."
+			lbl_login_feedback.modulate = Color(1.0, 0.4, 0.4)
+		return
+	if not email.contains("@") or not email.contains("."):
+		if lbl_login_feedback:
+			lbl_login_feedback.text = "Please enter a valid email address (e.g. candidate@republic.gov)."
+			lbl_login_feedback.modulate = Color(1.0, 0.4, 0.4)
+		return
+	
+	var session_data := _refresh_detected_session()
+	if session_data.is_empty():
+		if lbl_login_feedback:
+			lbl_login_feedback.text = "No Republic found. Please select 'Sign Up' above to register candidate."
+			lbl_login_feedback.modulate = Color(1.0, 0.7, 0.2)
+		return
+	
+	registered_email = email
+	if lbl_login_feedback:
+		lbl_login_feedback.text = "Login successful for " + email + ". Launching to office..."
+		lbl_login_feedback.modulate = Color(0.4, 1.0, 0.4)
+	_launch_to_office_or_resume(session_data)
+
+func _launch_to_office_or_resume(session_data: Dictionary) -> void:
+	var step: String = str(session_data.get("onboarding_step", ""))
+	
+	# Check if player is in office
+	if step == "InOffice" or (session_data.has("country_name") and (step.is_empty() or step == "InOffice") and session_data.has("treasury_balance")):
+		print("[AUTH/LAUNCH]: Player is in office. Launching straight to Executive Office.")
+		if is_inside_tree() and get_tree() != null:
+			get_tree().change_scene_to_file("res://ExecutiveOffice.tscn")
+		return
+	
+	# Check if player is in campaign phase
+	if step == "CampaignHeadquarters" or step == "AdvisersIntroduced":
+		print("[AUTH/LAUNCH]: Player is in campaign. Launching straight to Campaign Headquarters.")
+		_populate_campaign_hq_view(session_data)
+		_show_stage(ScreenStage.CAMPAIGN_HQ)
+		return
+	
+	# In-progress founding journey
+	match step:
+		"DevelopmentPlansSelected":
+			_populate_phase3_summary_view(session_data)
+			_show_stage(ScreenStage.PHASE3_SUMMARY)
+		"LeadershipSelected":
+			_show_stage(ScreenStage.DEVELOPMENT_PLANS)
+		"CountryCreated":
+			_populate_confirmed_view(session_data)
+			_show_stage(ScreenStage.CONFIRMED)
+		"EmailVerified":
+			_show_stage(ScreenStage.COUNTRY_NAME)
+		"AccountRegistered":
+			_show_stage(ScreenStage.VERIFY_EMAIL)
+		_:
+			_show_stage(ScreenStage.REGISTER)
+
+func _on_campaign_signout_pressed() -> void:
+	print("[AUTH]: Signing out from Campaign Headquarters to Start Gateway.")
+	_show_stage(ScreenStage.REGISTER)
+	_show_sign_up_mode()
 
 func _check_authoritative_session() -> Dictionary:
 	var paths := [
 		active_state_path,
 		"user://presidential_desk_state.json",
-		"res://presidential_desk_state.json"
+		"res://presidential_desk_state.json",
+		active_save_path
 	]
 	for p in paths:
 		var global_p := ProjectSettings.globalize_path(p)

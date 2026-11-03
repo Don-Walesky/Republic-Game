@@ -99,6 +99,7 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var stability_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/StabilityLabel") as Label
 @onready var defcon_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/DefconLabel") as Label
 @onready var switch_to_desk_button: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/SwitchToDeskButton") as Button
+@onready var sign_out_button: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/SignOutButton") as Button
 @onready var refresh_button: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/RefreshButton") as Button
 
 # Navigation Tab Bar
@@ -862,6 +863,8 @@ func _init_controls() -> void:
 		defcon_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/DefconLabel") as Label
 	if switch_to_desk_button == null:
 		switch_to_desk_button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/SwitchToDeskButton") as Button
+	if sign_out_button == null:
+		sign_out_button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/SignOutButton") as Button
 	if refresh_button == null:
 		refresh_button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/RefreshButton") as Button
 
@@ -1508,6 +1511,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _connect_signals() -> void:
 	if switch_to_desk_button and not switch_to_desk_button.pressed.is_connected(_on_switch_to_desk_button_pressed):
 		switch_to_desk_button.pressed.connect(_on_switch_to_desk_button_pressed)
+	if sign_out_button and not sign_out_button.pressed.is_connected(_on_sign_out_button_pressed):
+		sign_out_button.pressed.connect(_on_sign_out_button_pressed)
 	if refresh_button and not refresh_button.pressed.is_connected(_on_refresh_button_pressed):
 		refresh_button.pressed.connect(_on_refresh_button_pressed)
 
@@ -3367,6 +3372,11 @@ func set_desk_style(surface_color: Color, blotter_color: Color) -> void:
 func _on_switch_to_desk_button_pressed() -> void:
 	navigate_to_section(Section.OVERVIEW)
 	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
+
+func _on_sign_out_button_pressed() -> void:
+	print("[EXECUTIVE OFFICE]: Signing out. Returning to Sovereign Gateway / Onboarding.")
+	if is_inside_tree() and get_tree() != null:
+		get_tree().change_scene_to_file("res://Onboarding.tscn")
 
 func _on_refresh_button_pressed() -> void:
 	load_live_state()

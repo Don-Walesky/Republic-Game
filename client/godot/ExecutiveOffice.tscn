@@ -1040,6 +1040,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "Cabinet Data Desk ->"
 
+[node name="SignOutButton" type="Button" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🚪 Sign Out"
+
 [node name="NavBarPanel" type="PanelContainer" parent="InterfaceLayer"]
 layout_mode = 1
 anchors_preset = 10

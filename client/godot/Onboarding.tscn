@@ -69,13 +69,13 @@ alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 36)
-text = "★ New Republic"
+text = "📝 Sign Up"
 
 [node name="BtnModeResumeSession" type="Button" parent="PanelContainer/VBox/ScreenRegister/SessionModeHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 36)
-text = "▶ Resume / Log In"
+text = "🔑 Log In / Sign In"
 
 [node name="Instructions" type="Label" parent="PanelContainer/VBox/ScreenRegister"]
 layout_mode = 2
@@ -156,6 +156,69 @@ custom_minimum_size = Vector2(0, 42)
 text = "Register Executive Candidate"
 
 [node name="LblFeedback" type="Label" parent="PanelContainer/VBox/ScreenRegister"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+
+[node name="LoginForm" type="VBoxContainer" parent="PanelContainer/VBox/ScreenRegister"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LoginInstructions" type="Label" parent="PanelContainer/VBox/ScreenRegister/LoginForm"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Sign in to access your sovereign presidency or ongoing campaign."
+horizontal_alignment = 1
+
+[node name="SavedSessionCard" type="PanelContainer" parent="PanelContainer/VBox/ScreenRegister/LoginForm"]
+layout_mode = 2
+
+[node name="SessionCardVBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblSessionCardHeader" type="Label" parent="PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 12
+text = "AUTHORITATIVE REPUBLIC DETECTED"
+
+[node name="LblSessionDetails" type="Label" parent="PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "No saved Republic found."
+
+[node name="LblSessionPhase" type="Label" parent="PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1.0, 1)
+theme_override_font_sizes/font_size = 12
+text = "Phase: -"
+
+[node name="BtnQuickLogin" type="Button" parent="PanelContainer/VBox/ScreenRegister/LoginForm/SavedSessionCard/SessionCardVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "▶ Log In & Launch to Office"
+
+[node name="ManualLoginVBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenRegister/LoginForm"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblLoginEmail" type="Label" parent="PanelContainer/VBox/ScreenRegister/LoginForm/ManualLoginVBox"]
+layout_mode = 2
+text = "Or Sign In With Registered Email:"
+
+[node name="LoginEmailInput" type="LineEdit" parent="PanelContainer/VBox/ScreenRegister/LoginForm/ManualLoginVBox"]
+layout_mode = 2
+placeholder_text = "candidate@republic.gov"
+
+[node name="BtnSubmitLogin" type="Button" parent="PanelContainer/VBox/ScreenRegister/LoginForm/ManualLoginVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+text = "Log In & Continue Game"
+
+[node name="LblLoginFeedback" type="Label" parent="PanelContainer/VBox/ScreenRegister/LoginForm"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
@@ -1436,3 +1499,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 38)
 text = "Back to Presidential Advisory Council"
+
+[node name="BtnCampaignSignOut" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "🚪 Sign Out / Return to Start"
