@@ -67,6 +67,8 @@ var resend_cooldown_timer: float = 0.0
 @onready var summary_panel: Control = $PanelContainer/VBox/ScreenPhase3Summary
 
 # Registration Nodes
+@onready var btn_mode_new_republic: Button = $PanelContainer/VBox/ScreenRegister/SessionModeHBox/BtnModeNewRepublic
+@onready var btn_mode_resume: Button = $PanelContainer/VBox/ScreenRegister/SessionModeHBox/BtnModeResumeSession
 @onready var input_first_name: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/FirstNameInput
 @onready var input_last_name: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/LastNameInput
 @onready var input_email: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/EmailInput
@@ -208,6 +210,8 @@ func _init_controls() -> void:
 	if plans_panel == null: plans_panel = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans")
 	if summary_panel == null: summary_panel = get_node_or_null("PanelContainer/VBox/ScreenPhase3Summary")
 
+	if btn_mode_new_republic == null: btn_mode_new_republic = get_node_or_null("PanelContainer/VBox/ScreenRegister/SessionModeHBox/BtnModeNewRepublic")
+	if btn_mode_resume == null: btn_mode_resume = get_node_or_null("PanelContainer/VBox/ScreenRegister/SessionModeHBox/BtnModeResumeSession")
 	if input_first_name == null: input_first_name = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/FirstNameInput")
 	if input_last_name == null: input_last_name = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/LastNameInput")
 	if input_email == null: input_email = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/EmailInput")
@@ -340,6 +344,10 @@ func _process(delta: float) -> void:
 				btn_resend_email.disabled = false
 
 func _connect_signals() -> void:
+	if btn_mode_new_republic and not btn_mode_new_republic.pressed.is_connected(_on_entry_new_republic_pressed):
+		btn_mode_new_republic.pressed.connect(_on_entry_new_republic_pressed)
+	if btn_mode_resume and not btn_mode_resume.pressed.is_connected(_on_entry_resume_pressed):
+		btn_mode_resume.pressed.connect(_on_entry_resume_pressed)
 	if btn_register and not btn_register.pressed.is_connected(_on_register_pressed):
 		btn_register.pressed.connect(_on_register_pressed)
 	if btn_verify_email_action and not btn_verify_email_action.pressed.is_connected(_on_verify_action_pressed):
@@ -477,6 +485,68 @@ func _show_stage(stage: ScreenStage) -> void:
 		ScreenStage.CAMPAIGN_HQ: stage_name = "CampaignHeadquarters"
 
 	onboarding_step_changed.emit(stage_name)
+
+# ==============================================================================
+# Entry Navigation: New Republic vs Resume / Log In
+# ==============================================================================
+func _on_entry_new_republic_pressed() -> void:
+	if input_first_name: input_first_name.text = ""
+	if input_last_name: input_last_name.text = ""
+	if input_email: input_email.text = ""
+	if lbl_register_feedback:
+		lbl_register_feedback.text = "Establish a New Republic. Enter candidate credentials below."
+		lbl_register_feedback.modulate = Color(0.9, 0.9, 0.9)
+	_update_session_mode_buttons(true)
+	_show_stage(ScreenStage.REGISTER)
+
+func _on_entry_resume_pressed() -> void:
+	_update_session_mode_buttons(false)
+	var session_data := _check_authoritative_session()
+	if not session_data.is_empty():
+		var step: String = str(session_data.get("onboarding_step", ""))
+		if step == "InOffice" or (session_data.has("country_name") and (step.is_empty() or step == "InOffice") and session_data.has("treasury_balance")):
+			if lbl_register_feedback:
+				lbl_register_feedback.text = "Authoritative session found. Resuming presidency..."
+				lbl_register_feedback.modulate = Color(0.4, 1.0, 0.4)
+			if is_inside_tree() and get_tree() != null:
+				get_tree().change_scene_to_file("res://ExecutiveOffice.tscn")
+			return
+		elif not step.is_empty() and step != "NotStarted":
+			if lbl_register_feedback:
+				lbl_register_feedback.text = "Resuming in-progress founding journey (" + step + ")..."
+				lbl_register_feedback.modulate = Color(0.4, 1.0, 0.4)
+			_load_initial_stage()
+			return
+
+	if lbl_register_feedback:
+		lbl_register_feedback.text = "No saved Republic session found. Please register below to found a New Republic."
+		lbl_register_feedback.modulate = Color(1.0, 0.75, 0.3)
+
+func _check_authoritative_session() -> Dictionary:
+	var paths := [
+		active_state_path,
+		"user://presidential_desk_state.json",
+		"res://presidential_desk_state.json"
+	]
+	for p in paths:
+		var global_p := ProjectSettings.globalize_path(p)
+		if FileAccess.file_exists(global_p):
+			var file := FileAccess.open(global_p, FileAccess.READ)
+			if file != null:
+				var content := file.get_as_text()
+				file.close()
+				var parsed = JSON.parse_string(content)
+				if parsed != null and typeof(parsed) == TYPE_DICTIONARY:
+					var c_name: String = str(parsed.get("country_name", ""))
+					if not c_name.is_empty() and c_name != "[No State Loaded]":
+						return parsed
+	return {}
+
+func _update_session_mode_buttons(is_new_mode: bool) -> void:
+	if btn_mode_new_republic:
+		btn_mode_new_republic.modulate = Color(1.0, 1.0, 1.0) if is_new_mode else Color(0.65, 0.65, 0.7)
+	if btn_mode_resume:
+		btn_mode_resume.modulate = Color(1.0, 1.0, 1.0) if not is_new_mode else Color(0.65, 0.65, 0.7)
 
 # ==============================================================================
 # Step 1: Account Registration
@@ -1377,6 +1447,8 @@ func _on_assume_office_pressed() -> void:
 			lbl_campaign_feedback.text = "Inauguration complete! Welcome to the Presidential Executive Office."
 			lbl_campaign_feedback.modulate = Color(0.4, 1.0, 0.4)
 		onboarding_completed.emit(res)
+		if is_inside_tree() and get_tree() != null:
+			get_tree().change_scene_to_file("res://ExecutiveOffice.tscn")
 	else:
 		if btn_assume_office: btn_assume_office.disabled = false
 		if lbl_campaign_feedback:

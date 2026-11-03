@@ -60,6 +60,23 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="SessionModeHBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenRegister"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BtnModeNewRepublic" type="Button" parent="PanelContainer/VBox/ScreenRegister/SessionModeHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 36)
+text = "★ New Republic"
+
+[node name="BtnModeResumeSession" type="Button" parent="PanelContainer/VBox/ScreenRegister/SessionModeHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 36)
+text = "▶ Resume / Log In"
+
 [node name="Instructions" type="Label" parent="PanelContainer/VBox/ScreenRegister"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)

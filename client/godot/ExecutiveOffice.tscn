@@ -1096,11 +1096,12 @@ theme_override_font_sizes/font_size = 11
 text = "🏛 7. Office Décor"
 
 [node name="LeftDock" type="PanelContainer" parent="InterfaceLayer"]
+custom_minimum_size = Vector2(290, 0)
 layout_mode = 1
 anchor_left = 0.01
 anchor_top = 0.09
 anchor_bottom = 0.88
-offset_right = 230.0
+offset_right = 290.0
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_glassdock")
 

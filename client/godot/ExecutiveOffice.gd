@@ -3931,14 +3931,24 @@ func _on_left_dock_mouse_entered() -> void:
 	set_left_dock_expanded(true)
 
 func _on_left_dock_mouse_exited() -> void:
-	if not left_dock_pinned:
+	if not left_dock_pinned and left_dock:
+		var vp := left_dock.get_viewport()
+		if vp != null:
+			var mouse_pos := vp.get_mouse_position()
+			if left_dock.get_global_rect().has_point(mouse_pos):
+				return
 		set_left_dock_expanded(false)
 
 func _on_right_dock_mouse_entered() -> void:
 	set_right_dock_expanded(true)
 
 func _on_right_dock_mouse_exited() -> void:
-	if not right_dock_pinned:
+	if not right_dock_pinned and right_dock:
+		var vp := right_dock.get_viewport()
+		if vp != null:
+			var mouse_pos := vp.get_mouse_position()
+			if right_dock.get_global_rect().has_point(mouse_pos):
+				return
 		set_right_dock_expanded(false)
 
 # ==============================================================================
