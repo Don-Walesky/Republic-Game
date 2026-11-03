@@ -369,6 +369,12 @@ public sealed record PresidentialDeskSnapshot
     public IReadOnlyList<MediaReportSnapshot> MediaReports { get; init; } = Array.Empty<MediaReportSnapshot>();
 
     /// <summary>
+    /// Gets sensitive or high-impact media stories currently awaiting a presidential decision.
+    /// </summary>
+    [JsonPropertyName("pending_media_decisions")]
+    public IReadOnlyList<MediaReportSnapshot> PendingMediaDecisions { get; init; } = Array.Empty<MediaReportSnapshot>();
+
+    /// <summary>
     /// Gets the media landscape briefing summary.
     /// </summary>
     [JsonPropertyName("media_summary")]
@@ -1067,8 +1073,15 @@ public sealed record PresidentialDeskSnapshot
             StabilityImpact = r.StabilityImpact,
             IsSuppressed = r.IsSuppressed,
             IsUndergroundLeak = r.IsUndergroundLeak,
-            ResponseStatus = r.ResponseStatus.ToString()
+            ResponseStatus = r.ResponseStatus.ToString(),
+            RequiresDecision = r.RequiresDecision,
+            PredictedEffect = r.PredictedEffect,
+            AutoPublishTimerSeconds = r.AutoPublishTimerSeconds
         }).ToList();
+
+        var pendingMediaDecisions = mediaReportSnapshots
+            .Where(r => r.RequiresDecision && !r.IsSuppressed && r.ResponseStatus == "Unanswered")
+            .ToList();
 
         var topHeadline = country.MediaReports.FirstOrDefault(r => !r.IsSuppressed)?.Headline
                           ?? country.MediaReports.FirstOrDefault()?.Headline
@@ -1458,6 +1471,7 @@ public sealed record PresidentialDeskSnapshot
             ExternalThreatIndex = secAssessment.ExternalThreatIndex,
             MediaOutlets = mediaOutletSnapshots.AsReadOnly(),
             MediaReports = mediaReportSnapshots.AsReadOnly(),
+            PendingMediaDecisions = pendingMediaDecisions.AsReadOnly(),
             MediaSummary = mediaSummaryText,
             PrivateInvestors = privateInvestorSnapshots.AsReadOnly(),
             InvestmentProposals = investmentProposalSnapshots.AsReadOnly(),

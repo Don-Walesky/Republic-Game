@@ -246,6 +246,17 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var briefing_desk_button: Button = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox/BriefingDeskButton") as Button
 @onready var close_briefing_button: Button = _get_node_safe("InterfaceLayer/BriefingModal/BriefingVBox/BriefingActionsHBox/CloseBriefingButton") as Button
 
+# Media Desk Modal
+@onready var open_media_desk_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/OpenMediaDeskButton") as Button
+@onready var media_desk_modal: PanelContainer = _get_node_safe("InterfaceLayer/MediaDeskModal") as PanelContainer
+@onready var close_media_desk_x_button: Button = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskHeaderHBox/CloseMediaDeskXButton") as Button
+@onready var close_media_desk_button: Button = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskActionsHBox/CloseMediaDeskButton") as Button
+@onready var media_desk_corruption_label: Label = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskCorruptionHBox/MediaDeskCorruptionLabel") as Label
+@onready var media_desk_feedback_label: Label = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskFeedbackLabel") as Label
+@onready var pending_stories_vbox: VBoxContainer = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskScroll/PendingStoriesVBox") as VBoxContainer
+@onready var empty_pending_stories_label: Label = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskScroll/PendingStoriesVBox/EmptyPendingStoriesLabel") as Label
+var media_auto_publish_timer: Timer = null
+
 # Hotline Modal
 @onready var hotline_modal: PanelContainer = _get_node_safe("InterfaceLayer/HotlineModal") as PanelContainer
 @onready var close_hotline_x_button: Button = _get_node_safe("InterfaceLayer/HotlineModal/HotlineVBox/HotlineHeaderHBox/CloseHotlineXButton") as Button
@@ -1310,13 +1321,38 @@ func _init_controls() -> void:
 	if resources_effect_label == null:
 		resources_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesEffectLabel") as Label
 
-	# Press Secretary
+	# Press Secretary & Media Desk
 	if press_sec_name_label == null:
 		press_sec_name_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressSecNameLabel") as Label
 	if press_briefing_headline_label == null:
 		press_briefing_headline_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressBriefingHeadlineLabel") as Label
 	if press_briefing_summary_label == null:
 		press_briefing_summary_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressBriefingSummaryLabel") as Label
+	if open_media_desk_button == null:
+		open_media_desk_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/OpenMediaDeskButton") as Button
+	if media_desk_modal == null:
+		media_desk_modal = _get_node_safe("InterfaceLayer/MediaDeskModal") as PanelContainer
+	if close_media_desk_x_button == null:
+		close_media_desk_x_button = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskHeaderHBox/CloseMediaDeskXButton") as Button
+	if close_media_desk_button == null:
+		close_media_desk_button = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskActionsHBox/CloseMediaDeskButton") as Button
+	if media_desk_corruption_label == null:
+		media_desk_corruption_label = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskCorruptionHBox/MediaDeskCorruptionLabel") as Label
+	if media_desk_feedback_label == null:
+		media_desk_feedback_label = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskFeedbackLabel") as Label
+	if pending_stories_vbox == null:
+		pending_stories_vbox = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskScroll/PendingStoriesVBox") as VBoxContainer
+	if empty_pending_stories_label == null:
+		empty_pending_stories_label = _get_node_safe("InterfaceLayer/MediaDeskModal/MediaDeskVBox/MediaDeskScroll/PendingStoriesVBox/EmptyPendingStoriesLabel") as Label
+
+	if media_auto_publish_timer == null:
+		media_auto_publish_timer = Timer.new()
+		media_auto_publish_timer.name = "MediaAutoPublishTimer"
+		media_auto_publish_timer.wait_time = 20.0
+		media_auto_publish_timer.one_shot = false
+		media_auto_publish_timer.autostart = true
+		media_auto_publish_timer.timeout.connect(_on_media_auto_publish_timeout)
+		add_child(media_auto_publish_timer)
 
 	# Dynamic Events
 	if empty_events_label == null:
@@ -1631,6 +1667,14 @@ func _connect_signals() -> void:
 		appoint_interior_button.pressed.connect(_on_appoint_interior_pressed)
 	if appoint_infrastructure_button and not appoint_infrastructure_button.pressed.is_connected(_on_appoint_infrastructure_pressed):
 		appoint_infrastructure_button.pressed.connect(_on_appoint_infrastructure_pressed)
+
+	# Media Desk Signals
+	if open_media_desk_button and not open_media_desk_button.pressed.is_connected(open_media_desk_modal):
+		open_media_desk_button.pressed.connect(open_media_desk_modal)
+	if close_media_desk_x_button and not close_media_desk_x_button.pressed.is_connected(close_media_desk_modal):
+		close_media_desk_x_button.pressed.connect(close_media_desk_modal)
+	if close_media_desk_button and not close_media_desk_button.pressed.is_connected(close_media_desk_modal):
+		close_media_desk_button.pressed.connect(close_media_desk_modal)
 
 	if close_cabinet_appointment_x_button and not close_cabinet_appointment_x_button.pressed.is_connected(close_all_modals):
 		close_cabinet_appointment_x_button.pressed.connect(close_all_modals)
@@ -2035,6 +2079,9 @@ func apply_state(state: Dictionary) -> void:
 
 	# Phase 3: Living Media Environment & Action Management
 	_update_media_environment_briefing_ui(state)
+
+	# Media Desk Modal Updates
+	_update_media_desk_modal(state)
 
 	# Phase 3: Private Sector Inbound Proposals & Investment
 	_update_private_sector_investment_briefing_ui(state)
@@ -2469,6 +2516,20 @@ func _populate_dynamic_events(state: Dictionary) -> void:
 				events_count += 1
 				break
 
+	# 5. Background Ordinary News Reports (Published automatically by simulation)
+	var reports = state.get("media_reports", [])
+	if reports is Array:
+		for rep in reports:
+			if rep is Dictionary and not bool(rep.get("is_suppressed", false)) and not bool(rep.get("requires_decision", false)):
+				var h := str(rep.get("headline", "")).strip_edges()
+				var o := str(rep.get("outlet_name", "Press Wire")).strip_edges()
+				if not h.is_empty():
+					var card := _create_event_card("📰", h, o, "Press")
+					dynamic_events_vbox.add_child(card)
+					events_count += 1
+					if events_count >= 6:
+						break
+
 	empty_events_label.visible = (events_count == 0)
 
 func _create_event_card(icon: String, title: String, subtitle: String, timestamp: String) -> Control:
@@ -2551,6 +2612,12 @@ func _update_press_secretary(state: Dictionary) -> void:
 	if press_sec_name_label: press_sec_name_label.text = "Press Secretary: %s" % sec_name
 	if press_briefing_headline_label: press_briefing_headline_label.text = headline
 	if press_briefing_summary_label: press_briefing_summary_label.text = summary
+	var pending_count: int = get_pending_media_decisions().size()
+	if open_media_desk_button:
+		if pending_count > 0:
+			open_media_desk_button.text = "📰 Media Desk (%d Pending)" % pending_count
+		else:
+			open_media_desk_button.text = "📰 Media Desk"
 
 func _update_command_centre_modal(state: Dictionary) -> void:
 	if military_readiness_stat_label:
@@ -3568,6 +3635,22 @@ func open_briefing_modal() -> void:
 	if status_ticker_label:
 		status_ticker_label.text = "Executive Briefing: Presidential situation report and active memoranda opened."
 
+func open_media_desk_modal() -> void:
+	close_all_modals()
+	if modal_backdrop:
+		modal_backdrop.visible = true
+	if media_desk_modal:
+		media_desk_modal.visible = true
+	if status_ticker_label:
+		status_ticker_label.text = "Media Desk: Presidential review of pending sensitive news dispatches."
+	_update_media_desk_modal(latest_state)
+
+func close_media_desk_modal() -> void:
+	if media_desk_modal:
+		media_desk_modal.visible = false
+	if modal_backdrop and not is_any_modal_open():
+		modal_backdrop.visible = false
+
 func open_hotline_modal() -> void:
 	close_all_modals()
 	if modal_backdrop:
@@ -3617,6 +3700,7 @@ func close_customisation_modal() -> void:
 func close_all_modals() -> void:
 	if modal_backdrop: modal_backdrop.visible = false
 	if briefing_modal: briefing_modal.visible = false
+	if media_desk_modal: media_desk_modal.visible = false
 	if hotline_modal: hotline_modal.visible = false
 	if dossier_modal: dossier_modal.visible = false
 	if customisation_modal: customisation_modal.visible = false
@@ -3635,6 +3719,7 @@ func close_all_modals() -> void:
 
 func is_any_modal_open() -> bool:
 	return (briefing_modal and briefing_modal.visible) or \
+		(media_desk_modal and media_desk_modal.visible) or \
 		(hotline_modal and hotline_modal.visible) or \
 		(dossier_modal and dossier_modal.visible) or \
 		(customisation_modal and customisation_modal.visible) or \
@@ -6132,6 +6217,242 @@ func _update_media_environment_briefing_ui(state: Dictionary) -> void:
 
 			media_section.add_child(card)
 
+func get_pending_media_decisions() -> Array:
+	var list: Array = []
+	if latest_state.has("pending_media_decisions") and latest_state["pending_media_decisions"] is Array:
+		for item in latest_state["pending_media_decisions"]:
+			if item is Dictionary and not bool(item.get("is_suppressed", false)) and str(item.get("response_status", "Unanswered")) == "Unanswered":
+				list.append(item)
+	elif latest_state.has("media_reports") and latest_state["media_reports"] is Array:
+		for item in latest_state["media_reports"]:
+			if item is Dictionary and bool(item.get("requires_decision", false)) and not bool(item.get("is_suppressed", false)) and str(item.get("response_status", "Unanswered")) == "Unanswered":
+				list.append(item)
+	return list
+
+func _on_media_auto_publish_timeout() -> void:
+	var pending := get_pending_media_decisions()
+	if not pending.is_empty():
+		var oldest: Dictionary = pending[0]
+		var s_id := str(oldest.get("id", ""))
+		if not s_id.is_empty():
+			execute_media_response(s_id, "ignore")
+			_on_story_action_completed("Pending story auto-published after being ignored.")
+			_update_media_desk_modal(latest_state)
+
+func _on_story_action_completed(feedback_msg: String) -> void:
+	if media_desk_feedback_label:
+		media_desk_feedback_label.visible = true
+		media_desk_feedback_label.text = "Executive Action: " + feedback_msg
+	if status_ticker_label:
+		status_ticker_label.text = "Media Desk: " + feedback_msg
+	var cc_val := float(latest_state.get("corruption_control", 0.3)) * 100.0
+	if media_desk_corruption_label:
+		media_desk_corruption_label.text = "State Integrity: Corruption Control: %0.0f%% (%s)" % [
+			cc_val,
+			"Low Risk" if cc_val >= 60.0 else ("Moderate Concern" if cc_val >= 30.0 else "Critical Corruption Alert")
+		]
+	if corruption_control_label:
+		corruption_control_label.text = "Corruption Control: %0.0f%%" % cc_val
+
+func _mark_media_report_handled(report_id: String, response_type: String) -> void:
+	var norm_type := response_type.to_lower()
+	var new_status := "StatementIssued"
+	var is_suppressed := false
+	if norm_type in ["hush", "buy_and_kill", "hush_money"]:
+		new_status = "HushMoneyAccepted"
+		is_suppressed = true
+	elif norm_type in ["censorship", "censor"]:
+		new_status = "Censored"
+		is_suppressed = true
+
+	var reports = latest_state.get("media_reports", [])
+	if reports is Array:
+		for r in reports:
+			if r is Dictionary and str(r.get("id", "")) == report_id:
+				r["response_status"] = new_status
+				r["requires_decision"] = false
+				r["is_suppressed"] = is_suppressed
+
+	if latest_state.has("pending_media_decisions") and latest_state["pending_media_decisions"] is Array:
+		var filtered: Array = []
+		for item in latest_state["pending_media_decisions"]:
+			if item is Dictionary and str(item.get("id", "")) != report_id:
+				filtered.append(item)
+		latest_state["pending_media_decisions"] = filtered
+
+	_update_press_secretary(latest_state)
+
+func _update_media_desk_modal(state: Dictionary) -> void:
+	if not media_desk_modal:
+		return
+
+	var cc_val := float(state.get("corruption_control", 0.3)) * 100.0
+	if media_desk_corruption_label:
+		media_desk_corruption_label.text = "State Integrity: Corruption Control: %0.0f%% (%s)" % [
+			cc_val,
+			"Low Risk" if cc_val >= 60.0 else ("Moderate Concern" if cc_val >= 30.0 else "Critical Corruption Alert")
+		]
+
+	if not pending_stories_vbox:
+		return
+
+	for child in pending_stories_vbox.get_children():
+		if child != empty_pending_stories_label:
+			pending_stories_vbox.remove_child(child)
+			child.queue_free()
+
+	var pending_stories: Array = []
+	if state.has("pending_media_decisions") and state["pending_media_decisions"] is Array:
+		pending_stories = state["pending_media_decisions"]
+	else:
+		var reports = state.get("media_reports", [])
+		if reports is Array:
+			for r in reports:
+				if r is Dictionary and bool(r.get("requires_decision", false)) and not bool(r.get("is_suppressed", false)) and str(r.get("response_status", "Unanswered")) == "Unanswered":
+					pending_stories.append(r)
+
+	if empty_pending_stories_label:
+		empty_pending_stories_label.visible = pending_stories.is_empty()
+
+	for story in pending_stories:
+		if not (story is Dictionary):
+			continue
+		var story_id := str(story.get("id", ""))
+		var headline := str(story.get("headline", "Untitled Sensitive Story"))
+		var summary := str(story.get("article_summary", story.get("body", "No summary details provided.")))
+		var outlet_name := str(story.get("outlet_name", "National Press"))
+		var leaning := str(story.get("leaning", "Independent"))
+		var sentiment := str(story.get("sentiment", "Critical"))
+		var predicted_effect := str(story.get("predicted_effect", ""))
+		if predicted_effect.is_empty():
+			var app_imp := float(story.get("public_approval_impact", -3.0))
+			var stab_imp := float(story.get("stability_impact", -2.0))
+			predicted_effect = "Public Approval: %0.1f%%, Stability: %0.1f%% if published" % [app_imp, stab_imp]
+
+		var card := PanelContainer.new()
+		card.name = "MediaDeskCard_" + story_id
+		card.add_theme_stylebox_override("panel", get_theme_stylebox("panel", "PanelContainer"))
+
+		var card_vbox := VBoxContainer.new()
+		card_vbox.add_theme_constant_override("separation", 4)
+		card.add_child(card_vbox)
+
+		# 1. Header with Source, Leaning, Tone
+		var header_hbox := HBoxContainer.new()
+		var source_lbl := Label.new()
+		source_lbl.text = "📰 %s [%s]" % [outlet_name, leaning]
+		source_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		source_lbl.add_theme_font_size_override("font_size", 11)
+		source_lbl.add_theme_color_override("font_color", Color(0.92, 0.82, 0.4))
+		header_hbox.add_child(source_lbl)
+
+		var tone_lbl := Label.new()
+		tone_lbl.text = "[Tone: %s | High Impact]" % sentiment
+		tone_lbl.add_theme_font_size_override("font_size", 10)
+		tone_lbl.add_theme_color_override("font_color", Color(1.0, 0.5, 0.3) if sentiment.to_lower() == "critical" else Color(0.5, 0.8, 1.0))
+		header_hbox.add_child(tone_lbl)
+		card_vbox.add_child(header_hbox)
+
+		# 2. Headline
+		var hl_lbl := Label.new()
+		hl_lbl.text = headline
+		hl_lbl.add_theme_font_size_override("font_size", 12)
+		hl_lbl.add_theme_color_override("font_color", Color.WHITE)
+		card_vbox.add_child(hl_lbl)
+
+		# 3. Summary
+		var sum_lbl := Label.new()
+		sum_lbl.text = summary
+		sum_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sum_lbl.add_theme_font_size_override("font_size", 10)
+		sum_lbl.add_theme_color_override("font_color", Color(0.8, 0.85, 0.9))
+		card_vbox.add_child(sum_lbl)
+
+		# 4. Predicted Effect
+		var effect_panel := PanelContainer.new()
+		var effect_lbl := Label.new()
+		effect_lbl.text = "📊 Predicted Impact: " + predicted_effect
+		effect_lbl.add_theme_font_size_override("font_size", 10)
+		effect_lbl.add_theme_color_override("font_color", Color(0.4, 0.85, 0.95))
+		effect_panel.add_child(effect_lbl)
+		card_vbox.add_child(effect_panel)
+
+		# 5. Consequence Warning
+		var warn_lbl := Label.new()
+		warn_lbl.text = "⚠️ Executive Options: Approve allows the story to publish. Hush suppresses it from press, but raises Corruption."
+		warn_lbl.add_theme_font_size_override("font_size", 9)
+		warn_lbl.add_theme_color_override("font_color", Color(0.9, 0.7, 0.4))
+		card_vbox.add_child(warn_lbl)
+
+		# 6. Status and Result Feedback Label
+		var card_status_lbl := Label.new()
+		card_status_lbl.name = "CardStatusLabel"
+		card_status_lbl.visible = false
+		card_status_lbl.add_theme_font_size_override("font_size", 10)
+		card_vbox.add_child(card_status_lbl)
+
+		# 7. Action Buttons
+		var act_hbox := HBoxContainer.new()
+		act_hbox.alignment = BoxContainer.ALIGNMENT_END
+		act_hbox.add_theme_constant_override("separation", 8)
+
+		var approve_btn := Button.new()
+		approve_btn.name = "ApproveStoryButton"
+		approve_btn.text = "✅ Approve / Let It Run"
+		approve_btn.add_theme_font_size_override("font_size", 10)
+		approve_btn.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5))
+		act_hbox.add_child(approve_btn)
+
+		var hush_btn := Button.new()
+		hush_btn.name = "HushStoryButton"
+		hush_btn.text = "🤫 Hush / Buy & Kill"
+		hush_btn.add_theme_font_size_override("font_size", 10)
+		hush_btn.add_theme_color_override("font_color", Color(0.95, 0.45, 0.4))
+		act_hbox.add_child(hush_btn)
+
+		var ignore_btn := Button.new()
+		ignore_btn.name = "IgnoreStoryButton"
+		ignore_btn.text = "⏭️ Ignore (Auto-Publish)"
+		ignore_btn.add_theme_font_size_override("font_size", 10)
+		act_hbox.add_child(ignore_btn)
+
+		card_vbox.add_child(act_hbox)
+
+		approve_btn.pressed.connect(func():
+			approve_btn.disabled = true
+			hush_btn.disabled = true
+			ignore_btn.disabled = true
+			card_status_lbl.visible = true
+			card_status_lbl.text = "Status: Approved. Published to national press."
+			card_status_lbl.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5))
+			execute_media_response(story_id, "approve")
+			_on_story_action_completed("Approved and published to national press.")
+		)
+
+		hush_btn.pressed.connect(func():
+			approve_btn.disabled = true
+			hush_btn.disabled = true
+			ignore_btn.disabled = true
+			card_status_lbl.visible = true
+			card_status_lbl.text = "Status: Suppressed. Story killed, Corruption increased."
+			card_status_lbl.add_theme_color_override("font_color", Color(0.95, 0.45, 0.4))
+			execute_media_response(story_id, "hush")
+			_on_story_action_completed("Suppressed. Press silenced, Corruption increased.")
+		)
+
+		ignore_btn.pressed.connect(func():
+			approve_btn.disabled = true
+			hush_btn.disabled = true
+			ignore_btn.disabled = true
+			card_status_lbl.visible = true
+			card_status_lbl.text = "Status: Ignored. Auto-published by press wire."
+			card_status_lbl.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
+			execute_media_response(story_id, "ignore")
+			_on_story_action_completed("Ignored. Auto-published by press wire.")
+		)
+
+		pending_stories_vbox.add_child(card)
+
 func _update_private_sector_investment_briefing_ui(state: Dictionary) -> void:
 	if not briefing_modal:
 		return
@@ -6293,6 +6614,36 @@ func execute_media_response(report_id: String, response_type: String, confirmed:
 
 	req_file.store_string(JSON.stringify(request_dict, "\t"))
 	req_file.close()
+
+	_try_run_cli_request_processor()
+
+	var norm_type := response_type.to_lower()
+	if norm_type in ["hush", "buy_and_kill", "hush_money"]:
+		var prev_cc: float = float(latest_state.get("corruption_control", 0.3))
+		var new_cc: float = clampf(prev_cc - 0.08, 0.05, 1.0)
+		latest_state["corruption_control"] = new_cc
+		if corruption_control_label:
+			corruption_control_label.text = "Corruption Control: %0.0f%%" % (new_cc * 100.0)
+		if media_desk_corruption_label:
+			media_desk_corruption_label.text = "State Integrity: Corruption Control: %0.0f%% (Corruption Elevated)" % (new_cc * 100.0)
+	elif norm_type in ["approve", "let_run", "publish", "statement", "ignore", "auto_publish"]:
+		var reports = latest_state.get("media_reports", [])
+		if reports is Array:
+			for r in reports:
+				if r is Dictionary and str(r.get("id", "")) == report_id:
+					var app_imp: float = float(r.get("public_approval_impact", 0.0))
+					var stab_imp: float = float(r.get("stability_impact", 0.0))
+					var cur_app: float = float(latest_state.get("approval_rating", 65.0))
+					var cur_stab: float = float(latest_state.get("stability_rating", 70.0))
+					latest_state["approval_rating"] = clampf(cur_app + app_imp * 0.5, 0.0, 100.0)
+					latest_state["stability_rating"] = clampf(cur_stab + stab_imp * 0.5, 0.0, 100.0)
+					if approval_label:
+						approval_label.text = "Approval: %0.1f%%" % float(latest_state["approval_rating"])
+					if stability_label:
+						stability_label.text = "Stability: %0.1f%%" % float(latest_state["stability_rating"])
+					break
+
+	_mark_media_report_handled(report_id, response_type)
 
 	var msg := "Media directive enacted: %s on report '%s'." % [response_type.capitalize(), report_id]
 	if status_ticker_label:

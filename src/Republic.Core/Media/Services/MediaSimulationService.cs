@@ -4,6 +4,7 @@ using Republic.Core.Crises.Models;
 using Republic.Core.Economy.Treasury;
 using Republic.Core.Media.Models;
 using Republic.Core.NationalStrategy.Models;
+using Republic.Core.NationalYield;
 using Republic.Core.Time;
 using Republic.Core.World.Models;
 
@@ -102,7 +103,10 @@ public sealed class MediaSimulationService : IMediaSimulationService
                     OutletReach = finOutlet.AudienceReach,
                     PublishedDay = day,
                     PublicApprovalImpact = -2.5,
-                    StabilityImpact = -1.5
+                    StabilityImpact = -1.5,
+                    RequiresDecision = true,
+                    PredictedEffect = "Public Approval: -2.5%, Stability: -1.5% if published",
+                    AutoPublishTimerSeconds = 25.0
                 });
             }
 
@@ -124,7 +128,10 @@ public sealed class MediaSimulationService : IMediaSimulationService
                     OutletReach = popOutlet.AudienceReach,
                     PublishedDay = day,
                     PublicApprovalImpact = -3.5,
-                    StabilityImpact = -2.0
+                    StabilityImpact = -2.0,
+                    RequiresDecision = true,
+                    PredictedEffect = "Public Approval: -3.5%, Stability: -2.0% if published",
+                    AutoPublishTimerSeconds = 25.0
                 });
             }
         }
@@ -201,7 +208,10 @@ public sealed class MediaSimulationService : IMediaSimulationService
                     OutletReach = indepOutlet.AudienceReach,
                     PublishedDay = day,
                     PublicApprovalImpact = -3.0,
-                    StabilityImpact = -2.5
+                    StabilityImpact = -2.5,
+                    RequiresDecision = true,
+                    PredictedEffect = "Public Approval: -3.0%, Stability: -2.5% if published",
+                    AutoPublishTimerSeconds = 25.0
                 });
             }
         }
@@ -228,7 +238,10 @@ public sealed class MediaSimulationService : IMediaSimulationService
                     OutletReach = indepOutlet.AudienceReach,
                     PublishedDay = day,
                     PublicApprovalImpact = -2.0,
-                    StabilityImpact = -2.0
+                    StabilityImpact = -2.0,
+                    RequiresDecision = true,
+                    PredictedEffect = "Public Approval: -2.0%, Stability: -2.0% if published",
+                    AutoPublishTimerSeconds = 25.0
                 });
             }
         }
@@ -338,10 +351,39 @@ public sealed class MediaSimulationService : IMediaSimulationService
             });
         }
 
-        // Apply balanced impact to country stats for newly published unsuppressed reports
+        // 6. Sensitive Investigative Inquiry (Editorial Draft offered for Presidential Decision)
+        var sensitiveRepId = $"rep_sensitive_audit_{day}";
+        if (!country.MediaReports.Any(r => r.RequiresDecision && !r.IsSuppressed && r.ResponseStatus == MediaResponseStatus.Unanswered)
+            && !country.MediaReports.Any(r => r.Id == sensitiveRepId))
+        {
+            newReports.Add(new MediaReport
+            {
+                Id = sensitiveRepId,
+                OutletId = indepOutlet.Id,
+                OutletName = indepOutlet.Name,
+                Leaning = indepOutlet.Leaning,
+                Headline = "State Audit Inquiry: Ministerial Discretionary Funds Under Review",
+                ArticleSummary = "An independent watchdog memorandum questions ministerial discretionary spending. The editorial board offers the President an opportunity to review and address the findings before public release.",
+                Category = "Scandal",
+                Sentiment = MediaReportSentiment.Critical,
+                EventSource = "state_audit_inquiry",
+                OutletCredibility = indepOutlet.Credibility,
+                OutletReach = indepOutlet.AudienceReach,
+                PublishedDay = day,
+                PublicApprovalImpact = -3.5,
+                StabilityImpact = -2.0,
+                RequiresDecision = true,
+                PredictedEffect = "Public Approval: -3.5%, Stability: -2.0% if published",
+                AutoPublishTimerSeconds = 25.0,
+                ResponseStatus = MediaResponseStatus.Unanswered
+            });
+        }
+
+        // Apply balanced impact to country stats for newly published unsuppressed ordinary reports.
+        // Sensitive stories requiring decision hold their impact until approved or auto-published.
         foreach (var r in newReports)
         {
-            if (applySimulationImpacts && !r.IsSuppressed)
+            if (applySimulationImpacts && !r.IsSuppressed && !r.RequiresDecision)
             {
                 var appDelta = Math.Clamp(r.PublicApprovalImpact * (r.OutletReach / 100.0) * (r.OutletCredibility / 100.0), -4.0, 4.0);
                 var stabDelta = Math.Clamp(r.StabilityImpact * (r.OutletReach / 100.0) * (r.OutletCredibility / 100.0), -3.0, 3.0);
@@ -376,6 +418,60 @@ public sealed class MediaSimulationService : IMediaSimulationService
 
         switch (responseType.ToLowerInvariant())
         {
+            case "approve":
+            case "let_run":
+            case "publish":
+            {
+                report.RequiresDecision = false;
+                report.ResponseStatus = MediaResponseStatus.StatementIssued;
+
+                var appDelta = Math.Clamp(report.PublicApprovalImpact * (report.OutletReach / 100.0) * (report.OutletCredibility / 100.0), -6.0, 6.0);
+                var stabDelta = Math.Clamp(report.StabilityImpact * (report.OutletReach / 100.0) * (report.OutletCredibility / 100.0), -5.0, 5.0);
+                country.HappinessRating = Math.Clamp(country.HappinessRating + appDelta, 0.0, 100.0);
+                country.BaselineStability = Math.Clamp(country.BaselineStability + stabDelta, 0.0, 100.0);
+
+                outcomeMessage = $"Story approved for publication: '{report.Headline}'. Published to national press with public impact ({appDelta:+0.1;-0.1}% approval, {stabDelta:+0.1;-0.1}% stability).";
+                return true;
+            }
+
+            case "hush":
+            case "buy_and_kill":
+            case "suppress":
+            {
+                report.IsSuppressed = true;
+                report.RequiresDecision = false;
+                report.ResponseStatus = MediaResponseStatus.HushMoneyAccepted;
+
+                if (country.Treasury.Balance >= HushMoneyCost)
+                {
+                    country.Treasury.Withdraw(HushMoneyCost);
+                }
+
+                country.StateCapacity ??= new StateCapacityInputs();
+                double prevControl = country.StateCapacity.CorruptionControl ?? 0.3;
+                double newControl = Math.Clamp(prevControl - 0.08, 0.05, 1.0);
+                country.StateCapacity.CorruptionControl = newControl;
+                country.RecalculateCabinetStateCapacity();
+
+                outcomeMessage = $"Story suppressed from press: '{report.Headline}'. Story killed, but executive Corruption increased (Corruption Control fell from {prevControl * 100:0.0}% to {newControl * 100:0.0}%).";
+                return true;
+            }
+
+            case "ignore":
+            case "auto_publish":
+            {
+                report.RequiresDecision = false;
+                report.ResponseStatus = MediaResponseStatus.StatementIssued;
+
+                var appDelta = Math.Clamp(report.PublicApprovalImpact * (report.OutletReach / 100.0) * (report.OutletCredibility / 100.0), -6.0, 6.0);
+                var stabDelta = Math.Clamp(report.StabilityImpact * (report.OutletReach / 100.0) * (report.OutletCredibility / 100.0), -5.0, 5.0);
+                country.HappinessRating = Math.Clamp(country.HappinessRating + appDelta, 0.0, 100.0);
+                country.BaselineStability = Math.Clamp(country.BaselineStability + stabDelta, 0.0, 100.0);
+
+                outcomeMessage = $"Story auto-published after being ignored: '{report.Headline}'. Published to national press with public impact ({appDelta:+0.1;-0.1}% approval, {stabDelta:+0.1;-0.1}% stability).";
+                return true;
+            }
+
             case "statement":
             {
                 if (country.Treasury.Balance < StatementCost)
@@ -386,6 +482,7 @@ public sealed class MediaSimulationService : IMediaSimulationService
 
                 country.Treasury.Withdraw(StatementCost);
 
+                report.RequiresDecision = false;
                 // Recover partial approval and enhance credibility
                 report.ResponseStatus = MediaResponseStatus.StatementIssued;
                 var recovery = Math.Abs(report.PublicApprovalImpact) * 0.5;
@@ -433,6 +530,7 @@ public sealed class MediaSimulationService : IMediaSimulationService
 
                 if (wasExposed)
                 {
+                    report.RequiresDecision = false;
                     report.ResponseStatus = MediaResponseStatus.HushMoneyExposed;
                     report.IsUndergroundLeak = true;
 
@@ -470,10 +568,16 @@ public sealed class MediaSimulationService : IMediaSimulationService
                 else
                 {
                     report.IsSuppressed = true;
+                    report.RequiresDecision = false;
                     report.ResponseStatus = MediaResponseStatus.HushMoneyAccepted;
 
                     // Nullify damage from original story
                     country.HappinessRating = Math.Clamp(country.HappinessRating + Math.Abs(report.PublicApprovalImpact) * 0.8, 0.0, 100.0);
+
+                    // Raise Corruption: decrease CorruptionControl
+                    country.StateCapacity ??= new StateCapacityInputs();
+                    country.StateCapacity.CorruptionControl = Math.Clamp((country.StateCapacity.CorruptionControl ?? 0.3) - 0.08, 0.05, 1.0);
+                    country.RecalculateCabinetStateCapacity();
 
                     outcomeMessage = $"Covert transaction completed (R {HushMoneyCost:N0}). Publication schedule modified to bury the story.";
                     return true;
@@ -483,6 +587,7 @@ public sealed class MediaSimulationService : IMediaSimulationService
             case "censorship":
             {
                 report.IsSuppressed = true;
+                report.RequiresDecision = false;
                 report.ResponseStatus = MediaResponseStatus.Censored;
 
                 if (outlet != null)
@@ -529,7 +634,7 @@ public sealed class MediaSimulationService : IMediaSimulationService
             }
 
             default:
-                outcomeMessage = $"Unrecognized media response type '{responseType}'. Supported options: statement, hush_money, censorship.";
+                outcomeMessage = $"Unrecognized media response type '{responseType}'. Supported options: approve, hush, ignore, statement, hush_money, censorship.";
                 return false;
         }
     }

@@ -6041,7 +6041,8 @@ public static class PresidentialDeskBridge
                 IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
                 ApprovalRating = country.HappinessRating,
                 StabilityRating = country.BaselineStability,
-                TreasuryBalance = country.Treasury.Balance
+                TreasuryBalance = country.Treasury.Balance,
+                CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
             };
             TryWriteResultFile(targetStatePath, cancelResult);
             return cancelResult;
@@ -6062,7 +6063,8 @@ public static class PresidentialDeskBridge
                 IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
                 ApprovalRating = country.HappinessRating,
                 StabilityRating = country.BaselineStability,
-                TreasuryBalance = country.Treasury.Balance
+                TreasuryBalance = country.Treasury.Balance,
+                CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
             };
             TryWriteResultFile(targetStatePath, failResult);
             return failResult;

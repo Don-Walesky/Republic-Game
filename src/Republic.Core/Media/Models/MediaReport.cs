@@ -149,6 +149,22 @@ public sealed class MediaReport
     public bool IsUndergroundLeak { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether this sensitive or high-impact report
+    /// requires a presidential decision before publication.
+    /// </summary>
+    public bool RequiresDecision { get; set; }
+
+    /// <summary>
+    /// Gets or sets a summary of the predicted public impact if published.
+    /// </summary>
+    public string PredictedEffect { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the auto-publish countdown in seconds if ignored.
+    /// </summary>
+    public double AutoPublishTimerSeconds { get; set; } = 30.0;
+
+    /// <summary>
     /// Gets or sets the executive response status recorded for this story.
     /// </summary>
     public MediaResponseStatus ResponseStatus { get; set; } = MediaResponseStatus.Unanswered;

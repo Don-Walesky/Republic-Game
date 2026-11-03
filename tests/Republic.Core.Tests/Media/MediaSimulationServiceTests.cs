@@ -195,4 +195,141 @@ public sealed class MediaSimulationServiceTests
         Assert.NotNull(samizdat);
         Assert.Contains("BANNED DISPATCH", samizdat.Headline);
     }
+
+    [Fact]
+    public void ApplyMediaResponse_Approve_PublishesAndAppliesImpact()
+    {
+        var country = CreateTestCountry();
+        _service.EnsureCountryMediaOutlets(country);
+
+        var report = new MediaReport
+        {
+            Id = "rep_sensitive_test",
+            OutletId = "outlet_criterion_dispatch",
+            OutletName = "The Criterion Dispatch",
+            Headline = "Ministerial Audit Discrepancies",
+            PublicApprovalImpact = -4.0,
+            StabilityImpact = -2.0,
+            OutletCredibility = 90.0,
+            OutletReach = 60.0,
+            PublishedDay = 5,
+            RequiresDecision = true,
+            ResponseStatus = MediaResponseStatus.Unanswered
+        };
+        country.MediaReports.Add(report);
+
+        var initialApproval = country.HappinessRating;
+        var initialStability = country.BaselineStability;
+        var initialCorruption = country.StateCapacity?.CorruptionControl ?? 0.3;
+
+        bool success = _service.ApplyMediaResponse(country, "rep_sensitive_test", "approve", out var outcomeMessage);
+
+        Assert.True(success);
+        Assert.Contains("approved for publication", outcomeMessage);
+        Assert.False(report.RequiresDecision);
+        Assert.False(report.IsSuppressed);
+        Assert.Equal(MediaResponseStatus.StatementIssued, report.ResponseStatus);
+        Assert.True(country.HappinessRating < initialApproval);
+        Assert.True(country.BaselineStability < initialStability);
+        // Corruption did NOT increase on transparent approval
+        Assert.Equal(initialCorruption, country.StateCapacity?.CorruptionControl ?? 0.3);
+    }
+
+    [Fact]
+    public void ApplyMediaResponse_Hush_SuppressesStoryAndIncreasesCorruption()
+    {
+        var country = CreateTestCountry(treasuryBalance: 5_000_000.0);
+        _service.EnsureCountryMediaOutlets(country);
+
+        var report = new MediaReport
+        {
+            Id = "rep_scandal_test",
+            OutletId = "outlet_criterion_dispatch",
+            OutletName = "The Criterion Dispatch",
+            Headline = "Damaging Investigation into Government Contracts",
+            PublicApprovalImpact = -5.0,
+            StabilityImpact = -3.0,
+            OutletCredibility = 90.0,
+            OutletReach = 60.0,
+            PublishedDay = 5,
+            RequiresDecision = true,
+            ResponseStatus = MediaResponseStatus.Unanswered
+        };
+        country.MediaReports.Add(report);
+
+        var initialApproval = country.HappinessRating;
+        var initialStability = country.BaselineStability;
+        var initialCorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3;
+
+        bool success = _service.ApplyMediaResponse(country, "rep_scandal_test", "hush", out var outcomeMessage);
+
+        Assert.True(success);
+        Assert.Contains("Story suppressed from press", outcomeMessage);
+        Assert.True(report.IsSuppressed);
+        Assert.False(report.RequiresDecision);
+        Assert.Equal(MediaResponseStatus.HushMoneyAccepted, report.ResponseStatus);
+
+        // Story damage to approval/stability was suppressed
+        Assert.Equal(initialApproval, country.HappinessRating);
+        Assert.Equal(initialStability, country.BaselineStability);
+
+        // Corruption increased (CorruptionControl decreased)
+        var newCorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3;
+        Assert.True(newCorruptionControl < initialCorruptionControl);
+    }
+
+    [Fact]
+    public void ApplyMediaResponse_Ignore_AutoPublishesStoryAndAppliesImpact()
+    {
+        var country = CreateTestCountry();
+        _service.EnsureCountryMediaOutlets(country);
+
+        var report = new MediaReport
+        {
+            Id = "rep_ignored_story",
+            OutletId = "outlet_criterion_dispatch",
+            OutletName = "The Criterion Dispatch",
+            Headline = "Neglected Infrastructure Warning",
+            PublicApprovalImpact = -3.0,
+            StabilityImpact = -2.0,
+            OutletCredibility = 90.0,
+            OutletReach = 50.0,
+            PublishedDay = 6,
+            RequiresDecision = true,
+            ResponseStatus = MediaResponseStatus.Unanswered
+        };
+        country.MediaReports.Add(report);
+
+        var initialApproval = country.HappinessRating;
+
+        bool success = _service.ApplyMediaResponse(country, "rep_ignored_story", "ignore", out var outcomeMessage);
+
+        Assert.True(success);
+        Assert.Contains("auto-published after being ignored", outcomeMessage);
+        Assert.False(report.RequiresDecision);
+        Assert.False(report.IsSuppressed);
+        Assert.True(country.HappinessRating < initialApproval);
+    }
+
+    [Fact]
+    public void GenerateMediaReports_SeparatesDecisionRequiredFromBackgroundNews()
+    {
+        var country = CreateTestCountry(treasuryBalance: 50_000_000.0);
+        var simTime = RepublicTime.FromDayAndTime(1, new TimeOnly(10, 0), new DateTimeOffset(2030, 1, 1, 0, 0, 0, RepublicTime.WatOffset));
+
+        var reports = _service.GenerateMediaReports(country, simTime);
+
+        // Both decision-required sensitive stories and background ordinary stories are generated
+        var decisionStories = reports.Where(r => r.RequiresDecision).ToList();
+        var backgroundStories = reports.Where(r => !r.RequiresDecision).ToList();
+
+        Assert.NotEmpty(decisionStories);
+        Assert.NotEmpty(backgroundStories);
+
+        // Decision stories have predicted effect documented
+        Assert.All(decisionStories, r => Assert.False(string.IsNullOrWhiteSpace(r.PredictedEffect)));
+
+        // Ordinary background stories (like fiscal surplus or strategy) publish automatically
+        Assert.Contains(backgroundStories, r => r.EventSource == "treasury_surplus" || r.EventSource == "national_strategic_direction");
+    }
 }

@@ -55,6 +55,15 @@ public sealed record MediaReportSnapshot
     [JsonPropertyName("is_underground_leak")]
     public bool IsUndergroundLeak { get; init; }
 
+    [JsonPropertyName("requires_decision")]
+    public bool RequiresDecision { get; init; }
+
+    [JsonPropertyName("predicted_effect")]
+    public string PredictedEffect { get; init; } = string.Empty;
+
+    [JsonPropertyName("auto_publish_timer_seconds")]
+    public double AutoPublishTimerSeconds { get; init; } = 30.0;
+
     [JsonPropertyName("response_status")]
     public string ResponseStatus { get; init; } = "Pending";
 }
