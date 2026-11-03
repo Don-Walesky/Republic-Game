@@ -1105,6 +1105,7 @@ custom_minimum_size = Vector2(290, 0)
 layout_mode = 1
 anchor_left = 0.01
 anchor_top = 0.09
+anchor_right = 0.01
 anchor_bottom = 0.88
 offset_right = 290.0
 grow_vertical = 2

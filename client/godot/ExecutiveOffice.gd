@@ -3374,9 +3374,9 @@ func _on_switch_to_desk_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
 
 func _on_sign_out_button_pressed() -> void:
-	print("[EXECUTIVE OFFICE]: Signing out. Returning to Sovereign Gateway / Onboarding.")
+	print("[EXECUTIVE OFFICE]: Signing out. Returning to Sovereign Gateway (Auth.tscn).")
 	if is_inside_tree() and get_tree() != null:
-		get_tree().change_scene_to_file("res://Onboarding.tscn")
+		get_tree().change_scene_to_file("res://Auth.tscn")
 
 func _on_refresh_button_pressed() -> void:
 	load_live_state()
@@ -3945,7 +3945,7 @@ func _on_left_dock_mouse_exited() -> void:
 		var vp := left_dock.get_viewport()
 		if vp != null:
 			var mouse_pos := vp.get_mouse_position()
-			if left_dock.get_global_rect().has_point(mouse_pos):
+			if left_dock.get_global_rect().grow(16.0).has_point(mouse_pos):
 				return
 		set_left_dock_expanded(false)
 

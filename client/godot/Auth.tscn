@@ -1,0 +1,185 @@
+[gd_scene load_steps=5 format=3 uid="uid://c6xq5m8e9r2p1"]
+
+[ext_resource type="Script" path="res://Auth.gd" id="1_auth_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_main"]
+bg_color = Color(0.06, 0.09, 0.15, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.32, 0.48, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 12
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.08, 0.12, 0.2, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.4, 0.58, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+
+[node name="Auth" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_auth_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.05, 0.09, 1)
+
+[node name="MainPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -260.0
+offset_right = 280.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_main")
+
+[node name="VBox" type="VBoxContainer" parent="MainPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="VBoxContainer" parent="MainPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="MainPanel/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.78, 0.35, 1)
+theme_override_font_sizes/font_size = 28
+text = "REPUBLIC"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="MainPanel/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.78, 0.9, 1)
+theme_override_font_sizes/font_size = 13
+text = "Sovereign Executive & Governance Gateway"
+horizontal_alignment = 1
+
+[node name="TabHBox" type="HBoxContainer" parent="MainPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BtnTabSignUp" type="Button" parent="MainPanel/VBox/TabHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "📝 Sign Up"
+
+[node name="BtnTabLogin" type="Button" parent="MainPanel/VBox/TabHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "🔑 Log In / Sign In"
+
+[node name="SignUpBox" type="VBoxContainer" parent="MainPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="LblSignUpDesc" type="Label" parent="MainPanel/VBox/SignUpBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.86, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "Establish a New Sovereign Republic. Register your executive candidate profile, verify official credentials, and formulate your founding national doctrine."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="BtnGoToSignUp" type="Button" parent="MainPanel/VBox/SignUpBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "★ Sign Up & Begin Onboarding"
+
+[node name="LoginBox" type="VBoxContainer" parent="MainPanel/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="SavedSessionCard" type="PanelContainer" parent="MainPanel/VBox/LoginBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SessionVBox" type="VBoxContainer" parent="MainPanel/VBox/LoginBox/SavedSessionCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblSessionHeader" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 11
+text = "AUTHORITATIVE REPUBLIC DETECTED"
+
+[node name="LblDetectedCountry" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "No saved Republic found."
+
+[node name="LblDetectedPhase" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1.0, 1)
+theme_override_font_sizes/font_size = 12
+text = "Phase: -"
+
+[node name="BtnResumeSession" type="Button" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "▶ Log In & Launch to Office"
+
+[node name="ManualEmailBox" type="VBoxContainer" parent="MainPanel/VBox/LoginBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LblEmail" type="Label" parent="MainPanel/VBox/LoginBox/ManualEmailBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Or Sign In With Registered Email:"
+
+[node name="InputEmail" type="LineEdit" parent="MainPanel/VBox/LoginBox/ManualEmailBox"]
+layout_mode = 2
+placeholder_text = "candidate@republic.gov"
+
+[node name="BtnEmailLogin" type="Button" parent="MainPanel/VBox/LoginBox/ManualEmailBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Log In & Continue Game"
+
+[node name="LblFeedback" type="Label" parent="MainPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+autowrap_mode = 2

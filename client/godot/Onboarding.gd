@@ -207,6 +207,12 @@ var resend_cooldown_timer: float = 0.0
 func _ready() -> void:
 	_init_controls()
 	_connect_signals()
+	if Engine.has_meta("launch_to_campaign_hq") and Engine.get_meta("launch_to_campaign_hq"):
+		Engine.remove_meta("launch_to_campaign_hq")
+		var session := _check_authoritative_session()
+		_populate_campaign_hq_view(session)
+		_show_stage(ScreenStage.CAMPAIGN_HQ)
+		return
 	_load_initial_stage()
 
 func _init_controls() -> void:
@@ -628,9 +634,12 @@ func _launch_to_office_or_resume(session_data: Dictionary) -> void:
 			_show_stage(ScreenStage.REGISTER)
 
 func _on_campaign_signout_pressed() -> void:
-	print("[AUTH]: Signing out from Campaign Headquarters to Start Gateway.")
-	_show_stage(ScreenStage.REGISTER)
-	_show_sign_up_mode()
+	print("[AUTH]: Signing out from Campaign Headquarters to Start Gateway (Auth.tscn).")
+	if is_inside_tree() and get_tree() != null:
+		get_tree().change_scene_to_file("res://Auth.tscn")
+	else:
+		_show_stage(ScreenStage.REGISTER)
+		_show_sign_up_mode()
 
 func _check_authoritative_session() -> Dictionary:
 	var paths := [

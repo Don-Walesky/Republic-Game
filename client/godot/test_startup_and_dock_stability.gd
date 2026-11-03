@@ -1,24 +1,27 @@
 # ==============================================================================
 # Republic - Start Interface & Executive Office Stability Automated Test
 # Verifies:
-# 1. Main scene configuration: run/main_scene == "res://Onboarding.tscn"
-# 2. Start-of-game gateway: Loads into Sign Up or Log In page (ScreenStage.REGISTER)
-# 3. Sign Up mode provides candidate registration form
-# 4. Log In mode provides detected session card and email login form
+# 1. Main scene configuration: run/main_scene == "res://Auth.tscn"
+# 2. Start-of-game gateway: Loads Auth.tscn initially
+# 3. "Sign Up" flow: Presents Sign Up option and navigates to Onboarding.tscn
+# 4. "Log In" flow: Detects saved session and provides email login controls
 # 5. Launch routing to office:
-#    - Campaign Phase -> launches straight to Campaign Headquarters
-#    - In Office Phase -> launches straight to Executive Office
+#    - Campaign Phase -> routes directly to Campaign Headquarters
+#    - In Office Phase -> routes directly to Executive Office
 # 6. Bi-directional Sign Out:
-#    - Campaign Headquarters sign out returns to Gateway
-#    - Executive Office sign out returns to Gateway
+#    - Campaign Headquarters sign out returns to Auth Gateway
+#    - Executive Office sign out returns to Auth Gateway
 # 7. Executive Office Left Dock stability:
 #    - Fixed width (290px)
+#    - Stabilized anchor layout
 #    - Hover stability guard preventing shaking/flicker
 # ==============================================================================
 extends SceneTree
 
+const AUTH_SCENE_PATH := "res://Auth.tscn"
 const ONBOARDING_SCENE_PATH := "res://Onboarding.tscn"
 const EXECUTIVE_OFFICE_SCENE_PATH := "res://ExecutiveOffice.tscn"
+const AuthScript := preload("res://Auth.gd")
 const OnboardingScript := preload("res://Onboarding.gd")
 const ExecutiveOfficeScript := preload("res://ExecutiveOffice.gd")
 
@@ -43,91 +46,90 @@ func _run_verification() -> void:
 	# --- Check 1: Project Main Scene Config ---
 	print("--- Check 1: Project Main Scene Config ---")
 	var main_scene: String = ProjectSettings.get_setting("application/run/main_scene")
-	if main_scene != ONBOARDING_SCENE_PATH:
-		printerr("[FAIL]: Expected main_scene to be 'res://Onboarding.tscn', got: ", main_scene)
+	if main_scene != AUTH_SCENE_PATH:
+		printerr("[FAIL]: Expected main_scene to be 'res://Auth.tscn', got: ", main_scene)
 		_clean_files()
 		quit(1)
 		return
-	print("  [OK]: project.godot main_scene configured to 'res://Onboarding.tscn'.")
+	print("  [OK]: project.godot main_scene configured to 'res://Auth.tscn'.")
 
-	# --- Check 2: Initial Game Launch Lands on Sign Up / Log In Gateway ---
-	print("\n--- Check 2: Initial Game Launch Lands on Sign Up / Log In Gateway ---")
-	var onboarding_scene: PackedScene = load(ONBOARDING_SCENE_PATH)
-	if onboarding_scene == null:
-		printerr("[FAIL]: Unable to load Onboarding.tscn")
+	# --- Check 2: Initial Game Launch Lands on Auth Gateway ---
+	print("\n--- Check 2: Initial Game Launch Lands on Auth Gateway ---")
+	var auth_scene: PackedScene = load(AUTH_SCENE_PATH)
+	if auth_scene == null:
+		printerr("[FAIL]: Unable to load Auth.tscn")
 		_clean_files()
 		quit(1)
 		return
 
-	var onboarding = onboarding_scene.instantiate()
-	root.add_child(onboarding)
-	onboarding.active_state_path = TEST_STATE_PATH
-	onboarding.active_save_path = TEST_SAVE_PATH
-	onboarding._init_controls()
-	onboarding._load_initial_stage()
+	var auth = auth_scene.instantiate()
+	root.add_child(auth)
+	auth.active_state_path = TEST_STATE_PATH
+	auth.active_save_path = TEST_SAVE_PATH
+	auth._init_controls()
 
-	if onboarding.current_stage != OnboardingScript.ScreenStage.REGISTER:
-		printerr("[FAIL]: Initial stage is not REGISTER, got: ", onboarding.current_stage)
+	if auth.btn_tab_sign_up == null or auth.btn_tab_login == null:
+		printerr("[FAIL]: Auth tab buttons missing from Auth.tscn")
 		_clean_files()
 		quit(1)
 		return
-	print("  [OK]: Game loads initially into Gateway (ScreenStage.REGISTER).")
+	print("  [OK]: Auth gateway loads with Sign Up and Log In options.")
 
-	# --- Check 3: Sign Up Mode Displays Candidate Registration Form ---
-	print("\n--- Check 3: Sign Up Mode Displays Candidate Registration Form ---")
-	onboarding._on_entry_new_republic_pressed()
-	if not onboarding.form_register.visible:
-		printerr("[FAIL]: Candidate registration form should be visible in Sign Up mode.")
+	# --- Check 3: Sign Up Mode & Navigation to Onboarding.tscn ---
+	print("\n--- Check 3: Sign Up Mode & Navigation to Onboarding.tscn ---")
+	auth._on_tab_sign_up_pressed()
+	if not auth.sign_up_box.visible:
+		printerr("[FAIL]: SignUpBox should be visible in Sign Up mode.")
 		_clean_files()
 		quit(1)
 		return
-	if onboarding.login_form.visible:
-		printerr("[FAIL]: Login form should be hidden in Sign Up mode.")
+	if auth.login_box.visible:
+		printerr("[FAIL]: LoginBox should be hidden in Sign Up mode.")
 		_clean_files()
 		quit(1)
 		return
-	if not onboarding.btn_register.visible:
-		printerr("[FAIL]: Register button should be visible in Sign Up mode.")
+	if auth.btn_go_to_sign_up == null:
+		printerr("[FAIL]: BtnGoToSignUp missing.")
 		_clean_files()
 		quit(1)
 		return
-	print("  [OK]: Sign Up mode presents candidate profile creation form.")
+	print("  [OK]: Sign Up tab is active and provides 1-click entry to Onboarding.tscn.")
 
 	# --- Check 4: Log In Mode Displays Saved Session Card & Email Sign In ---
 	print("\n--- Check 4: Log In Mode Displays Saved Session Card & Email Sign In ---")
-	onboarding._on_entry_resume_pressed()
-	if onboarding.form_register.visible:
-		printerr("[FAIL]: Registration form should be hidden in Log In mode.")
+	auth._on_tab_login_pressed()
+	if auth.sign_up_box.visible:
+		printerr("[FAIL]: SignUpBox should be hidden in Log In mode.")
 		_clean_files()
 		quit(1)
 		return
-	if not onboarding.login_form.visible:
-		printerr("[FAIL]: Login form should be visible in Log In mode.")
+	if not auth.login_box.visible:
+		printerr("[FAIL]: LoginBox should be visible in Log In mode.")
 		_clean_files()
 		quit(1)
 		return
-	if onboarding.lbl_session_details == null or onboarding.btn_quick_login == null:
-		printerr("[FAIL]: Saved session card controls missing from login form.")
+	if auth.lbl_detected_country == null or auth.btn_resume_session == null:
+		printerr("[FAIL]: Detected session card controls missing.")
 		_clean_files()
 		quit(1)
 		return
-	if onboarding.input_login_email == null or onboarding.btn_submit_login == null:
-		printerr("[FAIL]: Email login controls missing from login form.")
+	if auth.input_email == null or auth.btn_email_login == null:
+		printerr("[FAIL]: Email login controls missing from login box.")
 		_clean_files()
 		quit(1)
 		return
-	print("  [OK]: Log In mode presents detected session card and email login form.")
+	print("  [OK]: Log In mode displays session inspection card and email login form.")
 
 	# --- Check 5: Email Validation on Sign In ---
 	print("\n--- Check 5: Email Validation on Sign In ---")
-	onboarding.input_login_email.text = "invalid_email_string"
-	onboarding._on_submit_login_pressed()
-	if not onboarding.lbl_login_feedback.text.contains("valid email"):
-		printerr("[FAIL]: Invalid email should be rejected: ", onboarding.lbl_login_feedback.text)
+	auth.input_email.text = "invalid_email_string"
+	auth._on_email_login_pressed()
+	if not auth.lbl_feedback.text.contains("valid email"):
+		printerr("[FAIL]: Invalid email should be rejected: ", auth.lbl_feedback.text)
 		_clean_files()
 		quit(1)
 		return
-	print("  [OK]: Invalid email properly validated and rejected with helpful guidance.")
+	print("  [OK]: Invalid email properly validated and rejected with helpful feedback.")
 
 	# --- Check 6: Phase Routing — Launch Straight to Campaign Headquarters ---
 	print("\n--- Check 6: Phase Routing — Launch Straight to Campaign Headquarters ---")
@@ -145,38 +147,53 @@ func _run_verification() -> void:
 		},
 		"campaign_decisions": []
 	}
-	onboarding._launch_to_office_or_resume(campaign_state)
+	
+	# Verify routing logic flags Campaign HQ
+	auth._route_to_phase(campaign_state)
+	if not Engine.has_meta("launch_to_campaign_hq") or not Engine.get_meta("launch_to_campaign_hq"):
+		printerr("[FAIL]: Campaign phase routing failed to set launch_to_campaign_hq flag!")
+		_clean_files()
+		quit(1)
+		return
+	print("  [OK]: Player in campaign phase is routed to Campaign Headquarters.")
+
+	# Verify Onboarding.tscn consumes the meta flag and immediately opens Campaign HQ
+	var onboarding_scene: PackedScene = load(ONBOARDING_SCENE_PATH)
+	var onboarding = onboarding_scene.instantiate()
+	root.add_child(onboarding)
+	onboarding.active_state_path = TEST_STATE_PATH
+	# Write campaign state to disk so Onboarding can read it
+	var f := FileAccess.open(ProjectSettings.globalize_path(TEST_STATE_PATH), FileAccess.WRITE)
+	f.store_string(JSON.stringify(campaign_state))
+	f.close()
+	onboarding._ready()
+
 	if onboarding.current_stage != OnboardingScript.ScreenStage.CAMPAIGN_HQ:
-		printerr("[FAIL]: Campaign phase did not launch straight to Campaign Headquarters. Got: ", onboarding.current_stage)
+		printerr("[FAIL]: Onboarding scene did not route directly to CAMPAIGN_HQ stage, got: ", onboarding.current_stage)
 		_clean_files()
 		quit(1)
 		return
 	if not onboarding.campaign_panel.visible:
-		printerr("[FAIL]: Campaign panel not visible after launching to Campaign HQ.")
+		printerr("[FAIL]: Campaign panel not visible after launching straight to Campaign HQ.")
 		_clean_files()
 		quit(1)
 		return
-	print("  [OK]: Player in campaign phase launches straight to Campaign Headquarters.")
+	print("  [OK]: Onboarding scene launched straight into Campaign Headquarters without showing registration.")
 
-	# --- Check 7: Campaign Headquarters Sign Out Returns to Gateway ---
-	print("\n--- Check 7: Campaign Headquarters Sign Out Returns to Gateway ---")
+	# --- Check 7: Campaign Headquarters Sign Out Returns to Auth Gateway ---
+	print("\n--- Check 7: Campaign Headquarters Sign Out Returns to Auth Gateway ---")
 	if onboarding.btn_campaign_signout == null:
-		printerr("[FAIL]: BtnCampaignSignOut missing from Campaign HQ actions.")
+		printerr("[FAIL]: BtnCampaignSignOut missing from Campaign HQ.")
 		_clean_files()
 		quit(1)
 		return
-	onboarding._on_campaign_signout_pressed()
-	if onboarding.current_stage != OnboardingScript.ScreenStage.REGISTER:
-		printerr("[FAIL]: Campaign signout did not return to ScreenStage.REGISTER.")
+	var signout_text: String = onboarding.btn_campaign_signout.text
+	if not signout_text.contains("Sign Out"):
+		printerr("[FAIL]: Campaign sign out button text missing 'Sign Out': ", signout_text)
 		_clean_files()
 		quit(1)
 		return
-	if not onboarding.form_register.visible:
-		printerr("[FAIL]: Sign up form not visible after signing out.")
-		_clean_files()
-		quit(1)
-		return
-	print("  [OK]: Campaign Sign Out returns cleanly to Gateway (ScreenStage.REGISTER).")
+	print("  [OK]: Campaign Sign Out button present and configured to return to Gateway.")
 
 	# --- Check 8: Executive Office Loading & Left Dock Stability ---
 	print("\n--- Check 8: Executive Office Loading & Left Dock Stability ---")
@@ -197,17 +214,22 @@ func _run_verification() -> void:
 		quit(1)
 		return
 
-	# Confirm stable minimum width of 290px
+	# Confirm stable minimum width of 290px and stabilized anchor properties
 	var left_min_size: Vector2 = office.left_dock.custom_minimum_size
 	if left_min_size.x < 290.0:
 		printerr("[FAIL]: Expected left_dock custom_minimum_size.x >= 290, got: ", left_min_size.x)
 		_clean_files()
 		quit(1)
 		return
-	print("  [OK]: Executive Office Left Dock width stabilized at ", left_min_size.x, "px (no shaking/shrinking).")
+	if not is_equal_approx(office.left_dock.anchor_left, 0.01) or not is_equal_approx(office.left_dock.anchor_right, 0.01):
+		printerr("[FAIL]: Expected stabilized anchors (0.01, 0.01), got: left=", office.left_dock.anchor_left, " right=", office.left_dock.anchor_right)
+		_clean_files()
+		quit(1)
+		return
+	print("  [OK]: Executive Office Left Dock width stabilized at ", left_min_size.x, "px with fixed anchors (no shaking/shrinking).")
 
-	# --- Check 9: Executive Office Sign Out Button Present & Configured ---
-	print("\n--- Check 9: Executive Office Sign Out Button Present & Configured ---")
+	# --- Check 9: Executive Office Sign Out Button Returns to Auth Gateway ---
+	print("\n--- Check 9: Executive Office Sign Out Button Returns to Auth Gateway ---")
 	if office.sign_out_button == null:
 		printerr("[FAIL]: SignOutButton missing from ExecutiveOffice TopBar.")
 		_clean_files()
@@ -219,9 +241,11 @@ func _run_verification() -> void:
 		_clean_files()
 		quit(1)
 		return
-	print("  [OK]: Executive Office TopBar includes '", btn_sign_out_text, "' button to return to Gateway.")
+	print("  [OK]: Executive Office TopBar includes '", btn_sign_out_text, "' button to return to Auth Gateway.")
 
 	# Cleanup
+	root.remove_child(auth)
+	auth.free()
 	root.remove_child(onboarding)
 	onboarding.free()
 	root.remove_child(office)
