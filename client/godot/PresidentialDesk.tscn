@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://PresidentialDesk.gd" id="1_desk"]
+[ext_resource type="Texture2D" uid="uid://db2ovl2ka45d4" path="res://assets/branding/republic_crest_badge_64.png" id="2_crest_badge_64"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 bg_color = Color(0.0666667, 0.0901961, 0.137255, 0.92)
@@ -109,7 +110,16 @@ theme_override_constants/separation = 4
 
 [node name="TitleRow" type="HBoxContainer" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
+
+[node name="LogoIcon" type="TextureRect" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TitleRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("2_crest_badge_64")
+expand_mode = 1
+stretch_mode = 5
+tooltip_text = "Republic Sovereign Crest"
 
 [node name="AppTitle" type="Label" parent="VBoxContainer/ExecutiveHeaderPanel/HeaderVBox/TitleRow"]
 layout_mode = 2

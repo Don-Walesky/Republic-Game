@@ -1,8 +1,10 @@
-[gd_scene load_steps=32 format=3]
+[gd_scene load_steps=34 format=3]
 
 [ext_resource type="Script" path="res://ExecutiveOffice.gd" id="1_office"]
 [ext_resource type="Script" path="res://CapitalWindowScenery.gd" id="2_scenery"]
 [ext_resource type="Texture2D" path="res://presidential_office_bg.jpg" id="3_bg_texture"]
+[ext_resource type="Texture2D" uid="uid://db2ovl2ka45d4" path="res://assets/branding/republic_crest_badge_64.png" id="4_crest_badge_64"]
+[ext_resource type="Texture2D" uid="uid://dq6pfbsbsh704" path="res://assets/branding/republic_crest_badge_128.png" id="5_crest_badge_128"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
 bg_color = Color(0.035, 0.055, 0.09, 0.94)
@@ -613,16 +615,29 @@ anchor_bottom = 1.0
 flat = true
 mouse_default_cursor_shape = 2
 
-[node name="PresidentialSeal" type="Control" parent="OfficeEnvironment/ExecutiveDesk"]
+[node name="PresidentialSeal" type="CenterContainer" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
-offset_right = 1.0
-offset_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -48.0
+offset_top = -48.0
+offset_right = 48.0
+offset_bottom = 48.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="SealLabel" type="Label" parent="OfficeEnvironment/ExecutiveDesk/PresidentialSeal"]
-layout_mode = 1
-offset_right = 1.0
-offset_bottom = 1.0
-text = ""
+[node name="SealTexture" type="TextureRect" parent="OfficeEnvironment/ExecutiveDesk/PresidentialSeal"]
+modulate = Color(1, 0.9, 0.6, 0.35)
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 2
+texture = ExtResource("5_crest_badge_128")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
 
 [node name="HotlinePhoneButton" type="Button" parent="OfficeEnvironment/ExecutiveDesk"]
 layout_mode = 1
@@ -764,6 +779,15 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
 [node name="TopBarHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar"]
 layout_mode = 2
 theme_override_constants/separation = 12
+
+[node name="RepublicCrest" type="TextureRect" parent="InterfaceLayer/TopBar/TopBarHBox"]
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4_crest_badge_64")
+expand_mode = 1
+stretch_mode = 5
+tooltip_text = "Republic Sovereign Crest"
 
 [node name="FlagIcon" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
