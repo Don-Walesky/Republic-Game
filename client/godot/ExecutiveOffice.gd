@@ -98,6 +98,13 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var card_approval: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval") as PanelContainer
 @onready var card_stability: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability") as PanelContainer
 @onready var card_economy: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy") as PanelContainer
+@onready var card_yield: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardYield") as PanelContainer
+@onready var card_tax: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTax") as PanelContainer
+@onready var card_capacity_top: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity") as PanelContainer
+@onready var yield_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardYield/YieldVBox/YieldLabel") as Label
+@onready var tax_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTax/TaxVBox/TaxLabel") as Label
+@onready var capacity_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity/CapacityVBox/CapacityLabel") as Label
+@onready var office_flag_banner: Control = _get_node_safe("OfficeEnvironment/CountryFlag/FlagBanner") as Control
 @onready var simulation_time_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SimulationTimeLabel") as Label
 @onready var speed_pause_btn: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedPauseBtn") as Button
 @onready var speed_play_btn: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedPlayBtn") as Button
@@ -991,6 +998,13 @@ func _init_controls() -> void:
 	if card_economy == null:
 		card_economy = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy") as PanelContainer
 	if simulation_time_label == null:
+		card_yield = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardYield") as PanelContainer
+		card_tax = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTax") as PanelContainer
+		card_capacity_top = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity") as PanelContainer
+		yield_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardYield/YieldVBox/YieldLabel") as Label
+		tax_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTax/TaxVBox/TaxLabel") as Label
+		capacity_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity/CapacityVBox/CapacityLabel") as Label
+		office_flag_banner = _get_node_safe("OfficeEnvironment/CountryFlag/FlagBanner") as Control
 		simulation_time_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SimulationTimeLabel") as Label
 	if speed_pause_btn == null:
 		speed_pause_btn = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedPauseBtn") as Button
@@ -1718,6 +1732,12 @@ func _connect_signals() -> void:
 		speed_fast_btn.pressed.connect(_on_speed_fast_pressed)
 
 	# Top HUD Telemetry Cards Direct 1-Click Inspection
+	if card_yield and not card_yield.gui_input.is_connected(_on_card_yield_gui_input):
+		card_yield.gui_input.connect(_on_card_yield_gui_input)
+	if card_tax and not card_tax.gui_input.is_connected(_on_card_tax_gui_input):
+		card_tax.gui_input.connect(_on_card_tax_gui_input)
+	if card_capacity_top and not card_capacity_top.gui_input.is_connected(_on_card_capacity_gui_input):
+		card_capacity_top.gui_input.connect(_on_card_capacity_gui_input)
 	if card_treasury and not card_treasury.gui_input.is_connected(_on_card_treasury_gui_input):
 		card_treasury.gui_input.connect(_on_card_treasury_gui_input)
 	if card_approval and not card_approval.gui_input.is_connected(_on_card_approval_gui_input):
@@ -4140,6 +4160,18 @@ func _on_speed_fast_pressed() -> void:
 	set_simulation_speed(2)
 
 # Handlers for Interactive Dashboard Cards & Links
+func _on_card_yield_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_economy_modal()
+
+func _on_card_tax_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_economy_modal()
+
+func _on_card_capacity_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_development_modal()
+
 func _on_card_treasury_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		open_economy_modal()

@@ -1,4 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://b8t5k3v2m7q1r"]
+[gd_scene load_steps=4 format=3 uid="uid://b8t5k3v2m7q1r"]
+
+[ext_resource type="Script" path="res://FlagRenderer.gd" id="3_flag_renderer"]
 
 [ext_resource type="Script" path="res://Onboarding.gd" id="1_onboarding_script"]
 [ext_resource type="Texture2D" uid="uid://db2ovl2ka45d4" path="res://assets/branding/republic_crest_badge_64.png" id="2_crest_badge_64"]
@@ -321,6 +323,87 @@ horizontal_alignment = 1
 layout_mode = 2
 custom_minimum_size = Vector2(0, 42)
 placeholder_text = "e.g. Republic of Azuria"
+
+[node name="FlagCreatorPanel" type="PanelContainer" parent="PanelContainer/VBox/ScreenCountryName"]
+layout_mode = 2
+
+[node name="FlagCreatorVBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FlagCreatorHeader" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox"]
+layout_mode = 2
+
+[node name="FlagCreatorTitle" type="Label" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagCreatorHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.78, 0.35, 1)
+theme_override_font_sizes/font_size = 12
+text = "🚩 SOVEREIGN NATIONAL FLAG CREATOR"
+
+[node name="BtnRandomFlag" type="Button" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagCreatorHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🎲 Randomize Flag"
+
+[node name="FlagBodyHBox" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="FlagPreviewContainer" type="CenterContainer" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox"]
+layout_mode = 2
+
+[node name="FlagPreview" type="Control" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagPreviewContainer"]
+custom_minimum_size = Vector2(160, 96)
+layout_mode = 2
+script = ExtResource("3_flag_renderer")
+
+[node name="FlagControlsGrid" type="GridContainer" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
+
+[node name="LblPattern" type="Label" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Pattern:"
+
+[node name="OptPattern" type="OptionButton" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+
+[node name="LblPrimary" type="Label" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Base Color:"
+
+[node name="OptPrimary" type="OptionButton" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+
+[node name="LblSecondary" type="Label" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Band Color:"
+
+[node name="OptSecondary" type="OptionButton" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+
+[node name="LblEmblem" type="Label" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Emblem:"
+
+[node name="OptEmblem" type="OptionButton" parent="PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
 
 [node name="BtnReviewFounding" type="Button" parent="PanelContainer/VBox/ScreenCountryName"]
 layout_mode = 2

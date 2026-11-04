@@ -37,6 +37,9 @@ var current_stability: float = 85.0
 var current_active_project: String = "None"
 var current_active_crisis: String = "None"
 var current_completed_project: String = "None"
+var current_treasury: float = 50000000.0 # Default starting treasury upon winning first election
+var current_national_yield: float = 100.0 # Baseline 100% economic productivity
+var wealth_level: float = 1.0 # 1.0 = Canonical baseline sovereign prosperity on election win
 
 # Completion celebration highlight
 var is_highlighting_completion: bool = false
@@ -55,22 +58,25 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 ## Updates procedural scenery based on authoritative Republic state
-func set_state_metrics(approval_val: float, stability_val: float, active_proj: String = "None", crisis_str: String = "None", completed_proj: String = "None") -> void:
+func set_state_metrics(approval_val: float, stability_val: float, active_proj: String = "None", crisis_str: String = "None", completed_proj: String = "None", treasury_val: float = 50000000.0, yield_val: float = 100.0) -> void:
 	current_approval = approval_val
 	current_stability = stability_val
 	current_active_project = active_proj
 	current_active_crisis = crisis_str
 	current_completed_project = completed_proj
+	current_treasury = treasury_val
+	current_national_yield = yield_val
+	_update_wealth_scaling()
 
 	# 1. Normalize stability and approval to 0.0 - 1.0
 	var stab_norm: float = clampf(stability_val / 100.0 if stability_val > 1.0 else stability_val, 0.0, 1.0)
 	var appr_norm: float = clampf(approval_val / 100.0 if approval_val > 1.0 else approval_val, 0.0, 1.0)
 
-	# 2. Window Light Density: High stability -> dense, vibrant lights; Low stability -> dimmed / sparse lights
-	window_light_density = clampf(0.25 + (stab_norm * 1.1) + (appr_norm * 0.4), 0.2, 1.8)
+	# 2. Window Light Density: High stability & wealth -> dense, vibrant lights
+	window_light_density = clampf((0.25 + (stab_norm * 1.1) + (appr_norm * 0.4)) * (0.8 + 0.2 * wealth_level), 0.2, 2.0)
 
-	# 3. Overall city brightness
-	city_brightness = clampf(0.65 + (stab_norm * 0.35) + (appr_norm * 0.20), 0.5, 1.25)
+	# 3. Overall city brightness scaled by wealth and civil stability
+	city_brightness = clampf((0.65 + (stab_norm * 0.35) + (appr_norm * 0.20)) * (0.85 + 0.15 * wealth_level), 0.5, 1.35)
 
 	# 4. Construction elements: Active project triggers crane and rooftop scaffolding
 	var has_proj := (not active_proj.is_empty() and active_proj != "None" and active_proj != "[No State Loaded]")
@@ -94,6 +100,18 @@ func set_state_metrics(approval_val: float, stability_val: float, active_proj: S
 		pollution_tint = Color(0.0, 0.0, 0.0, 0.0)
 
 	queue_redraw()
+
+## Updates national wealth representation based on treasury and yield
+func set_wealth_metrics(treasury_val: float, yield_val: float = 100.0) -> void:
+	current_treasury = treasury_val
+	current_national_yield = yield_val
+	_update_wealth_scaling()
+	queue_redraw()
+
+func _update_wealth_scaling() -> void:
+	var t_ratio: float = current_treasury / 50000000.0 if current_treasury > 0.0 else 0.5
+	var y_ratio: float = current_national_yield / 100.0 if current_national_yield > 0.0 else 1.0
+	wealth_level = clampf(t_ratio * y_ratio, 0.4, 2.5)
 
 func highlight_project_completion(proj_name: String, duration: float = 4.0) -> void:
 	is_highlighting_completion = true
@@ -224,6 +242,33 @@ func _draw() -> void:
 		Vector2(w, h * 0.75)
 	])
 	draw_colored_polygon(distant_poly, distant_buildings_color * b_mod)
+
+	# 2b. Wealth-Tier Specific Skyline Architecture
+	if wealth_level > 1.25:
+		# Affluent Sovereign Metropolis: Soaring illuminated glass towers & beacons
+		var high_spire_x1 := w * 0.18
+		var high_spire_x2 := w * 0.88
+		# Financial Center Pinnacle Tower 1
+		draw_rect(Rect2(high_spire_x1 - 10, h * 0.18, 20, h * 0.30), distant_buildings_color * 1.3 * b_mod)
+		draw_line(Vector2(high_spire_x1, h * 0.18), Vector2(high_spire_x1, h * 0.10), Color(0.9, 0.75, 0.3, 0.9), 2.0)
+		draw_circle(Vector2(high_spire_x1, h * 0.10), 3.0, Color(1.0, 0.3, 0.2, 0.95))
+		# International Trade Tower 2
+		draw_rect(Rect2(high_spire_x2 - 12, h * 0.20, 24, h * 0.28), distant_buildings_color * 1.25 * b_mod)
+		draw_line(Vector2(high_spire_x2, h * 0.20), Vector2(high_spire_x2, h * 0.12), Color(0.9, 0.75, 0.3, 0.9), 2.0)
+		draw_circle(Vector2(high_spire_x2, h * 0.12), 3.0, Color(1.0, 0.3, 0.2, 0.95))
+		# Skybridge connecting towers
+		draw_line(Vector2(w * 0.20, h * 0.42), Vector2(w * 0.32, h * 0.42), Color(0.4, 0.75, 1.0, 0.7), 3.0)
+	elif wealth_level < 0.8:
+		# Developing / Industrial: Industrial stacks & simpler municipal profile
+		var stack_x := w * 0.11
+		draw_rect(Rect2(stack_x - 4, h * 0.40, 8, h * 0.15), distant_buildings_color * 0.9 * b_mod)
+		draw_circle(Vector2(stack_x, h * 0.36), 6.0, Color(0.3, 0.3, 0.35, 0.18))
+	else:
+		# Canonical Baseline (Upon winning first election with standard sovereign wealth):
+		# Balanced capital skyline: Prominent municipal towers, construction cranes, classical dome
+		var civic_tower_x := w * 0.84
+		draw_rect(Rect2(civic_tower_x - 8, h * 0.26, 16, h * 0.22), distant_buildings_color * 1.15 * b_mod)
+		draw_line(Vector2(civic_tower_x, h * 0.26), Vector2(civic_tower_x, h * 0.20), dome_accent_color, 1.5)
 
 	# 3. National Capitol Dome & Midground Landmarks
 	var dome_center_x := w * 0.48

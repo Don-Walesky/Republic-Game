@@ -141,13 +141,19 @@ func test_honest_telemetry_and_delta_pills(office: Control) -> bool:
 	if office.top_approval_delta and office.top_approval_delta.visible:
 		printerr("  [FAIL]: Approval delta pill visible when no state loaded.")
 		return false
-	if office.deck_yield_val.text.contains("184.7M"):
+	if office.deck_yield_val and office.deck_yield_val.text.contains("184.7M"):
 		printerr("  [FAIL]: Hardcoded fallback 184.7M found in deck_yield_val!")
 		return false
-	if office.deck_tax_val.text.contains("96.3M"):
+	if office.yield_label and office.yield_label.text.contains("184.7M"):
+		printerr("  [FAIL]: Hardcoded fallback 184.7M found in yield_label!")
+		return false
+	if office.deck_tax_val and office.deck_tax_val.text.contains("96.3M"):
 		printerr("  [FAIL]: Hardcoded fallback 96.3M found in deck_tax_val!")
 		return false
-	if office.obj_val4.text.contains("452.8M"):
+	if office.tax_label and office.tax_label.text.contains("96.3M"):
+		printerr("  [FAIL]: Hardcoded fallback 96.3M found in tax_label!")
+		return false
+	if office.obj_val4 and office.obj_val4.text.contains("452.8M"):
 		printerr("  [FAIL]: Hardcoded fallback 452.8M found in obj_val4!")
 		return false
 

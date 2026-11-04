@@ -214,10 +214,10 @@ func _run_verification() -> void:
 		quit(1)
 		return
 
-	# Confirm stable minimum width of 290px and stabilized anchor properties
+	# Confirm stable reduced minimum width of 240px and stabilized anchor properties
 	var left_min_size: Vector2 = office.left_dock.custom_minimum_size
-	if left_min_size.x < 290.0:
-		printerr("[FAIL]: Expected left_dock custom_minimum_size.x >= 290, got: ", left_min_size.x)
+	if left_min_size.x < 240.0:
+		printerr("[FAIL]: Expected left_dock custom_minimum_size.x >= 240, got: ", left_min_size.x)
 		_clean_files()
 		quit(1)
 		return

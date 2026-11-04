@@ -107,6 +107,14 @@ var resend_cooldown_timer: float = 0.0
 @onready var btn_confirm_founding: Button = $PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box/HBox/BtnConfirm
 @onready var btn_cancel_modal: Button = $PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box/HBox/BtnCancel
 
+# Flag Creator Nodes
+@onready var flag_preview: Control = $PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagPreviewContainer/FlagPreview
+@onready var btn_random_flag: Button = $PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagCreatorHeader/BtnRandomFlag
+@onready var opt_flag_pattern: OptionButton = $PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid/OptPattern
+@onready var opt_flag_primary: OptionButton = $PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid/OptPrimary
+@onready var opt_flag_secondary: OptionButton = $PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid/OptSecondary
+@onready var opt_flag_emblem: OptionButton = $PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid/OptEmblem
+
 # Generating Nodes
 @onready var lbl_generating_status: Label = $PanelContainer/VBox/ScreenGenerating/LblStatus
 @onready var progress_bar: ProgressBar = $PanelContainer/VBox/ScreenGenerating/ProgressBar
@@ -262,6 +270,13 @@ func _init_controls() -> void:
 	if lbl_modal_country == null: lbl_modal_country = get_node_or_null("PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box/LblCountryPreview")
 	if btn_confirm_founding == null: btn_confirm_founding = get_node_or_null("PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box/HBox/BtnConfirm")
 	if btn_cancel_modal == null: btn_cancel_modal = get_node_or_null("PanelContainer/VBox/ScreenCountryName/ConfirmationModal/Box/HBox/BtnCancel")
+	if flag_preview == null: flag_preview = get_node_or_null("PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagPreviewContainer/FlagPreview")
+	if btn_random_flag == null: btn_random_flag = get_node_or_null("PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagCreatorHeader/BtnRandomFlag")
+	if opt_flag_pattern == null: opt_flag_pattern = get_node_or_null("PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid/OptPattern")
+	if opt_flag_primary == null: opt_flag_primary = get_node_or_null("PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid/OptPrimary")
+	if opt_flag_secondary == null: opt_flag_secondary = get_node_or_null("PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid/OptSecondary")
+	if opt_flag_emblem == null: opt_flag_emblem = get_node_or_null("PanelContainer/VBox/ScreenCountryName/FlagCreatorPanel/FlagCreatorVBox/FlagBodyHBox/FlagControlsGrid/OptEmblem")
+	_init_flag_options()
 
 	if lbl_generating_status == null: lbl_generating_status = get_node_or_null("PanelContainer/VBox/ScreenGenerating/LblStatus")
 	if progress_bar == null: progress_bar = get_node_or_null("PanelContainer/VBox/ScreenGenerating/ProgressBar")
@@ -390,6 +405,16 @@ func _connect_signals() -> void:
 		btn_review_founding.pressed.connect(_on_review_founding_pressed)
 	if btn_confirm_founding and not btn_confirm_founding.pressed.is_connected(_on_confirm_founding_pressed):
 		btn_confirm_founding.pressed.connect(_on_confirm_founding_pressed)
+	if btn_random_flag and not btn_random_flag.pressed.is_connected(_on_random_flag_pressed):
+		btn_random_flag.pressed.connect(_on_random_flag_pressed)
+	if opt_flag_pattern and not opt_flag_pattern.item_selected.is_connected(_on_flag_pattern_selected):
+		opt_flag_pattern.item_selected.connect(_on_flag_pattern_selected)
+	if opt_flag_primary and not opt_flag_primary.item_selected.is_connected(_on_flag_primary_selected):
+		opt_flag_primary.item_selected.connect(_on_flag_primary_selected)
+	if opt_flag_secondary and not opt_flag_secondary.item_selected.is_connected(_on_flag_secondary_selected):
+		opt_flag_secondary.item_selected.connect(_on_flag_secondary_selected)
+	if opt_flag_emblem and not opt_flag_emblem.item_selected.is_connected(_on_flag_emblem_selected):
+		opt_flag_emblem.item_selected.connect(_on_flag_emblem_selected)
 	if btn_cancel_modal and not btn_cancel_modal.pressed.is_connected(_on_cancel_modal_pressed):
 		btn_cancel_modal.pressed.connect(_on_cancel_modal_pressed)
 	if btn_resume_session and not btn_resume_session.pressed.is_connected(_on_resume_session_pressed):
@@ -821,6 +846,88 @@ func _display_verify_error(msg: String) -> void:
 # ==============================================================================
 # Step 3: Country Naming & Confirmation
 # ==============================================================================
+func _init_flag_options() -> void:
+	if opt_flag_pattern and opt_flag_pattern.item_count == 0:
+		opt_flag_pattern.add_item("Horizontal Tricolor", 0)
+		opt_flag_pattern.add_item("Vertical Tricolor", 1)
+		opt_flag_pattern.add_item("Bicolor Split", 2)
+		opt_flag_pattern.add_item("Sovereign Cross", 3)
+		opt_flag_pattern.add_item("Canton Star", 4)
+		opt_flag_pattern.add_item("Solid with Crest", 5)
+		opt_flag_pattern.select(0)
+
+	var color_names := [
+		"Sovereign Navy", "Crimson Red", "Emerald Green", "Imperial Gold",
+		"Ivory White", "Obsidian Slate", "Sky Blue", "Saffron Amber", "Royal Amethyst"
+	]
+
+	if opt_flag_primary and opt_flag_primary.item_count == 0:
+		for i in range(color_names.size()):
+			opt_flag_primary.add_item(color_names[i], i)
+		opt_flag_primary.select(0)
+
+	if opt_flag_secondary and opt_flag_secondary.item_count == 0:
+		for i in range(color_names.size()):
+			opt_flag_secondary.add_item(color_names[i], i)
+		opt_flag_secondary.select(4) # White
+
+	if opt_flag_emblem and opt_flag_emblem.item_count == 0:
+		opt_flag_emblem.add_item("⭐ Sovereign Star", 0)
+		opt_flag_emblem.add_item("🦅 Imperial Eagle", 1)
+		opt_flag_emblem.add_item("☀️ Radiant Sun", 2)
+		opt_flag_emblem.add_item("🏛️ Civic Capitol", 3)
+		opt_flag_emblem.add_item("🛡️ Heraldic Shield", 4)
+		opt_flag_emblem.add_item("⚔️ Crossed Sabres", 5)
+		opt_flag_emblem.add_item("🌿 Laurel Wreath", 6)
+		opt_flag_emblem.add_item("None (Clean)", 7)
+		opt_flag_emblem.select(0)
+
+func _on_random_flag_pressed() -> void:
+	if flag_preview and flag_preview.has_method("randomize_flag"):
+		flag_preview.randomize_flag()
+		_sync_flag_options_from_preview()
+
+func _sync_flag_options_from_preview() -> void:
+	if not flag_preview: return
+	var p = flag_preview.pattern
+	var pat_map := {
+		"horizontal_tricolor": 0, "vertical_tricolor": 1, "bicolor_horizontal": 2,
+		"sovereign_cross": 3, "canton_star": 4, "solid_emblem": 5
+	}
+	if opt_flag_pattern and pat_map.has(p):
+		opt_flag_pattern.select(pat_map[p])
+
+	var emb = flag_preview.emblem
+	var emb_map := {
+		"star": 0, "eagle": 1, "sun": 2, "temple": 3, "shield": 4, "sabres": 5, "wreath": 6, "none": 7
+	}
+	if opt_flag_emblem and emb_map.has(emb):
+		opt_flag_emblem.select(emb_map[emb])
+
+func _on_flag_pattern_selected(index: int) -> void:
+	if not flag_preview: return
+	var patterns := ["horizontal_tricolor", "vertical_tricolor", "bicolor_horizontal", "sovereign_cross", "canton_star", "solid_emblem"]
+	if index >= 0 and index < patterns.size():
+		flag_preview.pattern = patterns[index]
+
+func _on_flag_primary_selected(index: int) -> void:
+	if not flag_preview or not flag_preview.get("PALETTE"): return
+	var pal = flag_preview.PALETTE
+	if index >= 0 and index < pal.size():
+		flag_preview.primary_color = pal[index]
+
+func _on_flag_secondary_selected(index: int) -> void:
+	if not flag_preview or not flag_preview.get("PALETTE"): return
+	var pal = flag_preview.PALETTE
+	if index >= 0 and index < pal.size():
+		flag_preview.secondary_color = pal[index]
+
+func _on_flag_emblem_selected(index: int) -> void:
+	if not flag_preview: return
+	var emblems := ["star", "eagle", "sun", "temple", "shield", "sabres", "wreath", "none"]
+	if index >= 0 and index < emblems.size():
+		flag_preview.emblem = emblems[index]
+
 func _on_review_founding_pressed() -> void:
 	var name_text := input_country_name.text.strip_edges() if input_country_name else ""
 	if name_text.length() < 4:
@@ -858,9 +965,22 @@ func _run_procedural_generation_flow(country_name: String) -> void:
 	if lbl_generating_status: lbl_generating_status.text = "Ratifying sovereign charter with Global Registry..."
 	if progress_bar: progress_bar.value = 25.0
 
+	var flag_dict: Dictionary = {}
+	if flag_preview and flag_preview.has_method("to_flag_data"):
+		flag_dict = flag_preview.to_flag_data()
+	else:
+		flag_dict = {
+			"pattern": "horizontal_tricolor",
+			"primary_color": "142e61",
+			"secondary_color": "f5f7fa",
+			"accent_color": "dfb847",
+			"emblem": "star"
+		}
+
 	var req := {
 		"action": "create_country",
 		"country_name": country_name,
+		"flag_data": flag_dict,
 		"request_id": "onboarding_create_" + str(Time.get_unix_time_from_system())
 	}
 

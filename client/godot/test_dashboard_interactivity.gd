@@ -41,8 +41,8 @@ func _init() -> void:
 	var t2 := test_topbar_metric_cards_interactivity(office)
 	print("Test 2 (TopBar Metric Cards Direct Inspection): ", "PASS" if t2 else "FAIL")
 
-	var t3 := test_floating_telemetry_deck_interactivity(office)
-	print("Test 3 (Floating Telemetry Deck Direct Inspection): ", "PASS" if t3 else "FAIL")
+	var t3 := test_topbar_country_metrics_and_scenery(office)
+	print("Test 3 (TopBar Country Metrics & Scenery Wealth Scaling): ", "PASS" if t3 else "FAIL")
 
 	var t4 := test_right_dock_events_and_objectives(office)
 	print("Test 4 (RightDock Events View-All & Objectives): ", "PASS" if t4 else "FAIL")
@@ -170,58 +170,58 @@ func test_topbar_metric_cards_interactivity(office) -> bool:
 
 	return true
 
-func test_floating_telemetry_deck_interactivity(office) -> bool:
+func test_topbar_country_metrics_and_scenery(office) -> bool:
 	office.close_all_modals()
 
-	# 1. DeckYieldCard -> EconomyModal
-	if office.deck_yield_card == null:
-		printerr("[FAIL]: deck_yield_card not found")
+	# 1. CardYield -> EconomyModal
+	if office.card_yield == null:
+		printerr("[FAIL]: card_yield in TopBar not found")
 		return false
-	_simulate_card_click(office.deck_yield_card)
+	_simulate_card_click(office.card_yield)
 	if office.economy_modal == null or not office.economy_modal.visible:
-		printerr("[FAIL]: Clicking DeckYieldCard did not open EconomyModal")
+		printerr("[FAIL]: Clicking TopBar CardYield did not open EconomyModal")
 		return false
 	office.close_all_modals()
 
-	# 2. DeckTaxCard -> EconomyModal
-	if office.deck_tax_card == null:
-		printerr("[FAIL]: deck_tax_card not found")
+	# 2. CardTax -> EconomyModal
+	if office.card_tax == null:
+		printerr("[FAIL]: card_tax in TopBar not found")
 		return false
-	_simulate_card_click(office.deck_tax_card)
+	_simulate_card_click(office.card_tax)
 	if office.economy_modal == null or not office.economy_modal.visible:
-		printerr("[FAIL]: Clicking DeckTaxCard did not open EconomyModal")
+		printerr("[FAIL]: Clicking TopBar CardTax did not open EconomyModal")
 		return false
 	office.close_all_modals()
 
-	# 3. DeckCapacityCard -> DevelopmentModal
-	if office.deck_capacity_card == null:
-		printerr("[FAIL]: deck_capacity_card not found")
+	# 3. CardCapacity -> DevelopmentModal
+	if office.card_capacity_top == null:
+		printerr("[FAIL]: card_capacity_top in TopBar not found")
 		return false
-	_simulate_card_click(office.deck_capacity_card)
+	_simulate_card_click(office.card_capacity_top)
 	if office.development_modal == null or not office.development_modal.visible:
-		printerr("[FAIL]: Clicking DeckCapacityCard did not open DevelopmentModal")
+		printerr("[FAIL]: Clicking TopBar CardCapacity did not open DevelopmentModal")
 		return false
 	office.close_all_modals()
 
-	# 4. DeckWelfareCard -> BriefingModal
-	if office.deck_welfare_card == null:
-		printerr("[FAIL]: deck_welfare_card not found")
+	# 4. Confirm FloatingTelemetryDeck removed from dashboard
+	var floating_deck: Node = office.get_node_or_null("InterfaceLayer/FloatingTelemetryDeck")
+	if floating_deck != null and (floating_deck is CanvasItem and floating_deck.visible):
+		printerr("[FAIL]: FloatingTelemetryDeck should be removed or hidden from dashboard")
 		return false
-	_simulate_card_click(office.deck_welfare_card)
-	if office.briefing_modal == null or not office.briefing_modal.visible:
-		printerr("[FAIL]: Clicking DeckWelfareCard did not open BriefingModal")
-		return false
-	office.close_all_modals()
 
-	# 5. DeckDecisionsCard -> PolicyModal
-	if office.deck_decisions_card == null:
-		printerr("[FAIL]: deck_decisions_card not found")
+	# 5. Confirm standing office flag standard exists
+	if office.office_flag_banner == null:
+		printerr("[FAIL]: Standing office flag standard banner not found in OfficeEnvironment")
 		return false
-	_simulate_card_click(office.deck_decisions_card)
-	if office.policy_modal == null or not office.policy_modal.visible:
-		printerr("[FAIL]: Clicking DeckDecisionsCard did not open PolicyModal")
+
+	# 6. Confirm capital window scenery wealth scaling
+	if office.city_scenery == null:
+		printerr("[FAIL]: City scenery not found")
 		return false
-	office.close_all_modals()
+	office.city_scenery.set_wealth_metrics(50000000.0, 100.0)
+	if not is_equal_approx(office.city_scenery.wealth_level, 1.0):
+		printerr("[FAIL]: Expected baseline wealth_level 1.0 on winning first election, got: ", office.city_scenery.wealth_level)
+		return false
 
 	return true
 
