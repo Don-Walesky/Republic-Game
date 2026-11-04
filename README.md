@@ -139,3 +139,10 @@ dotnet test Republic.sln
 * `tests/Republic.Core.Tests` — Unit and integration test suites (836 passing tests).
 * `client/godot/` — Godot 4 executive presidential desk visual client (active presentation layer; replaces retired Unity client).
 * `Docs/` — Canonical product, design, and technical specifications.
+
+---
+
+## License & Copyright
+
+© 2026 DWEF Media. Source code licensed under the [MIT License](LICENSE).  
+The Republic name, logo, visual design, narrative elements, and original game assets are the property of DWEF Media and may not be used without permission.

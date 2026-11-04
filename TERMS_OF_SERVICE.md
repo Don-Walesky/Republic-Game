@@ -29,14 +29,15 @@ In multiplayer and shared-world environments:
 
 ## 4. Intellectual Property
 
-- The Republic codebase is licensed under the MIT License (see `LICENSE`).
-- Game lore, designs, branding, and assets belong to the respective copyright holders and project contributors.
+- The source code is licensed under the MIT License (see `LICENSE`).
+- Copyright © 2026 DWEF Media.
+- The Republic name, logo, visual design, narrative elements, and original game assets are the property of DWEF Media and may not be used without permission.
 
 ---
 
 ## 5. Limitation of Liability
 
-In no event shall the authors, maintainers, or contributors of Republic be liable for any claim, damages, or other liability arising from the use of or inability to use this simulation software.
+In no event shall DWEF Media, or the authors, maintainers, or contributors of Republic be liable for any claim, damages, or other liability arising from the use of or inability to use this simulation software.
 
 ---
 

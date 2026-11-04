@@ -1,13 +1,14 @@
 # Republic - Privacy Policy
 
 **Effective Date:** October 17, 2026  
-**Applicability:** Republic Simulation Engine, Desktop Client, and WebAssembly Early Access Candidate.
+**Applicability:** Republic Simulation Engine, Desktop Client, and WebAssembly Early Access Candidate.  
+**Publisher & Owner:** DWEF Media
 
 ---
 
 ## 1. Overview & Core Privacy Commitment
 
-Republic is an open political and nation-building simulation. We believe in privacy by design and data minimization:
+Republic is a political and nation-building simulation developed and published by DWEF Media. We believe in privacy by design and data minimization:
 - **No Personal Tracking**: We do not use third-party analytics trackers, tracking cookies, advertising IDs, or fingerprinting scripts.
 - **Local Sovereignty**: In single-player mode, all country state, presidential decisions, and simulation saves are stored exclusively on your local file system (`republic_game.sav`, `presidential_desk_state.json`, or Godot `user://` storage).
 - **Zero Account Wall**: Single-player gameplay does not require registering an account, providing an email, or surrendering personal identity.
@@ -47,4 +48,4 @@ When you host or join a multiplayer session:
 
 Under GDPR, CCPA, and global privacy frameworks:
 - Because local data is stored exclusively on your device, you have complete control to inspect, export, or delete your data at any time by deleting the game files or clearing browser storage.
-- For privacy inquiries or vulnerability reports, contact the maintainers via GitHub Issues at [https://github.com/Don-Walesky/Republic-Game](https://github.com/Don-Walesky/Republic-Game).
+- For privacy inquiries or vulnerability reports, contact DWEF Media via GitHub Issues at [https://github.com/Don-Walesky/Republic-Game](https://github.com/Don-Walesky/Republic-Game).
