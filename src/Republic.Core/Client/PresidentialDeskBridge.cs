@@ -5429,13 +5429,37 @@ public static class PresidentialDeskBridge
         var portfolio = CabinetPortfolio.Finance;
         if (portfolioName != null)
         {
-            if (portfolioName.Contains("Interior", StringComparison.OrdinalIgnoreCase))
+            if (portfolioName.Contains("Defense", StringComparison.OrdinalIgnoreCase))
+            {
+                portfolio = CabinetPortfolio.Defense;
+            }
+            else if (portfolioName.Contains("Foreign", StringComparison.OrdinalIgnoreCase))
+            {
+                portfolio = CabinetPortfolio.ForeignAffairs;
+            }
+            else if (portfolioName.Contains("Health", StringComparison.OrdinalIgnoreCase))
+            {
+                portfolio = CabinetPortfolio.Health;
+            }
+            else if (portfolioName.Contains("Interior", StringComparison.OrdinalIgnoreCase))
             {
                 portfolio = CabinetPortfolio.Interior;
             }
             else if (portfolioName.Contains("Infrastructure", StringComparison.OrdinalIgnoreCase) || portfolioName.Contains("Infra", StringComparison.OrdinalIgnoreCase))
             {
                 portfolio = CabinetPortfolio.Infrastructure;
+            }
+            else if (portfolioName.Contains("Education", StringComparison.OrdinalIgnoreCase))
+            {
+                portfolio = CabinetPortfolio.Education;
+            }
+            else if (portfolioName.Contains("Oil", StringComparison.OrdinalIgnoreCase))
+            {
+                portfolio = CabinetPortfolio.OilAndGas;
+            }
+            else if (portfolioName.Contains("Resource", StringComparison.OrdinalIgnoreCase))
+            {
+                portfolio = CabinetPortfolio.Resources;
             }
         }
 
@@ -5472,7 +5496,14 @@ public static class PresidentialDeskBridge
             var ministerName = portfolio switch
             {
                 CabinetPortfolio.Finance => "Dr. Elena Rostova",
+                CabinetPortfolio.Defense => "General Sean Vance",
+                CabinetPortfolio.ForeignAffairs => "Ambassador Nadia Al-Mansoor",
                 CabinetPortfolio.Interior => "Dr. Alistair Finch",
+                CabinetPortfolio.Health => "Dr. Miriam Osei",
+                CabinetPortfolio.Infrastructure => "Eng. Marcus Bennett",
+                CabinetPortfolio.Education => "Prof. Kenneth Meyer",
+                CabinetPortfolio.OilAndGas => "Eng. Tariq Al-Hassan",
+                CabinetPortfolio.Resources => "Geologist Elena Chen",
                 _ => "Eng. Marcus Bennett"
             };
 
@@ -5502,7 +5533,14 @@ public static class PresidentialDeskBridge
             var ministerName = portfolio switch
             {
                 CabinetPortfolio.Finance => "Senator Donald Vance",
+                CabinetPortfolio.Defense => "Colonel Donald Briggs",
+                CabinetPortfolio.ForeignAffairs => "Consul Perry Vance",
                 CabinetPortfolio.Interior => "Party Whip Thomas Sterling",
+                CabinetPortfolio.Health => "Director Kyle Henderson",
+                CabinetPortfolio.Infrastructure => "Alderman Gregory Cross",
+                CabinetPortfolio.Education => "Trustee Gary Wright",
+                CabinetPortfolio.OilAndGas => "Director Reginald Cole",
+                CabinetPortfolio.Resources => "Commissioner Frank Miller",
                 _ => "Alderman Gregory Cross"
             };
 

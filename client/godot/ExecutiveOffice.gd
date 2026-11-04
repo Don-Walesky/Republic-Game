@@ -93,7 +93,16 @@ var active_nav_section: Section = Section.OVERVIEW
 # Top HUD Bar
 @onready var top_bar: PanelContainer = _get_node_safe("InterfaceLayer/TopBar") as PanelContainer
 @onready var country_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CountryLabel") as Label
-@onready var simulation_time_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/SimulationTimeLabel") as Label
+@onready var president_card: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard") as PanelContainer
+@onready var card_treasury: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTreasury") as PanelContainer
+@onready var card_approval: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval") as PanelContainer
+@onready var card_stability: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability") as PanelContainer
+@onready var card_economy: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy") as PanelContainer
+@onready var simulation_time_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SimulationTimeLabel") as Label
+@onready var speed_pause_btn: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedPauseBtn") as Button
+@onready var speed_play_btn: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedPlayBtn") as Button
+@onready var speed_fast_btn: Button = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedFastBtn") as Button
+var simulation_speed: int = 1 # 0 = Pause, 1 = 1x, 2 = 2x
 @onready var treasury_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TreasuryLabel") as Label
 @onready var approval_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/ApprovalLabel") as Label
 @onready var stability_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/StabilityLabel") as Label
@@ -140,6 +149,7 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var defense_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseMinisterLabel") as Label
 @onready var defense_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseRatingsLabel") as Label
 @onready var defense_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/DefenseEffectLabel") as Label
+@onready var appoint_defense_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/AppointDefenseButton") as Button
 
 # Foreign Affairs Portfolio Card
 @onready var foreign_affairs_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs") as Control
@@ -147,6 +157,7 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var foreign_affairs_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsMinisterLabel") as Label
 @onready var foreign_affairs_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsRatingsLabel") as Label
 @onready var foreign_affairs_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/ForeignAffairsEffectLabel") as Label
+@onready var appoint_foreign_affairs_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/AppointForeignAffairsButton") as Button
 
 # Interior Portfolio Card
 @onready var interior_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior") as Control
@@ -162,6 +173,7 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var health_minister_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthMinisterLabel") as Label
 @onready var health_ratings_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthRatingsLabel") as Label
 @onready var health_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/HealthEffectLabel") as Label
+@onready var appoint_health_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/AppointHealthButton") as Button
 
 # Infrastructure Portfolio Card
 @onready var infrastructure_card: Control = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure") as Control
@@ -277,6 +289,13 @@ var media_auto_publish_timer: Timer = null
 @onready var austerity_decree_button: Button = _get_node_safe("InterfaceLayer/DossierModal/DossierVBox/DossierActionsHBox/AusterityDecreeButton") as Button
 
 # Enhanced Modern Telemetry Deck and Visual Overlay Bindings
+@onready var deck_yield_card: PanelContainer = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard") as PanelContainer
+@onready var deck_tax_card: PanelContainer = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard") as PanelContainer
+@onready var deck_capacity_card: PanelContainer = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard") as PanelContainer
+@onready var deck_welfare_card: PanelContainer = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard") as PanelContainer
+@onready var deck_decisions_card: PanelContainer = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard") as PanelContainer
+@onready var card_objectives: PanelContainer = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives") as PanelContainer
+@onready var events_view_all: LinkButton = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventsHeaderHBox/EventsViewAll") as LinkButton
 @onready var top_president_name: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox/PresidentNameLabel") as Label
 @onready var top_president_term: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox/PresidentTermLabel") as Label
 @onready var deck_yield_val: Label = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard/YieldCardVBox/YieldVal") as Label
@@ -719,6 +738,105 @@ const CANDIDATE_DEFINITIONS := {
 			"salary": 0,
 			"consequences": "• Prevents initiation of Strategic Mine projects.\n• Ministerial salary removed."
 		}
+	},
+	"Defense": {
+		"capacity_metric": "Military Readiness",
+		"technocrat": {
+			"name": "General Sean Vance",
+			"competence": 0.90,
+			"integrity": 0.90,
+			"loyalty": 0.50,
+			"experience": 0.85,
+			"connections": 0.40,
+			"salary": 160000,
+			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0%\n• Defense Readiness: 90%\n• Professional military doctrine and strategic deterrence."
+		},
+		"loyalist": {
+			"name": "Colonel Donald Briggs",
+			"competence": 0.45,
+			"integrity": 0.45,
+			"loyalty": 0.95,
+			"experience": 0.50,
+			"connections": 0.90,
+			"salary": 160000,
+			"consequences": "• Public Approval: -1.5%\n• Ruling Party Polling: +3.0%\n• Defense Readiness: Capped at 45%\n• Strong armed forces loyalty to executive leadership."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Defense Readiness: Reverts to emergency baseline (30%)\n• Ministerial salary removed."
+		}
+	},
+	"ForeignAffairs": {
+		"capacity_metric": "Diplomatic Standing",
+		"technocrat": {
+			"name": "Ambassador Nadia Al-Mansoor",
+			"competence": 0.90,
+			"integrity": 0.90,
+			"loyalty": 0.50,
+			"experience": 0.85,
+			"connections": 0.40,
+			"salary": 150000,
+			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0%\n• Diplomatic Influence: 90%\n• Enhanced bilateral accord success and global prestige."
+		},
+		"loyalist": {
+			"name": "Consul Perry Vance",
+			"competence": 0.45,
+			"integrity": 0.45,
+			"loyalty": 0.95,
+			"experience": 0.50,
+			"connections": 0.90,
+			"salary": 150000,
+			"consequences": "• Public Approval: -1.5%\n• Ruling Party Polling: +3.0%\n• Diplomatic Influence: Capped at 45%\n• Uncompromising defense of party foreign policy line."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Diplomatic Influence: Reverts to neutral baseline (30%)\n• Ministerial salary removed."
+		}
+	},
+	"Health": {
+		"capacity_metric": "Public Healthcare Quality",
+		"technocrat": {
+			"name": "Dr. Miriam Osei",
+			"competence": 0.90,
+			"integrity": 0.90,
+			"loyalty": 0.50,
+			"experience": 0.85,
+			"connections": 0.40,
+			"salary": 150000,
+			"consequences": "• Public Approval: +1.5%\n• Ruling Party Polling: -3.0%\n• Healthcare Quality: 90%\n• Robust epidemic response and clinic infrastructure."
+		},
+		"loyalist": {
+			"name": "Director Kyle Henderson",
+			"competence": 0.45,
+			"integrity": 0.45,
+			"loyalty": 0.95,
+			"experience": 0.50,
+			"connections": 0.90,
+			"salary": 150000,
+			"consequences": "• Public Approval: -1.5%\n• Ruling Party Polling: +3.0%\n• Healthcare Quality: Capped at 45%\n• Direct executive control over national health board."
+		},
+		"dismiss": {
+			"name": "Vacate Portfolio (Dismiss Minister)",
+			"competence": 0.0,
+			"integrity": 0.0,
+			"loyalty": 0.0,
+			"experience": 0.0,
+			"connections": 0.0,
+			"salary": 0,
+			"consequences": "• Healthcare Quality: Reverts to baseline (30%)\n• Ministerial salary removed."
+		}
 	}
 }
 
@@ -862,8 +980,24 @@ func _init_controls() -> void:
 		top_bar = _get_node_safe("InterfaceLayer/TopBar") as PanelContainer
 	if country_label == null:
 		country_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CountryLabel") as Label
+	if president_card == null:
+		president_card = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard") as PanelContainer
+	if card_treasury == null:
+		card_treasury = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTreasury") as PanelContainer
+	if card_approval == null:
+		card_approval = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval") as PanelContainer
+	if card_stability == null:
+		card_stability = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability") as PanelContainer
+	if card_economy == null:
+		card_economy = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy") as PanelContainer
 	if simulation_time_label == null:
-		simulation_time_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/SimulationTimeLabel") as Label
+		simulation_time_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SimulationTimeLabel") as Label
+	if speed_pause_btn == null:
+		speed_pause_btn = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedPauseBtn") as Button
+	if speed_play_btn == null:
+		speed_play_btn = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedPlayBtn") as Button
+	if speed_fast_btn == null:
+		speed_fast_btn = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TimeSection/SpeedHBox/SpeedFastBtn") as Button
 	if treasury_label == null:
 		treasury_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/TreasuryLabel") as Label
 	if approval_label == null:
@@ -1321,6 +1455,28 @@ func _init_controls() -> void:
 	if resources_effect_label == null:
 		resources_effect_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Resources/ResourcesVBox/ResourcesEffectLabel") as Label
 
+	if appoint_defense_button == null:
+		appoint_defense_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Defense/DefenseVBox/AppointDefenseButton") as Button
+	if appoint_foreign_affairs_button == null:
+		appoint_foreign_affairs_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_ForeignAffairs/ForeignAffairsVBox/AppointForeignAffairsButton") as Button
+	if appoint_health_button == null:
+		appoint_health_button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Health/HealthVBox/AppointHealthButton") as Button
+
+	if deck_yield_card == null:
+		deck_yield_card = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckYieldCard") as PanelContainer
+	if deck_tax_card == null:
+		deck_tax_card = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckTaxCard") as PanelContainer
+	if deck_capacity_card == null:
+		deck_capacity_card = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckCapacityCard") as PanelContainer
+	if deck_welfare_card == null:
+		deck_welfare_card = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckWelfareCard") as PanelContainer
+	if deck_decisions_card == null:
+		deck_decisions_card = _get_node_safe("InterfaceLayer/FloatingTelemetryDeck/DeckDecisionsCard") as PanelContainer
+	if card_objectives == null:
+		card_objectives = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardObjectives") as PanelContainer
+	if events_view_all == null:
+		events_view_all = _get_node_safe("InterfaceLayer/RightDock/RightDockVBox/RightDockContent/CardEvents/EventsVBox/EventsHeaderHBox/EventsViewAll") as LinkButton
+
 	# Press Secretary & Media Desk
 	if press_sec_name_label == null:
 		press_sec_name_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/PressSecretaryCard/PressSecVBox/PressSecNameLabel") as Label
@@ -1476,6 +1632,7 @@ func _ready() -> void:
 	_init_controls()
 	_connect_signals()
 	_apply_tooltips()
+	_update_speed_controls_ui()
 
 	# Customisation & notification initialization
 	load_saved_customization()
@@ -1552,6 +1709,42 @@ func _connect_signals() -> void:
 	if refresh_button and not refresh_button.pressed.is_connected(_on_refresh_button_pressed):
 		refresh_button.pressed.connect(_on_refresh_button_pressed)
 
+	# Time Speed Controls
+	if speed_pause_btn and not speed_pause_btn.pressed.is_connected(_on_speed_pause_pressed):
+		speed_pause_btn.pressed.connect(_on_speed_pause_pressed)
+	if speed_play_btn and not speed_play_btn.pressed.is_connected(_on_speed_play_pressed):
+		speed_play_btn.pressed.connect(_on_speed_play_pressed)
+	if speed_fast_btn and not speed_fast_btn.pressed.is_connected(_on_speed_fast_pressed):
+		speed_fast_btn.pressed.connect(_on_speed_fast_pressed)
+
+	# Top HUD Telemetry Cards Direct 1-Click Inspection
+	if card_treasury and not card_treasury.gui_input.is_connected(_on_card_treasury_gui_input):
+		card_treasury.gui_input.connect(_on_card_treasury_gui_input)
+	if card_approval and not card_approval.gui_input.is_connected(_on_card_approval_gui_input):
+		card_approval.gui_input.connect(_on_card_approval_gui_input)
+	if card_stability and not card_stability.gui_input.is_connected(_on_card_stability_gui_input):
+		card_stability.gui_input.connect(_on_card_stability_gui_input)
+	if card_economy and not card_economy.gui_input.is_connected(_on_card_economy_gui_input):
+		card_economy.gui_input.connect(_on_card_economy_gui_input)
+	if president_card and not president_card.gui_input.is_connected(_on_president_card_gui_input):
+		president_card.gui_input.connect(_on_president_card_gui_input)
+
+	# Floating Telemetry Deck Direct 1-Click Inspection
+	if deck_yield_card and not deck_yield_card.gui_input.is_connected(_on_deck_yield_card_gui_input):
+		deck_yield_card.gui_input.connect(_on_deck_yield_card_gui_input)
+	if deck_tax_card and not deck_tax_card.gui_input.is_connected(_on_deck_tax_card_gui_input):
+		deck_tax_card.gui_input.connect(_on_deck_tax_card_gui_input)
+	if deck_capacity_card and not deck_capacity_card.gui_input.is_connected(_on_deck_capacity_card_gui_input):
+		deck_capacity_card.gui_input.connect(_on_deck_capacity_card_gui_input)
+	if deck_welfare_card and not deck_welfare_card.gui_input.is_connected(_on_deck_welfare_card_gui_input):
+		deck_welfare_card.gui_input.connect(_on_deck_welfare_card_gui_input)
+	if deck_decisions_card and not deck_decisions_card.gui_input.is_connected(_on_deck_decisions_card_gui_input):
+		deck_decisions_card.gui_input.connect(_on_deck_decisions_card_gui_input)
+	if card_objectives and not card_objectives.gui_input.is_connected(_on_card_objectives_gui_input):
+		card_objectives.gui_input.connect(_on_card_objectives_gui_input)
+	if events_view_all and not events_view_all.pressed.is_connected(_on_events_view_all_pressed):
+		events_view_all.pressed.connect(_on_events_view_all_pressed)
+
 	if nav_overview_button and not nav_overview_button.pressed.is_connected(_on_nav_overview_pressed):
 		nav_overview_button.pressed.connect(_on_nav_overview_pressed)
 	if nav_cabinet_button and not nav_cabinet_button.pressed.is_connected(_on_nav_cabinet_pressed):
@@ -1602,8 +1795,8 @@ func _connect_signals() -> void:
 		open_cabinet_button.pressed.connect(_on_nav_cabinet_pressed)
 	if open_diplomacy_button and not open_diplomacy_button.pressed.is_connected(_on_nav_diplomacy_pressed):
 		open_diplomacy_button.pressed.connect(_on_nav_diplomacy_pressed)
-	if open_projects_button and not open_projects_button.pressed.is_connected(_on_nav_economy_pressed):
-		open_projects_button.pressed.connect(_on_nav_economy_pressed)
+	if open_projects_button and not open_projects_button.pressed.is_connected(open_development_modal):
+		open_projects_button.pressed.connect(open_development_modal)
 
 	if modal_backdrop and not modal_backdrop.gui_input.is_connected(_on_modal_backdrop_gui_input):
 		modal_backdrop.gui_input.connect(_on_modal_backdrop_gui_input)
@@ -1756,6 +1949,12 @@ func _connect_signals() -> void:
 		btn_nav_command.pressed.connect(_on_btn_nav_command_pressed)
 
 	# New Constitutional Portfolio Buttons
+	if appoint_defense_button and not appoint_defense_button.pressed.is_connected(_on_appoint_defense_pressed):
+		appoint_defense_button.pressed.connect(_on_appoint_defense_pressed)
+	if appoint_foreign_affairs_button and not appoint_foreign_affairs_button.pressed.is_connected(_on_appoint_foreign_affairs_pressed):
+		appoint_foreign_affairs_button.pressed.connect(_on_appoint_foreign_affairs_pressed)
+	if appoint_health_button and not appoint_health_button.pressed.is_connected(_on_appoint_health_pressed):
+		appoint_health_button.pressed.connect(_on_appoint_health_pressed)
 	if appoint_education_button and not appoint_education_button.pressed.is_connected(_on_appoint_education_pressed):
 		appoint_education_button.pressed.connect(_on_appoint_education_pressed)
 	if appoint_oil_and_gas_button and not appoint_oil_and_gas_button.pressed.is_connected(_on_appoint_oil_and_gas_pressed):
@@ -1816,6 +2015,44 @@ func _apply_tooltips() -> void:
 		blotter_button.tooltip_text = "Executive Blotter: Click to inspect presidential briefing or daily schedule."
 	if nav_customise_button:
 		nav_customise_button.tooltip_text = "Office Décor: Customise presidential portrait, flag, furniture, and interior architecture."
+
+	# Time Speed Controls Tooltips
+	if speed_pause_btn:
+		speed_pause_btn.tooltip_text = "Pause simulation time (⏸)"
+		speed_pause_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if speed_play_btn:
+		speed_play_btn.tooltip_text = "Run simulation at normal speed (► 1.0x)"
+		speed_play_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if speed_fast_btn:
+		speed_fast_btn.tooltip_text = "Fast-forward simulation (►► 2.0x)"
+		speed_fast_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+	if events_view_all:
+		events_view_all.tooltip_text = "Open full Situation Briefing and Intel Reports"
+		events_view_all.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if open_projects_button:
+		open_projects_button.tooltip_text = "National Infrastructure Projects: Construct roads, university, refinery, and mines."
+
+	# Interactive HUD and Telemetry Cards
+	var clickable_cards := [
+		{"node": president_card, "tip": "Presidential Profile: View executive mandate and customize portrait."},
+		{"node": card_treasury, "tip": "National Treasury: View central bank reserves and fiscal policy."},
+		{"node": card_approval, "tip": "Public Approval: View public sentiment and situation briefing."},
+		{"node": card_stability, "tip": "National Stability: View stability metrics and security reports."},
+		{"node": card_economy, "tip": "Military & Defense: View military readiness and command operations."},
+		{"node": deck_yield_card, "tip": "National Yield: View economic output and GDP breakdown."},
+		{"node": deck_tax_card, "tip": "Taxation: View tax revenue and fiscal adjustments."},
+		{"node": deck_capacity_card, "tip": "State Capacity: View infrastructure projects and civil service."},
+		{"node": deck_welfare_card, "tip": "Public Welfare: View health, education, and social programs."},
+		{"node": deck_decisions_card, "tip": "Strategic Decrees: Propose or enact legislative bills."},
+		{"node": card_objectives, "tip": "National Objectives: View priority milestones and infrastructure development."}
+	]
+	for item in clickable_cards:
+		var n: Control = item.get("node") as Control
+		if n:
+			n.mouse_filter = Control.MOUSE_FILTER_STOP
+			n.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			n.tooltip_text = str(item.get("tip"))
 
 # ==============================================================================
 # 5. STATE CONNECTOR & SYNCHRONIZATION
@@ -3473,17 +3710,16 @@ func _on_nav_customise_pressed() -> void:
 
 ## Navigates to a specific game section reusing existing PresidentialDesk functionality
 func navigate_to_section(section: Section) -> void:
+	close_all_modals(false)
 	active_nav_section = section
 	_update_nav_button_highlights()
 
 	if section == Section.OVERVIEW:
-		close_all_modals()
 		if status_ticker_label:
 			status_ticker_label.text = "Executive Office: Main presidential workspace and situational telemetry."
 		return
 
 	if section == Section.GOVERNMENT or section == Section.CABINET:
-		close_all_modals()
 		set_left_dock_expanded(true)
 		if status_ticker_label:
 			status_ticker_label.text = "Government: Reviewing Executive Cabinet, Constitutional Portfolios, and Press Briefings."
@@ -3502,9 +3738,10 @@ func navigate_to_section(section: Section) -> void:
 		return
 
 	if section == Section.DIPLOMACY:
-		close_all_modals()
 		set_right_dock_expanded(true)
 		open_dossier_modal()
+		active_nav_section = Section.DIPLOMACY
+		_update_nav_button_highlights()
 		return
 
 	if section == Section.SECURITY:
@@ -3661,7 +3898,7 @@ func open_hotline_modal() -> void:
 		status_ticker_label.text = "Hotline Console: Secure diplomatic channel opened."
 
 func open_dossier_modal() -> void:
-	close_all_modals()
+	close_all_modals(false)
 	if modal_backdrop:
 		modal_backdrop.visible = true
 	if dossier_modal:
@@ -3697,7 +3934,7 @@ func close_customisation_modal() -> void:
 	active_nav_section = Section.OVERVIEW
 	_update_nav_button_highlights()
 
-func close_all_modals() -> void:
+func close_all_modals(reset_nav: bool = true) -> void:
 	if modal_backdrop: modal_backdrop.visible = false
 	if briefing_modal: briefing_modal.visible = false
 	if media_desk_modal: media_desk_modal.visible = false
@@ -3714,8 +3951,9 @@ func close_all_modals() -> void:
 	if economy_modal: economy_modal.visible = false
 	if messages_modal: messages_modal.visible = false
 	if buffs_modal: buffs_modal.visible = false
-	active_nav_section = Section.OVERVIEW
-	_update_nav_button_highlights()
+	if reset_nav:
+		active_nav_section = Section.OVERVIEW
+		_update_nav_button_highlights()
 
 func is_any_modal_open() -> bool:
 	return (briefing_modal and briefing_modal.visible) or \
@@ -3779,10 +4017,9 @@ func open_economy_modal() -> void:
 		status_ticker_label.text = "Economy & Treasury: Central Bank and national fiscal telemetry."
 
 func open_security_modal() -> void:
-	close_all_modals()
+	open_dossier_modal()
 	active_nav_section = Section.SECURITY
 	_update_nav_button_highlights()
-	open_dossier_modal()
 	if status_ticker_label:
 		status_ticker_label.text = "National Security: Reviewing intelligence dossiers and defense posture."
 
@@ -3853,7 +4090,113 @@ func _on_btn_nav_buffs_pressed() -> void:
 func _on_btn_nav_command_pressed() -> void:
 	navigate_to_section(Section.COMMAND_CENTRE)
 
+# Handlers for Simulation Speed Controls
+func set_simulation_speed(speed: int) -> void:
+	simulation_speed = clampi(speed, 0, 2)
+	_update_speed_controls_ui()
+	if simulation_speed == 0:
+		if poll_timer:
+			poll_timer.paused = true
+		if media_auto_publish_timer:
+			media_auto_publish_timer.paused = true
+		if status_ticker_label:
+			status_ticker_label.text = "⏸ Simulation PAUSED. Executive decisions on standby."
+	elif simulation_speed == 1:
+		if poll_timer:
+			poll_timer.paused = false
+			poll_timer.wait_time = 0.5
+		if media_auto_publish_timer:
+			media_auto_publish_timer.paused = false
+			media_auto_publish_timer.wait_time = 30.0
+		if status_ticker_label:
+			status_ticker_label.text = "► Simulation running at 1.0x normal speed."
+	elif simulation_speed == 2:
+		if poll_timer:
+			poll_timer.paused = false
+			poll_timer.wait_time = 0.2
+		if media_auto_publish_timer:
+			media_auto_publish_timer.paused = false
+			media_auto_publish_timer.wait_time = 10.0
+		if status_ticker_label:
+			status_ticker_label.text = "►► Simulation speed accelerated to 2.0x (Fast)."
+
+func _update_speed_controls_ui() -> void:
+	var active_color := Color(0.95, 0.82, 0.35, 1.0)
+	var inactive_color := Color(0.7, 0.75, 0.85, 0.7)
+	if speed_pause_btn:
+		speed_pause_btn.modulate = active_color if simulation_speed == 0 else inactive_color
+	if speed_play_btn:
+		speed_play_btn.modulate = active_color if simulation_speed == 1 else inactive_color
+	if speed_fast_btn:
+		speed_fast_btn.modulate = active_color if simulation_speed == 2 else inactive_color
+
+func _on_speed_pause_pressed() -> void:
+	set_simulation_speed(0)
+
+func _on_speed_play_pressed() -> void:
+	set_simulation_speed(1)
+
+func _on_speed_fast_pressed() -> void:
+	set_simulation_speed(2)
+
+# Handlers for Interactive Dashboard Cards & Links
+func _on_card_treasury_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_economy_modal()
+
+func _on_card_approval_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_briefing_modal()
+
+func _on_card_stability_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_briefing_modal()
+
+func _on_card_economy_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_command_centre_modal()
+
+func _on_president_card_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_customisation_modal("portraits")
+
+func _on_deck_yield_card_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_economy_modal()
+
+func _on_deck_tax_card_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_economy_modal()
+
+func _on_deck_capacity_card_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_development_modal()
+
+func _on_deck_welfare_card_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_briefing_modal()
+
+func _on_deck_decisions_card_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_policy_modal()
+
+func _on_card_objectives_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_development_modal()
+
+func _on_events_view_all_pressed() -> void:
+	open_briefing_modal()
+
 # Handlers for New Portfolios
+func _on_appoint_defense_pressed() -> void:
+	open_appointment_modal("Defense")
+
+func _on_appoint_foreign_affairs_pressed() -> void:
+	open_appointment_modal("ForeignAffairs")
+
+func _on_appoint_health_pressed() -> void:
+	open_appointment_modal("Health")
+
 func _on_appoint_education_pressed() -> void:
 	open_appointment_modal("Education")
 
@@ -5157,6 +5500,8 @@ func _apply_portfolio_card_data(portfolio: String, data: Dictionary) -> void:
 				defense_ratings_label.text = ratings_str
 			if defense_effect_label:
 				defense_effect_label.text = effect_str
+			if appoint_defense_button:
+				appoint_defense_button.text = "Manage Appointment" if is_app else "Appoint Minister"
 		"ForeignAffairs":
 			if foreign_affairs_status_label:
 				foreign_affairs_status_label.text = status_str
@@ -5166,6 +5511,8 @@ func _apply_portfolio_card_data(portfolio: String, data: Dictionary) -> void:
 				foreign_affairs_ratings_label.text = ratings_str
 			if foreign_affairs_effect_label:
 				foreign_affairs_effect_label.text = effect_str
+			if appoint_foreign_affairs_button:
+				appoint_foreign_affairs_button.text = "Manage Appointment" if is_app else "Appoint Minister"
 		"Interior":
 			if interior_status_label:
 				interior_status_label.text = status_str
@@ -5186,6 +5533,8 @@ func _apply_portfolio_card_data(portfolio: String, data: Dictionary) -> void:
 				health_ratings_label.text = ratings_str
 			if health_effect_label:
 				health_effect_label.text = effect_str
+			if appoint_health_button:
+				appoint_health_button.text = "Manage Appointment" if is_app else "Appoint Minister"
 		"Infrastructure":
 			if infrastructure_status_label:
 				infrastructure_status_label.text = status_str
