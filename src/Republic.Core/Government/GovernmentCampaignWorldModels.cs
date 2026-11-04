@@ -321,6 +321,90 @@ public sealed class CampaignDecision
     }
 }
 
+public sealed class AiCampaignOpponent
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = string.Empty;
+
+    [JsonPropertyName("ideology")]
+    public string Ideology { get; set; } = string.Empty;
+
+    [JsonPropertyName("strategy")]
+    public string Strategy { get; set; } = string.Empty;
+
+    [JsonPropertyName("polling")]
+    public decimal Polling { get; set; }
+
+    [JsonPropertyName("momentum")]
+    public decimal Momentum { get; set; }
+
+    [JsonPropertyName("funds_repu")]
+    public decimal FundsRepu { get; set; }
+
+    [JsonPropertyName("recent_action")]
+    public string RecentAction { get; set; } = string.Empty;
+}
+
+public sealed class CampaignInterestGroup
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("icon")]
+    public string Icon { get; set; } = string.Empty;
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = string.Empty;
+
+    [JsonPropertyName("demands")]
+    public string Demands { get; set; } = string.Empty;
+
+    [JsonPropertyName("endorsement_benefit")]
+    public string EndorsementBenefit { get; set; } = string.Empty;
+
+    [JsonPropertyName("player_reputation")]
+    public decimal PlayerReputation { get; set; } = 50m;
+
+    [JsonPropertyName("endorsement_status")]
+    public string EndorsementStatus { get; set; } = "Neutral";
+
+    [JsonPropertyName("endorsed_candidate")]
+    public string EndorsedCandidate { get; set; } = string.Empty;
+
+    [JsonPropertyName("turnout_bonus")]
+    public decimal TurnoutBonus { get; set; } = 3.0m;
+
+    [JsonPropertyName("funding_bonus")]
+    public decimal FundingBonus { get; set; } = 0m;
+}
+
+public sealed class CampaignNewsItem
+{
+    [JsonPropertyName("headline")]
+    public string Headline { get; set; } = string.Empty;
+
+    [JsonPropertyName("summary")]
+    public string Summary { get; set; } = string.Empty;
+
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = "Sovereign Press Wire";
+
+    [JsonPropertyName("tone")]
+    public string Tone { get; set; } = "Neutral";
+
+    [JsonPropertyName("timestamp")]
+    public string Timestamp { get; set; } = string.Empty;
+}
+
 public sealed class CampaignOfficeState
 {
     [JsonPropertyName("campaign_manager")]
@@ -349,6 +433,163 @@ public sealed class CampaignOfficeState
 
     [JsonPropertyName("completed_decisions")]
     public List<CampaignDecision> CompletedDecisions { get; set; } = new();
+
+    [JsonPropertyName("ai_opponents")]
+    public List<AiCampaignOpponent> AiOpponents { get; set; } = CreateCanonicalOpponents();
+
+    [JsonPropertyName("interest_groups")]
+    public List<CampaignInterestGroup> InterestGroups { get; set; } = CreateCanonicalInterestGroups();
+
+    [JsonPropertyName("campaign_news")]
+    public List<CampaignNewsItem> CampaignNews { get; set; } = CreateInitialNews();
+
+    [JsonPropertyName("undecided_polling")]
+    public decimal UndecidedPolling { get; set; } = 10.0m;
+
+    [JsonPropertyName("total_turnout_projected")]
+    public decimal TotalTurnoutProjected { get; set; } = 74.0m;
+
+    [JsonPropertyName("election_breakdown")]
+    public Dictionary<string, decimal> ElectionBreakdown { get; set; } = new();
+
+    public static List<AiCampaignOpponent> CreateCanonicalOpponents()
+    {
+        return new List<AiCampaignOpponent>
+        {
+            new()
+            {
+                Id = "opp_marcus_thorne",
+                Name = "Senator Marcus Thorne",
+                Title = "Former Provincial Governor & Senior Senator",
+                Ideology = "Establishment Stalwart",
+                Strategy = "Corporate PAC donations, business syndicate endorsements, and television advertising.",
+                Polling = 32.0m,
+                Momentum = 0.2m,
+                FundsRepu = 4_200_000m,
+                RecentAction = "Secured prime-time advertising slots and hosted elite donor roundtables."
+            },
+            new()
+            {
+                Id = "opp_cassian_drake",
+                Name = "Cassian Drake",
+                Title = "Grassroots Movement Organizer",
+                Ideology = "Populist Challenger",
+                Strategy = "Anti-establishment stadium rallies, controversial digital attacks, and volatile voter swings.",
+                Polling = 23.0m,
+                Momentum = -0.1m,
+                FundsRepu = 2_800_000m,
+                RecentAction = "Staged unannounced stadium rally attacking political corruption."
+            }
+        };
+    }
+
+    public static List<CampaignInterestGroup> CreateCanonicalInterestGroups()
+    {
+        return new List<CampaignInterestGroup>
+        {
+            new()
+            {
+                Id = "ig_industrialists",
+                Name = "Chamber of Commerce & Industrialists",
+                Icon = "🏭",
+                Description = "Heavy manufacturers, commercial builders, and private capital syndicate.",
+                Demands = "Predictable corporate taxation, infrastructure fast-tracking, and regulatory stability.",
+                EndorsementBenefit = "+R 1,000,000 REPU corporate donations & +2.5% election day turnout.",
+                PlayerReputation = 42.0m,
+                EndorsementStatus = "EndorsingOpponent",
+                EndorsedCandidate = "Senator Marcus Thorne",
+                TurnoutBonus = 2.5m,
+                FundingBonus = 1_000_000m
+            },
+            new()
+            {
+                Id = "ig_media",
+                Name = "National Press Syndicate & Broadcasters",
+                Icon = "📰",
+                Description = "Sovereign journalistic guild, television networks, and investigative press.",
+                Demands = "Guaranteed press conference access, anti-censorship protections, and transparent government.",
+                EndorsementBenefit = "Editorial backing (+25% media campaign reach & active immunity against opponent smears).",
+                PlayerReputation = 50.0m,
+                EndorsementStatus = "Neutral",
+                EndorsedCandidate = string.Empty,
+                TurnoutBonus = 2.0m,
+                FundingBonus = 0m
+            },
+            new()
+            {
+                Id = "ig_unions",
+                Name = "Central Federation of Trade Unions",
+                Icon = "✊",
+                Description = "Miners, rail logistics crew, factory labor, and public sector workers.",
+                Demands = "Enforceable living wages, workplace safety charters, and collective bargaining rights.",
+                EndorsementBenefit = "Ten thousand volunteer campaign workers (+4.0% election day turnout boost).",
+                PlayerReputation = 52.0m,
+                EndorsementStatus = "Neutral",
+                EndorsedCandidate = string.Empty,
+                TurnoutBonus = 4.0m,
+                FundingBonus = 0m
+            },
+            new()
+            {
+                Id = "ig_professionals",
+                Name = "Civic League of Professional Associations",
+                Icon = "⚖️",
+                Description = "Physicians, civil engineers, bar association jurists, and teachers.",
+                Demands = "Merit-based civil service, judicial autonomy, and institutional integrity.",
+                EndorsementBenefit = "Civic credibility (+3.5% baseline stability & immunity to corruption scandals).",
+                PlayerReputation = 55.0m,
+                EndorsementStatus = "Neutral",
+                EndorsedCandidate = string.Empty,
+                TurnoutBonus = 2.5m,
+                FundingBonus = 0m
+            },
+            new()
+            {
+                Id = "ig_influencers",
+                Name = "Digital Vanguard & Cultural Influencers",
+                Icon = "🎙️",
+                Description = "Independent new media creators, youth podcasters, and cultural commentators.",
+                Demands = "Digital autonomy, innovation grants, and modernizing state communication.",
+                EndorsementBenefit = "Viral digital momentum (+5.0% swing among first-time & undecided voters).",
+                PlayerReputation = 48.0m,
+                EndorsementStatus = "Neutral",
+                EndorsedCandidate = string.Empty,
+                TurnoutBonus = 3.0m,
+                FundingBonus = 0m
+            }
+        };
+    }
+
+    public static List<CampaignNewsItem> CreateInitialNews()
+    {
+        return new List<CampaignNewsItem>
+        {
+            new()
+            {
+                Headline = "CAMPAIGN OPENS: Three-Way Contest for Presidential Mandate Begins",
+                Summary = "The sovereign election commission declares campaign season open. Candidate polling shows a tight three-way contest.",
+                Source = "Electoral Commission",
+                Tone = "Neutral",
+                Timestamp = "Day 1"
+            },
+            new()
+            {
+                Headline = "Chamber of Commerce Signals Leaning Toward Thorne",
+                Summary = "Commercial industrialists express wariness over populist promises, favoring establishment stability.",
+                Source = "Financial Times",
+                Tone = "Warning",
+                Timestamp = "Day 1"
+            },
+            new()
+            {
+                Headline = "Labor Unions Weigh Crucial Endorsement",
+                Summary = "Trade union delegates convene to deliberate between the contender and populist challenger Drake.",
+                Source = "Labor Standard",
+                Tone = "Neutral",
+                Timestamp = "Day 1"
+            }
+        };
+    }
 
     [JsonPropertyName("election_resolved")]
     public bool ElectionResolved { get; set; }

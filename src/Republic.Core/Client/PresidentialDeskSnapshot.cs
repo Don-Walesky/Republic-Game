@@ -673,6 +673,36 @@ public sealed record PresidentialDeskSnapshot
     public IReadOnlyList<CampaignDecision> CompletedCampaignDecisions { get; init; } = Array.Empty<CampaignDecision>();
 
     /// <summary>
+    /// Gets the competitive AI campaign opponents.
+    /// </summary>
+    [JsonPropertyName("campaign_ai_opponents")]
+    public IReadOnlyList<AiCampaignOpponent> AiOpponents { get; init; } = Array.Empty<AiCampaignOpponent>();
+
+    /// <summary>
+    /// Gets the 5 key interest groups and their endorsement status.
+    /// </summary>
+    [JsonPropertyName("campaign_interest_groups")]
+    public IReadOnlyList<CampaignInterestGroup> InterestGroups { get; init; } = Array.Empty<CampaignInterestGroup>();
+
+    /// <summary>
+    /// Gets recent campaign news stories and media coverage.
+    /// </summary>
+    [JsonPropertyName("campaign_news")]
+    public IReadOnlyList<CampaignNewsItem> CampaignNews { get; init; } = Array.Empty<CampaignNewsItem>();
+
+    /// <summary>
+    /// Gets the percentage of undecided/swing voters.
+    /// </summary>
+    [JsonPropertyName("campaign_undecided_polling")]
+    public decimal CampaignUndecidedPolling { get; init; } = 10.0m;
+
+    /// <summary>
+    /// Gets the multi-candidate popular vote breakdown on election night.
+    /// </summary>
+    [JsonPropertyName("election_breakdown")]
+    public IReadOnlyDictionary<string, decimal> ElectionBreakdown { get; init; } = new Dictionary<string, decimal>();
+
+    /// <summary>
     /// Gets whether national election night has been resolved.
     /// </summary>
     [JsonPropertyName("election_resolved")]
@@ -1560,6 +1590,12 @@ public sealed record PresidentialDeskSnapshot
             ElectionWon = country.CampaignOffice?.ElectionWon ?? false,
             ElectionTally = country.CampaignOffice?.ElectionTally ?? 0m,
             ElectionSummary = country.CampaignOffice?.ElectionSummary ?? string.Empty,
+
+            AiOpponents = country.CampaignOffice?.AiOpponents != null ? country.CampaignOffice.AiOpponents.ToList().AsReadOnly() : Array.Empty<AiCampaignOpponent>(),
+            InterestGroups = country.CampaignOffice?.InterestGroups != null ? country.CampaignOffice.InterestGroups.ToList().AsReadOnly() : Array.Empty<CampaignInterestGroup>(),
+            CampaignNews = country.CampaignOffice?.CampaignNews != null ? country.CampaignOffice.CampaignNews.ToList().AsReadOnly() : Array.Empty<CampaignNewsItem>(),
+            CampaignUndecidedPolling = country.CampaignOffice?.UndecidedPolling ?? 10.0m,
+            ElectionBreakdown = country.CampaignOffice?.ElectionBreakdown != null ? country.CampaignOffice.ElectionBreakdown : new Dictionary<string, decimal>(),
 
             LastAiDecision = resolvedAiDecision
         };

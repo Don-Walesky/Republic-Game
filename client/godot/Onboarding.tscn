@@ -1504,76 +1504,279 @@ theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
 theme_override_font_sizes/font_size = 14
 text = "Audit: Clean (Kaelen Thorne)"
 
-[node name="CardTeam" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+[node name="CardRaceOverview" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
 layout_mode = 2
 
-[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam"]
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="TeamTitle" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox"]
+[node name="HBoxHdr" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/HBoxHdr"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 12
+text = "LIVE CONTESTED ELECTION POLLING & MOMENTUM"
+
+[node name="LblProjectedTurnout" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/HBoxHdr"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "Projected Turnout: 70.0%"
+
+[node name="GridRace" type="GridContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox"]
+layout_mode = 2
+columns = 4
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 2
+
+[node name="LblRacePlayer" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 12
+text = "👤 You (Reform): 35.0% ▲"
+
+[node name="LblRaceThorne" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.5, 0.75, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "🏛️ M. Thorne: 32.0% ▼"
+
+[node name="LblRaceDrake" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.5, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "🔥 C. Drake: 23.0% ▲"
+
+[node name="LblRaceUndecided" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "❓ Undecided: 10.0%"
+
+[node name="HBoxCampaignTabs" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnTabDecisions" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 30)
+text = "⚡ Actions & Strategy"
+
+[node name="BtnTabGroups" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 30)
+text = "🤝 Interest Groups (5)"
+
+[node name="BtnTabOpponents" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 30)
+text = "🏛️ Rivals & Media Wire"
+
+[node name="BtnTabElection" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 30)
+text = "🗳️ Election Night Tally"
+
+[node name="TabDecisionsContainer" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CardTeam" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TeamTitle" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_font_sizes/font_size = 13
 text = "Campaign Leadership Guidance"
 
-[node name="LblGeneralAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox"]
+[node name="LblGeneralAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "• Marcus Vance (General Adviser): Build broad voter momentum across capital and labor while conserving purse liquidity."
 autowrap_mode = 2
 
-[node name="LblPressAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox"]
+[node name="LblPressAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "• Elena Vance (Press Secretary): High turnout at campaign rallies elevates our debate positioning and media sentiment."
 autowrap_mode = 2
 
-[node name="LblAccountantAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox"]
+[node name="LblAccountantAdvice" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
 theme_override_font_sizes/font_size = 11
 text = "• Kaelen Thorne (Accountant General): Strict financial controls active. All expenditures audited."
 autowrap_mode = 2
 
-[node name="ScrollDecisions" type="ScrollContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
-custom_minimum_size = Vector2(0, 260)
+[node name="ScrollDecisions" type="ScrollContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer"]
+custom_minimum_size = Vector2(0, 220)
 layout_mode = 2
 
-[node name="DecisionsBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/ScrollDecisions"]
+[node name="DecisionsBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/ScrollDecisions"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="CardElectionNight" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+[node name="TabInterestGroupsContainer" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblGroupsIntro" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabInterestGroupsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+text = "Court powerful societal blocs to win vital campaign endorsements. Endorsing groups deliver major turnout boosts, donations, and media reach. You may court each group with policy pledges and funding."
+autowrap_mode = 2
+
+[node name="ScrollGroups" type="ScrollContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabInterestGroupsContainer"]
+custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 
-[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight"]
+[node name="GroupsBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabInterestGroupsContainer/ScrollGroups"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="TabOpponentsNewsContainer" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CardOpponents" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="OppTitle" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 12
+text = "AI RIVAL CANDIDATES & CAMPAIGN STRATEGIES"
+
+[node name="HBoxOpponents" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CardThorne" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxThorne" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardThorne"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LblThorneHdr" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardThorne/VBoxThorne"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.75, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏛️ Senator Marcus Thorne (Establishment)"
+
+[node name="LblThorneDesc" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardThorne/VBoxThorne"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Strategy: Institutional stability & corporate donors\nLatest: Addressed conservative gala pledging fiscal austerity."
+autowrap_mode = 2
+
+[node name="CardDrake" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxDrake" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardDrake"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LblDrakeHdr" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardDrake/VBoxDrake"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.5, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "🔥 Cassian Drake (Nationalist-Populist)"
+
+[node name="LblDrakeDesc" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardDrake/VBoxDrake"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Strategy: Grassroots outrage & unannounced rallies\nLatest: Attacked incumbent institutions in viral livestream."
+autowrap_mode = 2
+
+[node name="CardNewsWire" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardNewsWire"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="NewsTitle" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardNewsWire/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 12
+text = "LIVE CAMPAIGN MEDIA WIRE & SIMULATED PRESS"
+
+[node name="ScrollNews" type="ScrollContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardNewsWire/VBox"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+
+[node name="NewsBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardNewsWire/VBox/ScrollNews"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="TabElectionContainer" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CardElectionNight" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="HBoxElection" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox"]
+[node name="HBoxElection" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox"]
 layout_mode = 2
 
-[node name="LblElectionTally" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection"]
+[node name="LblElectionTally" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
 theme_override_font_sizes/font_size = 13
 text = "Election Night Readiness: Polling Support >= 50.0% Required to Win Democratic Mandate"
 
-[node name="BtnContestElection" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection"]
+[node name="BtnContestElection" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection"]
 layout_mode = 2
 custom_minimum_size = Vector2(220, 32)
 text = "Contest National Election Night 🗳️"
 
-[node name="LblElectionResult" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox"]
+[node name="LblElectionResult" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Election Status: Campaigning in progress. Build public support before contesting election night."
 autowrap_mode = 2
 
-[node name="BtnAssumeOffice" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox"]
+[node name="ElectionBreakdownBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BtnAssumeOffice" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox"]
 visible = false
 layout_mode = 2
 custom_minimum_size = Vector2(0, 38)

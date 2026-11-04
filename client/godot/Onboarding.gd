@@ -201,14 +201,46 @@ var resend_cooldown_timer: float = 0.0
 @onready var lbl_campaign_purse: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPurse
 @onready var lbl_campaign_polling: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPolling
 @onready var lbl_campaign_audit: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblAudit
-@onready var lbl_team_general: Label = $PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblGeneralAdvice
-@onready var lbl_team_press: Label = $PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblPressAdvice
-@onready var lbl_team_accountant: Label = $PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblAccountantAdvice
-@onready var decisions_box: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/ScrollDecisions/DecisionsBox
-@onready var lbl_election_tally: Label = $PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection/LblElectionTally
-@onready var btn_contest_election: Button = $PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection/BtnContestElection
-@onready var lbl_election_result: Label = $PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/LblElectionResult
-@onready var btn_assume_office: Button = $PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/BtnAssumeOffice
+
+# Race Polling Bar
+@onready var lbl_projected_turnout: Label = $PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/HBoxHdr/LblProjectedTurnout
+@onready var lbl_race_player: Label = $PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRacePlayer
+@onready var lbl_race_thorne: Label = $PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRaceThorne
+@onready var lbl_race_drake: Label = $PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRaceDrake
+@onready var lbl_race_undecided: Label = $PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRaceUndecided
+
+# Tabs
+@onready var btn_tab_decisions: Button = $PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs/BtnTabDecisions
+@onready var btn_tab_groups: Button = $PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs/BtnTabGroups
+@onready var btn_tab_opponents: Button = $PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs/BtnTabOpponents
+@onready var btn_tab_election: Button = $PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs/BtnTabElection
+
+@onready var tab_decisions_container: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer
+@onready var tab_groups_container: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabInterestGroupsContainer
+@onready var tab_opponents_container: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer
+@onready var tab_election_container: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer
+
+# Decisions Tab
+@onready var lbl_team_general: Label = $PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox/LblGeneralAdvice
+@onready var lbl_team_press: Label = $PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox/LblPressAdvice
+@onready var lbl_team_accountant: Label = $PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox/LblAccountantAdvice
+@onready var decisions_box: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/ScrollDecisions/DecisionsBox
+
+# Groups Tab
+@onready var groups_box: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabInterestGroupsContainer/ScrollGroups/GroupsBox
+
+# Opponents & News Tab
+@onready var lbl_thorne_desc: Label = $PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardThorne/VBoxThorne/LblThorneDesc
+@onready var lbl_drake_desc: Label = $PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardDrake/VBoxDrake/LblDrakeDesc
+@onready var news_box: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardNewsWire/VBox/ScrollNews/NewsBox
+
+# Election Tab
+@onready var lbl_election_tally: Label = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/LblElectionTally
+@onready var btn_contest_election: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/BtnContestElection
+@onready var lbl_election_result: Label = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/LblElectionResult
+@onready var election_breakdown_box: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/ElectionBreakdownBox
+@onready var btn_assume_office: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/BtnAssumeOffice
+
 @onready var lbl_campaign_feedback: Label = $PanelContainer/VBox/ScreenCampaignHq/LblCampaignFeedback
 @onready var btn_back_to_advisers: Button = $PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnBackToAdvisers
 
@@ -360,13 +392,45 @@ func _init_controls() -> void:
 	if lbl_campaign_purse == null: lbl_campaign_purse = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPurse")
 	if lbl_campaign_polling == null: lbl_campaign_polling = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPolling")
 	if lbl_campaign_audit == null: lbl_campaign_audit = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblAudit")
+
+	if lbl_projected_turnout == null: lbl_projected_turnout = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/HBoxHdr/LblProjectedTurnout")
+	if lbl_race_player == null: lbl_race_player = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRacePlayer")
+	if lbl_race_thorne == null: lbl_race_thorne = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRaceThorne")
+	if lbl_race_drake == null: lbl_race_drake = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRaceDrake")
+	if lbl_race_undecided == null: lbl_race_undecided = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRaceUndecided")
+
+	if btn_tab_decisions == null: btn_tab_decisions = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs/BtnTabDecisions")
+	if btn_tab_groups == null: btn_tab_groups = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs/BtnTabGroups")
+	if btn_tab_opponents == null: btn_tab_opponents = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs/BtnTabOpponents")
+	if btn_tab_election == null: btn_tab_election = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignTabs/BtnTabElection")
+
+	if tab_decisions_container == null: tab_decisions_container = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer")
+	if tab_groups_container == null: tab_groups_container = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabInterestGroupsContainer")
+	if tab_opponents_container == null: tab_opponents_container = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer")
+	if tab_election_container == null: tab_election_container = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer")
+
+	if lbl_team_general == null: lbl_team_general = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox/LblGeneralAdvice")
 	if lbl_team_general == null: lbl_team_general = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblGeneralAdvice")
+	if lbl_team_press == null: lbl_team_press = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox/LblPressAdvice")
 	if lbl_team_press == null: lbl_team_press = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblPressAdvice")
+	if lbl_team_accountant == null: lbl_team_accountant = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/CardTeam/VBox/LblAccountantAdvice")
 	if lbl_team_accountant == null: lbl_team_accountant = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardTeam/VBox/LblAccountantAdvice")
+	if decisions_box == null: decisions_box = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/ScrollDecisions/DecisionsBox")
 	if decisions_box == null: decisions_box = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/ScrollDecisions/DecisionsBox")
+
+	if groups_box == null: groups_box = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabInterestGroupsContainer/ScrollGroups/GroupsBox")
+	if lbl_thorne_desc == null: lbl_thorne_desc = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardThorne/VBoxThorne/LblThorneDesc")
+	if lbl_drake_desc == null: lbl_drake_desc = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardOpponents/VBox/HBoxOpponents/CardDrake/VBoxDrake/LblDrakeDesc")
+	if news_box == null: news_box = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabOpponentsNewsContainer/CardNewsWire/VBox/ScrollNews/NewsBox")
+
+	if lbl_election_tally == null: lbl_election_tally = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/LblElectionTally")
 	if lbl_election_tally == null: lbl_election_tally = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection/LblElectionTally")
+	if btn_contest_election == null: btn_contest_election = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/BtnContestElection")
 	if btn_contest_election == null: btn_contest_election = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/HBoxElection/BtnContestElection")
+	if lbl_election_result == null: lbl_election_result = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/LblElectionResult")
 	if lbl_election_result == null: lbl_election_result = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/LblElectionResult")
+	if election_breakdown_box == null: election_breakdown_box = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/ElectionBreakdownBox")
+	if btn_assume_office == null: btn_assume_office = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/BtnAssumeOffice")
 	if btn_assume_office == null: btn_assume_office = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/BtnAssumeOffice")
 	if lbl_campaign_feedback == null: lbl_campaign_feedback = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/LblCampaignFeedback")
 	if btn_back_to_advisers == null: btn_back_to_advisers = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnBackToAdvisers")
@@ -435,6 +499,15 @@ func _connect_signals() -> void:
 		btn_unlock_slot4.pressed.connect(_on_unlock_slot4_pressed)
 	if btn_unlock_slot5 and not btn_unlock_slot5.pressed.is_connected(_on_unlock_slot5_pressed):
 		btn_unlock_slot5.pressed.connect(_on_unlock_slot5_pressed)
+	if btn_tab_decisions and not btn_tab_decisions.pressed.is_connected(_select_campaign_tab.bind("decisions")):
+		btn_tab_decisions.pressed.connect(_select_campaign_tab.bind("decisions"))
+	if btn_tab_groups and not btn_tab_groups.pressed.is_connected(_select_campaign_tab.bind("groups")):
+		btn_tab_groups.pressed.connect(_select_campaign_tab.bind("groups"))
+	if btn_tab_opponents and not btn_tab_opponents.pressed.is_connected(_select_campaign_tab.bind("opponents")):
+		btn_tab_opponents.pressed.connect(_select_campaign_tab.bind("opponents"))
+	if btn_tab_election and not btn_tab_election.pressed.is_connected(_select_campaign_tab.bind("election")):
+		btn_tab_election.pressed.connect(_select_campaign_tab.bind("election"))
+
 	if btn_back_to_advisers and not btn_back_to_advisers.pressed.is_connected(_on_back_to_advisers_pressed):
 		btn_back_to_advisers.pressed.connect(_on_back_to_advisers_pressed)
 	if btn_contest_election and not btn_contest_election.pressed.is_connected(_on_contest_election_pressed):
@@ -1492,6 +1565,19 @@ func _format_number(val: float) -> String:
 			res = "," + res
 	return res
 
+func _select_campaign_tab(tab_name: String) -> void:
+	if tab_decisions_container: tab_decisions_container.visible = (tab_name == "decisions")
+	if tab_groups_container: tab_groups_container.visible = (tab_name == "groups")
+	if tab_opponents_container: tab_opponents_container.visible = (tab_name == "opponents")
+	if tab_election_container: tab_election_container.visible = (tab_name == "election")
+
+	var gold := Color(0.85, 0.72, 0.35)
+	var dim := Color(0.8, 0.8, 0.8)
+	if btn_tab_decisions: btn_tab_decisions.modulate = gold if tab_name == "decisions" else dim
+	if btn_tab_groups: btn_tab_groups.modulate = gold if tab_name == "groups" else dim
+	if btn_tab_opponents: btn_tab_opponents.modulate = gold if tab_name == "opponents" else dim
+	if btn_tab_election: btn_tab_election.modulate = gold if tab_name == "election" else dim
+
 func _populate_campaign_hq_view(data: Dictionary) -> void:
 	active_campaign_data = data
 	var purse := float(data.get("campaign_purse", 5000000.0))
@@ -1526,6 +1612,53 @@ func _populate_campaign_hq_view(data: Dictionary) -> void:
 		var p_adv := str(press.get("briefing_summary", "Campaign rallies and media tours are elevating public recognition."))
 		lbl_team_press.text = "• Elena Vance (Press Secretary): %s" % [p_adv]
 
+	# Race Polling Overview & Contenders
+	var undecided := float(data.get("campaign_undecided_polling", 10.0))
+	var opponents = data.get("campaign_ai_opponents", [])
+	var thorne_poll := 32.0
+	var thorne_mom := -0.5
+	var drake_poll := 23.0
+	var drake_mom := 1.2
+	var thorne_action := "Addressed conservative gala pledging fiscal austerity."
+	var drake_action := "Staged viral rally criticizing status quo institutions."
+
+	if typeof(opponents) == TYPE_ARRAY:
+		for opp in opponents:
+			if typeof(opp) == TYPE_DICTIONARY:
+				var opp_id := str(opp.get("id", opp.get("Id", "")))
+				var p := float(opp.get("polling", opp.get("Polling", 0.0)))
+				var m := float(opp.get("momentum", opp.get("Momentum", 0.0)))
+				var act := str(opp.get("recent_action", opp.get("RecentAction", "")))
+				if opp_id == "opp_establishment":
+					thorne_poll = p
+					thorne_mom = m
+					if not act.is_empty(): thorne_action = act
+				elif opp_id == "opp_populist":
+					drake_poll = p
+					drake_mom = m
+					if not act.is_empty(): drake_action = act
+
+	if lbl_race_player:
+		lbl_race_player.text = "👤 You (Reform): %.1f%% ▲" % [polling]
+	if lbl_race_thorne:
+		var arrow := "▲" if thorne_mom >= 0 else "▼"
+		lbl_race_thorne.text = "🏛️ M. Thorne: %.1f%% %s" % [thorne_poll, arrow]
+	if lbl_race_drake:
+		var arrow := "▲" if drake_mom >= 0 else "▼"
+		lbl_race_drake.text = "🔥 C. Drake: %.1f%% %s" % [drake_poll, arrow]
+	if lbl_race_undecided:
+		lbl_race_undecided.text = "❓ Undecided: %.1f%%" % [undecided]
+	if lbl_projected_turnout:
+		var projected := float(data.get("total_turnout_projected", 68.0 + (polling * 0.1)))
+		lbl_projected_turnout.text = "Projected Turnout: %.1f%%" % [projected]
+
+	if lbl_thorne_desc:
+		lbl_thorne_desc.text = "Strategy: Institutional stability & corporate donors • Polling: %.1f%%
+Latest Move: %s" % [thorne_poll, thorne_action]
+	if lbl_drake_desc:
+		lbl_drake_desc.text = "Strategy: Grassroots outrage & mass rallies • Polling: %.1f%%
+Latest Move: %s" % [drake_poll, drake_action]
+
 	# Populate Decision Cards
 	if decisions_box:
 		for child in decisions_box.get_children():
@@ -1537,7 +1670,29 @@ func _populate_campaign_hq_view(data: Dictionary) -> void:
 				if typeof(d) == TYPE_DICTIONARY:
 					_create_decision_card(d)
 
-	# Election Night Status
+	# Populate Interest Groups Cards
+	if groups_box:
+		for child in groups_box.get_children():
+			child.queue_free()
+
+		var groups = data.get("campaign_interest_groups", [])
+		if typeof(groups) == TYPE_ARRAY and groups.size() > 0:
+			for g in groups:
+				if typeof(g) == TYPE_DICTIONARY:
+					_create_interest_group_card(g)
+
+	# Populate Campaign News Wire
+	if news_box:
+		for child in news_box.get_children():
+			child.queue_free()
+
+		var news_items = data.get("campaign_news", [])
+		if typeof(news_items) == TYPE_ARRAY and news_items.size() > 0:
+			for n in news_items:
+				if typeof(n) == TYPE_DICTIONARY:
+					_create_news_item_card(n)
+
+	# Election Night Status & Breakdown
 	var election_resolved := bool(data.get("election_resolved", false))
 	var election_won := bool(data.get("election_won", false))
 	var election_tally := float(data.get("election_tally", 0.0))
@@ -1545,6 +1700,33 @@ func _populate_campaign_hq_view(data: Dictionary) -> void:
 
 	if lbl_election_tally:
 		lbl_election_tally.text = "Election Readiness: Polling Support %.1f%% (Target: 50.0%% to Win)" % [polling]
+
+	if election_breakdown_box:
+		for child in election_breakdown_box.get_children():
+			child.queue_free()
+
+		var breakdown = data.get("election_breakdown", {})
+		if typeof(breakdown) == TYPE_DICTIONARY and breakdown.size() > 0:
+			var hdr := Label.new()
+			hdr.text = "Certified Election Night Popular Vote Results:"
+			hdr.modulate = Color(0.85, 0.72, 0.35)
+			hdr.set("theme_override_font_sizes/font_size", 12)
+			election_breakdown_box.add_child(hdr)
+
+			var grid := GridContainer.new()
+			grid.columns = 3
+			grid.set("theme_override_constants/h_separation", 16)
+			election_breakdown_box.add_child(grid)
+
+			for candidate_name in breakdown.keys():
+				var share := float(breakdown[candidate_name])
+				var lbl_c := Label.new()
+				lbl_c.text = "%s: %.1f%%" % [candidate_name, share]
+				if candidate_name.to_lower().contains("you") or candidate_name == "Player":
+					lbl_c.modulate = Color(0.4, 1.0, 0.4) if share >= 50.0 else Color(1.0, 0.6, 0.4)
+				else:
+					lbl_c.modulate = Color(0.7, 0.85, 1.0)
+				grid.add_child(lbl_c)
 
 	if election_resolved:
 		if lbl_election_result:
@@ -1556,7 +1738,7 @@ func _populate_campaign_hq_view(data: Dictionary) -> void:
 			btn_contest_election.disabled = election_won
 	else:
 		if lbl_election_result:
-			lbl_election_result.text = "Election Status: Campaign in progress. Build public support before contesting election night."
+			lbl_election_result.text = "Election Status: Campaign in progress. Build public support and endorsements before contesting election night."
 			lbl_election_result.modulate = Color(0.9, 0.9, 0.6)
 		if btn_assume_office:
 			btn_assume_office.visible = false
@@ -1612,6 +1794,136 @@ func _create_decision_card(d: Dictionary) -> void:
 
 	decisions_box.add_child(panel)
 
+func _create_interest_group_card(g: Dictionary) -> void:
+	var gid := str(g.get("id", g.get("Id", "")))
+	var name := str(g.get("name", g.get("Name", "")))
+	var icon := str(g.get("icon", g.get("Icon", "🤝")))
+	var desc := str(g.get("description", g.get("Description", "")))
+	var demands := str(g.get("demands", g.get("Demands", "")))
+	var benefit := str(g.get("endorsement_benefit", g.get("EndorsementBenefit", "")))
+	var rep := float(g.get("player_reputation", g.get("PlayerReputation", 50.0)))
+	var status := str(g.get("endorsement_status", g.get("EndorsementStatus", "Neutral")))
+	var endorsed_cand := str(g.get("endorsed_candidate", g.get("EndorsedCandidate", "")))
+
+	var panel := PanelContainer.new()
+	var vbox := VBoxContainer.new()
+	vbox.set("theme_override_constants/separation", 4)
+	panel.add_child(vbox)
+
+	var hbox_hdr := HBoxContainer.new()
+	vbox.add_child(hbox_hdr)
+
+	var lbl_title := Label.new()
+	lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl_title.text = "%s %s" % [icon, name]
+	lbl_title.modulate = Color(0.85, 0.72, 0.35)
+	hbox_hdr.add_child(lbl_title)
+
+	var lbl_status := Label.new()
+	if status == "EndorsingPlayer" or endorsed_cand.to_lower().contains("player") or endorsed_cand.to_lower().contains("you"):
+		lbl_status.text = "🏆 ENDORSING YOU"
+		lbl_status.modulate = Color(0.4, 1.0, 0.4)
+	elif status == "EndorsingOpponent":
+		lbl_status.text = "⚔️ BACKING: " + endorsed_cand
+		lbl_status.modulate = Color(1.0, 0.4, 0.4)
+	else:
+		lbl_status.text = "⚖️ NEUTRAL / UNDECIDED"
+		lbl_status.modulate = Color(0.9, 0.85, 0.4)
+	hbox_hdr.add_child(lbl_status)
+
+	var btn_court := Button.new()
+	btn_court.custom_minimum_size = Vector2(210, 26)
+	btn_court.text = "Court Group (Cost: R 200,000)"
+	hbox_hdr.add_child(btn_court)
+	btn_court.pressed.connect(_on_court_group_pressed.bind(gid, name))
+
+	var lbl_desc := Label.new()
+	lbl_desc.text = "%s
+• Demands: %s
+• Endorsement Benefit: %s" % [desc, demands, benefit]
+	lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_desc.set("theme_override_font_sizes/font_size", 11)
+	vbox.add_child(lbl_desc)
+
+	var hbox_rep := HBoxContainer.new()
+	vbox.add_child(hbox_rep)
+
+	var lbl_rep := Label.new()
+	lbl_rep.text = "Reputation Standing: %.0f/100" % [rep]
+	lbl_rep.set("theme_override_font_sizes/font_size", 10)
+	lbl_rep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox_rep.add_child(lbl_rep)
+
+	var pb := ProgressBar.new()
+	pb.custom_minimum_size = Vector2(160, 14)
+	pb.max_value = 100.0
+	pb.value = rep
+	hbox_rep.add_child(pb)
+
+	groups_box.add_child(panel)
+
+func _create_news_item_card(n: Dictionary) -> void:
+	var headline := str(n.get("headline", n.get("Headline", "")))
+	var summary := str(n.get("summary", n.get("Summary", "")))
+	var source := str(n.get("source", n.get("Source", "National Press")))
+	var tone := str(n.get("tone", n.get("Tone", "Neutral")))
+
+	var panel := PanelContainer.new()
+	var vbox := VBoxContainer.new()
+	vbox.set("theme_override_constants/separation", 2)
+	panel.add_child(vbox)
+
+	var hbox_hdr := HBoxContainer.new()
+	vbox.add_child(hbox_hdr)
+
+	var lbl_t := Label.new()
+	lbl_t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl_t.text = "%s — [%s]" % [headline, source]
+	if tone.to_lower().contains("positive"):
+		lbl_t.modulate = Color(0.4, 1.0, 0.4)
+	elif tone.to_lower().contains("crit") or tone.to_lower().contains("neg"):
+		lbl_t.modulate = Color(1.0, 0.4, 0.4)
+	elif tone.to_lower().contains("contro"):
+		lbl_t.modulate = Color(1.0, 0.7, 0.3)
+	else:
+		lbl_t.modulate = Color(0.7, 0.85, 1.0)
+	hbox_hdr.add_child(lbl_t)
+
+	var lbl_s := Label.new()
+	lbl_s.text = summary
+	lbl_s.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_s.set("theme_override_font_sizes/font_size", 10)
+	vbox.add_child(lbl_s)
+
+	news_box.add_child(panel)
+
+func _on_court_group_pressed(gid: String, gname: String) -> void:
+	if is_processing: return
+	is_processing = true
+	if lbl_campaign_feedback: lbl_campaign_feedback.text = "Courting %s with policy pledge and campaign expenditure..." % [gname]
+
+	var req := {
+		"action": "court_interest_group",
+		"group_id": gid,
+		"cost": 200000.0,
+		"expenditure_repu": 200000.0,
+		"pledge": "Commitment to policy priorities of " + gname,
+		"request_id": "onboarding_court_" + str(Time.get_unix_time_from_system())
+	}
+
+	var res := _submit_request_and_wait(req)
+	is_processing = false
+
+	if res.get("success", false) and res.get("result", "") == "Success":
+		if lbl_campaign_feedback:
+			lbl_campaign_feedback.text = str(res.get("message", "Group successfully courted."))
+			lbl_campaign_feedback.modulate = Color(0.4, 1.0, 0.4)
+		_populate_campaign_hq_view(res)
+	else:
+		if lbl_campaign_feedback:
+			lbl_campaign_feedback.text = str(res.get("message", "Failed to court group."))
+			lbl_campaign_feedback.modulate = Color(1.0, 0.4, 0.4)
+
 func _on_decision_clicked(dec_id: String) -> void:
 	if is_processing: return
 	is_processing = true
@@ -1639,8 +1951,9 @@ func _on_decision_clicked(dec_id: String) -> void:
 func _on_contest_election_pressed() -> void:
 	if is_processing: return
 	is_processing = true
+	_select_campaign_tab("election")
 	if btn_contest_election: btn_contest_election.disabled = true
-	if lbl_campaign_feedback: lbl_campaign_feedback.text = "Tabulating national election night votes..."
+	if lbl_campaign_feedback: lbl_campaign_feedback.text = "Tabulating national election night votes across all constituencies..."
 
 	var req := {
 		"action": "resolve_campaign_election",
@@ -1660,7 +1973,7 @@ func _on_contest_election_pressed() -> void:
 		else:
 			if btn_contest_election: btn_contest_election.disabled = false
 			if lbl_campaign_feedback:
-				lbl_campaign_feedback.text = "Electoral shortfall: Tally fell below 50.0%. Execute further campaign actions or rally."
+				lbl_campaign_feedback.text = "Electoral shortfall: Tally fell below 50.0%. Court key groups or enact campaign actions to surge."
 				lbl_campaign_feedback.modulate = Color(1.0, 0.4, 0.4)
 	else:
 		if btn_contest_election: btn_contest_election.disabled = false

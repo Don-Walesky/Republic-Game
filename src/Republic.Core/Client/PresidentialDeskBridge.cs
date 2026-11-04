@@ -2296,7 +2296,139 @@ public static class PresidentialDeskBridge
             AvailableCampaignDecisions = country?.CampaignOffice?.AvailableDecisions != null ? country.CampaignOffice.AvailableDecisions.ToList().AsReadOnly() : Array.Empty<CampaignDecision>(),
             CompletedCampaignDecisions = country?.CampaignOffice?.CompletedDecisions != null ? country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly() : Array.Empty<CampaignDecision>(),
             GeneralAdviser = country?.GeneralAdviser,
-            PressSecretary = country?.PressSecretary
+            PressSecretary = country?.PressSecretary,
+            AiOpponents = country?.CampaignOffice?.AiOpponents != null ? country.CampaignOffice.AiOpponents.ToList().AsReadOnly() : Array.Empty<AiCampaignOpponent>(),
+            InterestGroups = country?.CampaignOffice?.InterestGroups != null ? country.CampaignOffice.InterestGroups.ToList().AsReadOnly() : Array.Empty<CampaignInterestGroup>(),
+            CampaignNews = country?.CampaignOffice?.CampaignNews != null ? country.CampaignOffice.CampaignNews.ToList().AsReadOnly() : Array.Empty<CampaignNewsItem>(),
+            CampaignUndecidedPolling = country?.CampaignOffice?.UndecidedPolling ?? 10.0m,
+            ElectionBreakdown = country?.CampaignOffice?.ElectionBreakdown != null ? country.CampaignOffice.ElectionBreakdown : new Dictionary<string, decimal>()
+        };
+
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Courts a key civic or commercial interest group through bilateral negotiations, pledges, and campaign expenditures.
+    /// </summary>
+    public static PresidentialActionResult CourtInterestGroupDecisionAction(
+        string groupId,
+        decimal expenditureRepu = 250_000m,
+        string pledge = "National Partnership Charter",
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null,
+        string? requestingAccountId = null,
+        string? targetCountryId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        SaveEnvelope<FullGameState>? envelope = null;
+        if (File.Exists(targetSavePath))
+        {
+            try
+            {
+                envelope = LoadAuthoritativeState(targetSavePath);
+            }
+            catch (Exception ex)
+            {
+                var corruptResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "SaveCorrupted",
+                    Message = $"Authoritative save file is corrupted: {ex.Message}"
+                };
+                TryWriteResultFile(targetStatePath, corruptResult);
+                return corruptResult;
+            }
+        }
+
+        if (envelope?.State?.Account == null || envelope.State.OnboardingStep < OnboardingStep.AdvisersIntroduced)
+        {
+            var invalidPrecondition = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InvalidOnboardingStep",
+                Message = "You must enter Campaign Headquarters before courting interest groups.",
+                OnboardingStep = (envelope?.State?.OnboardingStep ?? OnboardingStep.NotStarted).ToString()
+            };
+            TryWriteResultFile(targetStatePath, invalidPrecondition);
+            return invalidPrecondition;
+        }
+
+        var country = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == "player-country" || c.IsFounded);
+        if (country == null)
+        {
+            var noCountryResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CountryNotFound",
+                Message = "Sovereign nation state not found in authoritative save.",
+                OnboardingStep = envelope.State.OnboardingStep.ToString()
+            };
+            TryWriteResultFile(targetStatePath, noCountryResult);
+            return noCountryResult;
+        }
+
+        var (courtSuccess, courtMsg, courtGroup) = CampaignService.CourtInterestGroup(country, groupId, expenditureRepu, pledge);
+        if (!courtSuccess)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CampaignDecisionFailed",
+                Message = courtMsg,
+                OnboardingStep = envelope.State.OnboardingStep.ToString(),
+                CampaignPurse = country.CampaignOffice?.Purse ?? 0m,
+                CampaignPurseFormatted = $"R {country.CampaignOffice?.Purse ?? 0m:N0} REPU",
+                CampaignPolling = country.CampaignOffice?.Polling ?? 0m,
+                AccountantGeneral = country.CampaignOffice?.AccountantGeneral
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        envelope.State.OnboardingStep = OnboardingStep.CampaignHeadquarters;
+        envelope.State.Account.CurrentStep = OnboardingStep.CampaignHeadquarters;
+        envelope.SavedAt = DateTimeOffset.UtcNow;
+
+        var serializer = new JsonStateSerializer();
+        AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+
+        var simTime = new RepublicTime(envelope.SavedAt, envelope.SavedAt);
+        ExportState(country, simTime, envelope.State.CurrentTick, targetStatePath, targetSavePath, latestDecisionResult: courtMsg);
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = courtMsg,
+            OnboardingStep = OnboardingStep.CampaignHeadquarters.ToString(),
+            IsRegistered = true,
+            IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
+            PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
+            CountryName = country.Name,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            CampaignPurse = country.CampaignOffice.Purse,
+            CampaignPurseFormatted = $"R {country.CampaignOffice.Purse:N0} REPU",
+            CampaignPolling = country.CampaignOffice.Polling,
+            AccountantGeneral = country.CampaignOffice.AccountantGeneral,
+            AvailableCampaignDecisions = country.CampaignOffice.AvailableDecisions.ToList().AsReadOnly(),
+            CompletedCampaignDecisions = country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly(),
+            GeneralAdviser = country.GeneralAdviser,
+            PressSecretary = country.PressSecretary,
+            AiOpponents = country.CampaignOffice.AiOpponents != null ? country.CampaignOffice.AiOpponents.ToList().AsReadOnly() : Array.Empty<AiCampaignOpponent>(),
+            InterestGroups = country.CampaignOffice.InterestGroups != null ? country.CampaignOffice.InterestGroups.ToList().AsReadOnly() : Array.Empty<CampaignInterestGroup>(),
+            CampaignNews = country.CampaignOffice.CampaignNews != null ? country.CampaignOffice.CampaignNews.ToList().AsReadOnly() : Array.Empty<CampaignNewsItem>(),
+            CampaignUndecidedPolling = country.CampaignOffice.UndecidedPolling,
+            ElectionBreakdown = country.CampaignOffice.ElectionBreakdown != null ? country.CampaignOffice.ElectionBreakdown : new Dictionary<string, decimal>()
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -2447,7 +2579,12 @@ public static class PresidentialDeskBridge
             AvailableCampaignDecisions = country.CampaignOffice.AvailableDecisions.ToList().AsReadOnly(),
             CompletedCampaignDecisions = country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly(),
             GeneralAdviser = country.GeneralAdviser,
-            PressSecretary = country.PressSecretary
+            PressSecretary = country.PressSecretary,
+            AiOpponents = country.CampaignOffice.AiOpponents != null ? country.CampaignOffice.AiOpponents.ToList().AsReadOnly() : Array.Empty<AiCampaignOpponent>(),
+            InterestGroups = country.CampaignOffice.InterestGroups != null ? country.CampaignOffice.InterestGroups.ToList().AsReadOnly() : Array.Empty<CampaignInterestGroup>(),
+            CampaignNews = country.CampaignOffice.CampaignNews != null ? country.CampaignOffice.CampaignNews.ToList().AsReadOnly() : Array.Empty<CampaignNewsItem>(),
+            CampaignUndecidedPolling = country.CampaignOffice.UndecidedPolling,
+            ElectionBreakdown = country.CampaignOffice.ElectionBreakdown != null ? country.CampaignOffice.ElectionBreakdown : new Dictionary<string, decimal>()
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -2585,7 +2722,12 @@ public static class PresidentialDeskBridge
             ElectionSummary = electionSummary,
             AccountantGeneral = country.CampaignOffice.AccountantGeneral,
             AvailableCampaignDecisions = country.CampaignOffice.AvailableDecisions.ToList().AsReadOnly(),
-            CompletedCampaignDecisions = country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly()
+            CompletedCampaignDecisions = country.CampaignOffice.CompletedDecisions.ToList().AsReadOnly(),
+            AiOpponents = country.CampaignOffice.AiOpponents != null ? country.CampaignOffice.AiOpponents.ToList().AsReadOnly() : Array.Empty<AiCampaignOpponent>(),
+            InterestGroups = country.CampaignOffice.InterestGroups != null ? country.CampaignOffice.InterestGroups.ToList().AsReadOnly() : Array.Empty<CampaignInterestGroup>(),
+            CampaignNews = country.CampaignOffice.CampaignNews != null ? country.CampaignOffice.CampaignNews.ToList().AsReadOnly() : Array.Empty<CampaignNewsItem>(),
+            CampaignUndecidedPolling = country.CampaignOffice.UndecidedPolling,
+            ElectionBreakdown = country.CampaignOffice.ElectionBreakdown != null ? country.CampaignOffice.ElectionBreakdown : new Dictionary<string, decimal>()
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -8189,6 +8331,47 @@ public static class PresidentialDeskBridge
                         }
                     }
 
+                    if (normalizedAction is "court_interest_group" or "court_group" or "court_stakeholder")
+                    {
+                        string groupId = "ig_industrialists";
+                        if (root.TryGetProperty("group_id", out var gidEl) && gidEl.ValueKind == JsonValueKind.String)
+                        {
+                            groupId = gidEl.GetString() ?? "ig_industrialists";
+                        }
+
+                        decimal cost = 200_000m;
+                        if (root.TryGetProperty("cost", out var cEl) && cEl.TryGetDecimal(out var decVal))
+                        {
+                            cost = decVal;
+                        }
+                        else if (root.TryGetProperty("expenditure_repu", out var expEl) && expEl.TryGetDecimal(out var decVal2))
+                        {
+                            cost = decVal2;
+                        }
+
+                        string pledge = "National Partnership Charter";
+                        if (root.TryGetProperty("pledge", out var plEl) && plEl.ValueKind == JsonValueKind.String)
+                        {
+                            pledge = plEl.GetString() ?? "National Partnership Charter";
+                        }
+
+                        string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
+                        string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(reqCid) && root.TryGetProperty("target_country_id", out var tcidEl))
+                        {
+                            reqCid = tcidEl.GetString();
+                        }
+
+                        try
+                        {
+                            return CourtInterestGroupDecisionAction(groupId, cost, pledge, targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
                     if (normalizedAction is "execute_campaign_decision" or "campaign_decision")
                     {
                         string decId = "";
@@ -9745,4 +9928,19 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("election_summary")]
     public string ElectionSummary { get; init; } = string.Empty;
+
+    [JsonPropertyName("campaign_ai_opponents")]
+    public IReadOnlyList<AiCampaignOpponent> AiOpponents { get; init; } = Array.Empty<AiCampaignOpponent>();
+
+    [JsonPropertyName("campaign_interest_groups")]
+    public IReadOnlyList<CampaignInterestGroup> InterestGroups { get; init; } = Array.Empty<CampaignInterestGroup>();
+
+    [JsonPropertyName("campaign_news")]
+    public IReadOnlyList<CampaignNewsItem> CampaignNews { get; init; } = Array.Empty<CampaignNewsItem>();
+
+    [JsonPropertyName("campaign_undecided_polling")]
+    public decimal CampaignUndecidedPolling { get; init; } = 10.0m;
+
+    [JsonPropertyName("election_breakdown")]
+    public IReadOnlyDictionary<string, decimal> ElectionBreakdown { get; init; } = new Dictionary<string, decimal>();
 }
