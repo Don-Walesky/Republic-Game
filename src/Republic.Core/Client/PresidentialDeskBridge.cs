@@ -3305,7 +3305,8 @@ public static class PresidentialDeskBridge
         bool confirmed = true,
         string? stateFilePath = null,
         string? saveFilePath = null,
-        string? requestId = null)
+        string? requestId = null,
+        string procurementType = "open_competitive")
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         string? snapshotCountryId = null;
@@ -3557,10 +3558,26 @@ public static class PresidentialDeskBridge
                 ApprovalRating = country.HappinessRating,
                 StabilityRating = country.BaselineStability,
                 TreasuryBalance = country.Treasury.Balance,
-                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None"
+                ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+                CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3,
+                CorruptionIndex = country.CorruptionIndex
             };
             TryWriteResultFile(targetStatePath, failResult);
             return failResult;
+        }
+
+        var normProc = procurementType?.Trim().ToLowerInvariant() ?? "open_competitive";
+        string procNote = string.Empty;
+        if (normProc is "crony" or "sole_source" or "non_competitive" or "inflated" or "connected")
+        {
+            country.AdjustCorruption(10.0, "Awarded project contract via non-competitive tender to connected firm");
+            country.HappinessRating = Math.Clamp(country.HappinessRating - 2.5, 0.0, 100.0);
+            procNote = $" Non-competitive procurement: Corruption Index increased by +10.0% to {country.CorruptionIndex:0.1}%, public approval -2.5%.";
+        }
+        else
+        {
+            country.AdjustCorruption(-3.0, "Open competitive procurement bidding process");
+            procNote = $" Transparent competitive tender: Corruption Index decreased by -3.0% to {country.CorruptionIndex:0.1}%.";
         }
 
         // Persist authoritative save file
@@ -3609,13 +3626,16 @@ public static class PresidentialDeskBridge
             RequestId = requestId ?? string.Empty,
             Success = true,
             Result = "Success",
-            Message = outcome.Message,
+            Message = outcome.Message + procNote,
             CountryName = country.Name,
             IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
             ApprovalRating = country.HappinessRating,
             StabilityRating = country.BaselineStability,
             TreasuryBalance = country.Treasury.Balance,
-            ActiveProject = outcome.Project?.Name ?? country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None"
+            ActiveProject = outcome.Project?.Name ?? country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3,
+            CorruptionIndex = country.CorruptionIndex
         };
 
         TryWriteResultFile(exportPath, successResult);
@@ -5668,7 +5688,8 @@ public static class PresidentialDeskBridge
             if (country.OppositionParty != null) country.OppositionParty = country.OppositionParty with { Support = effOpp };
 
             country.HappinessRating = Math.Clamp(country.HappinessRating + 1.5, 0.0, 100.0);
-            outcomeMessage = $"Technocrat Appointed: {appointed.Name} commissioned as Minister of {portfolio}. Administrative competence elevated to 90%, but party loyalists are discontented (-3.0% polling support).";
+            country.AdjustCorruption(-6.0, "Appointed merit-based technocrat minister");
+            outcomeMessage = $"Technocrat Appointed: {appointed.Name} commissioned as Minister of {portfolio}. Administrative competence elevated to 90%, Corruption reduced to {country.CorruptionIndex:0.1}%, but party loyalists are discontented (-3.0% polling support).";
         }
         else if (normalizedType is "loyalist" or "party_loyalist")
         {
@@ -5705,7 +5726,8 @@ public static class PresidentialDeskBridge
             if (country.OppositionParty != null) country.OppositionParty = country.OppositionParty with { Support = effOpp };
 
             country.HappinessRating = Math.Clamp(country.HappinessRating - 1.5, 0.0, 100.0);
-            outcomeMessage = $"Party Loyalist Appointed: {appointed.Name} commissioned as Minister of {portfolio}. Party base rallied (+3.0% polling support), but administrative competence is compromised (45%).";
+            country.AdjustCorruption(8.0, "Appointed political loyalist minister");
+            outcomeMessage = $"Party Loyalist Appointed: {appointed.Name} commissioned as Minister of {portfolio}. Party base rallied (+3.0% polling support), but administrative competence is compromised (45%) and Corruption increased to {country.CorruptionIndex:0.1}%.";
         }
         else if (normalizedType is "dismiss" or "vacate")
         {
@@ -5780,7 +5802,8 @@ public static class PresidentialDeskBridge
             AppointedMinister = appointed?.Name ?? "Vacant",
             CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
             CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
-            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3,
+            CorruptionIndex = country.CorruptionIndex
         };
 
         TryWriteResultFile(exportPath, successResult);
@@ -6285,7 +6308,8 @@ public static class PresidentialDeskBridge
             OppositionParty = country.OppositionParty?.Name ?? "None",
             CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
             CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
-            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3,
+            CorruptionIndex = country.CorruptionIndex
         };
 
         TryWriteResultFile(exportPath, successResult);
@@ -6738,7 +6762,8 @@ public static class PresidentialDeskBridge
         bool confirmed = true,
         string? stateFilePath = null,
         string? saveFilePath = null,
-        string? requestId = null)
+        string? requestId = null,
+        string dealType = "transparent")
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
@@ -6818,6 +6843,21 @@ public static class PresidentialDeskBridge
             simTime,
             allCountries);
 
+        if (success && executed != null)
+        {
+            var normDeal = dealType?.Trim().ToLowerInvariant() ?? "transparent";
+            if (normDeal is "exclusive" or "opaque" or "side_incentive" or "closed")
+            {
+                country!.AdjustCorruption(6.0, "Exclusive bilateral trade agreement with undisclosed terms");
+                outcomeMessage += $" [Opaque deal terms: Corruption Index increased to {country.CorruptionIndex:0.1}%].";
+            }
+            else
+            {
+                country!.AdjustCorruption(-2.0, "Transparent published bilateral trade treaty");
+                outcomeMessage += $" [Transparent published treaty: Corruption Index reduced to {country.CorruptionIndex:0.1}%].";
+            }
+        }
+
         if (!success || executed == null)
         {
             var failResult = new PresidentialActionResult
@@ -6880,7 +6920,8 @@ public static class PresidentialDeskBridge
             OppositionParty = country.OppositionParty?.Name ?? "None",
             CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
             CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
-            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3,
+            CorruptionIndex = country.CorruptionIndex
         };
 
         TryWriteResultFile(exportPath, successResult);
@@ -7014,6 +7055,330 @@ public static class PresidentialDeskBridge
             CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
             CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
             CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes a presidential resource concession decision (Mining, Energy, or Port rights)
+    /// to foreign or domestic entities. Closed/crony awards grant immediate cash but spike Corruption;
+    /// open competitive tenders enhance transparency.
+    /// </summary>
+    public static PresidentialActionResult ApplyResourceConcessionDecision(
+        string concessionType = "Mining",
+        string beneficiary = "connected_firm",
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "apply resource concession decision");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Resource concession award cancelled by executive decree. Existing rights remain unchanged.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                CorruptionIndex = country.CorruptionIndex,
+                CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        double prevCorr = country!.CorruptionIndex;
+        string outcomeMessage;
+        var normBeneficiary = beneficiary?.Trim().ToLowerInvariant() ?? "connected_firm";
+
+        if (normBeneficiary is "connected_firm" or "crony" or "opaque" or "closed" or "exclusive")
+        {
+            const double fee = 3_000_000.0;
+            country.Treasury.Deposit(fee);
+            country.AdjustCorruption(18.0, $"Awarded {concessionType} rights without open competition");
+            country.HappinessRating = Math.Clamp(country.HappinessRating - 5.0, 0.0, 100.0);
+            country.BaselineStability = Math.Clamp(country.BaselineStability - 3.0, 0.0, 100.0);
+
+            outcomeMessage = $"Exclusive {concessionType} Concession Awarded: R {fee:N0} upfront concession fee credited to Treasury without public tender. High Corruption penalty (+18.0% to {country.CorruptionIndex:0.1}%), Public Approval -5.0%, Stability -3.0%.";
+        }
+        else
+        {
+            const double auctionRev = 1_500_000.0;
+            country.Treasury.Deposit(auctionRev);
+            country.AdjustCorruption(-2.5, $"Open competitive auction of {concessionType} rights");
+            country.HappinessRating = Math.Clamp(country.HappinessRating + 2.0, 0.0, 100.0);
+
+            outcomeMessage = $"Open Competitive {concessionType} Concession Auction Ratified: R {auctionRev:N0} legitimate revenue deposited. Transparent auction decreased Corruption Index to {country.CorruptionIndex:0.1}%, Public Approval +2.0%.";
+        }
+
+        try
+        {
+            SaveAuthoritativeState(country, simTime, tick + 1, targetSavePath);
+        }
+        catch { }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3,
+            CorruptionIndex = country.CorruptionIndex,
+            PreviousCorruptionIndex = prevCorr
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes an authoritative presidential decision on foreign aid or multilateral loans.
+    /// Diverting funds into executive accounts causes severe Corruption increases and international sanctions risk.
+    /// Transparent deployment strengthens governance and public trust.
+    /// </summary>
+    public static PresidentialActionResult ApplyAidOrLoanDecision(
+        string actionType = "divert",
+        double amount = 2_000_000.0,
+        string aidSource = "IMF Development Facility",
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "apply foreign aid / loan decision");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = "Foreign aid/loan disbursement order deferred by executive action.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                CorruptionIndex = country.CorruptionIndex,
+                CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        double prevCorr = country!.CorruptionIndex;
+        string outcomeMessage;
+        var normAction = actionType?.Trim().ToLowerInvariant() ?? "divert";
+
+        if (normAction is "divert" or "slush_fund" or "siphon" or "covert")
+        {
+            country.Treasury.Deposit(amount);
+            country.AdjustCorruption(20.0, $"Diverted {aidSource} into executive slush fund");
+            country.HappinessRating = Math.Clamp(country.HappinessRating - 4.0, 0.0, 100.0);
+            country.BaselineStability = Math.Clamp(country.BaselineStability - 4.0, 0.0, 100.0);
+
+            outcomeMessage = $"International Aid Funds Diverted: R {amount:N0} from {aidSource} redirected to presidential discretionary accounts. Severe Corruption spike (+20.0% to {country.CorruptionIndex:0.1}%), international donors alarmed, Stability -4.0%.";
+        }
+        else
+        {
+            country.Treasury.Deposit(amount);
+            country.AdjustCorruption(-4.0, $"Transparently deployed and audited {aidSource} for public infrastructure");
+            country.HappinessRating = Math.Clamp(country.HappinessRating + 3.0, 0.0, 100.0);
+
+            outcomeMessage = $"International Aid Deployed Transparently: R {amount:N0} from {aidSource} committed to audited public development. Integrity affirmed: Corruption Index reduced to {country.CorruptionIndex:0.1}%, Public Approval +3.0%.";
+        }
+
+        try
+        {
+            SaveAuthoritativeState(country, simTime, tick + 1, targetSavePath);
+        }
+        catch { }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3,
+            CorruptionIndex = country.CorruptionIndex,
+            PreviousCorruptionIndex = prevCorr
+        };
+
+        TryWriteResultFile(exportPath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes an authoritative presidential diplomatic envoy appointment.
+    /// Appointing unqualified political loyalists causes moderate Corruption increases and strains foreign relations.
+    /// Appointing seasoned career diplomats lowers Corruption and improves bilateral standing.
+    /// </summary>
+    public static PresidentialActionResult ApplyDiplomaticAppointmentDecision(
+        string postName = "Ambassador to United Nations",
+        string candidateType = "career_diplomat",
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "apply diplomatic appointment decision");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (!confirmed)
+        {
+            var cancelResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "Cancelled",
+                Message = $"Diplomatic appointment for {postName} cancelled by executive order.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                CorruptionIndex = country.CorruptionIndex,
+                CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3
+            };
+            TryWriteResultFile(targetStatePath, cancelResult);
+            return cancelResult;
+        }
+
+        double prevCorr = country!.CorruptionIndex;
+        string outcomeMessage;
+        var normType = candidateType?.Trim().ToLowerInvariant() ?? "career_diplomat";
+
+        if (normType is "loyalist" or "political_loyalist" or "party_crony" or "donor")
+        {
+            country.AdjustCorruption(7.0, $"Appointed political loyalist as {postName}");
+            country.HappinessRating = Math.Clamp(country.HappinessRating - 1.5, 0.0, 100.0);
+
+            outcomeMessage = $"Diplomatic Post Commissioned: Political loyalist appointed as {postName}. Party patron rewarded, but diplomatic credibility strained: Corruption Index increased (+7.0% to {country.CorruptionIndex:0.1}%).";
+        }
+        else
+        {
+            country.AdjustCorruption(-2.5, $"Appointed seasoned career envoy as {postName}");
+            country.HappinessRating = Math.Clamp(country.HappinessRating + 1.0, 0.0, 100.0);
+
+            outcomeMessage = $"Diplomatic Post Commissioned: Seasoned career diplomat appointed as {postName}. Diplomatic prestige elevated, Corruption Index decreased (-2.5% to {country.CorruptionIndex:0.1}%).";
+        }
+
+        try
+        {
+            SaveAuthoritativeState(country, simTime, tick + 1, targetSavePath);
+        }
+        catch { }
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        PresidentialDeskSnapshot? snapshot = null;
+        try
+        {
+            snapshot = PresidentialDeskSnapshot.Create(country, simTime, tick + 1, targetSavePath, outcomeMessage);
+            var snapshotJson = Serialize(snapshot);
+            AtomicFileWriter.WriteAllTextSafely(exportPath, snapshotJson);
+        }
+        catch { }
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            ActiveProject = country.Projects.FirstOrDefault(p => p.IsActive)?.Name ?? "None",
+            RulingParty = country.RulingParty?.Name ?? "Democratic Union",
+            OppositionParty = country.OppositionParty?.Name ?? "None",
+            CabinetSummary = snapshot?.CabinetSummary ?? string.Empty,
+            CivilServiceQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3,
+            CorruptionControl = country.StateCapacity?.CorruptionControl ?? 0.3,
+            CorruptionIndex = country.CorruptionIndex,
+            PreviousCorruptionIndex = prevCorr
         };
 
         TryWriteResultFile(exportPath, successResult);
@@ -8597,9 +8962,19 @@ public static class PresidentialDeskBridge
                             projectConfirmed = projConfEl.GetBoolean();
                         }
 
+                        string procurementType = "open_competitive";
+                        if (root.TryGetProperty("procurement_type", out var ptEl) && ptEl.ValueKind == JsonValueKind.String)
+                        {
+                            procurementType = ptEl.GetString() ?? "open_competitive";
+                        }
+                        else if (root.TryGetProperty("procurement", out var pcmEl) && pcmEl.ValueKind == JsonValueKind.String)
+                        {
+                            procurementType = pcmEl.GetString() ?? "open_competitive";
+                        }
+
                         try
                         {
-                            return ApplyProjectDecision(projectType, projectConfirmed, targetStatePath, saveFilePath, requestId);
+                            return ApplyProjectDecision(projectType, projectConfirmed, targetStatePath, saveFilePath, requestId, procurementType);
                         }
                         finally
                         {
@@ -9088,9 +9463,139 @@ public static class PresidentialDeskBridge
                             acceptConfirmed = aConfEl.GetBoolean();
                         }
 
+                        string dealType = "transparent";
+                        if (root.TryGetProperty("deal_type", out var dtEl) && dtEl.ValueKind == JsonValueKind.String)
+                        {
+                            dealType = dtEl.GetString() ?? "transparent";
+                        }
+                        else if (root.TryGetProperty("is_exclusive", out var exEl) && exEl.ValueKind == JsonValueKind.True)
+                        {
+                            dealType = "exclusive";
+                        }
+
                         try
                         {
-                            return ApplyAcceptBilateralTrade(proposalId, acceptConfirmed, targetStatePath, saveFilePath, requestId);
+                            return ApplyAcceptBilateralTrade(proposalId, acceptConfirmed, targetStatePath, saveFilePath, requestId, dealType);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "resource_concession" or "grant_resource_concession" or "concession_decision" or "concession")
+                    {
+                        string concessionType = "Mining";
+                        if (root.TryGetProperty("concession_type", out var ctEl) && ctEl.ValueKind == JsonValueKind.String)
+                        {
+                            concessionType = ctEl.GetString() ?? "Mining";
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            concessionType = tEl.GetString() ?? "Mining";
+                        }
+
+                        string beneficiary = "connected_firm";
+                        if (root.TryGetProperty("beneficiary", out var bEl) && bEl.ValueKind == JsonValueKind.String)
+                        {
+                            beneficiary = bEl.GetString() ?? "connected_firm";
+                        }
+                        else if (root.TryGetProperty("procurement_type", out var ptEl) && ptEl.ValueKind == JsonValueKind.String)
+                        {
+                            beneficiary = ptEl.GetString() ?? "connected_firm";
+                        }
+
+                        bool conf = true;
+                        if (root.TryGetProperty("confirmed", out var rcConfEl) && (rcConfEl.ValueKind == JsonValueKind.True || rcConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            conf = rcConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyResourceConcessionDecision(concessionType, beneficiary, conf, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "divert_aid" or "divert_loan" or "aid_decision" or "foreign_aid" or "loan_decision")
+                    {
+                        string actType = "divert";
+                        if (root.TryGetProperty("action_type", out var atEl) && atEl.ValueKind == JsonValueKind.String)
+                        {
+                            actType = atEl.GetString() ?? "divert";
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            actType = tEl.GetString() ?? "divert";
+                        }
+
+                        double amt = 2_000_000.0;
+                        if (root.TryGetProperty("amount", out var amtEl) && amtEl.ValueKind == JsonValueKind.Number)
+                        {
+                            amt = amtEl.GetDouble();
+                        }
+
+                        string src = "IMF Development Facility";
+                        if (root.TryGetProperty("aid_source", out var asEl) && asEl.ValueKind == JsonValueKind.String)
+                        {
+                            src = asEl.GetString() ?? "IMF Development Facility";
+                        }
+                        else if (root.TryGetProperty("source", out var sEl) && sEl.ValueKind == JsonValueKind.String)
+                        {
+                            src = sEl.GetString() ?? "IMF Development Facility";
+                        }
+
+                        bool conf = true;
+                        if (root.TryGetProperty("confirmed", out var aidConfEl) && (aidConfEl.ValueKind == JsonValueKind.True || aidConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            conf = aidConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyAidOrLoanDecision(actType, amt, src, conf, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "diplomatic_appointment" or "appoint_diplomat" or "appoint_envoy")
+                    {
+                        string postName = "Ambassador to United Nations";
+                        if (root.TryGetProperty("post_name", out var pnEl) && pnEl.ValueKind == JsonValueKind.String)
+                        {
+                            postName = pnEl.GetString() ?? "Ambassador to United Nations";
+                        }
+                        else if (root.TryGetProperty("post", out var pEl) && pEl.ValueKind == JsonValueKind.String)
+                        {
+                            postName = pEl.GetString() ?? "Ambassador to United Nations";
+                        }
+
+                        string cType = "career_diplomat";
+                        if (root.TryGetProperty("candidate_type", out var ctEl) && ctEl.ValueKind == JsonValueKind.String)
+                        {
+                            cType = ctEl.GetString() ?? "career_diplomat";
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            cType = tEl.GetString() ?? "career_diplomat";
+                        }
+
+                        bool conf = true;
+                        if (root.TryGetProperty("confirmed", out var dipConfEl) && (dipConfEl.ValueKind == JsonValueKind.True || dipConfEl.ValueKind == JsonValueKind.False))
+                        {
+                            conf = dipConfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyDiplomaticAppointmentDecision(postName, cType, conf, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {
@@ -9826,6 +10331,12 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("corruption_control")]
     public double CorruptionControl { get; init; }
+
+    [JsonPropertyName("corruption_index")]
+    public double CorruptionIndex { get; init; }
+
+    [JsonPropertyName("previous_corruption_index")]
+    public double PreviousCorruptionIndex { get; init; }
 
     [JsonPropertyName("onboarding_step")]
     public string OnboardingStep { get; init; } = string.Empty;

@@ -171,6 +171,18 @@ public sealed record PresidentialDeskSnapshot
     public double CorruptionControl { get; init; } = 0.3;
 
     /// <summary>
+    /// Gets the sovereign Corruption Index percentage (0.0 to 100.0).
+    /// </summary>
+    [JsonPropertyName("corruption_index")]
+    public double CorruptionIndex { get; init; } = 25.0;
+
+    /// <summary>
+    /// Gets the formatted sovereign Corruption percentage string (e.g. "25.0%").
+    /// </summary>
+    [JsonPropertyName("corruption")]
+    public string Corruption { get; init; } = "25.0%";
+
+    /// <summary>
     /// Gets the infrastructure condition factor (0.0 to 1.0) governed by the Infrastructure portfolio.
     /// </summary>
     [JsonPropertyName("infrastructure_condition")]
@@ -916,7 +928,9 @@ public sealed record PresidentialDeskSnapshot
         var civilQuality = country.StateCapacity?.CivilServiceQuality ?? 0.3;
         var corrControl = country.StateCapacity?.CorruptionControl ?? 0.3;
         var infraCondition = country.StateCapacity?.InfrastructureCondition ?? 0.3;
-        var stateCapacitySummary = $"Civil Service: {civilQuality * 100:0.#}% | Corruption Control: {corrControl * 100:0.#}% | Infrastructure: {infraCondition * 100:0.#}%";
+        var corruptionIndex = country.CorruptionIndex;
+        var formattedCorruption = $"{corruptionIndex:0.1}%";
+        var stateCapacitySummary = $"Civil Service: {civilQuality * 100:0.#}% | Corruption: {corruptionIndex:0.1}% (Control: {corrControl * 100:0.#}%) | Infrastructure: {infraCondition * 100:0.#}%";
 
         var cabinetList = new List<CabinetMinisterSnapshot>();
         foreach (var p in Enum.GetValues<CabinetPortfolio>())
@@ -1478,6 +1492,8 @@ public sealed record PresidentialDeskSnapshot
             DefenseMinister = defenseName,
             CivilServiceQuality = civilQuality,
             CorruptionControl = corrControl,
+            CorruptionIndex = corruptionIndex,
+            Corruption = formattedCorruption,
             InfrastructureCondition = infraCondition,
             Cabinet = cabinetList.AsReadOnly(),
             GdpFormatted = gdpFormatted,

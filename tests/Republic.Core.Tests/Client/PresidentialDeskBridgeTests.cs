@@ -3394,8 +3394,123 @@ public sealed class PresidentialDeskBridgeTests
             }
         }
     }
+    [Fact]
+    public void ApplyResourceConcessionDecision_Crony_IncreasesCorruptionAndDepositsFunds()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"concession_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Test", time, "test");
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var result = PresidentialDeskBridge.ApplyResourceConcessionDecision(
+                concessionType: "Mining",
+                beneficiary: "connected_firm",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.True(result.CorruptionIndex > 25.0);
+            Assert.Contains("Exclusive Mining Concession Awarded", result.Message);
+
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.True(snapshot.CorruptionIndex > 25.0);
+            Assert.True(snapshot.TreasuryBalance >= 3_000_000.0);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyAidOrLoanDecision_Divert_SpikesCorruptionAndDepositsCash()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"aid_divert_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Test", time, "test");
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var result = PresidentialDeskBridge.ApplyAidOrLoanDecision(
+                actionType: "divert",
+                amount: 2_500_000.0,
+                aidSource: "UN Development Fund",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.True(result.CorruptionIndex >= 45.0);
+            Assert.Contains("Diverted", result.Message);
+
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.True(snapshot.CorruptionIndex >= 45.0);
+            Assert.True(snapshot.TreasuryBalance >= 2_500_000.0);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyDiplomaticAppointmentDecision_Loyalist_IncreasesCorruption()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"diplomat_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var tempStateFile = Path.Combine(tempDir, "state.json");
+        var tempSaveFile = Path.Combine(tempDir, "state.sav");
+
+        try
+        {
+            var time = CreateTime(1);
+            var country = Country.Found("Republic of Test", time, "test");
+            PresidentialDeskBridge.ExportState(country, time, 1, tempStateFile, tempSaveFile);
+
+            var result = PresidentialDeskBridge.ApplyDiplomaticAppointmentDecision(
+                postName: "Ambassador to United Nations",
+                candidateType: "political_loyalist",
+                confirmed: true,
+                stateFilePath: tempStateFile,
+                saveFilePath: tempSaveFile);
+
+            Assert.True(result.Success);
+            Assert.Equal("Success", result.Result);
+            Assert.True(result.CorruptionIndex > 25.0);
+            Assert.Contains("Political loyalist", result.Message);
+
+            var snapshot = PresidentialDeskBridge.LoadState(tempStateFile);
+            Assert.NotNull(snapshot);
+            Assert.True(snapshot.CorruptionIndex > 25.0);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { }
+            }
+        }
+    }
 }
-
-
-
-

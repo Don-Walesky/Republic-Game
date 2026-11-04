@@ -429,8 +429,9 @@ public sealed class MediaSimulationService : IMediaSimulationService
                 var stabDelta = Math.Clamp(report.StabilityImpact * (report.OutletReach / 100.0) * (report.OutletCredibility / 100.0), -5.0, 5.0);
                 country.HappinessRating = Math.Clamp(country.HappinessRating + appDelta, 0.0, 100.0);
                 country.BaselineStability = Math.Clamp(country.BaselineStability + stabDelta, 0.0, 100.0);
+                country.AdjustCorruption(-1.5, "Allowed critical media story to run transparently");
 
-                outcomeMessage = $"Story approved for publication: '{report.Headline}'. Published to national press with public impact ({appDelta:+0.1;-0.1}% approval, {stabDelta:+0.1;-0.1}% stability).";
+                outcomeMessage = $"Story approved for publication: '{report.Headline}'. Published to national press with public impact ({appDelta:+0.1;-0.1}% approval, {stabDelta:+0.1;-0.1}% stability, Corruption Index reduced to {country.CorruptionIndex:0.1}%).";
                 return true;
             }
 
@@ -451,9 +452,9 @@ public sealed class MediaSimulationService : IMediaSimulationService
                 double prevControl = country.StateCapacity.CorruptionControl ?? 0.3;
                 double newControl = Math.Clamp(prevControl - 0.08, 0.05, 1.0);
                 country.StateCapacity.CorruptionControl = newControl;
-                country.RecalculateCabinetStateCapacity();
+                country.AdjustCorruption(8.0, "Covert payment to suppress investigative story");
 
-                outcomeMessage = $"Story suppressed from press: '{report.Headline}'. Story killed, but executive Corruption increased (Corruption Control fell from {prevControl * 100:0.0}% to {newControl * 100:0.0}%).";
+                outcomeMessage = $"Story suppressed from press: '{report.Headline}'. Story killed, but executive Corruption increased to {country.CorruptionIndex:0.1}% (Corruption Control fell from {prevControl * 100:0.0}% to {newControl * 100:0.0}%).";
                 return true;
             }
 

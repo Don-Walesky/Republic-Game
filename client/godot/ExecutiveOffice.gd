@@ -101,6 +101,11 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var card_yield: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardYield") as PanelContainer
 @onready var card_tax: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTax") as PanelContainer
 @onready var card_capacity_top: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity") as PanelContainer
+@onready var card_corruption: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption") as PanelContainer
+@onready var corruption_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionLabel") as Label
+@onready var corruption_delta: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox/CorruptionDelta") as PanelContainer
+@onready var corruption_delta_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox/CorruptionDelta/CorruptionDeltaLabel") as Label
+var previous_corruption_val: float = -1.0
 @onready var yield_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardYield/YieldVBox/YieldLabel") as Label
 @onready var tax_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTax/TaxVBox/TaxLabel") as Label
 @onready var capacity_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity/CapacityVBox/CapacityLabel") as Label
@@ -995,6 +1000,14 @@ func _init_controls() -> void:
 		card_approval = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval") as PanelContainer
 	if card_stability == null:
 		card_stability = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability") as PanelContainer
+	if card_corruption == null:
+		card_corruption = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption") as PanelContainer
+	if corruption_label == null:
+		corruption_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionLabel") as Label
+	if corruption_delta == null:
+		corruption_delta = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox/CorruptionDelta") as PanelContainer
+	if corruption_delta_label == null:
+		corruption_delta_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox/CorruptionDelta/CorruptionDeltaLabel") as Label
 	if card_economy == null:
 		card_economy = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardEconomy") as PanelContainer
 	if simulation_time_label == null:
@@ -1744,6 +1757,8 @@ func _connect_signals() -> void:
 		card_approval.gui_input.connect(_on_card_approval_gui_input)
 	if card_stability and not card_stability.gui_input.is_connected(_on_card_stability_gui_input):
 		card_stability.gui_input.connect(_on_card_stability_gui_input)
+	if card_corruption and not card_corruption.gui_input.is_connected(_on_card_corruption_gui_input):
+		card_corruption.gui_input.connect(_on_card_corruption_gui_input)
 	if card_economy and not card_economy.gui_input.is_connected(_on_card_economy_gui_input):
 		card_economy.gui_input.connect(_on_card_economy_gui_input)
 	if president_card and not president_card.gui_input.is_connected(_on_president_card_gui_input):
@@ -2059,6 +2074,7 @@ func _apply_tooltips() -> void:
 		{"node": card_treasury, "tip": "National Treasury: View central bank reserves and fiscal policy."},
 		{"node": card_approval, "tip": "Public Approval: View public sentiment and situation briefing."},
 		{"node": card_stability, "tip": "National Stability: View stability metrics and security reports."},
+		{"node": card_corruption, "tip": "Corruption Index: National integrity, transparency rating, and anti-corruption control."},
 		{"node": card_economy, "tip": "Military & Defense: View military readiness and command operations."},
 		{"node": deck_yield_card, "tip": "National Yield: View economic output and GDP breakdown."},
 		{"node": deck_tax_card, "tip": "Taxation: View tax revenue and fiscal adjustments."},
@@ -2135,6 +2151,8 @@ func display_missing_state() -> void:
 		approval_label.text = "Approval: [No State Loaded]"
 	if stability_label:
 		stability_label.text = "Stability: [No State Loaded]"
+	if corruption_label:
+		corruption_label.text = "Corruption: [No State Loaded]"
 	if defcon_label:
 		defcon_label.text = "Defense: [No State Loaded]"
 	if simulation_time_label:
@@ -2234,6 +2252,34 @@ func apply_state(state: Dictionary) -> void:
 		if stab.is_empty() and state.has("stability_rating"):
 			stab = str(state.get("stability_rating", 0.0)) + "%"
 		stability_label.text = "Stability: " + (stab if not stab.is_empty() else "[No State Loaded]")
+
+	if corruption_label:
+		var corr_val: float = float(state.get("corruption_index", 25.0))
+		var corr_str: String = str(state.get("corruption", ""))
+		if corr_str.is_empty():
+			corr_str = "%0.1f%%" % corr_val
+		corruption_label.text = "Corruption: " + corr_str
+
+		if corr_val < 25.0:
+			corruption_label.set("theme_override_colors/font_color", Color(0.2, 0.85, 0.45))
+		elif corr_val <= 50.0:
+			corruption_label.set("theme_override_colors/font_color", Color(0.95, 0.75, 0.2))
+		else:
+			corruption_label.set("theme_override_colors/font_color", Color(0.95, 0.3, 0.3))
+
+		if corruption_delta and corruption_delta_label:
+			if previous_corruption_val >= 0.0 and abs(corr_val - previous_corruption_val) > 0.05:
+				var d: float = corr_val - previous_corruption_val
+				corruption_delta.visible = true
+				if d > 0:
+					corruption_delta_label.text = "+%0.1f%%" % d
+					corruption_delta_label.set("theme_override_colors/font_color", Color(0.95, 0.3, 0.3))
+				else:
+					corruption_delta_label.text = "%0.1f%%" % d
+					corruption_delta_label.set("theme_override_colors/font_color", Color(0.2, 0.85, 0.45))
+			else:
+				corruption_delta.visible = false
+			previous_corruption_val = corr_val
 
 	if simulation_time_label:
 		var stime := str(state.get("simulation_time", "[No State Loaded]"))
@@ -4181,6 +4227,10 @@ func _on_card_approval_gui_input(event: InputEvent) -> void:
 		open_briefing_modal()
 
 func _on_card_stability_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		open_briefing_modal()
+
+func _on_card_corruption_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		open_briefing_modal()
 
@@ -7003,11 +7053,25 @@ func execute_media_response(report_id: String, response_type: String, confirmed:
 		var prev_cc: float = float(latest_state.get("corruption_control", 0.3))
 		var new_cc: float = clampf(prev_cc - 0.08, 0.05, 1.0)
 		latest_state["corruption_control"] = new_cc
+		var prev_corr: float = float(latest_state.get("corruption_index", 25.0))
+		var new_corr: float = clampf(prev_corr + 8.0, 0.0, 100.0)
+		latest_state["corruption_index"] = new_corr
+		latest_state["corruption"] = "%0.1f%%" % new_corr
+		if corruption_label:
+			corruption_label.text = "Corruption: %0.1f%%" % new_corr
+			corruption_label.set("theme_override_colors/font_color", Color(0.95, 0.3, 0.3))
 		if corruption_control_label:
 			corruption_control_label.text = "Corruption Control: %0.0f%%" % (new_cc * 100.0)
 		if media_desk_corruption_label:
-			media_desk_corruption_label.text = "State Integrity: Corruption Control: %0.0f%% (Corruption Elevated)" % (new_cc * 100.0)
+			media_desk_corruption_label.text = "State Integrity: Corruption Index %0.1f%% | Control: %0.0f%% (Corruption Elevated)" % [new_corr, (new_cc * 100.0)]
 	elif norm_type in ["approve", "let_run", "publish", "statement", "ignore", "auto_publish"]:
+		if norm_type in ["approve", "let_run", "publish"]:
+			var prev_corr: float = float(latest_state.get("corruption_index", 25.0))
+			var new_corr: float = clampf(prev_corr - 1.5, 0.0, 100.0)
+			latest_state["corruption_index"] = new_corr
+			latest_state["corruption"] = "%0.1f%%" % new_corr
+			if corruption_label:
+				corruption_label.text = "Corruption: %0.1f%%" % new_corr
 		var reports = latest_state.get("media_reports", [])
 		if reports is Array:
 			for r in reports:

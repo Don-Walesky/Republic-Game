@@ -148,6 +148,16 @@ func test_topbar_metric_cards_interactivity(office) -> bool:
 		return false
 	office.close_all_modals()
 
+	# 3b. CardCorruption -> BriefingModal
+	if office.card_corruption == null:
+		printerr("[FAIL]: card_corruption node not found")
+		return false
+	_simulate_card_click(office.card_corruption)
+	if office.briefing_modal == null or not office.briefing_modal.visible:
+		printerr("[FAIL]: Clicking CardCorruption did not open BriefingModal")
+		return false
+	office.close_all_modals()
+
 	# 4. CardEconomy -> CommandCentreModal
 	if office.card_economy == null:
 		printerr("[FAIL]: card_economy node not found")

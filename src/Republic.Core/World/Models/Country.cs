@@ -80,6 +80,56 @@ public sealed class Country
     public double BaselineStability { get; set; } = 75.0;
 
     /// <summary>
+    /// Gets or sets the sovereign Corruption Index percentage (0.0 to 100.0).
+    /// Lower represents higher institutional integrity; higher indicates systemic corruption.
+    /// Baseline default is 25.0%.
+    /// </summary>
+    public double CorruptionIndex { get; set; } = 25.0;
+
+    /// <summary>
+    /// Adjusts the national corruption index by a delta percentage point amount,
+    /// clamping between 0.0 and 100.0, synchronizing StateCapacity.CorruptionControl,
+    /// and applying governance consequences (approval and stability drag, investigative leaks) if severe.
+    /// </summary>
+    public double AdjustCorruption(double delta, string reason)
+    {
+        double prev = CorruptionIndex;
+        CorruptionIndex = Math.Clamp(CorruptionIndex + delta, 0.0, 100.0);
+
+
+
+        // Apply drag consequences when corruption is elevated (> 50.0%)
+        if (CorruptionIndex > 50.0)
+        {
+            double excess = CorruptionIndex - 50.0;
+            double drag = Math.Min(excess * 0.05, 8.0);
+            BaselineStability = Math.Clamp(BaselineStability - (drag * 0.2), 5.0, 100.0);
+            HappinessRating = Math.Clamp(HappinessRating - (drag * 0.2), 5.0, 100.0);
+
+            // Trigger investigative press report if corruption exceeds 70% and none exists yet
+            if (CorruptionIndex >= 70.0 && !MediaReports.Any(r => r.Headline.Contains("Kleptocracy", StringComparison.OrdinalIgnoreCase)))
+            {
+                var scandal = new MediaReport
+                {
+                    Headline = "INVESTIGATION: Rampant Kleptocracy and Covert Procurement Uncovered in Presidency",
+                    ArticleSummary = "Whistleblower documents published by national media expose widespread non-competitive contracts, diverted funds, and crony influence across the administration.",
+                    PublicApprovalImpact = -8.0,
+                    StabilityImpact = -6.0,
+                    OutletCredibility = 92.0,
+                    OutletReach = 88.0,
+                    RequiresDecision = true,
+                    ResponseStatus = MediaResponseStatus.Unanswered,
+                    EventSource = "investigative_leak",
+                    PredictedEffect = "Major public outrage (-8% approval, -6% stability) unless addressed."
+                };
+                MediaReports.Insert(0, scandal);
+            }
+        }
+
+        return CorruptionIndex;
+    }
+
+    /// <summary>
     /// Gets or sets the sovereign public approval / happiness rating percentage (0.0 to 100.0).
     /// Defaults to the standard national baseline (68.5).
     /// </summary>
@@ -3103,6 +3153,9 @@ public sealed class Country
             FoundingBuffs = foundingBuffs,
             StateCapacity = stateCapacity?.Clone() ?? new StateCapacityInputs(),
             Cabinet = cabinet != null ? new Dictionary<CabinetPortfolio, Minister?>(cabinet) : new Dictionary<CabinetPortfolio, Minister?>(),
+            CorruptionIndex = stateCapacity?.CorruptionControl.HasValue == true
+                ? Math.Clamp(Math.Round((1.0 - stateCapacity.CorruptionControl.Value) * 100.0, 1), 0.0, 100.0)
+                : 25.0,
             GrossDomesticProduct = grossDomesticProduct,
             HappinessRating = happinessRating,
             LatestYieldSnapshot = latestYieldSnapshot,

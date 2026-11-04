@@ -1269,6 +1269,49 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 12
 text = "Stability: [No State Loaded]"
 
+[node name="VSeparatorCorr" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+
+[node name="CardCorruption" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_metric_card")
+
+[node name="CorruptionVBox" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardCorruption"]
+layout_mode = 2
+alignment = 1
+
+[node name="CorruptionHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CorruptionIcon" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "⚖️"
+
+[node name="CorruptionTitle" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Corruption Index"
+
+[node name="CorruptionDelta" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox"]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_delta_pill")
+
+[node name="CorruptionDeltaLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox/CorruptionDelta"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.17, 0.83, 0.49, 1)
+theme_override_font_sizes/font_size = 9
+text = ""
+
+[node name="CorruptionLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "Corruption: [No State Loaded]"
+
 [node name="VSeparatorDefcon" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 
