@@ -47,6 +47,11 @@ public sealed class PlayerAccount
             return DisplayName;
         }
 
+        if (!string.IsNullOrWhiteSpace(PersonalIdentity.Username))
+        {
+            return PersonalIdentity.Username;
+        }
+
         if (!string.IsNullOrWhiteSpace(PersonalIdentity.LastName))
         {
             return $"Leader {PersonalIdentity.LastName}";

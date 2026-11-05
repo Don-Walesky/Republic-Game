@@ -1732,7 +1732,8 @@ public static class PresidentialDeskBridge
         string? saveFilePath = null,
         string? requestId = null,
         DateOnly? referenceDate = null,
-        string gender = "Female")
+        string gender = "Female",
+        string? username = null)
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
@@ -1804,6 +1805,14 @@ public static class PresidentialDeskBridge
         }
 
         var account = identityService.RegisterAccount(firstName, lastName, email, dob, referenceDate, gender: gender);
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            account.PersonalIdentity.Username = username.Trim();
+            if (string.IsNullOrWhiteSpace(account.DisplayName))
+            {
+                account.DisplayName = username.Trim();
+            }
+        }
         var pendingEmail = account.PersonalIdentity.PendingVerificationEmail;
 
         if (envelope?.State != null)
@@ -2894,7 +2903,8 @@ public static class PresidentialDeskBridge
         string? saveFilePath = null,
         string? requestId = null,
         string? requestingAccountId = null,
-        string? targetCountryId = null)
+        string? targetCountryId = null,
+        string? preferredTitle = null)
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
@@ -2949,6 +2959,11 @@ public static class PresidentialDeskBridge
             return noCountryResult;
         }
 
+        if (!string.IsNullOrWhiteSpace(preferredTitle))
+        {
+            envelope.State.Account.DisplayName = preferredTitle.Trim();
+            envelope.State.Account.PersonalIdentity.HonorificTitle = preferredTitle.Trim();
+        }
         envelope.State.OnboardingStep = OnboardingStep.InOffice;
         envelope.State.Account.CurrentStep = OnboardingStep.InOffice;
         envelope.SavedAt = DateTimeOffset.UtcNow;
@@ -10262,98 +10277,76 @@ public static class PresidentialDeskBridge
                 if (!string.IsNullOrWhiteSpace(action))
                 {
                     var normalizedAction = action.Trim().ToLowerInvariant();
-                    if (normalizedAction is "register_account" or "register" or "account_registration")
-
+                    if (normalizedAction is "register_account" or "register_candidate" or "register")
                     {
-
                         string firstName = string.Empty;
-
                         if (root.TryGetProperty("first_name", out var fnEl) && fnEl.ValueKind == JsonValueKind.String)
-
                         {
-
                             firstName = fnEl.GetString() ?? string.Empty;
-
                         }
-
-
 
                         string lastName = string.Empty;
-
                         if (root.TryGetProperty("last_name", out var lnEl) && lnEl.ValueKind == JsonValueKind.String)
-
                         {
-
                             lastName = lnEl.GetString() ?? string.Empty;
-
                         }
 
-
+                        string username = string.Empty;
+                        if (root.TryGetProperty("username", out var uEl) && uEl.ValueKind == JsonValueKind.String)
+                        {
+                            username = uEl.GetString() ?? string.Empty;
+                        }
 
                         string email = string.Empty;
-
                         if (root.TryGetProperty("email", out var emEl) && emEl.ValueKind == JsonValueKind.String)
-
                         {
-
                             email = emEl.GetString() ?? string.Empty;
-
                         }
-
                         else if (root.TryGetProperty("email_address", out var emaEl) && emaEl.ValueKind == JsonValueKind.String)
-
                         {
-
                             email = emaEl.GetString() ?? string.Empty;
-
                         }
 
-
+                        if (string.IsNullOrWhiteSpace(email))
+                        {
+                            if (!string.IsNullOrWhiteSpace(username))
+                                email = $"{username.Trim().ToLowerInvariant()}@republic.net";
+                            else if (!string.IsNullOrWhiteSpace(firstName) && !string.IsNullOrWhiteSpace(lastName))
+                                email = $"{firstName.Trim().ToLowerInvariant()}.{lastName.Trim().ToLowerInvariant()}@republic.net";
+                            else
+                                email = "candidate@republic.net";
+                        }
 
                         string dob = string.Empty;
-
                         if (root.TryGetProperty("date_of_birth", out var dobEl) && dobEl.ValueKind == JsonValueKind.String)
-
                         {
-
                             dob = dobEl.GetString() ?? string.Empty;
-
                         }
-
                         else if (root.TryGetProperty("dob", out var dEl) && dEl.ValueKind == JsonValueKind.String)
-
                         {
-
                             dob = dEl.GetString() ?? string.Empty;
-
                         }
 
-
-
-                        try
-
+                        if (string.IsNullOrWhiteSpace(dob))
                         {
+                            dob = "1990-01-01";
+                        }
 
-                            string gender = "Female";
+                        string gender = "Female";
                         if (root.TryGetProperty("gender", out var gEl) && gEl.ValueKind == JsonValueKind.String)
                         {
                             gender = gEl.GetString() ?? "Female";
                         }
-                        return RegisterAccountDecision(firstName, lastName, email, dob, targetStatePath, saveFilePath, requestId, gender: gender);
 
-                        }
-
-                        finally
-
+                        try
                         {
-
-                            TryDeleteFile(targetRequestPath);
-
+                            return RegisterAccountDecision(firstName, lastName, email, dob, targetStatePath, saveFilePath, requestId, gender: gender, username: username);
                         }
-
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
                     }
-
-
 
                     if (normalizedAction is "verify_email" or "verify_token" or "email_verification")
 
@@ -10634,9 +10627,17 @@ public static class PresidentialDeskBridge
                             reqCid = tcidEl.GetString();
                         }
 
+                        string? prefTitle = null;
+                        if (root.TryGetProperty("preferred_title", out var ptEl) && ptEl.ValueKind == JsonValueKind.String)
+                            prefTitle = ptEl.GetString();
+                        else if (root.TryGetProperty("player_display_name", out var pdnEl) && pdnEl.ValueKind == JsonValueKind.String)
+                            prefTitle = pdnEl.GetString();
+                        else if (root.TryGetProperty("official_title", out var otEl) && otEl.ValueKind == JsonValueKind.String)
+                            prefTitle = otEl.GetString();
+
                         try
                         {
-                            return AssumeOfficeDecisionAction(targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid);
+                            return AssumeOfficeDecisionAction(targetStatePath, saveFilePath, requestId, requestingAccountId: reqAccId, targetCountryId: reqCid, preferredTitle: prefTitle);
                         }
                         finally
                         {

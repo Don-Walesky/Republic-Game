@@ -38,6 +38,7 @@ var active_result_path: String = "res://presidential_desk_result.json"
 # In-memory session state
 var registered_first_name: String = ""
 var registered_last_name: String = ""
+var registered_username: String = ""
 var registered_email: String = ""
 var registered_dob: String = ""
 var selected_gender: String = ""
@@ -83,6 +84,7 @@ var resend_cooldown_timer: float = 0.0
 @onready var btn_campaign_signout: Button = $PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnCampaignSignOut
 @onready var input_first_name: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/FirstNameInput
 @onready var input_last_name: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/LastNameInput
+@onready var input_username: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/UsernameInput
 @onready var input_email: LineEdit = $PanelContainer/VBox/ScreenRegister/Form/EmailInput
 @onready var spin_dob_year: SpinBox = $PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/YearSpin
 @onready var spin_dob_month: SpinBox = $PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/MonthSpin
@@ -140,6 +142,7 @@ var resend_cooldown_timer: float = 0.0
 
 # Leadership Selection Nodes
 @onready var lbl_leader_count: Label = $PanelContainer/VBox/ScreenLeadership/LblLeaderCount
+@onready var btn_random_leadership: Button = $PanelContainer/VBox/ScreenLeadership/BtnRandomLeadership
 @onready var lbl_doctrine_preview: Label = $PanelContainer/VBox/ScreenLeadership/LblDoctrinePreview
 @onready var btn_confirm_leadership: Button = $PanelContainer/VBox/ScreenLeadership/BtnConfirmLeadership
 @onready var lbl_leadership_feedback: Label = $PanelContainer/VBox/ScreenLeadership/LblFeedback
@@ -151,6 +154,7 @@ var resend_cooldown_timer: float = 0.0
 
 # Development Plans Nodes
 @onready var lbl_plans_count: Label = $PanelContainer/VBox/ScreenDevelopmentPlans/LblPlansCount
+@onready var btn_random_plans: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/BtnRandomPlans
 @onready var btn_confirm_plans: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/BtnConfirmDevelopmentPlans
 @onready var lbl_plans_feedback: Label = $PanelContainer/VBox/ScreenDevelopmentPlans/LblFeedback
 @onready var btn_plan_1: Button = $PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1/VBox/HBox/BtnPlan1
@@ -244,6 +248,13 @@ var resend_cooldown_timer: float = 0.0
 @onready var btn_contest_election: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/BtnContestElection
 @onready var lbl_election_result: Label = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/LblElectionResult
 @onready var election_breakdown_box: VBoxContainer = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/ElectionBreakdownBox
+@onready var card_executive_address: PanelContainer = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress
+@onready var input_official_address: LineEdit = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressInput/InputOfficialAddress
+@onready var btn_title_last_name: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleLastName
+@onready var btn_title_first_name: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleFirstName
+@onready var btn_title_full_name: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleFullName
+@onready var btn_title_madam: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleMadam
+@onready var btn_title_mister: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleMister
 @onready var btn_assume_office: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/BtnAssumeOffice
 
 @onready var lbl_campaign_feedback: Label = $PanelContainer/VBox/ScreenCampaignHq/LblCampaignFeedback
@@ -283,6 +294,7 @@ func _init_controls() -> void:
 	if btn_campaign_signout == null: btn_campaign_signout = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnCampaignSignOut")
 	if input_first_name == null: input_first_name = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/FirstNameInput")
 	if input_last_name == null: input_last_name = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/LastNameInput")
+	if input_username == null: input_username = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/UsernameInput")
 	if input_email == null: input_email = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/EmailInput")
 	if spin_dob_year == null: spin_dob_year = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/YearSpin")
 	if spin_dob_month == null: spin_dob_month = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/MonthSpin")
@@ -335,6 +347,7 @@ func _init_controls() -> void:
 
 	# Leadership Nodes
 	if lbl_leader_count == null: lbl_leader_count = get_node_or_null("PanelContainer/VBox/ScreenLeadership/LblLeaderCount")
+	if btn_random_leadership == null: btn_random_leadership = get_node_or_null("PanelContainer/VBox/ScreenLeadership/BtnRandomLeadership")
 	if lbl_doctrine_preview == null: lbl_doctrine_preview = get_node_or_null("PanelContainer/VBox/ScreenLeadership/LblDoctrinePreview")
 	if btn_confirm_leadership == null: btn_confirm_leadership = get_node_or_null("PanelContainer/VBox/ScreenLeadership/BtnConfirmLeadership")
 	if lbl_leadership_feedback == null: lbl_leadership_feedback = get_node_or_null("PanelContainer/VBox/ScreenLeadership/LblFeedback")
@@ -347,6 +360,7 @@ func _init_controls() -> void:
 
 	# Development Plans Nodes
 	if lbl_plans_count == null: lbl_plans_count = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/LblPlansCount")
+	if btn_random_plans == null: btn_random_plans = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/BtnRandomPlans")
 	if btn_confirm_plans == null: btn_confirm_plans = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/BtnConfirmDevelopmentPlans")
 	if lbl_plans_feedback == null: lbl_plans_feedback = get_node_or_null("PanelContainer/VBox/ScreenDevelopmentPlans/LblFeedback")
 
@@ -437,6 +451,13 @@ func _init_controls() -> void:
 	if lbl_election_result == null: lbl_election_result = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/LblElectionResult")
 	if lbl_election_result == null: lbl_election_result = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/LblElectionResult")
 	if election_breakdown_box == null: election_breakdown_box = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/ElectionBreakdownBox")
+	if card_executive_address == null: card_executive_address = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress")
+	if input_official_address == null: input_official_address = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressInput/InputOfficialAddress")
+	if btn_title_last_name == null: btn_title_last_name = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleLastName")
+	if btn_title_first_name == null: btn_title_first_name = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleFirstName")
+	if btn_title_full_name == null: btn_title_full_name = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleFullName")
+	if btn_title_madam == null: btn_title_madam = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleMadam")
+	if btn_title_mister == null: btn_title_mister = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets/BtnTitleMister")
 	if btn_assume_office == null: btn_assume_office = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/BtnAssumeOffice")
 	if btn_assume_office == null: btn_assume_office = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/BtnAssumeOffice")
 	if lbl_campaign_feedback == null: lbl_campaign_feedback = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/LblCampaignFeedback")
@@ -528,6 +549,41 @@ func _connect_signals() -> void:
 	if btn_proceed_leadership and not btn_proceed_leadership.pressed.is_connected(_on_proceed_leadership_pressed):
 		btn_proceed_leadership.pressed.connect(_on_proceed_leadership_pressed)
 
+	if btn_random_leadership and not btn_random_leadership.pressed.is_connected(_on_random_leadership_pressed):
+		btn_random_leadership.pressed.connect(_on_random_leadership_pressed)
+	if btn_random_plans and not btn_random_plans.pressed.is_connected(_on_random_plans_pressed):
+		btn_random_plans.pressed.connect(_on_random_plans_pressed)
+
+	if btn_title_last_name and not btn_title_last_name.pressed.is_connected(_on_title_last_name_pressed):
+		btn_title_last_name.pressed.connect(_on_title_last_name_pressed)
+	if btn_title_first_name and not btn_title_first_name.pressed.is_connected(_on_title_first_name_pressed):
+		btn_title_first_name.pressed.connect(_on_title_first_name_pressed)
+	if btn_title_full_name and not btn_title_full_name.pressed.is_connected(_on_title_full_name_pressed):
+		btn_title_full_name.pressed.connect(_on_title_full_name_pressed)
+	if btn_title_madam and not btn_title_madam.pressed.is_connected(_on_title_madam_pressed):
+		btn_title_madam.pressed.connect(_on_title_madam_pressed)
+	if btn_title_mister and not btn_title_mister.pressed.is_connected(_on_title_mister_pressed):
+		btn_title_mister.pressed.connect(_on_title_mister_pressed)
+
+	# Direct card clicking for Leadership
+	_connect_card_click("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardTechnocrat", _on_technocrat_toggled)
+	_connect_card_click("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardPopulist", _on_populist_toggled)
+	_connect_card_click("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardVisionary", _on_visionary_toggled)
+	_connect_card_click("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardStatist", _on_statist_toggled)
+	_connect_card_click("PanelContainer/VBox/ScreenLeadership/ScrollLeadership/CardsBox/CardDiplomat", _on_diplomat_toggled)
+
+	# Direct card clicking for Development Plans
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan1", _on_plan_clicked.bind("industrialisation_first", btn_plan_1))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan2", _on_plan_clicked.bind("agricultural_transformation", btn_plan_2))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan3", _on_plan_clicked.bind("technology_and_innovation", btn_plan_3))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan4", _on_plan_clicked.bind("infrastructure_revolution", btn_plan_4))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan5", _on_plan_clicked.bind("human_capital_development", btn_plan_5))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan6", _on_plan_clicked.bind("financial_and_commercial_power", btn_plan_6))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan7", _on_plan_clicked.bind("energy_and_natural_resources", btn_plan_7))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan8", _on_plan_clicked.bind("national_security_and_defence", btn_plan_8))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan9", _on_plan_clicked.bind("sustainable_development", btn_plan_9))
+	_connect_card_click("PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans/PlansBox/CardPlan10", _on_plan_clicked.bind("global_trade_and_international_influence", btn_plan_10))
+
 	# Leadership buttons
 	if btn_arch_technocrat and not btn_arch_technocrat.pressed.is_connected(_on_technocrat_toggled):
 		btn_arch_technocrat.pressed.connect(_on_technocrat_toggled)
@@ -559,6 +615,15 @@ func _connect_signals() -> void:
 	# Summary buttons
 	if btn_verify_phase3_reload and not btn_verify_phase3_reload.pressed.is_connected(_on_resume_session_pressed):
 		btn_verify_phase3_reload.pressed.connect(_on_resume_session_pressed)
+
+func _connect_card_click(node_path: String, callback: Callable) -> void:
+	var card = get_node_or_null(node_path)
+	if card and not card.gui_input.is_connected(_on_card_gui_input.bind(callback)):
+		card.gui_input.connect(_on_card_gui_input.bind(callback))
+
+func _on_card_gui_input(event: InputEvent, callback: Callable) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		callback.call()
 
 func _connect_plan_button(btn: Button, plan_key: String) -> void:
 	if btn and not btn.pressed.is_connected(_on_plan_clicked.bind(plan_key, btn)):
@@ -811,11 +876,11 @@ func _on_register_pressed() -> void:
 
 	var first_name := input_first_name.text.strip_edges() if input_first_name else ""
 	var last_name := input_last_name.text.strip_edges() if input_last_name else ""
+	var username := input_username.text.strip_edges() if input_username else ""
 	var email := input_email.text.strip_edges() if input_email else ""
 	var year := int(spin_dob_year.value) if spin_dob_year else 1990
 	var month := int(spin_dob_month.value) if spin_dob_month else 1
 	var day := int(spin_dob_day.value) if spin_dob_day else 1
-	var dob_str := "%04d-%02d-%02d" % [year, month, day]
 
 	if first_name.is_empty():
 		_display_register_error("First name is required.")
@@ -823,20 +888,43 @@ func _on_register_pressed() -> void:
 	if last_name.is_empty():
 		_display_register_error("Last name is required.")
 		return
-	if email.is_empty() or not email.contains("@") or not email.contains("."):
-		_display_register_error("Please provide a valid email address.")
+
+	# Handle username
+	if username.is_empty():
+		if not first_name.is_empty() and not last_name.is_empty():
+			username = (first_name.substr(0, 1) + "_" + last_name).to_lower()
+			if input_username: input_username.text = username
+		else:
+			_display_register_error("Username is required.")
+			return
+
+	if username.length() < 3:
+		_display_register_error("Username must be at least 3 characters.")
 		return
 
-	# Age verification (<13 years old)
-	var sim_year := 2027
-	var age := sim_year - year
-	if age < 13:
-		_display_register_error("Candidates must be at least 13 years of age to register (age: %d)." % [age])
-		return
+	# Default email and date of birth if not set via hidden form
+	if email.is_empty():
+		email = "%s@republic.net" % username.to_lower()
+		if input_email: input_email.text = email
+
+	if year <= 1900 or year > 2014:
+		year = 1990
+		if spin_dob_year: spin_dob_year.value = 1990
+
+	var dob_str := "%04d-%02d-%02d" % [year, month, day]
 
 	if selected_gender.is_empty():
-		_display_register_error("Please confirm executive candidate gender (Madam President or Mr. President).")
-		return
+		selected_gender = "Female"
+	if selected_title.is_empty():
+		selected_title = "President " + last_name
+	if selected_avatar.is_empty():
+		selected_avatar = "👩‍💼"
+
+	registered_username = username
+	registered_first_name = first_name
+	registered_last_name = last_name
+	registered_email = email
+	registered_dob = dob_str
 
 	is_processing = true
 	if btn_register: btn_register.disabled = true
@@ -846,11 +934,13 @@ func _on_register_pressed() -> void:
 		"action": "register_account",
 		"first_name": first_name,
 		"last_name": last_name,
+		"username": username,
 		"email": email,
 		"gender": selected_gender,
 		"title": selected_title,
 		"avatar": selected_avatar,
 		"date_of_birth": dob_str,
+		"dob": dob_str,
 		"request_id": "onboarding_reg_" + str(Time.get_unix_time_from_system())
 	}
 
@@ -1777,6 +1867,18 @@ Latest Move: %s" % [drake_poll, drake_action]
 			lbl_election_result.modulate = Color(0.4, 1.0, 0.4) if election_won else Color(1.0, 0.4, 0.4)
 		if btn_assume_office:
 			btn_assume_office.visible = election_won
+		if card_executive_address:
+			card_executive_address.visible = election_won
+			var fname := registered_first_name if not registered_first_name.is_empty() else (input_first_name.text.strip_edges() if input_first_name else "Leader")
+			var lname := registered_last_name if not registered_last_name.is_empty() else (input_last_name.text.strip_edges() if input_last_name else "Executive")
+			if btn_title_last_name:
+				btn_title_last_name.text = "President " + lname
+			if btn_title_first_name:
+				btn_title_first_name.text = "President " + fname
+			if btn_title_full_name:
+				btn_title_full_name.text = ("President %s %s" % [fname, lname]).strip_edges()
+			if input_official_address and (input_official_address.text.is_empty() or input_official_address.text == "e.g. President Vance"):
+				input_official_address.text = "President " + (lname if not lname.is_empty() else fname)
 		if btn_contest_election:
 			btn_contest_election.disabled = election_won
 	else:
@@ -1785,6 +1887,8 @@ Latest Move: %s" % [drake_poll, drake_action]
 			lbl_election_result.modulate = Color(0.9, 0.9, 0.6)
 		if btn_assume_office:
 			btn_assume_office.visible = false
+		if card_executive_address:
+			card_executive_address.visible = false
 		if btn_contest_election:
 			btn_contest_election.disabled = false
 
@@ -2024,14 +2128,129 @@ func _on_contest_election_pressed() -> void:
 			lbl_campaign_feedback.text = str(res.get("message", "Failed to resolve election."))
 			lbl_campaign_feedback.modulate = Color(1.0, 0.4, 0.4)
 
+func _on_title_last_name_pressed() -> void:
+	if input_official_address:
+		var lname := registered_last_name if not registered_last_name.is_empty() else (input_last_name.text.strip_edges() if input_last_name else "Executive")
+		input_official_address.text = "President " + lname
+
+func _on_title_first_name_pressed() -> void:
+	if input_official_address:
+		var fname := registered_first_name if not registered_first_name.is_empty() else (input_first_name.text.strip_edges() if input_first_name else "Leader")
+		input_official_address.text = "President " + fname
+
+func _on_title_full_name_pressed() -> void:
+	if input_official_address:
+		var fname := registered_first_name if not registered_first_name.is_empty() else (input_first_name.text.strip_edges() if input_first_name else "")
+		var lname := registered_last_name if not registered_last_name.is_empty() else (input_last_name.text.strip_edges() if input_last_name else "")
+		input_official_address.text = ("President %s %s" % [fname, lname]).strip_edges()
+
+func _on_title_madam_pressed() -> void:
+	if input_official_address:
+		input_official_address.text = "Madam President"
+
+func _on_title_mister_pressed() -> void:
+	if input_official_address:
+		input_official_address.text = "Mr. President"
+
+func _on_random_leadership_pressed() -> void:
+	var archetypes := ["technocrat", "peoples_champion", "visionary", "strategist", "diplomat"]
+	archetypes.shuffle()
+	var pick1: String = archetypes[0]
+	var pick2: String = archetypes[1]
+
+	selected_archetypes.clear()
+	for btn in [btn_arch_technocrat, btn_arch_populist, btn_arch_visionary, btn_arch_statist, btn_arch_diplomat]:
+		if btn:
+			btn.text = "Select"
+			btn.modulate = Color(1.0, 1.0, 1.0)
+			var card = btn.get_parent().get_parent().get_parent() if btn.get_parent() and btn.get_parent().get_parent() else null
+			if card is Control: card.modulate = Color(1.0, 1.0, 1.0)
+
+	_toggle_archetype(pick1, _get_archetype_button(pick1))
+	_toggle_archetype(pick2, _get_archetype_button(pick2))
+
+	if lbl_leadership_feedback:
+		lbl_leadership_feedback.text = "Randomized leadership behavior doctrine: %s!" % _compute_doctrine_title(selected_archetypes)
+		lbl_leadership_feedback.modulate = Color(0.4, 1.0, 0.4)
+
+func _get_archetype_button(key: String) -> Button:
+	match key:
+		"technocrat": return btn_arch_technocrat
+		"peoples_champion": return btn_arch_populist
+		"visionary": return btn_arch_visionary
+		"strategist": return btn_arch_statist
+		"diplomat": return btn_arch_diplomat
+		_: return null
+
+func _on_random_plans_pressed() -> void:
+	var all_plans := [
+		"industrialisation_first",
+		"agricultural_transformation",
+		"technology_and_innovation",
+		"infrastructure_revolution",
+		"human_capital_development",
+		"financial_and_commercial_power",
+		"energy_and_natural_resources",
+		"national_security_and_defence",
+		"sustainable_development",
+		"global_trade_and_international_influence"
+	]
+	all_plans.shuffle()
+
+	selected_plans.clear()
+	var all_buttons := [
+		btn_plan_1, btn_plan_2, btn_plan_3, btn_plan_4, btn_plan_5,
+		btn_plan_6, btn_plan_7, btn_plan_8, btn_plan_9, btn_plan_10
+	]
+	for btn in all_buttons:
+		if btn:
+			btn.text = "Select"
+			btn.modulate = Color(1.0, 1.0, 1.0)
+			var card = btn.get_parent().get_parent().get_parent() if btn.get_parent() and btn.get_parent().get_parent() else null
+			if card is Control: card.modulate = Color(1.0, 1.0, 1.0)
+
+	for i in range(4):
+		var p_key: String = all_plans[i]
+		var btn = _get_plan_button_by_key(p_key)
+		_on_plan_clicked(p_key, btn)
+
+	if lbl_plans_feedback:
+		lbl_plans_feedback.text = "Randomized inaugural national development priorities!"
+		lbl_plans_feedback.modulate = Color(0.4, 1.0, 0.4)
+
+func _get_plan_button_by_key(key: String) -> Button:
+	match key:
+		"industrialisation_first": return btn_plan_1
+		"agricultural_transformation": return btn_plan_2
+		"technology_and_innovation": return btn_plan_3
+		"infrastructure_revolution": return btn_plan_4
+		"human_capital_development": return btn_plan_5
+		"financial_and_commercial_power": return btn_plan_6
+		"energy_and_natural_resources": return btn_plan_7
+		"national_security_and_defence": return btn_plan_8
+		"sustainable_development": return btn_plan_9
+		"global_trade_and_international_influence": return btn_plan_10
+		_: return null
+
 func _on_assume_office_pressed() -> void:
 	if is_processing: return
 	is_processing = true
 	if btn_assume_office: btn_assume_office.disabled = true
 	if lbl_campaign_feedback: lbl_campaign_feedback.text = "Administering presidential oath of office..."
 
+	var pref_title := input_official_address.text.strip_edges() if input_official_address else ""
+	if pref_title.is_empty():
+		var lname := registered_last_name if not registered_last_name.is_empty() else (input_last_name.text.strip_edges() if input_last_name else "")
+		var fname := registered_first_name if not registered_first_name.is_empty() else (input_first_name.text.strip_edges() if input_first_name else "")
+		pref_title = "President " + (lname if not lname.is_empty() else fname)
+
+	selected_title = pref_title
+
 	var req := {
 		"action": "assume_office",
+		"preferred_title": pref_title,
+		"player_display_name": pref_title,
+		"official_title": pref_title,
 		"request_id": "onboarding_inaug_" + str(Time.get_unix_time_from_system())
 	}
 
@@ -2040,7 +2259,7 @@ func _on_assume_office_pressed() -> void:
 
 	if res.get("success", false):
 		if lbl_campaign_feedback:
-			lbl_campaign_feedback.text = "Inauguration complete! Welcome to the Presidential Executive Office."
+			lbl_campaign_feedback.text = "Inauguration complete! Welcome to the Presidential Executive Office, %s." % pref_title
 			lbl_campaign_feedback.modulate = Color(0.4, 1.0, 0.4)
 		onboarding_completed.emit(res)
 		if is_inside_tree() and get_tree() != null:

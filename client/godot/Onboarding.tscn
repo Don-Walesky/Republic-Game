@@ -25,17 +25,17 @@ color = Color(0.04, 0.07, 0.12, 1)
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -480.0
-offset_top = -320.0
-offset_right = 480.0
-offset_bottom = 320.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 20.0
+offset_right = -32.0
+offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="VBox" type="VBoxContainer" parent="PanelContainer"]
 layout_mode = 2
@@ -100,37 +100,55 @@ horizontal_alignment = 1
 
 [node name="Form" type="VBoxContainer" parent="PanelContainer/VBox/ScreenRegister"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
 
 [node name="LblFirst" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 13
 text = "First Name:"
 
 [node name="FirstNameInput" type="LineEdit" parent="PanelContainer/VBox/ScreenRegister/Form"]
 layout_mode = 2
-placeholder_text = "Enter first name"
+custom_minimum_size = Vector2(0, 36)
+placeholder_text = "e.g. Aurelius"
 
 [node name="LblLast" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 13
 text = "Last Name:"
 
 [node name="LastNameInput" type="LineEdit" parent="PanelContainer/VBox/ScreenRegister/Form"]
 layout_mode = 2
-placeholder_text = "Enter last name"
+custom_minimum_size = Vector2(0, 36)
+placeholder_text = "e.g. Vance"
+
+[node name="LblUsername" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Username / Handle:"
+
+[node name="UsernameInput" type="LineEdit" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+placeholder_text = "e.g. a_vance"
 
 [node name="LblEmail" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+visible = false
 layout_mode = 2
 text = "Email Address:"
 
 [node name="EmailInput" type="LineEdit" parent="PanelContainer/VBox/ScreenRegister/Form"]
+visible = false
 layout_mode = 2
 placeholder_text = "Enter email address"
 
 [node name="LblDOB" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+visible = false
 layout_mode = 2
 text = "Date of Birth (Minimum age: 13):"
 
 [node name="HBoxDOB" type="HBoxContainer" parent="PanelContainer/VBox/ScreenRegister/Form"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 12
 
@@ -165,10 +183,12 @@ max_value = 31.0
 value = 15.0
 
 [node name="LblGender" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+visible = false
 layout_mode = 2
 text = "Executive Candidate Gender & Honorific (Required):"
 
 [node name="HBoxGender" type="HBoxContainer" parent="PanelContainer/VBox/ScreenRegister/Form"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 12
 
@@ -625,9 +645,17 @@ theme_override_font_sizes/font_size = 13
 text = "Selected: 0 / 2 (Select 2 to continue)"
 horizontal_alignment = 1
 
+[node name="BtnRandomLeadership" type="Button" parent="PanelContainer/VBox/ScreenLeadership"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(220, 34)
+theme_override_font_sizes/font_size = 12
+text = "🎲 Randomize Behaviour"
+
 [node name="ScrollLeadership" type="ScrollContainer" parent="PanelContainer/VBox/ScreenLeadership"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 240)
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 340)
 
 [node name="CardsBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenLeadership/ScrollLeadership"]
 layout_mode = 2
@@ -818,9 +846,17 @@ theme_override_font_sizes/font_size = 13
 text = "Selected: 0 / 4 (Select 4 to continue)"
 horizontal_alignment = 1
 
+[node name="BtnRandomPlans" type="Button" parent="PanelContainer/VBox/ScreenDevelopmentPlans"]
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(220, 34)
+theme_override_font_sizes/font_size = 12
+text = "🎲 Randomize Focus"
+
 [node name="ScrollPlans" type="ScrollContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 240)
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 340)
 
 [node name="PlansBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenDevelopmentPlans/ScrollPlans"]
 layout_mode = 2
@@ -1796,12 +1832,86 @@ autowrap_mode = 2
 layout_mode = 2
 theme_override_constants/separation = 4
 
+[node name="CardExecutiveAddress" type="PanelContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox"]
+visible = false
+layout_mode = 2
+
+[node name="AddressVBox" type="VBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LblAddressTitle" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
+theme_override_font_sizes/font_size = 14
+text = "OFFICIAL PRESIDENTIAL ADDRESS & TITLE"
+
+[node name="LblAddressSub" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 11
+text = "Choose how citizens, cabinet ministers, and foreign heads of state will address you:"
+
+[node name="HBoxAddressPresets" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnTitleLastName" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 32)
+theme_override_font_sizes/font_size = 11
+text = "President [Last Name]"
+
+[node name="BtnTitleFirstName" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 32)
+theme_override_font_sizes/font_size = 11
+text = "President [First Name]"
+
+[node name="BtnTitleFullName" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 32)
+theme_override_font_sizes/font_size = 11
+text = "President [Full Name]"
+
+[node name="BtnTitleMadam" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 32)
+theme_override_font_sizes/font_size = 11
+text = "Madam President"
+
+[node name="BtnTitleMister" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressPresets"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 32)
+theme_override_font_sizes/font_size = 11
+text = "Mr. President"
+
+[node name="HBoxAddressInput" type="HBoxContainer" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LblPreferredTitle" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressInput"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Preferred Address:"
+
+[node name="InputOfficialAddress" type="LineEdit" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/CardExecutiveAddress/AddressVBox/HBoxAddressInput"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+placeholder_text = "e.g. President Vance"
+
 [node name="BtnAssumeOffice" type="Button" parent="PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox"]
 visible = false
 layout_mode = 2
-custom_minimum_size = Vector2(0, 38)
+custom_minimum_size = Vector2(0, 42)
 theme_override_colors/font_color = Color(0.85, 0.72, 0.35, 1)
-text = "Assume Office in Presidential Executive Office 🏛️"
+text = "Administer Presidential Oath & Enter Executive Office 🏛️"
 
 [node name="LblCampaignFeedback" type="Label" parent="PanelContainer/VBox/ScreenCampaignHq"]
 layout_mode = 2

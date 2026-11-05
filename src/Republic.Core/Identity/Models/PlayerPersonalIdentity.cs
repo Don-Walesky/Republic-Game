@@ -15,6 +15,9 @@ public sealed class PlayerPersonalIdentity
     [JsonPropertyName("last_name")]
     public string LastName { get; set; } = string.Empty;
 
+    [JsonPropertyName("username")]
+    public string Username { get; set; } = string.Empty;
+
     [JsonPropertyName("email_address")]
     public string EmailAddress { get; set; } = string.Empty;
 

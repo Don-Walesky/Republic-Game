@@ -1,9 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://c6xq5m8e9r2p1"]
+[gd_scene format=3 uid="uid://c6xq5m8far2p1"]
 
-[ext_resource type="Script" path="res://Auth.gd" id="1_auth_script"]
+[ext_resource type="Script" uid="uid://dgwmnia56xnkc" path="res://Auth.gd" id="1_auth_script"]
 [ext_resource type="Texture2D" uid="uid://bc5lg4gpqmwdb" path="res://assets/branding/republic_banner_feathered.png" id="2_banner_tex"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_main"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
 bg_color = Color(0.06, 0.09, 0.15, 0.96)
 border_width_left = 1
 border_width_top = 1
@@ -14,14 +18,13 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.6)
 shadow_size = 12
-content_margin_left = 24.0
-content_margin_top = 24.0
-content_margin_right = 24.0
-content_margin_bottom = 24.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
 bg_color = Color(0.08, 0.12, 0.2, 0.9)
 border_width_left = 1
 border_width_top = 1
@@ -32,12 +35,8 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-content_margin_left = 16.0
-content_margin_top = 14.0
-content_margin_right = 16.0
-content_margin_bottom = 14.0
 
-[node name="Auth" type="Control"]
+[node name="Auth" type="Control" unique_id=1820804610]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -46,16 +45,20 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_auth_script")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1321512131]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -2.0
+offset_top = -25.0
+offset_right = -2.0
+offset_bottom = -25.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.03, 0.05, 0.09, 1)
 
-[node name="MainPanel" type="PanelContainer" parent="."]
+[node name="MainPanel" type="PanelContainer" parent="." unique_id=2127741330]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -70,53 +73,53 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_main")
 
-[node name="VBox" type="VBoxContainer" parent="MainPanel"]
+[node name="VBox" type="VBoxContainer" parent="MainPanel" unique_id=118346414]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="Header" type="VBoxContainer" parent="MainPanel/VBox"]
+[node name="Header" type="VBoxContainer" parent="MainPanel/VBox" unique_id=1307287894]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="LogoContainer" type="CenterContainer" parent="MainPanel/VBox/Header"]
+[node name="LogoContainer" type="CenterContainer" parent="MainPanel/VBox/Header" unique_id=7527048]
 layout_mode = 2
 
-[node name="LogoBanner" type="TextureRect" parent="MainPanel/VBox/Header/LogoContainer"]
+[node name="LogoBanner" type="TextureRect" parent="MainPanel/VBox/Header/LogoContainer" unique_id=297226775]
 custom_minimum_size = Vector2(280, 140)
 layout_mode = 2
 texture = ExtResource("2_banner_tex")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Subtitle" type="Label" parent="MainPanel/VBox/Header"]
+[node name="Subtitle" type="Label" parent="MainPanel/VBox/Header" unique_id=381180505]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.78, 0.9, 1)
 theme_override_font_sizes/font_size = 13
 text = "Sovereign Executive & Governance Gateway"
 horizontal_alignment = 1
 
-[node name="TabHBox" type="HBoxContainer" parent="MainPanel/VBox"]
+[node name="TabHBox" type="HBoxContainer" parent="MainPanel/VBox" unique_id=1448218811]
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="BtnTabSignUp" type="Button" parent="MainPanel/VBox/TabHBox"]
+[node name="BtnTabSignUp" type="Button" parent="MainPanel/VBox/TabHBox" unique_id=2010744987]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 38)
 text = "📝 Sign Up"
 
-[node name="BtnTabLogin" type="Button" parent="MainPanel/VBox/TabHBox"]
+[node name="BtnTabLogin" type="Button" parent="MainPanel/VBox/TabHBox" unique_id=1424955021]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 38)
 text = "🔑 Log In / Sign In"
 
-[node name="SignUpBox" type="VBoxContainer" parent="MainPanel/VBox"]
+[node name="SignUpBox" type="VBoxContainer" parent="MainPanel/VBox" unique_id=1256528324]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="LblSignUpDesc" type="Label" parent="MainPanel/VBox/SignUpBox"]
+[node name="LblSignUpDesc" type="Label" parent="MainPanel/VBox/SignUpBox" unique_id=1203948266]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.86, 0.95, 1)
 theme_override_font_sizes/font_size = 13
@@ -124,65 +127,65 @@ text = "Establish a New Sovereign Republic. Register your executive candidate pr
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="BtnGoToSignUp" type="Button" parent="MainPanel/VBox/SignUpBox"]
-layout_mode = 2
+[node name="BtnGoToSignUp" type="Button" parent="MainPanel/VBox/SignUpBox" unique_id=962911839]
 custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
 text = "★ Sign Up & Begin Onboarding"
 
-[node name="LoginBox" type="VBoxContainer" parent="MainPanel/VBox"]
+[node name="LoginBox" type="VBoxContainer" parent="MainPanel/VBox" unique_id=1711659066]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="SavedSessionCard" type="PanelContainer" parent="MainPanel/VBox/LoginBox"]
+[node name="SavedSessionCard" type="PanelContainer" parent="MainPanel/VBox/LoginBox" unique_id=1118241091]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="SessionVBox" type="VBoxContainer" parent="MainPanel/VBox/LoginBox/SavedSessionCard"]
+[node name="SessionVBox" type="VBoxContainer" parent="MainPanel/VBox/LoginBox/SavedSessionCard" unique_id=565624685]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="LblSessionHeader" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox"]
+[node name="LblSessionHeader" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox" unique_id=942601124]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.8, 0.3, 1)
 theme_override_font_sizes/font_size = 11
 text = "AUTHORITATIVE REPUBLIC DETECTED"
 
-[node name="LblDetectedCountry" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox"]
+[node name="LblDetectedCountry" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox" unique_id=1873936991]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "No saved Republic found."
 
-[node name="LblDetectedPhase" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox"]
+[node name="LblDetectedPhase" type="Label" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox" unique_id=1166588408]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.85, 1.0, 1)
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 12
 text = "Phase: -"
 
-[node name="BtnResumeSession" type="Button" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox"]
-layout_mode = 2
+[node name="BtnResumeSession" type="Button" parent="MainPanel/VBox/LoginBox/SavedSessionCard/SessionVBox" unique_id=43019920]
 custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
 text = "▶ Log In & Launch to Office"
 
-[node name="ManualEmailBox" type="VBoxContainer" parent="MainPanel/VBox/LoginBox"]
+[node name="ManualEmailBox" type="VBoxContainer" parent="MainPanel/VBox/LoginBox" unique_id=1390801024]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="LblEmail" type="Label" parent="MainPanel/VBox/LoginBox/ManualEmailBox"]
+[node name="LblEmail" type="Label" parent="MainPanel/VBox/LoginBox/ManualEmailBox" unique_id=1072887184]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Or Sign In With Registered Email:"
 
-[node name="InputEmail" type="LineEdit" parent="MainPanel/VBox/LoginBox/ManualEmailBox"]
+[node name="InputEmail" type="LineEdit" parent="MainPanel/VBox/LoginBox/ManualEmailBox" unique_id=1439745190]
 layout_mode = 2
 placeholder_text = "candidate@republic.gov"
 
-[node name="BtnEmailLogin" type="Button" parent="MainPanel/VBox/LoginBox/ManualEmailBox"]
-layout_mode = 2
+[node name="BtnEmailLogin" type="Button" parent="MainPanel/VBox/LoginBox/ManualEmailBox" unique_id=1402841242]
 custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
 text = "Log In & Continue Game"
 
-[node name="LblFeedback" type="Label" parent="MainPanel/VBox"]
+[node name="LblFeedback" type="Label" parent="MainPanel/VBox" unique_id=1063632269]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
