@@ -6,6 +6,7 @@ using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.CentralBank.Models;
 using Republic.Core.Economy.Debt.Models;
 using Republic.Core.Economy.StockMarket.Models;
+using Republic.Core.Economy.Businesses.Models;
 using Republic.Core.Economy.PrivateSector.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
@@ -196,6 +197,23 @@ public sealed class Country
     public bool ForexMilestonePendingNotification { get; set; }
 
     /// <summary>
+    /// Gets or sets the simulation day on which the current presidency began.
+    /// Used for timing the First Wave of inbound global enterprises (Day 30, 60, 90, 120, 150).
+    /// </summary>
+    public long PresidencyStartDay { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the simulation day on which the national currency management was unlocked/created.
+    /// Used for timing the Second Wave of multinational corporate approaches (Day 30, 60, 90, 120, 150 post-currency).
+    /// </summary>
+    public long? CurrencyCreationDay { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of influential global businesses and industrialists that have approached the country.
+    /// </summary>
+    public List<GlobalBusinessProposal> GlobalBusinesses { get; set; } = new();
+
+    /// <summary>
     /// Gets the inflation-adjusted project cost multiplier.
     /// At baseline inflation (<= 3.0%), multiplier is 1.0.
     /// Higher inflation scales capital project costs accordingly.
@@ -214,9 +232,14 @@ public sealed class Country
         double gdp = GrossDomesticProduct > 0.0 ? GrossDomesticProduct : 450_000_000_000.0;
 
         // 1. Calculate Quarterly Fiscal Estimates
+        double businessTaxContribution = GlobalBusinesses?
+            .Where(b => b.Status == GlobalBusinessDecisionStatus.Accepted)
+            .Sum(b => b.QuarterlyTaxContribution) ?? 0.0;
+
         double estQuarterlyTaxRev = (gdp * 0.15 * TaxPolicy.IncomeTaxRate) +
                                     (gdp * 0.10 * TaxPolicy.CorporateTaxRate) +
-                                    (Math.Max(0.0, TradeBalance) * TaxPolicy.ImportTariffRate);
+                                    (Math.Max(0.0, TradeBalance) * TaxPolicy.ImportTariffRate) +
+                                    businessTaxContribution;
 
         double estQuarterlyExp = MinistryBudget.TotalQuarterlyExpenditures + Debt.QuarterlyDebtService;
         double fiscalBalance = estQuarterlyTaxRev - estQuarterlyExp;
@@ -3300,7 +3323,10 @@ public sealed class Country
         NationalStrategyProfile? strategyProfile = null,
         int baseMilitaryLevel = 12,
         IEnumerable<IntelligenceOperation>? intelligenceOperations = null,
-        IEnumerable<IntelligenceDossierReport>? acquiredIntelligence = null)
+        IEnumerable<IntelligenceDossierReport>? acquiredIntelligence = null,
+        long presidencyStartDay = 1,
+        long? currencyCreationDay = null,
+        IEnumerable<GlobalBusinessProposal>? globalBusinesses = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -3355,7 +3381,10 @@ public sealed class Country
             Party = party,
             OppositionParty = oppositionParty,
             InterestGroup = interestGroup,
-            Bill = bill
+            Bill = bill,
+            PresidencyStartDay = presidencyStartDay,
+            CurrencyCreationDay = currencyCreationDay,
+            GlobalBusinesses = globalBusinesses != null ? new List<GlobalBusinessProposal>(globalBusinesses) : new List<GlobalBusinessProposal>()
         };
 
         if (election != null)

@@ -531,6 +531,11 @@ var media_auto_publish_timer: Timer = null
 @onready var btn_take_external_loan: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnTakeExternalLoan") as Button
 @onready var btn_repay_debt: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnRepayDebt") as Button
 @onready var econ_desk_link_button: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconDeskLinkButton") as Button
+@onready var global_businesses_card: PanelContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard") as PanelContainer
+@onready var biz_status_badge: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/BizHeaderHBox/BizStatusBadge") as Label
+@onready var biz_metrics_summary_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/BizMetricsSummaryLabel") as Label
+@onready var pending_biz_container: VBoxContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/PendingBizContainer") as VBoxContainer
+@onready var operating_biz_container: VBoxContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/OperatingBizContainer") as VBoxContainer
 
 @onready var messages_modal: PanelContainer = _get_node_safe("InterfaceLayer/MessagesModal") as PanelContainer
 @onready var close_msg_x_button: Button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgHeaderHBox/CloseMsgXButton") as Button
@@ -1795,6 +1800,16 @@ func _init_controls() -> void:
 		btn_repay_debt = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnRepayDebt") as Button
 	if econ_desk_link_button == null:
 		econ_desk_link_button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconDeskLinkButton") as Button
+	if global_businesses_card == null:
+		global_businesses_card = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard") as PanelContainer
+	if biz_status_badge == null:
+		biz_status_badge = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/BizHeaderHBox/BizStatusBadge") as Label
+	if biz_metrics_summary_label == null:
+		biz_metrics_summary_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/BizMetricsSummaryLabel") as Label
+	if pending_biz_container == null:
+		pending_biz_container = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/PendingBizContainer") as VBoxContainer
+	if operating_biz_container == null:
+		operating_biz_container = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/OperatingBizContainer") as VBoxContainer
 
 	if messages_modal == null:
 		messages_modal = _get_node_safe("InterfaceLayer/MessagesModal") as PanelContainer
@@ -3429,6 +3444,176 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 		debt_total_label.text = "Total Debt: %s (Dom: R %.0fM | Ext: R %.0fM)" % [tot_fmt, dom_val, ext_val]
 	if debt_service_label:
 		debt_service_label.text = "Debt Service: %s" % str(state.get("debt_service_quarterly_formatted", "R 3.63M / Qtr"))
+
+	# 6. Global Businesses & Inbound Industrialists
+	var op_count: int = int(state.get("operating_businesses_count", 0))
+	var pend_count: int = int(state.get("pending_business_proposals_count", 0))
+	if biz_status_badge:
+		biz_status_badge.text = "Operating: %d | Pending Proposals: %d" % [op_count, pend_count]
+
+	if biz_metrics_summary_label:
+		var tax_str: String = str(state.get("total_business_quarterly_tax_formatted", "R 0 / Qtr"))
+		var jobs_val: int = int(state.get("total_business_jobs_created", 0))
+		var gdp_val: float = float(state.get("total_business_gdp_boost", 0.0)) / 1000000.0
+		biz_metrics_summary_label.text = "Quarterly Tax: %s | Direct Jobs: %s | Total GDP Boost: +R %.1fM" % [
+			tax_str, _format_number_commas(jobs_val), gdp_val
+		]
+
+	var all_biz: Variant = state.get("global_businesses", [])
+	var biz_list: Array = []
+	if all_biz is Array:
+		biz_list = all_biz as Array
+
+	# Populate Pending Proposals
+	if pending_biz_container:
+		for child in pending_biz_container.get_children():
+			pending_biz_container.remove_child(child)
+			child.queue_free()
+
+		var has_pending: bool = false
+		for b in biz_list:
+			if not (b is Dictionary):
+				continue
+			var status_str: String = str(b.get("status", "Pending"))
+			if status_str != "Pending":
+				continue
+
+			has_pending = true
+			var b_id: String = str(b.get("id", ""))
+			var b_name: String = str(b.get("business_name", "Global Enterprise"))
+			var b_ind: String = str(b.get("industry", "Manufacturing"))
+			var b_minister: String = str(b.get("presenting_minister", "Minister of Finance"))
+			var b_title: String = str(b.get("proposal_title", ""))
+			var b_desc: String = str(b.get("description", ""))
+			var b_cap: String = str(b.get("capital_investment_formatted", "R 0"))
+			var b_jobs: int = int(b.get("projected_jobs", 0))
+			var b_tax: String = str(b.get("quarterly_tax_contribution_formatted", "R 0"))
+
+			var p_card := PanelContainer.new()
+			var p_style := StyleBoxFlat.new()
+			p_style.bg_color = Color(0.08, 0.11, 0.16, 0.95)
+			p_style.border_color = Color(0.28, 0.42, 0.6, 0.8)
+			p_style.set_border_width_all(1)
+			p_style.set_corner_radius_all(4)
+			p_style.content_margin_left = 8
+			p_style.content_margin_right = 8
+			p_style.content_margin_top = 6
+			p_style.content_margin_bottom = 6
+			p_card.add_theme_stylebox_override("panel", p_style)
+
+			var p_vbox := VBoxContainer.new()
+			p_vbox.add_theme_constant_override("separation", 4)
+			p_card.add_child(p_vbox)
+
+			var top_row := HBoxContainer.new()
+			p_vbox.add_child(top_row)
+
+			var name_lbl := Label.new()
+			name_lbl.text = "🏛️ %s  [%s]" % [b_name, b_ind]
+			name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			name_lbl.add_theme_font_size_override("font_size", 11)
+			name_lbl.add_theme_color_override("font_color", Color(0.95, 0.82, 0.35, 1.0))
+			top_row.add_child(name_lbl)
+
+			var min_lbl := Label.new()
+			min_lbl.text = "Sponsored by: %s" % b_minister
+			min_lbl.add_theme_font_size_override("font_size", 9)
+			min_lbl.add_theme_color_override("font_color", Color(0.65, 0.8, 1.0, 1.0))
+			top_row.add_child(min_lbl)
+
+			if not b_title.is_empty():
+				var t_lbl := Label.new()
+				t_lbl.text = b_title
+				t_lbl.add_theme_font_size_override("font_size", 10)
+				t_lbl.add_theme_color_override("font_color", Color(0.85, 0.9, 0.95, 1.0))
+				p_vbox.add_child(t_lbl)
+
+			if not b_desc.is_empty():
+				var d_lbl := Label.new()
+				d_lbl.text = b_desc
+				d_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				d_lbl.add_theme_font_size_override("font_size", 9)
+				d_lbl.add_theme_color_override("font_color", Color(0.7, 0.75, 0.8, 1.0))
+				p_vbox.add_child(d_lbl)
+
+			var metrics_lbl := Label.new()
+			metrics_lbl.text = "💰 Direct Investment: %s | 👥 Jobs: %s | 📈 Quarterly Tax: %s / Qtr" % [
+				b_cap, _format_number_commas(b_jobs), b_tax
+			]
+			metrics_lbl.add_theme_font_size_override("font_size", 9)
+			metrics_lbl.add_theme_color_override("font_color", Color(0.4, 0.9, 0.55, 1.0))
+			p_vbox.add_child(metrics_lbl)
+
+			var btn_row := HBoxContainer.new()
+			btn_row.add_theme_constant_override("separation", 8)
+			p_vbox.add_child(btn_row)
+
+			var accept_btn := Button.new()
+			accept_btn.text = "✓ Authorize Commercial Entry (Accept)"
+			accept_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			accept_btn.add_theme_font_size_override("font_size", 9)
+			var acc_style := StyleBoxFlat.new()
+			acc_style.bg_color = Color(0.12, 0.38, 0.22, 0.9)
+			acc_style.set_corner_radius_all(3)
+			accept_btn.add_theme_stylebox_override("normal", acc_style)
+			accept_btn.pressed.connect(func(): _on_accept_global_business_pressed(b_id))
+			btn_row.add_child(accept_btn)
+
+			var decline_btn := Button.new()
+			decline_btn.text = "✗ Decline Delegation"
+			decline_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			decline_btn.add_theme_font_size_override("font_size", 9)
+			var dec_style := StyleBoxFlat.new()
+			dec_style.bg_color = Color(0.4, 0.14, 0.16, 0.9)
+			dec_style.set_corner_radius_all(3)
+			decline_btn.add_theme_stylebox_override("normal", dec_style)
+			decline_btn.pressed.connect(func(): _on_decline_global_business_pressed(b_id))
+			btn_row.add_child(decline_btn)
+
+			pending_biz_container.add_child(p_card)
+
+		if not has_pending:
+			var empty_lbl := Label.new()
+			empty_lbl.text = "No pending inbound proposals. Global enterprises arrive as the term progresses."
+			empty_lbl.add_theme_font_size_override("font_size", 9)
+			empty_lbl.add_theme_color_override("font_color", Color(0.6, 0.65, 0.7, 0.8))
+			pending_biz_container.add_child(empty_lbl)
+
+	# Populate Operating Roster
+	if operating_biz_container:
+		for child in operating_biz_container.get_children():
+			operating_biz_container.remove_child(child)
+			child.queue_free()
+
+		var has_operating: bool = false
+		for b in biz_list:
+			if not (b is Dictionary):
+				continue
+			var status_str: String = str(b.get("status", "Pending"))
+			if status_str != "Accepted":
+				continue
+
+			has_operating = true
+			var b_name: String = str(b.get("business_name", "Global Enterprise"))
+			var b_ind: String = str(b.get("industry", "Manufacturing"))
+			var b_jobs: int = int(b.get("projected_jobs", 0))
+			var b_tax: String = str(b.get("quarterly_tax_contribution_formatted", "R 0"))
+			var day_dec: int = int(b.get("decided_on_day", 1))
+
+			var row_lbl := Label.new()
+			row_lbl.text = "• %s (%s) — Operating since Day %d | Yielding: %s / Qtr | %s Jobs" % [
+				b_name, b_ind, day_dec, b_tax, _format_number_commas(b_jobs)
+			]
+			row_lbl.add_theme_font_size_override("font_size", 9)
+			row_lbl.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0, 1.0))
+			operating_biz_container.add_child(row_lbl)
+
+		if not has_operating:
+			var empty_op_lbl := Label.new()
+			empty_op_lbl.text = "No multinational corporations currently operating domestically."
+			empty_op_lbl.add_theme_font_size_override("font_size", 9)
+			empty_op_lbl.add_theme_color_override("font_color", Color(0.55, 0.6, 0.65, 0.8))
+			operating_biz_container.add_child(empty_op_lbl)
 
 func _update_messages_modal(state: Dictionary) -> void:
 	var emails: Variant = state.get("emails", [])
@@ -5265,6 +5450,30 @@ func _on_repay_debt_pressed() -> void:
 	})
 	if status_ticker_label:
 		status_ticker_label.text = "Debt Management: Sovereign debt repaid (-R 25M)."
+
+func _on_accept_global_business_pressed(biz_id: String) -> void:
+	var req_id := "req_biz_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "global_business_decision",
+		"business_id": biz_id,
+		"decision": "accept",
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Commercial Policy: Authorizing inbound global enterprise entry..."
+
+func _on_decline_global_business_pressed(biz_id: String) -> void:
+	var req_id := "req_biz_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "global_business_decision",
+		"business_id": biz_id,
+		"decision": "decline",
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Commercial Policy: Inbound global enterprise proposal declined."
 
 func _write_request_file(req_dict: Dictionary) -> bool:
 	var req_path := _resolve_request_path()

@@ -13,6 +13,8 @@ using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.CentralBank.Models;
 using Republic.Core.Economy.Debt.Models;
 using Republic.Core.Economy.StockMarket.Models;
+using Republic.Core.Economy.Businesses.Models;
+using Republic.Core.Economy.Businesses.Services;
 using Republic.Core.Communication.Services;
 using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.PrivateSector.Services;
@@ -9164,6 +9166,10 @@ public static class PresidentialDeskBridge
         }
 
         country.CentralBank.ForexUnlocked = true;
+        if (!country.CurrencyCreationDay.HasValue)
+        {
+            country.CurrencyCreationDay = simTime.DayNumber;
+        }
 
         if (!confirmed)
         {
@@ -9205,6 +9211,136 @@ public static class PresidentialDeskBridge
         country.UpdateEconomicCycle(simTime);
 
         string outcomeMessage = $"National currency regime set to {country.CentralBank.CurrencyRegime}. Exchange rate: 1 USD = {country.CentralBank.ExchangeRateToUSD:0.00} REPU. Foreign reserves: {RepuTreasury.Format(country.CentralBank.ForeignReserves)}.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Evaluates a presidential decision to Accept or Decline an inbound commercial proposal from an influential global business or industrialist.
+    /// Accepting authorizes commercial entry, depositing capital investment, creating skilled jobs, boosting quarterly tax revenue,
+    /// lifting equity markets, and increasing export volumes.
+    /// </summary>
+    public static PresidentialActionResult ApplyGlobalBusinessDecision(
+        string businessId,
+        string decision,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "apply global business decision");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (string.IsNullOrWhiteSpace(businessId))
+        {
+            var noIdResult = CreateInvalidInputResult(targetStatePath, "Global business decision requires a valid business proposal ID.", requestId);
+            TryWriteResultFile(targetStatePath, noIdResult);
+            return noIdResult;
+        }
+
+        var globalBizService = new GlobalBusinessService();
+        globalBizService.UpdateBusinessApproaches(country!, simTime);
+
+        var proposal = country!.GlobalBusinesses.FirstOrDefault(b => string.Equals(b.Id, businessId.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (proposal == null)
+        {
+            var missingResult = CreateInvalidInputResult(targetStatePath, $"Global business proposal '{businessId}' not found.", requestId);
+            TryWriteResultFile(targetStatePath, missingResult);
+            return missingResult;
+        }
+
+        if (!confirmed)
+        {
+            string op = decision.Trim().ToLowerInvariant() == "accept" ? "Authorize" : "Decline";
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose to {op} global business proposal from {proposal.BusinessName} ({proposal.Industry}).",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        bool isAccept = decision.Trim().ToLowerInvariant() == "accept";
+        bool success;
+        string outcomeMessage;
+
+        if (isAccept)
+        {
+            success = globalBizService.AcceptProposal(country, proposal.Id, simTime, out outcomeMessage);
+        }
+        else
+        {
+            success = globalBizService.DeclineProposal(country, proposal.Id, simTime, out outcomeMessage);
+        }
+
+        if (!success)
+        {
+            var failResult = CreateInvalidInputResult(targetStatePath, outcomeMessage, requestId);
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
 
         var world = envelope?.State?.World;
         try
@@ -11037,6 +11173,40 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyCentralBankDecision(operation, val, cbConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "global_business_decision" or "business_decision" or "accept_business" or "decline_business")
+                    {
+                        string businessId = string.Empty;
+                        if (root.TryGetProperty("business_id", out var bIdEl) && bIdEl.ValueKind == JsonValueKind.String)
+                        {
+                            businessId = bIdEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            businessId = idEl.GetString() ?? string.Empty;
+                        }
+
+                        string decision = normalizedAction is "decline_business" ? "decline" : "accept";
+                        if (root.TryGetProperty("decision", out var decEl) && decEl.ValueKind == JsonValueKind.String)
+                        {
+                            decision = decEl.GetString() ?? decision;
+                        }
+
+                        bool bConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var cfEl) && (cfEl.ValueKind == JsonValueKind.True || cfEl.ValueKind == JsonValueKind.False))
+                        {
+                            bConfirmed = cfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyGlobalBusinessDecision(businessId, decision, bConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

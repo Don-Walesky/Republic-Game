@@ -4489,6 +4489,56 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 text = "💳 Repay Debt (-R 25M)"
 
+[node name="GlobalBusinessesCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="BizVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BizHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox"]
+layout_mode = 2
+
+[node name="BizTitleLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/BizHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏢 Global Enterprises & Inbound Industrialists"
+
+[node name="BizStatusBadge" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox/BizHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "Operating: 0 | Pending Proposals: 0"
+
+[node name="BizMetricsSummaryLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 9
+text = "Quarterly Tax: R 0 / Qtr | Direct Jobs: 0 | Total GDP Boost: R 0"
+
+[node name="PendingBizSectionLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.35, 1)
+theme_override_font_sizes/font_size = 10
+text = "📬 Inbound Commercial Delegations (Awaiting Presidential Authorization)"
+
+[node name="PendingBizContainer" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="OperatingBizSectionLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "🏭 Authorized Multinational Corporations Operating Domestically"
+
+[node name="OperatingBizContainer" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/GlobalBusinessesCard/BizVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
 [node name="EconDeskLinkButton" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
