@@ -1312,6 +1312,38 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 12
 text = "Corruption: [No State Loaded]"
 
+[node name="VSeparatorBci" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+
+[node name="CardBusinessConfidence" type="PanelContainer" parent="InterfaceLayer/TopBar/TopBarHBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_metric_card")
+
+[node name="BusinessConfidenceVBox" type="VBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence"]
+layout_mode = 2
+alignment = 1
+
+[node name="BusinessConfidenceHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence/BusinessConfidenceVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BusinessConfidenceIcon" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence/BusinessConfidenceVBox/BusinessConfidenceHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "💼"
+
+[node name="BusinessConfidenceTitle" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence/BusinessConfidenceVBox/BusinessConfidenceHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "Business Confidence"
+
+[node name="BusinessConfidenceLabel" type="Label" parent="InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence/BusinessConfidenceVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "BCI: 65.0 (Moderate Growth 🟡)"
+
 [node name="VSeparatorDefcon" type="VSeparator" parent="InterfaceLayer/TopBar/TopBarHBox"]
 layout_mode = 2
 
@@ -4290,6 +4322,17 @@ theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 9
 text = "Market Sentiment: Moderate Expansion"
 
+[node name="StockSectorsContainer" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="StockDriversLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 9
+text = "Key Market Drivers: Price stability, capital liquidity, private corporate confidence"
+autowrap_mode = 2
+
 [node name="ForexCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
@@ -4371,6 +4414,27 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 text = "📤 Sterilize R 10M to Reserves"
 
+[node name="ForexInterventionHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ForexCompetitivenessLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.85, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 9
+text = "Competitiveness: 1.00x | Import Impact: 1.00x"
+
+[node name="BtnDefendCurrency" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "🛡️ Defend Currency (-R 20M Res)"
+
+[node name="BtnBoostExports" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "🚢 Boost Exports (+R 25M Res)"
+
 [node name="BudgetCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
@@ -4437,6 +4501,33 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 text = "Science: R 250M"
 
+[node name="TradeTariffHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TradeBalanceDetailsLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Trade: Exp R 3,500M / Qtr | Imp R 2,800M / Qtr | Net: +R 700M Surplus"
+
+[node name="TariffRateLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 9
+text = "Tariff: 5.0%"
+
+[node name="BtnTariffCut" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "-2% Tariff"
+
+[node name="BtnTariffHike" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "+2% Tariff"
+
 [node name="BtnRebalanceBudget" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 9
@@ -4466,6 +4557,12 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 9
 text = "Debt Service: R 3.63M / Qtr"
+
+[node name="DebtSustainabilityLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 9
+text = "Sustainability: Sustainable (Low Risk) 🟢 (Debt/GDP: 2.5% | Svc/Rev: 0.2%)"
 
 [node name="DebtActionsHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox"]
 layout_mode = 2

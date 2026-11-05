@@ -746,6 +746,63 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("exchange_rate_usd")]
     public double ExchangeRateToUSD { get; init; } = 1.25;
 
+    [JsonPropertyName("stock_market_primary_drivers")]
+    public string StockMarketPrimaryDrivers { get; init; } = "Market trading in macroeconomic equilibrium.";
+
+    [JsonPropertyName("stock_market_sectors")]
+    public IReadOnlyList<StockMarketSectorSnapshot> StockMarketSectors { get; init; } = Array.Empty<StockMarketSectorSnapshot>();
+
+    [JsonPropertyName("forex_export_competitiveness")]
+    public string ForexExportCompetitiveness { get; init; } = "1.00x (Baseline parity)";
+
+    [JsonPropertyName("forex_import_cost_multiplier")]
+    public string ForexImportCostMultiplier { get; init; } = "1.00x (Baseline parity)";
+
+    [JsonPropertyName("forex_interventions_count")]
+    public int ForexInterventionsCount { get; init; }
+
+    [JsonPropertyName("quarterly_exports")]
+    public double QuarterlyExports { get; init; }
+
+    [JsonPropertyName("quarterly_exports_formatted")]
+    public string QuarterlyExportsFormatted { get; init; } = "R 0";
+
+    [JsonPropertyName("quarterly_imports")]
+    public double QuarterlyImports { get; init; }
+
+    [JsonPropertyName("quarterly_imports_formatted")]
+    public string QuarterlyImportsFormatted { get; init; } = "R 0";
+
+    [JsonPropertyName("net_trade_balance")]
+    public double NetTradeBalance { get; init; }
+
+    [JsonPropertyName("net_trade_balance_formatted")]
+    public string NetTradeBalanceFormatted { get; init; } = "R 0";
+
+    [JsonPropertyName("import_tariff_rate_formatted")]
+    public string ImportTariffRateFormatted { get; init; } = "5.0%";
+
+    [JsonPropertyName("debt_to_gdp_ratio_formatted")]
+    public string DebtToGdpRatioFormatted { get; init; } = "0.0%";
+
+    [JsonPropertyName("debt_service_to_revenue_ratio_formatted")]
+    public string DebtServiceToRevenueRatioFormatted { get; init; } = "0.0%";
+
+    [JsonPropertyName("debt_sustainability_status")]
+    public string DebtSustainabilityStatus { get; init; } = "Sustainable (Low Risk) 🟢";
+
+    [JsonPropertyName("debt_sustainability_summary")]
+    public string DebtSustainabilitySummary { get; init; } = string.Empty;
+
+    [JsonPropertyName("business_confidence_score")]
+    public double BusinessConfidenceScore { get; init; } = 65.0;
+
+    [JsonPropertyName("business_confidence_status")]
+    public string BusinessConfidenceStatus { get; init; } = "Moderate Growth 🟡";
+
+    [JsonPropertyName("business_confidence_summary")]
+    public string BusinessConfidenceSummary { get; init; } = string.Empty;
+
     [JsonPropertyName("bills")]
     public IReadOnlyList<CountryBillSnapshot> Bills { get; init; } = Array.Empty<CountryBillSnapshot>();
 
@@ -1730,6 +1787,29 @@ public sealed record PresidentialDeskSnapshot
             .Where(b => b.Status == Republic.Core.Economy.Businesses.Models.GlobalBusinessDecisionStatus.Accepted)
             .Sum(b => b.GdpContribution);
 
+        // Stock market sectors snapshot
+        var sectorSnapshots = (country.StockMarket?.Sectors ?? new List<Republic.Core.Economy.StockMarket.Models.StockMarketSector>()).Select(s => new StockMarketSectorSnapshot
+        {
+            SectorName = s.SectorName,
+            Icon = s.Icon,
+            CurrentPoints = s.CurrentPoints,
+            ChangePercent = s.ChangePercent,
+            Direction = s.Direction,
+            KeyDrivers = s.KeyDrivers,
+            RepresentativeCompanies = s.RepresentativeCompanies.Select(c => new ListedCompanySnapshot
+            {
+                Name = c.Name,
+                Ticker = c.Ticker,
+                MarketCapRepu = c.MarketCapRepu,
+                SharePriceRepu = c.SharePriceRepu,
+                ChangePercent = c.ChangePercent
+            }).ToList().AsReadOnly()
+        }).ToList();
+
+        var bci = country.BusinessConfidence ?? new Republic.Core.Economy.Confidence.Models.BusinessConfidenceRecord();
+        var debtRec = country.Debt ?? new Republic.Core.Economy.Debt.Models.NationalDebtRecord();
+        var cbRec = country.CentralBank ?? new Republic.Core.Economy.CentralBank.Models.CountryCentralBank();
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -1870,6 +1950,25 @@ public sealed record PresidentialDeskSnapshot
             StockMarketSentiment = country.StockMarket?.Sentiment ?? "Moderate Expansion",
             CurrencyRegime = country.CentralBank?.CurrencyRegime ?? "Sovereign Managed Float",
             ExchangeRateToUSD = country.CentralBank?.ExchangeRateToUSD ?? 1.25,
+            StockMarketPrimaryDrivers = country.StockMarket?.PrimaryDrivers ?? "Market trading in macroeconomic equilibrium.",
+            StockMarketSectors = sectorSnapshots.AsReadOnly(),
+            ForexExportCompetitiveness = $"{cbRec.ExportCompetitivenessMultiplier:0.00}x ({(cbRec.ExportCompetitivenessMultiplier >= 1.0 ? "Export Advantage" : "Export Drag")})",
+            ForexImportCostMultiplier = $"{cbRec.ImportCostMultiplier:0.00}x ({(cbRec.ImportCostMultiplier <= 1.0 ? "Import Discount" : "Import Inflation")})",
+            ForexInterventionsCount = cbRec.TotalInterventions,
+            QuarterlyExports = country.QuarterlyExports,
+            QuarterlyExportsFormatted = $"{RepuTreasury.Format(country.QuarterlyExports)} / Qtr",
+            QuarterlyImports = country.QuarterlyImports,
+            QuarterlyImportsFormatted = $"{RepuTreasury.Format(country.QuarterlyImports)} / Qtr",
+            NetTradeBalance = country.NetTradeBalance,
+            NetTradeBalanceFormatted = (country.NetTradeBalance >= 0 ? "+" : "") + $"{RepuTreasury.Format(country.NetTradeBalance)} {(country.NetTradeBalance >= 0 ? "Surplus" : "Deficit")}",
+            ImportTariffRateFormatted = $"{taxPolicy.ImportTariffRate * 100.0:0.0}%",
+            DebtToGdpRatioFormatted = $"{debtRec.DebtToGdpRatio:0.0}%",
+            DebtServiceToRevenueRatioFormatted = $"{debtRec.DebtServiceToRevenueRatio:0.0}%",
+            DebtSustainabilityStatus = debtRec.SustainabilityStatus,
+            DebtSustainabilitySummary = debtRec.SustainabilitySummary,
+            BusinessConfidenceScore = bci.Score,
+            BusinessConfidenceStatus = bci.Status,
+            BusinessConfidenceSummary = bci.Summary,
             Bills = billSnapshots.AsReadOnly(),
             PendingBill = pendingBillSnapshot,
             PlayerGender = playerGender,

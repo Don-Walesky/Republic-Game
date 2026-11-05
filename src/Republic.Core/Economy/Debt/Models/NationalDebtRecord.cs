@@ -1,5 +1,6 @@
 namespace Republic.Core.Economy.Debt.Models;
 
+using System;
 using System.Text.Json.Serialization;
 using Republic.Core.Economy.CentralBank.Models;
 using Republic.Core.Economy.Treasury;
@@ -28,6 +29,49 @@ public sealed class NationalDebtRecord
     [JsonPropertyName("quarterly_debt_service")]
     public double QuarterlyDebtService =>
         (DomesticDebt * (DomesticInterestRate / 4.0)) + (ExternalDebt * (ExternalInterestRate / 4.0));
+
+    [JsonPropertyName("debt_to_gdp_ratio")]
+    public double DebtToGdpRatio { get; set; } = 2.5;
+
+    [JsonPropertyName("debt_service_to_revenue_ratio")]
+    public double DebtServiceToRevenueRatio { get; set; } = 1.6;
+
+    [JsonPropertyName("sustainability_status")]
+    public string SustainabilityStatus { get; set; } = "Sustainable (Low Risk) 🟢";
+
+    [JsonPropertyName("sustainability_summary")]
+    public string SustainabilitySummary { get; set; } = "Debt stock is highly sustainable. Sovereign debt represents a modest fraction of GDP and quarterly service is well covered by tax revenues.";
+
+    /// <summary>
+    /// Evaluates sovereign debt sustainability based on national GDP and quarterly revenue.
+    /// Returns the updated sustainability status string.
+    /// </summary>
+    public string EvaluateSustainability(double gdp, double quarterlyRevenue)
+    {
+        double effectiveGdp = gdp > 0.0 ? gdp : 10_000_000_000.0;
+        double effectiveRev = quarterlyRevenue > 0.0 ? quarterlyRevenue : 200_000_000.0;
+
+        DebtToGdpRatio = Math.Round((TotalDebt / effectiveGdp) * 100.0, 2);
+        DebtServiceToRevenueRatio = Math.Round((QuarterlyDebtService / effectiveRev) * 100.0, 2);
+
+        if (DebtToGdpRatio > 70.0 || DebtServiceToRevenueRatio > 30.0)
+        {
+            SustainabilityStatus = "Critical Debt Distress (High Risk) 🔴";
+            SustainabilitySummary = $"High risk of sovereign default! Debt is {DebtToGdpRatio:0.1}% of GDP and service consumes {DebtServiceToRevenueRatio:0.1}% of revenue. Austerity or restructuring required.";
+        }
+        else if (DebtToGdpRatio > 40.0 || DebtServiceToRevenueRatio > 15.0)
+        {
+            SustainabilityStatus = "Moderate Pressure (Medium Risk) 🟡";
+            SustainabilitySummary = $"Moderate fiscal pressure. Sovereign debt is {DebtToGdpRatio:0.1}% of GDP with service absorbing {DebtServiceToRevenueRatio:0.1}% of quarterly revenue.";
+        }
+        else
+        {
+            SustainabilityStatus = "Sustainable (Low Risk) 🟢";
+            SustainabilitySummary = $"Sovereign borrowing is fully sustainable at {DebtToGdpRatio:0.1}% of GDP. Debt service requires only {DebtServiceToRevenueRatio:0.1}% of revenue.";
+        }
+
+        return SustainabilityStatus;
+    }
 
     /// <summary>
     /// Takes on additional sovereign borrowing.
@@ -102,4 +146,3 @@ public sealed class NationalDebtRecord
         return false;
     }
 }
-

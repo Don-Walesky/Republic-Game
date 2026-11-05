@@ -1,5 +1,6 @@
 namespace Republic.Core.Economy.CentralBank.Models;
 
+using System;
 using System.Text.Json.Serialization;
 using Republic.Core.Economy.Treasury;
 
@@ -36,6 +37,25 @@ public sealed class CountryCentralBank
     [JsonPropertyName("total_sterilizations")]
     public double TotalSterilizations { get; set; }
 
+    [JsonPropertyName("total_interventions")]
+    public int TotalInterventions { get; set; }
+
+    /// <summary>
+    /// Gets the export competitiveness multiplier derived from the prevailing exchange rate.
+    /// A weaker currency (higher REPU per USD) boosts foreign export demand.
+    /// </summary>
+    [JsonPropertyName("export_competitiveness_multiplier")]
+    public double ExportCompetitivenessMultiplier =>
+        Math.Round(Math.Clamp(1.0 + ((ExchangeRateToUSD - 1.25) * 0.50), 0.60, 1.80), 3);
+
+    /// <summary>
+    /// Gets the import cost inflation multiplier derived from the exchange rate.
+    /// A weaker currency increases the cost of imported raw materials and consumer goods.
+    /// </summary>
+    [JsonPropertyName("import_cost_multiplier")]
+    public double ImportCostMultiplier =>
+        Math.Round(Math.Clamp(1.0 + ((ExchangeRateToUSD - 1.25) * 0.35), 0.70, 1.60), 3);
+
     /// <summary>
     /// Sets the central bank benchmark interest rate, clamped between 0.5% and 25.0%.
     /// </summary>
@@ -51,6 +71,44 @@ public sealed class CountryCentralBank
     public double AdjustInterestRate(double delta)
     {
         return SetInterestRate(BenchmarkInterestRate + delta);
+    }
+
+    /// <summary>
+    /// Central bank intervenes in the foreign exchange market to defend/strengthen the sovereign currency.
+    /// Sells foreign reserves to absorb domestic currency, appreciating the exchange rate (lower REPU per USD)
+    /// and cooling imported inflation pressure.
+    /// </summary>
+    public bool InterveneDefendCurrency(double reserveAmount)
+    {
+        if (reserveAmount <= 0.0 || ForeignReserves < reserveAmount) return false;
+
+        ForeignReserves -= reserveAmount;
+        double appreciationDelta = (reserveAmount / 100_000_000.0) * 0.05;
+        ExchangeRateToUSD = Math.Max(0.75, Math.Round(ExchangeRateToUSD - appreciationDelta, 3));
+        TotalInterventions++;
+        return true;
+    }
+
+    /// <summary>
+    /// Central bank intervenes in the foreign exchange market to boost export competitiveness.
+    /// Sells domestic liquidity to purchase and accumulate foreign exchange reserves,
+    /// allowing the exchange rate to slightly devalue/depreciate to make national exports cheaper abroad.
+    /// </summary>
+    public bool InterveneBoostExports(double reserveAmount, RepuTreasury? treasury = null)
+    {
+        if (reserveAmount <= 0.0) return false;
+
+        if (treasury != null && treasury.Balance >= reserveAmount)
+        {
+            treasury.Withdraw(reserveAmount);
+        }
+
+        ForeignReserves += reserveAmount;
+        double depreciationDelta = (reserveAmount / 100_000_000.0) * 0.05;
+        ExchangeRateToUSD = Math.Min(2.50, Math.Round(ExchangeRateToUSD + depreciationDelta, 3));
+        TotalInterventions++;
+        CheckForexUnlock();
+        return true;
     }
 
     /// <summary>
@@ -117,4 +175,3 @@ public sealed class CountryCentralBank
         return true;
     }
 }
-

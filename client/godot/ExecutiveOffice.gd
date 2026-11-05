@@ -106,6 +106,8 @@ var active_nav_section: Section = Section.OVERVIEW
 @onready var corruption_delta: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox/CorruptionDelta") as PanelContainer
 @onready var corruption_delta_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption/CorruptionVBox/CorruptionHeaderHBox/CorruptionDelta/CorruptionDeltaLabel") as Label
 var previous_corruption_val: float = -1.0
+@onready var card_business_confidence: PanelContainer = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence") as PanelContainer
+@onready var business_confidence_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence/BusinessConfidenceVBox/BusinessConfidenceLabel") as Label
 @onready var yield_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardYield/YieldVBox/YieldLabel") as Label
 @onready var tax_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardTax/TaxVBox/TaxLabel") as Label
 @onready var capacity_label: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCapacity/CapacityVBox/CapacityLabel") as Label
@@ -503,6 +505,8 @@ var media_auto_publish_timer: Timer = null
 @onready var stock_market_direction_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockTitleHBox/StockMarketDirectionLabel") as Label
 @onready var stock_market_points_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDetailsHBox/StockMarketPointsLabel") as Label
 @onready var stock_market_sentiment_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDetailsHBox/StockMarketSentimentLabel") as Label
+@onready var stock_sectors_container: VBoxContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockSectorsContainer") as VBoxContainer
+@onready var stock_drivers_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDriversLabel") as Label
 
 @onready var foreign_reserves_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexHeaderHBox/ForeignReservesLabel") as Label
 @onready var forex_unlock_badge: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexHeaderHBox/ForexUnlockBadge") as Label
@@ -514,6 +518,10 @@ var media_auto_publish_timer: Timer = null
 @onready var btn_regime_floating: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/BtnRegimeFloating") as Button
 @onready var btn_inject_reserves: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox/BtnInjectReserves") as Button
 @onready var btn_sterilize_reserves: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox/BtnSterilizeReserves") as Button
+@onready var forex_intervention_hbox: HBoxContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox") as HBoxContainer
+@onready var forex_competitiveness_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox/ForexCompetitivenessLabel") as Label
+@onready var btn_defend_currency: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox/BtnDefendCurrency") as Button
+@onready var btn_boost_exports: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox/BtnBoostExports") as Button
 
 @onready var budget_revenue_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetRevenueLabel") as Label
 @onready var budget_expenditure_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetExpenditureLabel") as Label
@@ -524,9 +532,15 @@ var media_auto_publish_timer: Timer = null
 @onready var budget_infra_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetInfraLabel") as Label
 @onready var budget_science_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetScienceLabel") as Label
 @onready var btn_rebalance_budget: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BtnRebalanceBudget") as Button
+@onready var trade_tariff_hbox: HBoxContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox") as HBoxContainer
+@onready var trade_balance_details_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox/TradeBalanceDetailsLabel") as Label
+@onready var tariff_rate_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox/TariffRateLabel") as Label
+@onready var btn_tariff_cut: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox/BtnTariffCut") as Button
+@onready var btn_tariff_hike: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox/BtnTariffHike") as Button
 
 @onready var debt_total_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSummaryHBox/DebtTotalLabel") as Label
 @onready var debt_service_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSummaryHBox/DebtServiceLabel") as Label
+@onready var debt_sustainability_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSustainabilityLabel") as Label
 @onready var btn_take_domestic_loan: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnTakeDomesticLoan") as Button
 @onready var btn_take_external_loan: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnTakeExternalLoan") as Button
 @onready var btn_repay_debt: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnRepayDebt") as Button
@@ -1066,6 +1080,10 @@ func _init_controls() -> void:
 		card_approval = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardApproval") as PanelContainer
 	if card_stability == null:
 		card_stability = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardStability") as PanelContainer
+	if card_business_confidence == null:
+		card_business_confidence = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence") as PanelContainer
+	if business_confidence_label == null:
+		business_confidence_label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardBusinessConfidence/BusinessConfidenceVBox/BusinessConfidenceLabel") as Label
 	if card_corruption == null:
 		card_corruption = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/CardCorruption") as PanelContainer
 	if corruption_label == null:
@@ -1770,6 +1788,30 @@ func _init_controls() -> void:
 		btn_inject_reserves = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox/BtnInjectReserves") as Button
 	if btn_sterilize_reserves == null:
 		btn_sterilize_reserves = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox/BtnSterilizeReserves") as Button
+	if stock_sectors_container == null:
+		stock_sectors_container = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockSectorsContainer") as VBoxContainer
+	if stock_drivers_label == null:
+		stock_drivers_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDriversLabel") as Label
+	if forex_intervention_hbox == null:
+		forex_intervention_hbox = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox") as HBoxContainer
+	if forex_competitiveness_label == null:
+		forex_competitiveness_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox/ForexCompetitivenessLabel") as Label
+	if btn_defend_currency == null:
+		btn_defend_currency = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox/BtnDefendCurrency") as Button
+	if btn_boost_exports == null:
+		btn_boost_exports = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexInterventionHBox/BtnBoostExports") as Button
+	if trade_tariff_hbox == null:
+		trade_tariff_hbox = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox") as HBoxContainer
+	if trade_balance_details_label == null:
+		trade_balance_details_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox/TradeBalanceDetailsLabel") as Label
+	if tariff_rate_label == null:
+		tariff_rate_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox/TariffRateLabel") as Label
+	if btn_tariff_cut == null:
+		btn_tariff_cut = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox/BtnTariffCut") as Button
+	if btn_tariff_hike == null:
+		btn_tariff_hike = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/TradeTariffHBox/BtnTariffHike") as Button
+	if debt_sustainability_label == null:
+		debt_sustainability_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSustainabilityLabel") as Label
 	if budget_revenue_label == null:
 		budget_revenue_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetRevenueLabel") as Label
 	if budget_expenditure_label == null:
@@ -2209,6 +2251,14 @@ func _connect_signals() -> void:
 		btn_inject_reserves.pressed.connect(_on_inject_reserves_pressed)
 	if btn_sterilize_reserves and not btn_sterilize_reserves.pressed.is_connected(_on_sterilize_reserves_pressed):
 		btn_sterilize_reserves.pressed.connect(_on_sterilize_reserves_pressed)
+	if btn_defend_currency and not btn_defend_currency.pressed.is_connected(_on_defend_currency_pressed):
+		btn_defend_currency.pressed.connect(_on_defend_currency_pressed)
+	if btn_boost_exports and not btn_boost_exports.pressed.is_connected(_on_boost_exports_pressed):
+		btn_boost_exports.pressed.connect(_on_boost_exports_pressed)
+	if btn_tariff_cut and not btn_tariff_cut.pressed.is_connected(_on_tariff_cut_pressed):
+		btn_tariff_cut.pressed.connect(_on_tariff_cut_pressed)
+	if btn_tariff_hike and not btn_tariff_hike.pressed.is_connected(_on_tariff_hike_pressed):
+		btn_tariff_hike.pressed.connect(_on_tariff_hike_pressed)
 	if btn_rebalance_budget and not btn_rebalance_budget.pressed.is_connected(_on_rebalance_budget_pressed):
 		btn_rebalance_budget.pressed.connect(_on_rebalance_budget_pressed)
 	if btn_take_domestic_loan and not btn_take_domestic_loan.pressed.is_connected(_on_take_domestic_loan_pressed):
@@ -2389,6 +2439,8 @@ func display_missing_state() -> void:
 		stability_label.text = "Stability: [No State Loaded]"
 	if corruption_label:
 		corruption_label.text = "Corruption: [No State Loaded]"
+	if business_confidence_label:
+		business_confidence_label.text = "BCI: [No State Loaded]"
 	if defcon_label:
 		defcon_label.text = "Defense: [No State Loaded]"
 	if simulation_time_label:
@@ -2513,9 +2565,21 @@ func apply_state(state: Dictionary) -> void:
 				else:
 					corruption_delta_label.text = "%0.1f%%" % d
 					corruption_delta_label.set("theme_override_colors/font_color", Color(0.2, 0.85, 0.45))
+
 			else:
 				corruption_delta.visible = false
 			previous_corruption_val = corr_val
+
+	if business_confidence_label:
+		var bci_score: float = float(state.get("business_confidence_score", 65.0))
+		var bci_status: String = str(state.get("business_confidence_status", "Moderate Growth 🟡"))
+		business_confidence_label.text = "BCI: %0.1f (%s)" % [bci_score, bci_status]
+		if bci_score >= 70.0:
+			business_confidence_label.set("theme_override_colors/font_color", Color(0.2, 0.85, 0.45))
+		elif bci_score >= 50.0:
+			business_confidence_label.set("theme_override_colors/font_color", Color(0.95, 0.75, 0.2))
+		else:
+			business_confidence_label.set("theme_override_colors/font_color", Color(0.95, 0.3, 0.3))
 
 	if simulation_time_label:
 		var stime := str(state.get("simulation_time", "[No State Loaded]"))
@@ -3376,6 +3440,37 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 			stock_market_direction_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
 	if stock_market_sentiment_label:
 		stock_market_sentiment_label.text = "Sentiment: %s" % str(state.get("stock_market_sentiment", "Moderate Expansion"))
+	if stock_sectors_container:
+		for c in stock_sectors_container.get_children():
+			stock_sectors_container.remove_child(c)
+			c.queue_free()
+		var sectors: Array = state.get("stock_sectors", [])
+		if sectors is Array and not sectors.is_empty():
+			for sec in sectors:
+				if sec is Dictionary:
+					var s_label := Label.new()
+					var sec_name: String = str(sec.get("sector_name", "Sector"))
+					var sec_pts: float = float(sec.get("sector_points", 1000.0))
+					var sec_chg: float = float(sec.get("sector_change_pct", 0.0))
+					var sec_sent: String = str(sec.get("sector_sentiment", "Neutral"))
+					s_label.text = "• %s: %.1f pts (%+.1f%%) | %s" % [sec_name, sec_pts, sec_chg, sec_sent]
+					s_label.add_theme_font_size_override("font_size", 9)
+					if sec_chg > 0:
+						s_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5, 1.0))
+					elif sec_chg < 0:
+						s_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4, 1.0))
+					else:
+						s_label.add_theme_color_override("font_color", Color(0.75, 0.85, 0.95, 1.0))
+					stock_sectors_container.add_child(s_label)
+	if stock_drivers_label:
+		var drivers: Array = state.get("stock_market_drivers", [])
+		if drivers is Array and not drivers.is_empty():
+			var driver_strs: Array[String] = []
+			for d in drivers:
+				driver_strs.append(str(d))
+			stock_drivers_label.text = "Key Drivers: %s" % ", ".join(driver_strs)
+		else:
+			stock_drivers_label.text = "Key Drivers: Price stability, capital liquidity, private corporate confidence"
 
 	# 3. Foreign Exchange & Reserves
 	var f_reserves_fmt: String = str(state.get("foreign_reserves_formatted", ""))
@@ -3411,6 +3506,14 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 		btn_regime_pegged.disabled = not is_unlocked
 	if btn_regime_floating:
 		btn_regime_floating.disabled = not is_unlocked
+	if forex_competitiveness_label:
+		var comp_str: String = str(state.get("forex_export_competitiveness", "1.00x"))
+		var cost_str: String = str(state.get("forex_import_cost_multiplier", "1.00x"))
+		forex_competitiveness_label.text = "Competitiveness: %s | Import Impact: %s" % [comp_str, cost_str]
+	if btn_defend_currency:
+		btn_defend_currency.disabled = not is_unlocked
+	if btn_boost_exports:
+		btn_boost_exports.disabled = not is_unlocked
 
 	# 4. National Budget
 	if budget_revenue_label:
@@ -3435,6 +3538,13 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 		budget_infra_label.text = "Infra: R %.0fM" % (float(state.get("budget_infrastructure_allocation", 600000000.0)) / 1000000.0)
 	if budget_science_label:
 		budget_science_label.text = "Science: R %.0fM" % (float(state.get("budget_science_allocation", 250000000.0)) / 1000000.0)
+	if trade_balance_details_label:
+		var exp_str: String = str(state.get("quarterly_exports_formatted", "R 3,500M / Qtr"))
+		var imp_str: String = str(state.get("quarterly_imports_formatted", "R 2,800M / Qtr"))
+		var net_str: String = str(state.get("net_trade_balance_formatted", "+R 700M Surplus"))
+		trade_balance_details_label.text = "Trade: Exp %s | Imp %s | Net: %s" % [exp_str, imp_str, net_str]
+	if tariff_rate_label:
+		tariff_rate_label.text = "Tariff: %s" % str(state.get("import_tariff_rate_formatted", "5.0%"))
 
 	# 5. Sovereign Debt & Loans
 	if debt_total_label:
@@ -3444,6 +3554,17 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 		debt_total_label.text = "Total Debt: %s (Dom: R %.0fM | Ext: R %.0fM)" % [tot_fmt, dom_val, ext_val]
 	if debt_service_label:
 		debt_service_label.text = "Debt Service: %s" % str(state.get("debt_service_quarterly_formatted", "R 3.63M / Qtr"))
+	if debt_sustainability_label:
+		var s_status: String = str(state.get("debt_sustainability_status", "Sustainable 🟢"))
+		var gdp_ratio: String = str(state.get("debt_to_gdp_ratio_formatted", "2.5%"))
+		var svc_ratio: String = str(state.get("debt_service_to_revenue_ratio_formatted", "0.2%"))
+		debt_sustainability_label.text = "Sustainability: %s (Debt/GDP: %s | Svc/Rev: %s)" % [s_status, gdp_ratio, svc_ratio]
+		if "Sustainable" in s_status:
+			debt_sustainability_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5, 1.0))
+		elif "Critical" in s_status:
+			debt_sustainability_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4, 1.0))
+		else:
+			debt_sustainability_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.35, 1.0))
 
 	# 6. Global Businesses & Inbound Industrialists
 	var op_count: int = int(state.get("operating_businesses_count", 0))
@@ -8211,3 +8332,48 @@ func execute_investment_decision(proposal_id: String, decision: String, confirme
 
 
 
+
+
+func _on_defend_currency_pressed() -> void:
+	var req_id := "req_forex_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "forex_intervention",
+		"intervention_type": "defend",
+		"amount": 20000000.0,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Central Bank: Currency defended via foreign reserve market operations."
+
+func _on_boost_exports_pressed() -> void:
+	var req_id := "req_forex_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "forex_intervention",
+		"intervention_type": "boost_exports",
+		"amount": 25000000.0,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Central Bank: Export competitiveness bolstered through foreign reserve accumulation."
+
+func _on_tariff_cut_pressed() -> void:
+	_on_tariff_adjust_pressed(-2.0)
+
+func _on_tariff_hike_pressed() -> void:
+	_on_tariff_adjust_pressed(2.0)
+
+func _on_tariff_adjust_pressed(delta_pct: float) -> void:
+	var current_tariff_fmt: String = str(latest_state.get("import_tariff_rate_formatted", "5.0%"))
+	var current_tariff: float = float(current_tariff_fmt.replace("%", "").strip_edges())
+	var new_tariff: float = clampf(current_tariff + delta_pct, 0.0, 50.0)
+	var req_id := "req_tariff_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "trade_tariff",
+		"tariff_percent": new_tariff,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Trade Policy: Sovereign import tariff adjusted to %.1f%%." % new_tariff

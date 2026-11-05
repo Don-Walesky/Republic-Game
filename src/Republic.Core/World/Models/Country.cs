@@ -7,6 +7,7 @@ using Republic.Core.Economy.CentralBank.Models;
 using Republic.Core.Economy.Debt.Models;
 using Republic.Core.Economy.StockMarket.Models;
 using Republic.Core.Economy.Businesses.Models;
+using Republic.Core.Economy.Confidence.Models;
 using Republic.Core.Economy.PrivateSector.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
@@ -168,6 +169,26 @@ public sealed class Country
     public double TradeBalance { get; set; } = 2_100_000_000.0;
 
     /// <summary>
+    /// Gets or sets the estimated quarterly export volume in REPU.
+    /// </summary>
+    public double QuarterlyExports { get; set; } = 3_200_000_000.0;
+
+    /// <summary>
+    /// Gets or sets the estimated quarterly import volume in REPU.
+    /// </summary>
+    public double QuarterlyImports { get; set; } = 2_675_000_000.0;
+
+    /// <summary>
+    /// Gets the net quarterly trade balance in REPU (QuarterlyExports - QuarterlyImports).
+    /// </summary>
+    public double NetTradeBalance => QuarterlyExports - QuarterlyImports;
+
+    /// <summary>
+    /// Gets or sets the national Business Confidence Index (BCI) tracking private enterprise optimism and capital deployment.
+    /// </summary>
+    public BusinessConfidenceRecord BusinessConfidence { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets the sovereign headline inflation rate percentage (0.0 to 50.0%).
     /// Baseline default is 3.5%.
     /// Rises with fiscal deficits, low central bank interest rates, high borrowing, and low reserves.
@@ -227,50 +248,81 @@ public sealed class Country
     /// Evaluates and advances the domestic macroeconomic cycle:
     /// Taxation → Inflation → Budget → Loans → Trade → Stock Market → Forex.
     /// </summary>
+    /// <summary>
+    /// Adjusts the sovereign import tariff rate (clamped between 1.0% and 40.0%) and advances the macroeconomic cycle.
+    /// </summary>
+    public double ApplyTradeTariff(double newTariffRate, RepublicTime simTime)
+    {
+        double clamped = Math.Clamp(Math.Round(newTariffRate, 3), 0.01, 0.40);
+        TaxPolicy.ImportTariffRate = clamped;
+        UpdateEconomicCycle(simTime);
+        return TaxPolicy.ImportTariffRate;
+    }
+
     public double UpdateEconomicCycle(RepublicTime simTime)
     {
         double gdp = GrossDomesticProduct > 0.0 ? GrossDomesticProduct : 450_000_000_000.0;
 
-        // 1. Calculate Quarterly Fiscal Estimates
+        // 1. Calculate Trade Volumes & Currency Competitiveness
+        double globalBizExportBoost = GlobalBusinesses?
+            .Where(b => b.Status == GlobalBusinessDecisionStatus.Accepted)
+            .Sum(b => b.QuarterlyExportContribution) ?? 0.0;
+
+        // Exports benefit from exchange rate competitiveness and global business export commitments
+        QuarterlyExports = ((gdp * 0.035) + globalBizExportBoost) * CentralBank.ExportCompetitivenessMultiplier;
+
+        // Imports are moderated by tariffs and exchange rate import costs
+        double tariffProtectionEffect = Math.Clamp(1.0 - (TaxPolicy.ImportTariffRate * 0.75), 0.50, 1.0);
+        QuarterlyImports = (gdp * 0.028) * CentralBank.ImportCostMultiplier * tariffProtectionEffect;
+
+        // Annualized trade balance:
+        TradeBalance = (QuarterlyExports - QuarterlyImports) * 4.0;
+
+        // 2. Direct Link from Trade Surplus/Deficit to Foreign Reserves (settled on quarterly cadence via SettleQuarterlyTradeBalance)
+        double netQuarterlyTrade = QuarterlyExports - QuarterlyImports;
+
+        // 3. Calculate Quarterly Fiscal Estimates
         double businessTaxContribution = GlobalBusinesses?
             .Where(b => b.Status == GlobalBusinessDecisionStatus.Accepted)
             .Sum(b => b.QuarterlyTaxContribution) ?? 0.0;
 
+        double tariffRevenue = QuarterlyImports * TaxPolicy.ImportTariffRate;
+
         double estQuarterlyTaxRev = (gdp * 0.15 * TaxPolicy.IncomeTaxRate) +
                                     (gdp * 0.10 * TaxPolicy.CorporateTaxRate) +
-                                    (Math.Max(0.0, TradeBalance) * TaxPolicy.ImportTariffRate) +
+                                    tariffRevenue +
                                     businessTaxContribution;
 
         double estQuarterlyExp = MinistryBudget.TotalQuarterlyExpenditures + Debt.QuarterlyDebtService;
         double fiscalBalance = estQuarterlyTaxRev - estQuarterlyExp;
 
-        // 2. Synthesize Inflation Pressure
-        // Baseline 3.5%
+        // 4. Synthesize Inflation Pressure
         double baseInflation = 3.5;
-
-        // A. Tax Policy demand-pull impact:
         double taxInflationImpact = -(TaxPolicy.IncomeTaxRate - 0.25) * 6.0;
-
-        // B. Central Bank Interest Rate impact:
         double rateInflationImpact = -(CentralBank.BenchmarkInterestRate - 4.5) * 0.50;
-
-        // C. Fiscal Deficit / Spending impact:
         double deficitInflationImpact = fiscalBalance < 0.0
             ? Math.Min(4.0, (Math.Abs(fiscalBalance) / 200_000_000.0) * 0.3)
             : -Math.Min(1.5, (fiscalBalance / 200_000_000.0) * 0.15);
-
-        // D. Debt impact:
         double debtInflationImpact = Math.Min(3.0, (Debt.TotalDebt / 100_000_000.0) * 0.15);
-
-        // E. Foreign Reserves shielding:
         double reserveInflationImpact = CentralBank.ForeignReserves < 30_000_000.0
             ? 0.8
             : (CentralBank.ForeignReserves >= 100_000_000.0 ? -0.5 : 0.0);
+        double tariffInflationImpact = (TaxPolicy.ImportTariffRate - 0.05) * 4.0;
+        double importedCostInflation = (CentralBank.ImportCostMultiplier - 1.0) * 2.5;
 
-        double rawInflation = baseInflation + taxInflationImpact + rateInflationImpact + deficitInflationImpact + debtInflationImpact + reserveInflationImpact;
+        double rawInflation = baseInflation + taxInflationImpact + rateInflationImpact +
+                              deficitInflationImpact + debtInflationImpact + reserveInflationImpact +
+                              tariffInflationImpact + importedCostInflation;
         InflationRate = Math.Clamp(Math.Round(rawInflation, 1), 0.5, 35.0);
 
-        // 3. Approval drag from elevated inflation
+        // 5. Debt Sustainability Evaluation
+        Debt.EvaluateSustainability(gdp, estQuarterlyTaxRev);
+        if (Debt.SustainabilityStatus.Contains("Critical", StringComparison.OrdinalIgnoreCase))
+        {
+            HappinessRating = Math.Clamp(HappinessRating - 0.5, 5.0, 100.0);
+        }
+
+        // 6. Approval drag from elevated inflation
         if (InflationRate > 5.0)
         {
             double excess = InflationRate - 5.0;
@@ -278,10 +330,34 @@ public sealed class Country
             HappinessRating = Math.Clamp(HappinessRating - drag, 5.0, 100.0);
         }
 
-        // 4. Update Stock Market Index based on new macroeconomic indicators
-        StockMarket.UpdateIndex(BaselineStability, InflationRate, CorruptionIndex, TaxPolicy.CorporateTaxRate, CentralBank.BenchmarkInterestRate);
+        // 7. Business Confidence Index Update
+        int acceptedCount = GlobalBusinesses?.Count(b => b.Status == GlobalBusinessDecisionStatus.Accepted) ?? 0;
+        BusinessConfidence.UpdateConfidence(
+            BaselineStability,
+            InflationRate,
+            CorruptionIndex,
+            TaxPolicy.CorporateTaxRate,
+            CentralBank.BenchmarkInterestRate,
+            acceptedCount,
+            TaxPolicy.ImportTariffRate);
 
-        // 5. Check Forex Unlock Threshold (150 Million REPU)
+        // 8. Update Expanded Stock Market & Industry Sectors
+        var acceptedIndustries = GlobalBusinesses?
+            .Where(b => b.Status == GlobalBusinessDecisionStatus.Accepted)
+            .Select(b => b.Industry)
+            .ToList() ?? new List<string>();
+
+        StockMarket.UpdateIndex(
+            BaselineStability,
+            InflationRate,
+            CorruptionIndex,
+            TaxPolicy.CorporateTaxRate,
+            CentralBank.BenchmarkInterestRate,
+            CentralBank.ExchangeRateToUSD,
+            TaxPolicy.ImportTariffRate,
+            acceptedIndustries);
+
+        // 9. Check Forex Unlock Threshold (150 Million REPU)
         bool wasUnlocked = CentralBank.ForexUnlocked;
         bool isUnlockedNow = CentralBank.CheckForexUnlock();
         if (!wasUnlocked && isUnlockedNow)
@@ -3183,6 +3259,31 @@ public sealed class Country
     /// </summary>
     /// <param name="report">The evaluated fiscal quarter report.</param>
     /// <returns>The confirmed fiscal quarter report reflecting the updated sovereign treasury balance.</returns>
+
+    /// <summary>
+    /// Settles the net quarterly trade balance into the sovereign foreign reserves.
+    /// Trade surpluses direct foreign exchange receipts into Central Bank reserves (capped at R 35M / qtr).
+    /// Trade deficits draw down reserves to settle foreign vendor payment balances (capped at R 25M / qtr).
+    /// </summary>
+    public double SettleQuarterlyTradeBalance()
+    {
+        double netQuarterlyTrade = QuarterlyExports - QuarterlyImports;
+        if (netQuarterlyTrade > 0.0)
+        {
+            double reserveSurplusInflow = Math.Min(35_000_000.0, netQuarterlyTrade * 0.20);
+            CentralBank.DepositForeignReserves(reserveSurplusInflow);
+            return reserveSurplusInflow;
+        }
+        else if (netQuarterlyTrade < 0.0)
+        {
+            double reserveDeficitDrain = Math.Min(25_000_000.0, Math.Abs(netQuarterlyTrade) * 0.20);
+            CentralBank.WithdrawForeignReserves(reserveDeficitDrain);
+            return -reserveDeficitDrain;
+        }
+
+        return 0.0;
+    }
+
     public FiscalQuarterReport ApplyFiscalQuarter(FiscalQuarterReport report)
     {
         ArgumentNullException.ThrowIfNull(report);
@@ -3230,6 +3331,9 @@ public sealed class Country
 
         Treasury.RecordSnapshotApplied(transactionKey);
         LastProcessedFiscalQuarter = report.QuarterIndex;
+
+        // Settle quarterly trade balance into Central Bank foreign reserves
+        SettleQuarterlyTradeBalance();
 
         var finalReport = new FiscalQuarterReport
         {
