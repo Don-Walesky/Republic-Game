@@ -30,7 +30,8 @@ public interface IPlayerIdentityService
         string email,
         DateOnly dateOfBirth,
         DateOnly? referenceDate = null,
-        string? customAccountId = null);
+        string? customAccountId = null,
+        string gender = "Female");
 
     /// <summary>
     /// Verifies the player's email address using a verification token.

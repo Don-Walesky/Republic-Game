@@ -588,6 +588,33 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("pending_bill")]
     public CountryBillSnapshot? PendingBill { get; init; }
 
+    [JsonPropertyName("player_gender")]
+    public string PlayerGender { get; init; } = "Female";
+
+    [JsonPropertyName("player_title")]
+    public string PlayerTitle { get; init; } = "Madam President";
+
+    [JsonPropertyName("player_avatar")]
+    public string PlayerAvatar { get; init; } = "👩‍💼";
+
+    [JsonPropertyName("legislature_seats_ruling")]
+    public int LegislatureSeatsRuling { get; init; } = 48;
+
+    [JsonPropertyName("legislature_seats_opposition")]
+    public int LegislatureSeatsOpposition { get; init; } = 42;
+
+    [JsonPropertyName("legislature_seats_independent")]
+    public int LegislatureSeatsIndependent { get; init; } = 10;
+
+    [JsonPropertyName("legislature_chamber_status")]
+    public string LegislatureChamberStatus { get; init; } = "Hung Parliament / Minority";
+
+    [JsonPropertyName("legislature_has_majority")]
+    public bool LegislatureHasMajority { get; init; }
+
+    [JsonPropertyName("lawmakers")]
+    public IReadOnlyList<LawmakerSnapshot> Lawmakers { get; init; } = Array.Empty<LawmakerSnapshot>();
+
     [JsonPropertyName("military_personnel")]
     public int MilitaryPersonnel { get; init; }
 
@@ -797,6 +824,9 @@ public sealed record PresidentialDeskSnapshot
         bool isEmailVerified = true;
 
         string playerDisplayName = string.Empty;
+        string playerGender = "Female";
+        string playerTitle = "Madam President";
+        string playerAvatar = "👩‍💼";
         string verificationToken = string.Empty;
         var selectedLeadership = new List<string>();
         string leadershipDoctrine = string.Empty;
@@ -833,6 +863,13 @@ public sealed record PresidentialDeskSnapshot
 
 
                         playerDisplayName = envelope.State.Account.GetPublicIdentity();
+                        if (envelope.State.Account.PersonalIdentity != null)
+                        {
+                            var pi = envelope.State.Account.PersonalIdentity;
+                            if (!string.IsNullOrWhiteSpace(pi.Gender)) playerGender = pi.Gender;
+                            if (!string.IsNullOrWhiteSpace(pi.HonorificTitle)) playerTitle = pi.HonorificTitle;
+                            if (!string.IsNullOrWhiteSpace(pi.AvatarSymbol)) playerAvatar = pi.AvatarSymbol;
+                        }
 
                         if (envelope.State.Account.SelectedLeadershipArchetypes != null && envelope.State.Account.SelectedLeadershipArchetypes.Count > 0)
                         {
@@ -929,8 +966,8 @@ public sealed record PresidentialDeskSnapshot
         var corrControl = country.StateCapacity?.CorruptionControl ?? 0.3;
         var infraCondition = country.StateCapacity?.InfrastructureCondition ?? 0.3;
         var corruptionIndex = country.CorruptionIndex;
-        var formattedCorruption = $"{corruptionIndex:0.1}%";
-        var stateCapacitySummary = $"Civil Service: {civilQuality * 100:0.#}% | Corruption: {corruptionIndex:0.1}% (Control: {corrControl * 100:0.#}%) | Infrastructure: {infraCondition * 100:0.#}%";
+        var formattedCorruption = $"{corruptionIndex:0.0}%";
+        var stateCapacitySummary = $"Civil Service: {civilQuality * 100:0.#}% | Corruption: {corruptionIndex:0.0}% (Control: {corrControl * 100:0.#}%) | Infrastructure: {infraCondition * 100:0.#}%";
 
         var cabinetList = new List<CabinetMinisterSnapshot>();
         foreach (var p in Enum.GetValues<CabinetPortfolio>())
@@ -1366,6 +1403,24 @@ public sealed record PresidentialDeskSnapshot
         var activeOpsCount = intelOpSnapshots.Count(o => o.Status is "Preparing" or "InProgress");
         var intelSummaryText = $"Intelligence: Level {country.MilitaryLevel} Armed Forces | {activeOpsCount} Active Operations | {dossierSnapshots.Count} Acquired Dossiers";
 
+        // Legislature chamber & lawmakers integration
+        var chamber = country.Legislature ?? new Republic.Core.Legislature.Models.ParliamentaryChamber();
+        chamber.InitializeDefaultLawmakers();
+
+        var lawmakerSnapshots = chamber.Lawmakers.Select(l => new LawmakerSnapshot
+        {
+            Id = l.Id,
+            Name = l.Name,
+            Constituency = l.Constituency,
+            OriginalParty = l.OriginalParty,
+            CurrentParty = l.CurrentParty,
+            SeatWeight = l.SeatWeight,
+            Stance = l.Stance,
+            Loyalty = l.LoyaltyToOriginal,
+            HasDefected = l.HasDefectedToRulingParty,
+            DefectionIncentive = l.DefectionIncentive
+        }).ToList();
+
         // Bills and legislative integration
         var billSnapshots = country.Bills.Select(b => new CountryBillSnapshot
         {
@@ -1557,6 +1612,15 @@ public sealed record PresidentialDeskSnapshot
             CentralBankForeignReserves = country.Treasury.Balance * 0.45,
             Bills = billSnapshots.AsReadOnly(),
             PendingBill = pendingBillSnapshot,
+            PlayerGender = playerGender,
+            PlayerTitle = playerTitle,
+            PlayerAvatar = playerAvatar,
+            LegislatureSeatsRuling = chamber.RulingPartySeats,
+            LegislatureSeatsOpposition = chamber.OppositionSeats,
+            LegislatureSeatsIndependent = chamber.IndependentSeats,
+            LegislatureChamberStatus = chamber.ChamberStatus,
+            LegislatureHasMajority = chamber.HasWorkingMajority,
+            Lawmakers = lawmakerSnapshots.AsReadOnly(),
             MilitaryPersonnel = country.MilitaryLevel * 2500,
             MilitaryWeaponsInventory = country.MilitaryLevel * 85,
             MilitaryCompositeReadiness = secAssessment.CompositeReadiness,

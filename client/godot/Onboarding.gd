@@ -40,6 +40,9 @@ var registered_first_name: String = ""
 var registered_last_name: String = ""
 var registered_email: String = ""
 var registered_dob: String = ""
+var selected_gender: String = ""
+var selected_title: String = ""
+var selected_avatar: String = ""
 var verification_token: String = ""
 var verification_email_data: Dictionary = {}
 var created_country_data: Dictionary = {}
@@ -84,6 +87,8 @@ var resend_cooldown_timer: float = 0.0
 @onready var spin_dob_year: SpinBox = $PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/YearSpin
 @onready var spin_dob_month: SpinBox = $PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/MonthSpin
 @onready var spin_dob_day: SpinBox = $PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/DaySpin
+@onready var btn_gender_female: Button = $PanelContainer/VBox/ScreenRegister/Form/HBoxGender/BtnGenderFemale
+@onready var btn_gender_male: Button = $PanelContainer/VBox/ScreenRegister/Form/HBoxGender/BtnGenderMale
 @onready var btn_register: Button = $PanelContainer/VBox/ScreenRegister/BtnRegister
 @onready var lbl_register_feedback: Label = $PanelContainer/VBox/ScreenRegister/LblFeedback
 
@@ -282,6 +287,8 @@ func _init_controls() -> void:
 	if spin_dob_year == null: spin_dob_year = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/YearSpin")
 	if spin_dob_month == null: spin_dob_month = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/MonthSpin")
 	if spin_dob_day == null: spin_dob_day = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/HBoxDOB/DaySpin")
+	if btn_gender_female == null: btn_gender_female = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/HBoxGender/BtnGenderFemale")
+	if btn_gender_male == null: btn_gender_male = get_node_or_null("PanelContainer/VBox/ScreenRegister/Form/HBoxGender/BtnGenderMale")
 	if btn_register == null: btn_register = get_node_or_null("PanelContainer/VBox/ScreenRegister/BtnRegister")
 	if lbl_register_feedback == null: lbl_register_feedback = get_node_or_null("PanelContainer/VBox/ScreenRegister/LblFeedback")
 
@@ -457,6 +464,10 @@ func _connect_signals() -> void:
 		btn_submit_login.pressed.connect(_on_submit_login_pressed)
 	if btn_campaign_signout and not btn_campaign_signout.pressed.is_connected(_on_campaign_signout_pressed):
 		btn_campaign_signout.pressed.connect(_on_campaign_signout_pressed)
+	if btn_gender_female and not btn_gender_female.pressed.is_connected(_on_gender_female_pressed):
+		btn_gender_female.pressed.connect(_on_gender_female_pressed)
+	if btn_gender_male and not btn_gender_male.pressed.is_connected(_on_gender_male_pressed):
+		btn_gender_male.pressed.connect(_on_gender_male_pressed)
 	if btn_register and not btn_register.pressed.is_connected(_on_register_pressed):
 		btn_register.pressed.connect(_on_register_pressed)
 	if btn_verify_email_action and not btn_verify_email_action.pressed.is_connected(_on_verify_action_pressed):
@@ -769,6 +780,31 @@ func _update_session_mode_buttons(is_new_mode: bool) -> void:
 # ==============================================================================
 # Step 1: Account Registration
 # ==============================================================================
+
+func _on_gender_female_pressed() -> void:
+	selected_gender = "Female"
+	selected_title = "Madam President"
+	selected_avatar = "👩‍💼"
+	_update_gender_button_styles()
+
+func _on_gender_male_pressed() -> void:
+	selected_gender = "Male"
+	selected_title = "Mr. President"
+	selected_avatar = "👨‍💼"
+	_update_gender_button_styles()
+
+func _update_gender_button_styles() -> void:
+	if btn_gender_female:
+		if selected_gender == "Female":
+			btn_gender_female.modulate = Color(1.0, 0.9, 0.4)
+		else:
+			btn_gender_female.modulate = Color(0.7, 0.7, 0.7)
+	if btn_gender_male:
+		if selected_gender == "Male":
+			btn_gender_male.modulate = Color(1.0, 0.9, 0.4)
+		else:
+			btn_gender_male.modulate = Color(0.7, 0.7, 0.7)
+
 func _on_register_pressed() -> void:
 	if is_processing: return
 	if lbl_register_feedback: lbl_register_feedback.text = ""
@@ -798,6 +834,10 @@ func _on_register_pressed() -> void:
 		_display_register_error("Candidates must be at least 13 years of age to register (age: %d)." % [age])
 		return
 
+	if selected_gender.is_empty():
+		_display_register_error("Please confirm executive candidate gender (Madam President or Mr. President).")
+		return
+
 	is_processing = true
 	if btn_register: btn_register.disabled = true
 	if lbl_register_feedback: lbl_register_feedback.text = "Registering account with Sovereign Electoral Registry..."
@@ -807,6 +847,9 @@ func _on_register_pressed() -> void:
 		"first_name": first_name,
 		"last_name": last_name,
 		"email": email,
+		"gender": selected_gender,
+		"title": selected_title,
+		"avatar": selected_avatar,
 		"date_of_birth": dob_str,
 		"request_id": "onboarding_reg_" + str(Time.get_unix_time_from_system())
 	}

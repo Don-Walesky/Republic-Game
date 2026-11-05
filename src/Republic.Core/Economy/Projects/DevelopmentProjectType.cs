@@ -34,5 +34,40 @@ public enum DevelopmentProjectType
     /// <summary>
     /// National mineral extraction and mining facility.
     /// </summary>
-    Mine = 5
+    Mine = 5,
+
+    /// <summary>
+    /// National high-speed rail corridor and inter-city passenger transit network.
+    /// </summary>
+    HighSpeedRail = 6,
+
+    /// <summary>
+    /// Deepwater maritime seaport logistics hub and international container terminal.
+    /// </summary>
+    DeepwaterPort = 7,
+
+    /// <summary>
+    /// Clean solar and wind energy mega-grid facility.
+    /// </summary>
+    RenewableEnergy = 8,
+
+    /// <summary>
+    /// National teaching hospital and advanced medical healthcare center.
+    /// </summary>
+    TeachingHospital = 9,
+
+    /// <summary>
+    /// Special economic and industrial export processing zone.
+    /// </summary>
+    SpecialEconomicZone = 10,
+
+    /// <summary>
+    /// Sovereign AI and high-performance supercomputing data center.
+    /// </summary>
+    SupercomputingCenter = 11,
+
+    /// <summary>
+    /// Agro-industrial irrigation mega-dam and national food security reservoir.
+    /// </summary>
+    IrrigationDam = 12
 }

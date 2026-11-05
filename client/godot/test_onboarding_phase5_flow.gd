@@ -70,6 +70,9 @@ func _run_tests() -> void:
 	onboarding.spin_dob_year.value = 1991
 	onboarding.spin_dob_month.value = 3
 	onboarding.spin_dob_day.value = 20
+	onboarding.selected_gender = "Female"
+	onboarding.selected_title = "Madam President"
+	onboarding.selected_avatar = "👩‍💼"
 	onboarding._on_register_pressed()
 
 	if onboarding.current_stage != OnboardingScript.ScreenStage.VERIFY_EMAIL:

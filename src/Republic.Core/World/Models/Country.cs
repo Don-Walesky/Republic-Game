@@ -631,6 +631,11 @@ public sealed class Country
         return group != null;
     }
 
+    /// <summary>
+    /// Gets or sets the sovereign parliamentary chamber (100-seat National Assembly).
+    /// </summary>
+    public Republic.Core.Legislature.Models.ParliamentaryChamber Legislature { get; set; } = new();
+
     private readonly List<CountryBill> _bills = new();
 
     /// <summary>
@@ -2705,6 +2710,55 @@ public sealed class Country
     {
         ArgumentNullException.ThrowIfNull(clock);
         return StartMineProject(clock.CurrentTime, cost);
+    }
+
+    public NationalHighSpeedRailProject? StartHighSpeedRailProject(RepublicTime startedBoundary, double cost = NationalHighSpeedRailProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return null;
+        var project = new NationalHighSpeedRailProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    public NationalDeepwaterPortProject? StartDeepwaterPortProject(RepublicTime startedBoundary, double cost = NationalDeepwaterPortProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return null;
+        var project = new NationalDeepwaterPortProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    public NationalRenewableEnergyProject? StartRenewableEnergyProject(RepublicTime startedBoundary, double cost = NationalRenewableEnergyProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return null;
+        var project = new NationalRenewableEnergyProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    public NationalHospitalProject? StartHospitalProject(RepublicTime startedBoundary, double cost = NationalHospitalProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return null;
+        var project = new NationalHospitalProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    public NationalEconomicZoneProject? StartEconomicZoneProject(RepublicTime startedBoundary, double cost = NationalEconomicZoneProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return null;
+        var project = new NationalEconomicZoneProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    public NationalSupercomputerProject? StartSupercomputerProject(RepublicTime startedBoundary, double cost = NationalSupercomputerProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return null;
+        var project = new NationalSupercomputerProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    public NationalIrrigationDamProject? StartIrrigationDamProject(RepublicTime startedBoundary, double cost = NationalIrrigationDamProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return null;
+        var project = new NationalIrrigationDamProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
     }
 
     /// <summary>

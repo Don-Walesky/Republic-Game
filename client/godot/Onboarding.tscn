@@ -164,6 +164,26 @@ min_value = 1.0
 max_value = 31.0
 value = 15.0
 
+[node name="LblGender" type="Label" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+text = "Executive Candidate Gender & Honorific (Required):"
+
+[node name="HBoxGender" type="HBoxContainer" parent="PanelContainer/VBox/ScreenRegister/Form"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnGenderFemale" type="Button" parent="PanelContainer/VBox/ScreenRegister/Form/HBoxGender"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "👩‍💼 Female (Madam President)"
+
+[node name="BtnGenderMale" type="Button" parent="PanelContainer/VBox/ScreenRegister/Form/HBoxGender"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 38)
+text = "👨‍💼 Male (Mr. President)"
+
 [node name="BtnRegister" type="Button" parent="PanelContainer/VBox/ScreenRegister"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 42)

@@ -460,6 +460,21 @@ var media_auto_publish_timer: Timer = null
 @onready var start_university_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectUniversity/UniHBox/StartUniversityButton") as Button
 @onready var start_refinery_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox/StartRefineryButton") as Button
 @onready var start_mine_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox/StartMineButton") as Button
+@onready var start_rail_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRail/RailHBox/StartRailButton") as Button
+@onready var start_port_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectPort/PortHBox/StartPortButton") as Button
+@onready var start_renewable_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRenewable/RenewableHBox/StartRenewableButton") as Button
+@onready var start_hospital_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectHospital/HospHBox/StartHospitalButton") as Button
+@onready var start_sez_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSEZ/SEZHBox/StartSEZButton") as Button
+@onready var start_supercomputer_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSupercomputer/SCHBox/StartSupercomputerButton") as Button
+@onready var start_dam_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectDam/DamHBox/StartDamButton") as Button
+
+@onready var ruling_seats_badge: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox/RulingSeatsBadge") as Label
+@onready var opposition_seats_badge: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox/OppositionSeatsBadge") as Label
+@onready var independent_seats_badge: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox/IndependentSeatsBadge") as Label
+@onready var chamber_status_badge: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberStatusBadge") as Label
+@onready var lawmakers_vbox: VBoxContainer = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/LawmakersScroll/LawmakersVBox") as VBoxContainer
+@onready var top_president_avatar: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentAvatar") as Label
+@onready var top_president_role: Label = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox/PresidentRoleLabel") as Label
 @onready var dev_status_label: Label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevStatusLabel") as Label
 
 @onready var policy_modal: PanelContainer = _get_node_safe("InterfaceLayer/PolicyModal") as PanelContainer
@@ -1598,6 +1613,34 @@ func _init_controls() -> void:
 		start_refinery_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRefinery/RefHBox/StartRefineryButton") as Button
 	if start_mine_button == null:
 		start_mine_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectMine/MineHBox/StartMineButton") as Button
+	if start_rail_button == null:
+		start_rail_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRail/RailHBox/StartRailButton") as Button
+	if start_port_button == null:
+		start_port_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectPort/PortHBox/StartPortButton") as Button
+	if start_renewable_button == null:
+		start_renewable_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRenewable/RenewableHBox/StartRenewableButton") as Button
+	if start_hospital_button == null:
+		start_hospital_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectHospital/HospHBox/StartHospitalButton") as Button
+	if start_sez_button == null:
+		start_sez_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSEZ/SEZHBox/StartSEZButton") as Button
+	if start_supercomputer_button == null:
+		start_supercomputer_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSupercomputer/SCHBox/StartSupercomputerButton") as Button
+	if start_dam_button == null:
+		start_dam_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectDam/DamHBox/StartDamButton") as Button
+	if ruling_seats_badge == null:
+		ruling_seats_badge = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox/RulingSeatsBadge") as Label
+	if opposition_seats_badge == null:
+		opposition_seats_badge = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox/OppositionSeatsBadge") as Label
+	if independent_seats_badge == null:
+		independent_seats_badge = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox/IndependentSeatsBadge") as Label
+	if chamber_status_badge == null:
+		chamber_status_badge = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberStatusBadge") as Label
+	if lawmakers_vbox == null:
+		lawmakers_vbox = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/LawmakersScroll/LawmakersVBox") as VBoxContainer
+	if top_president_avatar == null:
+		top_president_avatar = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentAvatar") as Label
+	if top_president_role == null:
+		top_president_role = _get_node_safe("InterfaceLayer/TopBar/TopBarHBox/PresidentCard/PresidentHBox/PresidentVBox/PresidentRoleLabel") as Label
 	if dev_status_label == null:
 		dev_status_label = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevStatusLabel") as Label
 
@@ -2022,6 +2065,20 @@ func _connect_signals() -> void:
 		start_refinery_button.pressed.connect(_on_start_refinery_pressed)
 	if start_mine_button and not start_mine_button.pressed.is_connected(_on_start_mine_pressed):
 		start_mine_button.pressed.connect(_on_start_mine_pressed)
+	if start_rail_button and not start_rail_button.pressed.is_connected(_on_start_rail_pressed):
+		start_rail_button.pressed.connect(_on_start_rail_pressed)
+	if start_port_button and not start_port_button.pressed.is_connected(_on_start_port_pressed):
+		start_port_button.pressed.connect(_on_start_port_pressed)
+	if start_renewable_button and not start_renewable_button.pressed.is_connected(_on_start_renewable_pressed):
+		start_renewable_button.pressed.connect(_on_start_renewable_pressed)
+	if start_hospital_button and not start_hospital_button.pressed.is_connected(_on_start_hospital_pressed):
+		start_hospital_button.pressed.connect(_on_start_hospital_pressed)
+	if start_sez_button and not start_sez_button.pressed.is_connected(_on_start_sez_pressed):
+		start_sez_button.pressed.connect(_on_start_sez_pressed)
+	if start_supercomputer_button and not start_supercomputer_button.pressed.is_connected(_on_start_supercomputer_pressed):
+		start_supercomputer_button.pressed.connect(_on_start_supercomputer_pressed)
+	if start_dam_button and not start_dam_button.pressed.is_connected(_on_start_dam_pressed):
+		start_dam_button.pressed.connect(_on_start_dam_pressed)
 	if propose_bill_button and not propose_bill_button.pressed.is_connected(_on_propose_bill_pressed):
 		propose_bill_button.pressed.connect(_on_propose_bill_pressed)
 	if vote_bill_button and not vote_bill_button.pressed.is_connected(_on_vote_bill_pressed):
@@ -2577,9 +2634,17 @@ func _update_modern_office_visuals(state: Dictionary) -> void:
 	if top_president_name:
 		var p_name := str(state.get("president_name", "")).strip_edges()
 		if p_name.is_empty():
-			top_president_name.text = "[Unavailable]"
+			top_president_name.text = str(state.get("player_display_name", "[Unavailable]"))
 		else:
 			top_president_name.text = p_name
+
+	var player_gender: String = str(state.get("player_gender", "Female"))
+	var player_title: String = str(state.get("player_title", "Madam President" if player_gender.to_lower() == "female" else "Mr. President"))
+	var player_avatar: String = str(state.get("player_avatar", "👩‍💼" if player_gender.to_lower() == "female" else "👨‍💼"))
+	if top_president_avatar:
+		top_president_avatar.text = player_avatar
+	if top_president_role:
+		top_president_role.text = player_title
 
 	if top_president_term:
 		if state.has("simulation_day"):
@@ -2987,6 +3052,94 @@ func _update_development_modal_requirements(state: Dictionary) -> void:
 		start_mine_button.disabled = not has_res
 
 func _update_policy_and_bills_modal(state: Dictionary) -> void:
+	# Update Chamber composition
+	var ruling_seats: int = int(state.get("legislature_seats_ruling", 48))
+	var opp_seats: int = int(state.get("legislature_seats_opposition", 42))
+	var ind_seats: int = int(state.get("legislature_seats_independent", 10))
+	var has_maj: bool = bool(state.get("legislature_has_majority", ruling_seats >= 51))
+	var chamber_status: String = str(state.get("legislature_chamber_status", "Hung Parliament / Minority"))
+
+	if ruling_seats_badge:
+		ruling_seats_badge.text = "🏛️ President's Coalition: %d Seats" % ruling_seats
+	if opposition_seats_badge:
+		opposition_seats_badge.text = "⚖️ Opposition: %d Seats" % opp_seats
+	if independent_seats_badge:
+		independent_seats_badge.text = "🕊️ Crossbench: %d Seats" % ind_seats
+	if chamber_status_badge:
+		if has_maj:
+			chamber_status_badge.text = "⭐ Working Majority (%d/100 Seats) — Legislative stability achieved; bills pass reliably." % ruling_seats
+			chamber_status_badge.modulate = Color(0.3, 1.0, 0.5)
+		else:
+			chamber_status_badge.text = "⚠️ Minority Government (%d/100 Seats) — Obstruction risk! Court legislators to reach 51-seat majority." % ruling_seats
+			chamber_status_badge.modulate = Color(1.0, 0.75, 0.3)
+
+	# Update Lawmakers Floor Roster
+	var lawmakers_list = state.get("lawmakers", [])
+	if lawmakers_vbox and lawmakers_list is Array and not lawmakers_list.is_empty():
+		for child in lawmakers_vbox.get_children():
+			child.queue_free()
+
+		for lmk in lawmakers_list:
+			if lmk is Dictionary:
+				var l_id: String = str(lmk.get("id", ""))
+				var l_name: String = str(lmk.get("name", "Hon. Lawmaker"))
+				var l_const: String = str(lmk.get("constituency", ""))
+				var l_party: String = str(lmk.get("current_party", "Opposition"))
+				var l_orig: String = str(lmk.get("original_party", "Opposition"))
+				var l_weight: int = int(lmk.get("seat_weight", 1))
+				var l_stance: String = str(lmk.get("stance", ""))
+				var l_defected: bool = bool(lmk.get("has_defected", false))
+				var l_inc: String = str(lmk.get("defection_incentive", ""))
+
+				var card := PanelContainer.new()
+				var hbox := HBoxContainer.new()
+				hbox.add_theme_constant_override("separation", 8)
+				card.add_child(hbox)
+
+				var info_vbox := VBoxContainer.new()
+				info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+				var name_lbl := Label.new()
+				name_lbl.add_theme_font_size_override("font_size", 10)
+				name_lbl.add_theme_color_override("font_color", Color(0.92, 0.85, 0.4, 1.0))
+				name_lbl.text = "%s (%s | %s | +%d Seat%s)" % [l_name, l_party, l_const, l_weight, "s" if l_weight > 1 else ""]
+				info_vbox.add_child(name_lbl)
+
+				var stance_lbl := Label.new()
+				stance_lbl.add_theme_font_size_override("font_size", 8)
+				stance_lbl.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9, 1.0))
+				stance_lbl.text = "Stance: %s" % l_stance
+				info_vbox.add_child(stance_lbl)
+
+				hbox.add_child(info_vbox)
+
+				if l_defected:
+					var defect_badge := Label.new()
+					defect_badge.add_theme_font_size_override("font_size", 9)
+					defect_badge.add_theme_color_override("font_color", Color(0.2, 0.9, 0.4, 1.0))
+					defect_badge.text = "✅ Party Ally (%s)" % (l_inc if not l_inc.is_empty() else "Defected")
+					hbox.add_child(defect_badge)
+				else:
+					var btn_grant := Button.new()
+					btn_grant.add_theme_font_size_override("font_size", 8)
+					btn_grant.text = "🏛️ District Grant (R250k | 0% Corrup)"
+					btn_grant.pressed.connect(func(): _on_court_lawmaker_pressed(l_id, "district_grant"))
+					hbox.add_child(btn_grant)
+
+					var btn_chair := Button.new()
+					btn_chair.add_theme_font_size_override("font_size", 8)
+					btn_chair.text = "📜 Comm. Chair (Free | -1% Frict)"
+					btn_chair.pressed.connect(func(): _on_court_lawmaker_pressed(l_id, "committee_chair"))
+					hbox.add_child(btn_chair)
+
+					var btn_pat := Button.new()
+					btn_pat.add_theme_font_size_override("font_size", 8)
+					btn_pat.text = "💼 Patronage (R150k | +2.5% Corrup)"
+					btn_pat.pressed.connect(func(): _on_court_lawmaker_pressed(l_id, "executive_patronage"))
+					hbox.add_child(btn_pat)
+
+				lawmakers_vbox.add_child(card)
+
 	var pending_bill = state.get("pending_bill", null)
 	if pending_bill is Dictionary:
 		if bill_title_label: bill_title_label.text = "Pending Bill: %s" % str(pending_bill.get("title", "National Policy Act"))
@@ -4320,6 +4473,49 @@ func _on_execute_attack_pressed() -> void:
 		status_ticker_label.text = "Warfare Directive: Authorized %s against %s with %s troops." % [op_type, target, _format_number_commas(troops)]
 
 # Handlers for Development Projects
+
+func _on_start_rail_pressed() -> void:
+	if not has_minister("Infrastructure", latest_state):
+		if dev_status_label: dev_status_label.text = "❌ Cannot initiate High-Speed Rail: Requires an appointed Minister of Infrastructure!"
+		return
+	_initiate_project("HighSpeedRail")
+
+func _on_start_port_pressed() -> void:
+	if not has_minister("Infrastructure", latest_state):
+		if dev_status_label: dev_status_label.text = "❌ Cannot initiate Deepwater Port: Requires an appointed Minister of Infrastructure!"
+		return
+	_initiate_project("DeepwaterPort")
+
+func _on_start_renewable_pressed() -> void:
+	if not has_minister("Resources", latest_state):
+		if dev_status_label: dev_status_label.text = "❌ Cannot initiate Renewable Mega-Grid: Requires an appointed Minister of Resources!"
+		return
+	_initiate_project("RenewableEnergy")
+
+func _on_start_hospital_pressed() -> void:
+	if not has_minister("Health", latest_state):
+		if dev_status_label: dev_status_label.text = "❌ Cannot initiate Teaching Hospital: Requires an appointed Minister of Health!"
+		return
+	_initiate_project("Hospital")
+
+func _on_start_sez_pressed() -> void:
+	if not has_minister("Finance", latest_state):
+		if dev_status_label: dev_status_label.text = "❌ Cannot initiate Special Economic Zone: Requires an appointed Minister of Finance!"
+		return
+	_initiate_project("EconomicZone")
+
+func _on_start_supercomputer_pressed() -> void:
+	if not has_minister("Education", latest_state):
+		if dev_status_label: dev_status_label.text = "❌ Cannot initiate Supercomputer Center: Requires an appointed Minister of Education/Science!"
+		return
+	_initiate_project("Supercomputer")
+
+func _on_start_dam_pressed() -> void:
+	if not has_minister("Resources", latest_state):
+		if dev_status_label: dev_status_label.text = "❌ Cannot initiate Irrigation Mega-Dam: Requires an appointed Minister of Resources!"
+		return
+	_initiate_project("IrrigationDam")
+
 func _on_start_roads_pressed() -> void:
 	_initiate_project("Roads")
 
@@ -4359,6 +4555,22 @@ func _initiate_project(proj_type: String) -> void:
 		status_ticker_label.text = "Development Directive: Commenced %s project." % proj_type
 
 # Handlers for Policy & Legislative Chamber
+
+func _on_court_lawmaker_pressed(lawmaker_id: String, incentive_type: String) -> void:
+	var req_id := "req_court_" + str(Time.get_unix_time_from_system())
+	var req_dict := {
+		"request_id": req_id,
+		"action": "court_legislator",
+		"legislator_id": lawmaker_id,
+		"incentive_type": incentive_type,
+		"client_timestamp": Time.get_datetime_string_from_system()
+	}
+	_write_request_file(req_dict)
+	if pol_status_label:
+		pol_status_label.text = "Dispatched executive envoy to court lawmaker (%s)..." % incentive_type
+	if status_ticker_label:
+		status_ticker_label.text = "Parliamentary Directive: Initiated floor-crossing courtship (%s)." % incentive_type
+
 func _on_propose_bill_pressed() -> void:
 	var req_id := "req_bill_" + str(Time.get_unix_time_from_system())
 	var req_dict := {

@@ -13,6 +13,15 @@ using Republic.Core.World.Models;
 [JsonDerivedType(typeof(NationalRoadProject), typeDiscriminator: nameof(NationalRoadProject))]
 [JsonDerivedType(typeof(NationalUniversityProject), typeDiscriminator: nameof(NationalUniversityProject))]
 [JsonDerivedType(typeof(NationalPowerPlantProject), typeDiscriminator: nameof(NationalPowerPlantProject))]
+[JsonDerivedType(typeof(NationalRefineryProject), typeDiscriminator: nameof(NationalRefineryProject))]
+[JsonDerivedType(typeof(NationalMineProject), typeDiscriminator: nameof(NationalMineProject))]
+[JsonDerivedType(typeof(NationalHighSpeedRailProject), typeDiscriminator: nameof(NationalHighSpeedRailProject))]
+[JsonDerivedType(typeof(NationalDeepwaterPortProject), typeDiscriminator: nameof(NationalDeepwaterPortProject))]
+[JsonDerivedType(typeof(NationalRenewableEnergyProject), typeDiscriminator: nameof(NationalRenewableEnergyProject))]
+[JsonDerivedType(typeof(NationalHospitalProject), typeDiscriminator: nameof(NationalHospitalProject))]
+[JsonDerivedType(typeof(NationalEconomicZoneProject), typeDiscriminator: nameof(NationalEconomicZoneProject))]
+[JsonDerivedType(typeof(NationalSupercomputerProject), typeDiscriminator: nameof(NationalSupercomputerProject))]
+[JsonDerivedType(typeof(NationalIrrigationDamProject), typeDiscriminator: nameof(NationalIrrigationDamProject))]
 [JsonDerivedType(typeof(Republic.Core.Economy.PrivateSector.Models.PrivateInvestmentProject), typeDiscriminator: nameof(Republic.Core.Economy.PrivateSector.Models.PrivateInvestmentProject))]
 public abstract class DevelopmentProject : IDevelopmentProject
 {

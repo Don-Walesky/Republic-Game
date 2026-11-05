@@ -1,12 +1,15 @@
 # ADR-0037: Godot Presidential Desk State Bridge
 
 ## Status
+
 Accepted
 
 ## Context
+
 In previous phases, a preliminary Godot 4 interface prototype was introduced under `client/godot/` with hard-coded demonstration values (`Republic of Walesky`, `R 1,250,000,000`, `62`, `Civic Union`, `No election`).
 
 Phase 14 requires connecting the existing Godot presidential desk interface directly to the authoritative `Republic.Core` simulation state, replacing hard-coded values with live data while adhering to core architecture constraints:
+
 1. Standard Godot builds (running GDScript) do not embed the .NET CLR and cannot directly link or execute C# assemblies.
 2. The solution must not introduce heavy networking, multiplayer infrastructure, or a new web server/backend.
 3. Treasury, approval, stability, tax policy, and simulation-time calculations must remain strictly inside `Republic.Core` and never be duplicated in GDScript.

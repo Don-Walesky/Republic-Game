@@ -1575,6 +1575,131 @@ public static class PresidentialDeskBridge
     /// <summary>
     /// Registers a new player account with private personal identity, age verification, and verification token.
     /// </summary>
+
+    /// <summary>
+    /// Courts a target parliamentarian to defect to the President's ruling coalition in the National Assembly.
+    /// Balances technocratic development grants against institutional committee chairs and raw political patronage.
+    /// </summary>
+    public static PresidentialActionResult ApplyCourtLegislatorDecision(
+        string legislatorId,
+        string incentiveType,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissing",
+                Message = $"Cannot court lawmaker: Save state file '{targetSavePath}' not found."
+            };
+            TryWriteResultFile(targetStatePath, missingResult);
+            return missingResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            envelope = LoadAuthoritativeState(targetSavePath);
+        }
+        catch (Exception ex)
+        {
+            var errResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CorruptState",
+                Message = $"Failed to load simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, errResult);
+            return errResult;
+        }
+
+        var country = envelope?.State?.World?.Countries?.FirstOrDefault();
+        if (country == null)
+        {
+            var errResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CountryNotFound",
+                Message = "No active sovereign country found in simulation state."
+            };
+            TryWriteResultFile(targetStatePath, errResult);
+            return errResult;
+        }
+
+        country.Legislature ??= new Republic.Core.Legislature.Models.ParliamentaryChamber();
+        country.Legislature.InitializeDefaultLawmakers();
+
+        var courtResult = country.Legislature.CourtLawmaker(legislatorId, incentiveType, country);
+        if (!courtResult.Success)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CourtshipFailed",
+                Message = courtResult.Message,
+                CountryName = country.Name,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance,
+                CorruptionIndex = country.CorruptionIndex,
+                LegislatureSeatsRuling = country.Legislature.RulingPartySeats,
+                LegislatureSeatsOpposition = country.Legislature.OppositionSeats,
+                LegislatureSeatsIndependent = country.Legislature.IndependentSeats,
+                LegislatureChamberStatus = country.Legislature.ChamberStatus,
+                LegislatureHasMajority = country.Legislature.HasWorkingMajority
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        // Persist updated state
+        ulong nextTick = 1;
+        if (envelope?.State != null)
+        {
+            envelope.State.CurrentTick += 1;
+            nextTick = envelope.State.CurrentTick;
+            envelope.SavedAt = DateTimeOffset.UtcNow;
+            var serializer = new JsonStateSerializer();
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+        }
+
+        // Export updated snapshot
+        var clock = RepublicClock.CreateControlled();
+        var snapshot = PresidentialDeskSnapshot.Create(country, clock.CurrentTime, nextTick, targetSavePath, latestDecisionResult: courtResult.Message);
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase) ? Path.ChangeExtension(targetStatePath, ".json") : targetStatePath;
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = courtResult.Message,
+            CountryName = country.Name,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance,
+            CorruptionIndex = country.CorruptionIndex,
+            LegislatureSeatsRuling = country.Legislature.RulingPartySeats,
+            LegislatureSeatsOpposition = country.Legislature.OppositionSeats,
+            LegislatureSeatsIndependent = country.Legislature.IndependentSeats,
+            LegislatureChamberStatus = country.Legislature.ChamberStatus,
+            LegislatureHasMajority = country.Legislature.HasWorkingMajority
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
     public static PresidentialActionResult RegisterAccountDecision(
         string firstName,
         string lastName,
@@ -1583,7 +1708,8 @@ public static class PresidentialDeskBridge
         string? stateFilePath = null,
         string? saveFilePath = null,
         string? requestId = null,
-        DateOnly? referenceDate = null)
+        DateOnly? referenceDate = null,
+        string gender = "Female")
     {
         var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
         var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
@@ -1654,7 +1780,7 @@ public static class PresidentialDeskBridge
             return dupResult;
         }
 
-        var account = identityService.RegisterAccount(firstName, lastName, email, dob, referenceDate);
+        var account = identityService.RegisterAccount(firstName, lastName, email, dob, referenceDate, gender: gender);
         var pendingEmail = account.PersonalIdentity.PendingVerificationEmail;
 
         if (envelope?.State != null)
@@ -1700,7 +1826,10 @@ public static class PresidentialDeskBridge
             OnboardingStep = OnboardingStep.AccountRegistered.ToString(),
             IsRegistered = true,
             IsEmailVerified = false,
-            PlayerDisplayName = account.GetPublicIdentity()
+            PlayerDisplayName = account.GetPublicIdentity(),
+            PlayerGender = account.PersonalIdentity.Gender,
+            PlayerTitle = account.PersonalIdentity.HonorificTitle,
+            PlayerAvatar = account.PersonalIdentity.AvatarSymbol
         };
 
         TryWriteResultFile(targetStatePath, successResult);
@@ -3538,6 +3667,54 @@ public static class PresidentialDeskBridge
                  string.Equals(projectType, "National Mine", StringComparison.OrdinalIgnoreCase))
         {
             outcome = PresidentialWorkspaceHandler.InitiateMineProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "HighSpeedRail", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "High Speed Rail", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Rail", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "High-Speed Rail", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateHighSpeedRailProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "DeepwaterPort", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Deepwater Port", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Port", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Seaport", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateDeepwaterPortProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "RenewableEnergy", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Renewable Energy", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Solar", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Wind", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateRenewableEnergyProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "Hospital", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Teaching Hospital", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "TeachingHospital", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Healthcare", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateHospitalProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "EconomicZone", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Special Economic Zone", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "SpecialEconomicZone", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "SEZ", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateEconomicZoneProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "Supercomputer", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Supercomputing Center", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "SupercomputingCenter", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "AI Center", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateSupercomputerProject(country, simTime, confirmed: true);
+        }
+        else if (string.Equals(projectType, "IrrigationDam", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Irrigation Dam", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(projectType, "Dam", StringComparison.OrdinalIgnoreCase))
+        {
+            outcome = PresidentialWorkspaceHandler.InitiateIrrigationDamProject(country, simTime, confirmed: true);
         }
         else
         {
@@ -8499,7 +8676,12 @@ public static class PresidentialDeskBridge
 
                         {
 
-                            return RegisterAccountDecision(firstName, lastName, email, dob, targetStatePath, saveFilePath, requestId);
+                            string gender = "Female";
+                        if (root.TryGetProperty("gender", out var gEl) && gEl.ValueKind == JsonValueKind.String)
+                        {
+                            gender = gEl.GetString() ?? "Female";
+                        }
+                        return RegisterAccountDecision(firstName, lastName, email, dob, targetStatePath, saveFilePath, requestId, gender: gender);
 
                         }
 
@@ -9828,6 +10010,30 @@ public static class PresidentialDeskBridge
                         }
                     }
 
+                    if (normalizedAction is "court_legislator" or "court_lawmaker" or "sway_lawmaker" or "defect_legislator")
+                    {
+                        string legislatorId = string.Empty;
+                        if (root.TryGetProperty("legislator_id", out var legEl) && legEl.ValueKind == JsonValueKind.String)
+                            legislatorId = legEl.GetString() ?? string.Empty;
+                        else if (root.TryGetProperty("lawmaker_id", out var lmkEl) && lmkEl.ValueKind == JsonValueKind.String)
+                            legislatorId = lmkEl.GetString() ?? string.Empty;
+
+                        string incentiveType = "district_grant";
+                        if (root.TryGetProperty("incentive_type", out var incEl) && incEl.ValueKind == JsonValueKind.String)
+                            incentiveType = incEl.GetString() ?? "district_grant";
+                        else if (root.TryGetProperty("courtship_type", out var cshEl) && cshEl.ValueKind == JsonValueKind.String)
+                            incentiveType = cshEl.GetString() ?? "district_grant";
+
+                        try
+                        {
+                            return ApplyCourtLegislatorDecision(legislatorId, incentiveType, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
                     if (normalizedAction is "propose_bill" or "legislature_propose" or "bill_propose")
                     {
                         string title = string.Empty;
@@ -10328,6 +10534,30 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("civil_service_quality")]
     public double CivilServiceQuality { get; init; }
+
+    [JsonPropertyName("player_gender")]
+    public string PlayerGender { get; init; } = string.Empty;
+
+    [JsonPropertyName("player_title")]
+    public string PlayerTitle { get; init; } = string.Empty;
+
+    [JsonPropertyName("player_avatar")]
+    public string PlayerAvatar { get; init; } = string.Empty;
+
+    [JsonPropertyName("legislature_seats_ruling")]
+    public int LegislatureSeatsRuling { get; init; }
+
+    [JsonPropertyName("legislature_seats_opposition")]
+    public int LegislatureSeatsOpposition { get; init; }
+
+    [JsonPropertyName("legislature_seats_independent")]
+    public int LegislatureSeatsIndependent { get; init; }
+
+    [JsonPropertyName("legislature_chamber_status")]
+    public string LegislatureChamberStatus { get; init; } = string.Empty;
+
+    [JsonPropertyName("legislature_has_majority")]
+    public bool LegislatureHasMajority { get; init; }
 
     [JsonPropertyName("corruption_control")]
     public double CorruptionControl { get; init; }

@@ -3746,6 +3746,209 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Initiate Mine"
 
+[node name="CardProjectRail" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="RailHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRail"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RailInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRail/RailHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RailTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRail/RailHBox/RailInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🚄 High-Speed Rail Corridor (R 1,800,000)"
+
+[node name="RailRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRail/RailHBox/RailInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Req: Infrastructure Minister | +8 Transport Infra, +R 350M Trade, +3% Stability"
+
+[node name="StartRailButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRail/RailHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Rail Corridor"
+
+[node name="CardProjectPort" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="PortHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectPort"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PortInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectPort/PortHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PortTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectPort/PortHBox/PortInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🚢 Deepwater Seaport Hub (R 2,200,000)"
+
+[node name="PortRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectPort/PortHBox/PortInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Req: Infrastructure Minister | +R 600M Trade, +10B GDP, +4 Industrial Capacity"
+
+[node name="StartPortButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectPort/PortHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Seaport Hub"
+
+[node name="CardProjectRenewable" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="RenewableHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRenewable"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RenewableInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRenewable/RenewableHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RenewableTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRenewable/RenewableHBox/RenewableInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "☀️ Renewable Energy Mega-Grid (R 1,400,000)"
+
+[node name="RenewableRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRenewable/RenewableHBox/RenewableInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Req: Resources Minister | +6 Clean Energy Capacity, +3% Citizen Approval"
+
+[node name="StartRenewableButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectRenewable/RenewableHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Mega-Grid"
+
+[node name="CardProjectHospital" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="HospHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectHospital"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HospInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectHospital/HospHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HospTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectHospital/HospHBox/HospInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏥 National Teaching Hospital (R 1,100,000)"
+
+[node name="HospRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectHospital/HospHBox/HospInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Req: Health Minister | +5% Approval, +3% Baseline Stability, Healthcare Network"
+
+[node name="StartHospitalButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectHospital/HospHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Hospital"
+
+[node name="CardProjectSEZ" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SEZHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSEZ"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SEZInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSEZ/SEZHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SEZTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSEZ/SEZHBox/SEZInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏭 Special Economic Zone (R 1,600,000)"
+
+[node name="SEZRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSEZ/SEZHBox/SEZInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Req: Finance Minister | +5 Industrial Capacity, +15B GDP, +R 400M Trade"
+
+[node name="StartSEZButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSEZ/SEZHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Economic Zone"
+
+[node name="CardProjectSupercomputer" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SCHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSupercomputer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SCInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSupercomputer/SCHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SCTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSupercomputer/SCHBox/SCInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "💻 Sovereign AI & Supercomputing Center (R 1,900,000)"
+
+[node name="SCRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSupercomputer/SCHBox/SCInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Req: Education Minister | +6 Science, +8 Innovation, +5 Admin, +6 Intelligence"
+
+[node name="StartSupercomputerButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectSupercomputer/SCHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Supercomputer"
+
+[node name="CardProjectDam" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="DamHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectDam"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DamInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectDam/DamHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DamTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectDam/DamHBox/DamInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🌊 Agro-Industrial Irrigation Mega-Dam (R 950,000)"
+
+[node name="DamRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectDam/DamHBox/DamInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Req: Resources Minister | +6 Natural Resources, +4 Energy, +4% Stability"
+
+[node name="StartDamButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectDam/DamHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Initiate Irrigation Dam"
+
 [node name="DevStatusLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
@@ -3761,17 +3964,17 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -340.0
-offset_top = -240.0
-offset_right = 340.0
-offset_bottom = 240.0
+offset_left = -390.0
+offset_top = -285.0
+offset_right = 390.0
+offset_bottom = 285.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
 
 [node name="PolVBox" type="VBoxContainer" parent="InterfaceLayer/PolicyModal"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="PolHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox"]
 layout_mode = 2
@@ -3781,12 +3984,70 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 13
-text = "📜 National Policy & Legislative Chamber (50:50 Engine)"
+text = "🏛️ National Assembly & Legislative Chamber (100 Seats)"
 
 [node name="ClosePolXButton" type="Button" parent="InterfaceLayer/PolicyModal/PolVBox/PolHeaderHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = " ✕ "
+
+[node name="ChamberCard" type="PanelContainer" parent="InterfaceLayer/PolicyModal/PolVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ChamberVBox" type="VBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox/ChamberCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChamberSeatsHBox" type="HBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RulingSeatsBadge" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 10
+text = "🏛️ President's Coalition: 48 Seats"
+horizontal_alignment = 1
+
+[node name="OppositionSeatsBadge" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1.0, 0.45, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "⚖️ Opposition: 42 Seats"
+horizontal_alignment = 1
+
+[node name="IndependentSeatsBadge" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox/ChamberSeatsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 10
+text = "🕊️ Crossbench: 10 Seats"
+horizontal_alignment = 1
+
+[node name="ChamberStatusBadge" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/ChamberCard/ChamberVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1.0, 1)
+theme_override_font_sizes/font_size = 9
+text = "⚠️ Minority Government (48/100) — High Bill Obstruction Risk! Court legislators to build a 51-seat majority."
+horizontal_alignment = 1
+
+[node name="LawmakersTitleLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.35, 1)
+theme_override_font_sizes/font_size = 10
+text = "👥 Key Lawmakers & Floor-Crossing (Aisle Defection Desk):"
+
+[node name="LawmakersScroll" type="ScrollContainer" parent="InterfaceLayer/PolicyModal/PolVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 110)
+
+[node name="LawmakersVBox" type="VBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox/LawmakersScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
 
 [node name="PolBillCard" type="PanelContainer" parent="InterfaceLayer/PolicyModal/PolVBox"]
 layout_mode = 2

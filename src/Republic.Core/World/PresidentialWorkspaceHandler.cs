@@ -330,6 +330,139 @@ public static class PresidentialWorkspaceHandler
             project);
     }
 
+    public static ExecutiveActionOutcome InitiateHighSpeedRailProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InvalidCountry, "Cannot initiate project: invalid country.");
+        if (!confirmed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.Cancelled, "Project cancelled by executive order.");
+        var minister = country.GetMinister(CabinetPortfolio.Infrastructure);
+        if (minister == null || !minister.IsAppointed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Requires an appointed Minister of Infrastructure.");
+        if (country.Projects.OfType<NationalHighSpeedRailProject>().Any(p => p.IsActive))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "High-Speed Rail is already under active construction.");
+        if (country.Treasury.Balance < NationalHighSpeedRailProject.StandardCost)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InsufficientFunds, $"Insufficient funds. Required: {RepuTreasury.Format(NationalHighSpeedRailProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        var project = country.StartHighSpeedRailProject(simulationTime);
+        if (project == null)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Unable to start High-Speed Rail corridor.");
+        return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"High-Speed Rail Corridor initiated. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
+    }
+
+    public static ExecutiveActionOutcome InitiateDeepwaterPortProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InvalidCountry, "Cannot initiate project: invalid country.");
+        if (!confirmed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.Cancelled, "Project cancelled by executive order.");
+        var minister = country.GetMinister(CabinetPortfolio.Infrastructure);
+        if (minister == null || !minister.IsAppointed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Requires an appointed Minister of Infrastructure.");
+        if (country.Projects.OfType<NationalDeepwaterPortProject>().Any(p => p.IsActive))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "Deepwater Seaport Hub is already under active construction.");
+        if (country.Treasury.Balance < NationalDeepwaterPortProject.StandardCost)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InsufficientFunds, $"Insufficient funds. Required: {RepuTreasury.Format(NationalDeepwaterPortProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        var project = country.StartDeepwaterPortProject(simulationTime);
+        if (project == null)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Unable to start Deepwater Seaport Hub.");
+        return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"Deepwater Seaport Hub initiated. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
+    }
+
+    public static ExecutiveActionOutcome InitiateRenewableEnergyProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InvalidCountry, "Cannot initiate project: invalid country.");
+        if (!confirmed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.Cancelled, "Project cancelled by executive order.");
+        var minister = country.GetMinister(CabinetPortfolio.Resources);
+        if (minister == null || !minister.IsAppointed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Requires an appointed Minister of Resources.");
+        if (country.Projects.OfType<NationalRenewableEnergyProject>().Any(p => p.IsActive))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "Renewable Energy Mega-Grid is already under active construction.");
+        if (country.Treasury.Balance < NationalRenewableEnergyProject.StandardCost)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InsufficientFunds, $"Insufficient funds. Required: {RepuTreasury.Format(NationalRenewableEnergyProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        var project = country.StartRenewableEnergyProject(simulationTime);
+        if (project == null)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Unable to start Renewable Energy Mega-Grid.");
+        return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"Renewable Energy Mega-Grid initiated. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
+    }
+
+    public static ExecutiveActionOutcome InitiateHospitalProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InvalidCountry, "Cannot initiate project: invalid country.");
+        if (!confirmed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.Cancelled, "Project cancelled by executive order.");
+        var minister = country.GetMinister(CabinetPortfolio.Health);
+        if (minister == null || !minister.IsAppointed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Requires an appointed Minister of Health.");
+        if (country.Projects.OfType<NationalHospitalProject>().Any(p => p.IsActive))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "Teaching Hospital Network is already under active construction.");
+        if (country.Treasury.Balance < NationalHospitalProject.StandardCost)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InsufficientFunds, $"Insufficient funds. Required: {RepuTreasury.Format(NationalHospitalProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        var project = country.StartHospitalProject(simulationTime);
+        if (project == null)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Unable to start Teaching Hospital Network.");
+        return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"National Teaching Hospital initiated. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
+    }
+
+    public static ExecutiveActionOutcome InitiateEconomicZoneProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InvalidCountry, "Cannot initiate project: invalid country.");
+        if (!confirmed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.Cancelled, "Project cancelled by executive order.");
+        var minister = country.GetMinister(CabinetPortfolio.Finance);
+        if (minister == null || !minister.IsAppointed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Requires an appointed Minister of Finance.");
+        if (country.Projects.OfType<NationalEconomicZoneProject>().Any(p => p.IsActive))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "Special Economic Zone is already under active construction.");
+        if (country.Treasury.Balance < NationalEconomicZoneProject.StandardCost)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InsufficientFunds, $"Insufficient funds. Required: {RepuTreasury.Format(NationalEconomicZoneProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        var project = country.StartEconomicZoneProject(simulationTime);
+        if (project == null)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Unable to start Special Economic Zone.");
+        return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"Special Economic Zone initiated. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
+    }
+
+    public static ExecutiveActionOutcome InitiateSupercomputerProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InvalidCountry, "Cannot initiate project: invalid country.");
+        if (!confirmed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.Cancelled, "Project cancelled by executive order.");
+        var minister = country.GetMinister(CabinetPortfolio.Education);
+        if (minister == null || !minister.IsAppointed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Requires an appointed Minister of Education/Science.");
+        if (country.Projects.OfType<NationalSupercomputerProject>().Any(p => p.IsActive))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "Sovereign AI & Supercomputing Center is already under active construction.");
+        if (country.Treasury.Balance < NationalSupercomputerProject.StandardCost)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InsufficientFunds, $"Insufficient funds. Required: {RepuTreasury.Format(NationalSupercomputerProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        var project = country.StartSupercomputerProject(simulationTime);
+        if (project == null)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Unable to start Sovereign AI & Supercomputing Center.");
+        return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"Sovereign AI & Supercomputing Center initiated. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
+    }
+
+    public static ExecutiveActionOutcome InitiateIrrigationDamProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InvalidCountry, "Cannot initiate project: invalid country.");
+        if (!confirmed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.Cancelled, "Project cancelled by executive order.");
+        var minister = country.GetMinister(CabinetPortfolio.Resources);
+        if (minister == null || !minister.IsAppointed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Requires an appointed Minister of Resources.");
+        if (country.Projects.OfType<NationalIrrigationDamProject>().Any(p => p.IsActive))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "Agro-Industrial Irrigation Mega-Dam is already under active construction.");
+        if (country.Treasury.Balance < NationalIrrigationDamProject.StandardCost)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InsufficientFunds, $"Insufficient funds. Required: {RepuTreasury.Format(NationalIrrigationDamProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        var project = country.StartIrrigationDamProject(simulationTime);
+        if (project == null)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Unable to start Agro-Industrial Irrigation Mega-Dam.");
+        return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"Agro-Industrial Irrigation Mega-Dam initiated. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
+    }
+
     /// <summary>
     /// Adjusts the national taxation policy for the specified sovereign country.
     /// Validates inputs, requires explicit presidential confirmation, and evaluates citizen welfare and approval consequences.

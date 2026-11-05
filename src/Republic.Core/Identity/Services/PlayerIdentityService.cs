@@ -137,7 +137,8 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
         string email,
         DateOnly dateOfBirth,
         DateOnly? referenceDate = null,
-        string? customAccountId = null)
+        string? customAccountId = null,
+        string gender = "Female")
     {
         var (isValid, message) = ValidateRegistration(firstName, lastName, email, dateOfBirth, referenceDate);
         if (!isValid)
@@ -152,12 +153,17 @@ public sealed class PlayerIdentityService : IPlayerIdentityService
         var cleanLast = lastName.Trim();
         var cleanEmail = email.Trim().ToLowerInvariant();
 
+        bool isMale = string.Equals(gender, "Male", StringComparison.OrdinalIgnoreCase);
+
         var identity = new PlayerPersonalIdentity
         {
             FirstName = cleanFirst,
             LastName = cleanLast,
             EmailAddress = cleanEmail,
             DateOfBirth = dateOfBirth,
+            Gender = isMale ? "Male" : "Female",
+            HonorificTitle = isMale ? "Mr. President" : "Madam President",
+            AvatarSymbol = isMale ? "👨‍💼" : "👩‍💼",
             IsEmailVerified = false,
             VerificationToken = token,
             VerificationTokenExpiresAtUtc = now.Add(VerificationTokenLifetime),

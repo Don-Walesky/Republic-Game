@@ -21,6 +21,15 @@ public sealed class PlayerPersonalIdentity
     [JsonPropertyName("date_of_birth")]
     public string DateOfBirthString { get; set; } = string.Empty;
 
+    [JsonPropertyName("gender")]
+    public string Gender { get; set; } = "Female";
+
+    [JsonPropertyName("honorific_title")]
+    public string HonorificTitle { get; set; } = "Madam President";
+
+    [JsonPropertyName("avatar_symbol")]
+    public string AvatarSymbol { get; set; } = "👩‍💼";
+
     [JsonIgnore]
     public DateOnly DateOfBirth
     {
