@@ -248,6 +248,12 @@ public sealed class CountryProfileFactory : ICountryProfileFactory
         country.TaxPolicy.IncomeTaxRate = StandardStartingIncomeTaxRate;
         country.TaxPolicy.CorporateTaxRate = StandardStartingCorporateTaxRate;
         country.TaxPolicy.ImportTariffRate = StandardStartingImportTariffRate;
+        country.InflationRate = 3.5;
+        country.CentralBank.ForeignReserves = 45_000_000.0;
+        country.Debt.DomesticDebt = 150_000_000.0;
+        country.Debt.ExternalDebt = 100_000_000.0;
+        country.StockMarket.CurrentPoints = 2500.0;
+        country.UpdateEconomicCycle(foundingTime);
 
         if (!string.IsNullOrWhiteSpace(profile.PrimaryResource) && profile.PrimaryResource != CountryProfile.DefaultUnspecified)
         {

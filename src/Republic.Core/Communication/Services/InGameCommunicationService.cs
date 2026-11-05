@@ -495,6 +495,49 @@ public static class InGameCommunicationService
         });
     }
 
+    /// <summary>
+    /// Dispatches a high-priority sovereign economic cable announcing the historic milestone of crossing 150 Million REPU in foreign exchange reserves.
+    /// Unlocks National Currency Management and Forex Participation.
+    /// </summary>
+    public static EmailMessage DispatchForexUnlockCable(FullGameState gameState, Country country)
+    {
+        ArgumentNullException.ThrowIfNull(gameState);
+        ArgumentNullException.ThrowIfNull(country);
+
+        var centralBank = country.CentralBank;
+        var subject = "🌐 HISTORIC ECONOMIC MILESTONE: Foreign Reserves Cross R 150M — Currency Management & Forex Authorized";
+        var body = $"Mr./Madam President,\n\n" +
+            $"The Central Bank of {country.Name} officially certifies that our sovereign foreign exchange reserves have crossed R 150,000,000 REPU.\n\n" +
+            $"Reaching this critical threshold provides our republic with profound macroeconomic resilience:\n" +
+            $"• National Currency Management unlocked: Sovereign float or pegged exchange rate mechanisms authorized.\n" +
+            $"• Basic Forex Participation authorized: Bilateral reserve allocations and foreign currency market interventions enabled.\n" +
+            $"• Sovereign Credit Standing elevated across global capital markets.\n\n" +
+            $"We submit our readiness to execute your foreign exchange directives.\n\n" +
+            $"{centralBank.GovernorName}\nGovernor, Central Bank of {country.Name}";
+
+        var email = new EmailMessage
+        {
+            Id = $"mail_forex_unlock_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}",
+            Sender = $"Central Bank ({centralBank.GovernorName})",
+            SenderTitle = "Central Bank Governor",
+            Recipient = "Presidential Desk",
+            Subject = subject,
+            Body = body,
+            DateSent = DateTime.UtcNow,
+            IsRead = false,
+            Folder = "Inbox",
+            Channel = "Executive",
+            Urgency = "Priority",
+            ActionRequired = false,
+            ActionType = "view_forex",
+            RelatedEntityId = "forex_desk",
+            AvatarSymbol = "🌐"
+        };
+
+        StoreMessageInGameState(gameState, email);
+        return email;
+    }
+
     private static void StoreMessageInGameState(FullGameState? gameState, EmailMessage message)
     {
         if (gameState?.Workspace == null)

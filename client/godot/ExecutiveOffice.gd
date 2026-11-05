@@ -492,9 +492,44 @@ var media_auto_publish_timer: Timer = null
 
 @onready var economy_modal: PanelContainer = _get_node_safe("InterfaceLayer/EconomyModal") as PanelContainer
 @onready var close_econ_x_button: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconHeaderHBox/CloseEconXButton") as Button
-@onready var governor_name_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/GovernorNameLabel") as Label
-@onready var interest_rate_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/InterestRateLabel") as Label
-@onready var foreign_reserves_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/ForeignReservesLabel") as Label
+@onready var governor_name_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/GovernorNameLabel") as Label
+@onready var interest_rate_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox/InterestRateLabel") as Label
+@onready var rate_cut_button: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox/RateCutButton") as Button
+@onready var rate_hike_button: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox/RateHikeButton") as Button
+@onready var inflation_rate_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InflationHBox/InflationRateLabel") as Label
+@onready var inflation_cost_multiplier_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InflationHBox/InflationCostMultiplierLabel") as Label
+
+@onready var stock_market_name_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockTitleHBox/StockMarketNameLabel") as Label
+@onready var stock_market_direction_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockTitleHBox/StockMarketDirectionLabel") as Label
+@onready var stock_market_points_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDetailsHBox/StockMarketPointsLabel") as Label
+@onready var stock_market_sentiment_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDetailsHBox/StockMarketSentimentLabel") as Label
+
+@onready var foreign_reserves_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexHeaderHBox/ForeignReservesLabel") as Label
+@onready var forex_unlock_badge: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexHeaderHBox/ForexUnlockBadge") as Label
+@onready var forex_progress_bar: ProgressBar = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexProgressHBox/ForexProgressBar") as ProgressBar
+@onready var forex_progress_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexProgressHBox/ForexProgressLabel") as Label
+@onready var currency_regime_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/CurrencyRegimeLabel") as Label
+@onready var btn_regime_managed: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/BtnRegimeManaged") as Button
+@onready var btn_regime_pegged: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/BtnRegimePegged") as Button
+@onready var btn_regime_floating: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/BtnRegimeFloating") as Button
+@onready var btn_inject_reserves: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox/BtnInjectReserves") as Button
+@onready var btn_sterilize_reserves: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox/BtnSterilizeReserves") as Button
+
+@onready var budget_revenue_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetRevenueLabel") as Label
+@onready var budget_expenditure_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetExpenditureLabel") as Label
+@onready var budget_balance_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetBalanceLabel") as Label
+@onready var budget_defense_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetDefenseLabel") as Label
+@onready var budget_health_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetHealthLabel") as Label
+@onready var budget_education_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetEducationLabel") as Label
+@onready var budget_infra_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetInfraLabel") as Label
+@onready var budget_science_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetScienceLabel") as Label
+@onready var btn_rebalance_budget: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BtnRebalanceBudget") as Button
+
+@onready var debt_total_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSummaryHBox/DebtTotalLabel") as Label
+@onready var debt_service_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSummaryHBox/DebtServiceLabel") as Label
+@onready var btn_take_domestic_loan: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnTakeDomesticLoan") as Button
+@onready var btn_take_external_loan: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnTakeExternalLoan") as Button
+@onready var btn_repay_debt: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnRepayDebt") as Button
 @onready var econ_desk_link_button: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconDeskLinkButton") as Button
 
 @onready var messages_modal: PanelContainer = _get_node_safe("InterfaceLayer/MessagesModal") as PanelContainer
@@ -1685,11 +1720,79 @@ func _init_controls() -> void:
 	if close_econ_x_button == null:
 		close_econ_x_button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconHeaderHBox/CloseEconXButton") as Button
 	if governor_name_label == null:
-		governor_name_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/GovernorNameLabel") as Label
+		governor_name_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/GovernorNameLabel") as Label
+		if governor_name_label == null:
+			governor_name_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/GovernorNameLabel") as Label
 	if interest_rate_label == null:
-		interest_rate_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/InterestRateLabel") as Label
+		interest_rate_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox/InterestRateLabel") as Label
+		if interest_rate_label == null:
+			interest_rate_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/InterestRateLabel") as Label
+	if rate_cut_button == null:
+		rate_cut_button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox/RateCutButton") as Button
+	if rate_hike_button == null:
+		rate_hike_button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox/RateHikeButton") as Button
+	if inflation_rate_label == null:
+		inflation_rate_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InflationHBox/InflationRateLabel") as Label
+	if inflation_cost_multiplier_label == null:
+		inflation_cost_multiplier_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InflationHBox/InflationCostMultiplierLabel") as Label
+	if stock_market_name_label == null:
+		stock_market_name_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockTitleHBox/StockMarketNameLabel") as Label
+	if stock_market_direction_label == null:
+		stock_market_direction_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockTitleHBox/StockMarketDirectionLabel") as Label
+	if stock_market_points_label == null:
+		stock_market_points_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDetailsHBox/StockMarketPointsLabel") as Label
+	if stock_market_sentiment_label == null:
+		stock_market_sentiment_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDetailsHBox/StockMarketSentimentLabel") as Label
 	if foreign_reserves_label == null:
-		foreign_reserves_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/ForeignReservesLabel") as Label
+		foreign_reserves_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexHeaderHBox/ForeignReservesLabel") as Label
+		if foreign_reserves_label == null:
+			foreign_reserves_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox/ForeignReservesLabel") as Label
+	if forex_unlock_badge == null:
+		forex_unlock_badge = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexHeaderHBox/ForexUnlockBadge") as Label
+	if forex_progress_bar == null:
+		forex_progress_bar = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexProgressHBox/ForexProgressBar") as ProgressBar
+	if forex_progress_label == null:
+		forex_progress_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexProgressHBox/ForexProgressLabel") as Label
+	if currency_regime_label == null:
+		currency_regime_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/CurrencyRegimeLabel") as Label
+	if btn_regime_managed == null:
+		btn_regime_managed = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/BtnRegimeManaged") as Button
+	if btn_regime_pegged == null:
+		btn_regime_pegged = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/BtnRegimePegged") as Button
+	if btn_regime_floating == null:
+		btn_regime_floating = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox/BtnRegimeFloating") as Button
+	if btn_inject_reserves == null:
+		btn_inject_reserves = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox/BtnInjectReserves") as Button
+	if btn_sterilize_reserves == null:
+		btn_sterilize_reserves = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox/BtnSterilizeReserves") as Button
+	if budget_revenue_label == null:
+		budget_revenue_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetRevenueLabel") as Label
+	if budget_expenditure_label == null:
+		budget_expenditure_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetExpenditureLabel") as Label
+	if budget_balance_label == null:
+		budget_balance_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox/BudgetBalanceLabel") as Label
+	if budget_defense_label == null:
+		budget_defense_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetDefenseLabel") as Label
+	if budget_health_label == null:
+		budget_health_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetHealthLabel") as Label
+	if budget_education_label == null:
+		budget_education_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetEducationLabel") as Label
+	if budget_infra_label == null:
+		budget_infra_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetInfraLabel") as Label
+	if budget_science_label == null:
+		budget_science_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox/BudgetScienceLabel") as Label
+	if btn_rebalance_budget == null:
+		btn_rebalance_budget = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BtnRebalanceBudget") as Button
+	if debt_total_label == null:
+		debt_total_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSummaryHBox/DebtTotalLabel") as Label
+	if debt_service_label == null:
+		debt_service_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSummaryHBox/DebtServiceLabel") as Label
+	if btn_take_domestic_loan == null:
+		btn_take_domestic_loan = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnTakeDomesticLoan") as Button
+	if btn_take_external_loan == null:
+		btn_take_external_loan = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnTakeExternalLoan") as Button
+	if btn_repay_debt == null:
+		btn_repay_debt = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox/BtnRepayDebt") as Button
 	if econ_desk_link_button == null:
 		econ_desk_link_button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconDeskLinkButton") as Button
 
@@ -2077,6 +2180,28 @@ func _connect_signals() -> void:
 		close_pol_x_button.pressed.connect(close_all_modals)
 	if close_econ_x_button and not close_econ_x_button.pressed.is_connected(close_all_modals):
 		close_econ_x_button.pressed.connect(close_all_modals)
+	if rate_cut_button and not rate_cut_button.pressed.is_connected(_on_rate_cut_pressed):
+		rate_cut_button.pressed.connect(_on_rate_cut_pressed)
+	if rate_hike_button and not rate_hike_button.pressed.is_connected(_on_rate_hike_pressed):
+		rate_hike_button.pressed.connect(_on_rate_hike_pressed)
+	if btn_regime_managed and not btn_regime_managed.pressed.is_connected(_on_regime_managed_pressed):
+		btn_regime_managed.pressed.connect(_on_regime_managed_pressed)
+	if btn_regime_pegged and not btn_regime_pegged.pressed.is_connected(_on_regime_pegged_pressed):
+		btn_regime_pegged.pressed.connect(_on_regime_pegged_pressed)
+	if btn_regime_floating and not btn_regime_floating.pressed.is_connected(_on_regime_floating_pressed):
+		btn_regime_floating.pressed.connect(_on_regime_floating_pressed)
+	if btn_inject_reserves and not btn_inject_reserves.pressed.is_connected(_on_inject_reserves_pressed):
+		btn_inject_reserves.pressed.connect(_on_inject_reserves_pressed)
+	if btn_sterilize_reserves and not btn_sterilize_reserves.pressed.is_connected(_on_sterilize_reserves_pressed):
+		btn_sterilize_reserves.pressed.connect(_on_sterilize_reserves_pressed)
+	if btn_rebalance_budget and not btn_rebalance_budget.pressed.is_connected(_on_rebalance_budget_pressed):
+		btn_rebalance_budget.pressed.connect(_on_rebalance_budget_pressed)
+	if btn_take_domestic_loan and not btn_take_domestic_loan.pressed.is_connected(_on_take_domestic_loan_pressed):
+		btn_take_domestic_loan.pressed.connect(_on_take_domestic_loan_pressed)
+	if btn_take_external_loan and not btn_take_external_loan.pressed.is_connected(_on_take_external_loan_pressed):
+		btn_take_external_loan.pressed.connect(_on_take_external_loan_pressed)
+	if btn_repay_debt and not btn_repay_debt.pressed.is_connected(_on_repay_debt_pressed):
+		btn_repay_debt.pressed.connect(_on_repay_debt_pressed)
 	if close_msg_x_button and not close_msg_x_button.pressed.is_connected(close_all_modals):
 		close_msg_x_button.pressed.connect(close_all_modals)
 	if btn_msg_filter_all and not btn_msg_filter_all.pressed.is_connected(_on_msg_filter_all_pressed):
@@ -3201,15 +3326,109 @@ func _update_policy_and_bills_modal(state: Dictionary) -> void:
 				bill_votes_tally_label.text = "Roll-Call Status: Awaiting legislative vote."
 
 func _update_economy_central_bank_modal(state: Dictionary) -> void:
+	# 1. Central Bank & Inflation
 	if governor_name_label:
 		var gov := str(state.get("central_bank_governor_name", "Dr. Marcus Thorne"))
 		governor_name_label.text = "Central Bank Governor: %s" % gov
 	if interest_rate_label:
-		var rate := str(state.get("central_bank_interest_rate", "5.25% Benchmark Rate"))
-		interest_rate_label.text = "Benchmark Interest Rate: %s" % rate
+		var rate_val: Variant = state.get("central_bank_interest_rate", 4.5)
+		var rate_str: String = "%.1f%%" % float(rate_val) if (rate_val is float or rate_val is int) else str(rate_val)
+		interest_rate_label.text = "Benchmark Interest Rate: %s" % rate_str
+	if inflation_rate_label:
+		var inf_val: Variant = state.get("inflation_rate", 3.5)
+		var inf_fmt: String = str(state.get("inflation_rate_formatted", "%.1f%%" % float(inf_val)))
+		inflation_rate_label.text = "Inflation Rate: %s" % inf_fmt
+	if inflation_cost_multiplier_label:
+		var impact_str: String = str(state.get("inflation_impact_on_costs", "+0.0% Project Cost Index"))
+		var mult_val: float = float(state.get("inflation_cost_multiplier", 1.0))
+		inflation_cost_multiplier_label.text = "Cost Index: %.2fx (%s)" % [mult_val, impact_str]
+
+	# 2. Stock Market
+	if stock_market_name_label:
+		stock_market_name_label.text = str(state.get("stock_market_name", "Republic Composite Index (RCI)"))
+	if stock_market_points_label:
+		var pts: float = float(state.get("stock_market_points", 2500.0))
+		stock_market_points_label.text = "Current Index: %.1f pts" % pts
+	if stock_market_direction_label:
+		var dir_str: String = str(state.get("stock_market_direction", "Bullish ↗️"))
+		var chg_pct: float = float(state.get("stock_market_change_pct", 0.0))
+		stock_market_direction_label.text = "%s (%+.1f%%)" % [dir_str, chg_pct]
+		if "Bullish" in dir_str:
+			stock_market_direction_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5, 1.0))
+		elif "Bearish" in dir_str:
+			stock_market_direction_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4, 1.0))
+		else:
+			stock_market_direction_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
+	if stock_market_sentiment_label:
+		stock_market_sentiment_label.text = "Sentiment: %s" % str(state.get("stock_market_sentiment", "Moderate Expansion"))
+
+	# 3. Foreign Exchange & Reserves
+	var f_reserves_fmt: String = str(state.get("foreign_reserves_formatted", ""))
+	if f_reserves_fmt.is_empty():
+		f_reserves_fmt = str(state.get("central_bank_foreign_reserves", "R 45.0M"))
 	if foreign_reserves_label:
-		var res := str(state.get("central_bank_foreign_reserves", "R 42.8B Foreign Reserves"))
-		foreign_reserves_label.text = "Foreign Reserves: %s" % res
+		foreign_reserves_label.text = "🌐 Sovereign Foreign Reserves: %s" % f_reserves_fmt
+
+	var is_unlocked: bool = bool(state.get("forex_unlocked", false))
+	if forex_unlock_badge:
+		if is_unlocked:
+			forex_unlock_badge.text = "⭐ UNLOCKED: Sovereign Currency & Forex Active"
+			forex_unlock_badge.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5, 1.0))
+		else:
+			forex_unlock_badge.text = "🔒 LOCKED (Reach R 150M to Unlock Forex)"
+			forex_unlock_badge.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1.0))
+
+	if forex_progress_bar:
+		var prog_pct: float = float(state.get("forex_unlock_progress_pct", 30.0))
+		forex_progress_bar.value = prog_pct
+	if forex_progress_label:
+		var prog_pct: float = float(state.get("forex_unlock_progress_pct", 30.0))
+		forex_progress_label.text = "%.1f%% of R 150M Unlock Milestone" % prog_pct
+
+	if currency_regime_label:
+		var regime: String = str(state.get("currency_regime", "Sovereign Managed Float"))
+		var ex_rate: float = float(state.get("exchange_rate_usd", 1.25))
+		currency_regime_label.text = "Regime: %s (1 USD = %.2f REPU)" % [regime, ex_rate]
+
+	if btn_regime_managed:
+		btn_regime_managed.disabled = not is_unlocked
+	if btn_regime_pegged:
+		btn_regime_pegged.disabled = not is_unlocked
+	if btn_regime_floating:
+		btn_regime_floating.disabled = not is_unlocked
+
+	# 4. National Budget
+	if budget_revenue_label:
+		budget_revenue_label.text = "Quarterly Rev: %s" % str(state.get("budget_revenue_formatted", "R 2,250.0M / Qtr"))
+	if budget_expenditure_label:
+		budget_expenditure_label.text = "Quarterly Outlays: %s" % str(state.get("budget_expenditure_formatted", "R 2,103.6M / Qtr"))
+	if budget_balance_label:
+		var bal_str: String = str(state.get("budget_balance_formatted", "+R 146.4M Surplus"))
+		budget_balance_label.text = "Fiscal Balance: %s" % bal_str
+		if "Surplus" in bal_str:
+			budget_balance_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5, 1.0))
+		else:
+			budget_balance_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4, 1.0))
+
+	if budget_defense_label:
+		budget_defense_label.text = "Defense: R %.0fM" % (float(state.get("budget_defense_allocation", 500000000.0)) / 1000000.0)
+	if budget_health_label:
+		budget_health_label.text = "Health: R %.0fM" % (float(state.get("budget_healthcare_allocation", 400000000.0)) / 1000000.0)
+	if budget_education_label:
+		budget_education_label.text = "Education: R %.0fM" % (float(state.get("budget_education_allocation", 350000000.0)) / 1000000.0)
+	if budget_infra_label:
+		budget_infra_label.text = "Infra: R %.0fM" % (float(state.get("budget_infrastructure_allocation", 600000000.0)) / 1000000.0)
+	if budget_science_label:
+		budget_science_label.text = "Science: R %.0fM" % (float(state.get("budget_science_allocation", 250000000.0)) / 1000000.0)
+
+	# 5. Sovereign Debt & Loans
+	if debt_total_label:
+		var tot_fmt: String = str(state.get("national_debt_total_formatted", "R 250,000,000"))
+		var dom_val: float = float(state.get("national_debt_domestic", 150000000.0)) / 1000000.0
+		var ext_val: float = float(state.get("national_debt_external", 100000000.0)) / 1000000.0
+		debt_total_label.text = "Total Debt: %s (Dom: R %.0fM | Ext: R %.0fM)" % [tot_fmt, dom_val, ext_val]
+	if debt_service_label:
+		debt_service_label.text = "Debt Service: %s" % str(state.get("debt_service_quarterly_formatted", "R 3.63M / Qtr"))
 
 func _update_messages_modal(state: Dictionary) -> void:
 	var emails: Variant = state.get("emails", [])
@@ -4914,6 +5133,138 @@ func _on_econ_desk_link_pressed() -> void:
 	if desk_script and "requested_section" in desk_script:
 		desk_script.requested_section = 2
 	get_tree().change_scene_to_file("res://PresidentialDesk.tscn")
+
+func _on_rate_hike_pressed() -> void:
+	var req_id := "req_cb_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "central_bank",
+		"operation": "rate_hike",
+		"value": 0.5,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Central Bank: Benchmark interest rate hike enacted (+0.5%)."
+
+func _on_rate_cut_pressed() -> void:
+	var req_id := "req_cb_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "central_bank",
+		"operation": "rate_cut",
+		"value": 0.5,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Central Bank: Benchmark interest rate cut enacted (-0.5%)."
+
+func _on_regime_managed_pressed() -> void:
+	var req_id := "req_fx_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "forex_decision",
+		"currency_regime": "ManagedFloat",
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Forex Policy: Sovereign Managed Float regime adopted."
+
+func _on_regime_pegged_pressed() -> void:
+	var req_id := "req_fx_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "forex_decision",
+		"currency_regime": "PeggedToUSD",
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Forex Policy: Fixed exchange peg to USD adopted."
+
+func _on_regime_floating_pressed() -> void:
+	var req_id := "req_fx_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "forex_decision",
+		"currency_regime": "Floating",
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Forex Policy: Free floating currency regime adopted."
+
+func _on_inject_reserves_pressed() -> void:
+	var req_id := "req_cb_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "central_bank",
+		"operation": "inject_reserves",
+		"value": 10000000.0,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Central Bank: Injected R 10M from reserves into Treasury."
+
+func _on_sterilize_reserves_pressed() -> void:
+	var req_id := "req_cb_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "central_bank",
+		"operation": "sterilize_reserves",
+		"value": 10000000.0,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Central Bank: Sterilized R 10M from Treasury into foreign reserves."
+
+func _on_rebalance_budget_pressed() -> void:
+	var req_id := "req_bgt_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "adjust_budget",
+		"defense": 500000000.0,
+		"healthcare": 450000000.0,
+		"education": 400000000.0,
+		"infrastructure": 600000000.0,
+		"science": 300000000.0,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Fiscal Policy: Ministry budget rebalanced."
+
+func _on_take_domestic_loan_pressed() -> void:
+	var req_id := "req_loan_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "take_loan",
+		"loan_type": "domestic",
+		"amount": 25000000.0,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Debt Management: Domestic sovereign bond issued (+R 25M)."
+
+func _on_take_external_loan_pressed() -> void:
+	var req_id := "req_loan_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "take_loan",
+		"loan_type": "external",
+		"amount": 50000000.0,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Debt Management: Multilateral external loan facility contracted (+R 50M)."
+
+func _on_repay_debt_pressed() -> void:
+	var req_id := "req_loan_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	_write_request_file({
+		"request_id": req_id,
+		"action": "repay_loan",
+		"loan_type": "domestic",
+		"amount": 25000000.0,
+		"confirmed": true
+	})
+	if status_ticker_label:
+		status_ticker_label.text = "Debt Management: Sovereign debt repaid (-R 25M)."
 
 func _write_request_file(req_dict: Dictionary) -> bool:
 	var req_path := _resolve_request_path()

@@ -593,6 +593,105 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("central_bank_foreign_reserves")]
     public double CentralBankForeignReserves { get; init; }
 
+    [JsonPropertyName("inflation_rate")]
+    public double InflationRate { get; init; } = 3.5;
+
+    [JsonPropertyName("inflation_rate_formatted")]
+    public string InflationRateFormatted { get; init; } = "3.5%";
+
+    [JsonPropertyName("inflation_cost_multiplier")]
+    public double InflationCostMultiplier { get; init; } = 1.0;
+
+    [JsonPropertyName("inflation_impact_on_costs")]
+    public string InflationImpactOnCosts { get; init; } = "+0.5% Cost Index";
+
+    [JsonPropertyName("budget_revenue")]
+    public double BudgetRevenue { get; init; }
+
+    [JsonPropertyName("budget_revenue_formatted")]
+    public string BudgetRevenueFormatted { get; init; } = "R 1.25B / Qtr";
+
+    [JsonPropertyName("budget_expenditure")]
+    public double BudgetExpenditure { get; init; }
+
+    [JsonPropertyName("budget_expenditure_formatted")]
+    public string BudgetExpenditureFormatted { get; init; } = "R 1.10B / Qtr";
+
+    [JsonPropertyName("budget_balance")]
+    public double BudgetBalance { get; init; }
+
+    [JsonPropertyName("budget_balance_formatted")]
+    public string BudgetBalanceFormatted { get; init; } = "+R 150M Surplus";
+
+    [JsonPropertyName("budget_defense_allocation")]
+    public double BudgetDefenseAllocation { get; init; } = 500_000_000.0;
+
+    [JsonPropertyName("budget_healthcare_allocation")]
+    public double BudgetHealthcareAllocation { get; init; } = 400_000_000.0;
+
+    [JsonPropertyName("budget_education_allocation")]
+    public double BudgetEducationAllocation { get; init; } = 350_000_000.0;
+
+    [JsonPropertyName("budget_infrastructure_allocation")]
+    public double BudgetInfrastructureAllocation { get; init; } = 600_000_000.0;
+
+    [JsonPropertyName("budget_science_allocation")]
+    public double BudgetScienceAllocation { get; init; } = 250_000_000.0;
+
+    [JsonPropertyName("foreign_reserves")]
+    public double ForeignReserves { get; init; } = 45_000_000.0;
+
+    [JsonPropertyName("foreign_reserves_formatted")]
+    public string ForeignReservesFormatted { get; init; } = "R 45.0M";
+
+    [JsonPropertyName("forex_unlocked")]
+    public bool ForexUnlocked { get; init; }
+
+    [JsonPropertyName("forex_unlock_threshold")]
+    public double ForexUnlockThreshold { get; init; } = 150_000_000.0;
+
+    [JsonPropertyName("forex_unlock_progress_pct")]
+    public double ForexUnlockProgressPct { get; init; } = 30.0;
+
+    [JsonPropertyName("national_debt_domestic")]
+    public double NationalDebtDomestic { get; init; } = 150_000_000.0;
+
+    [JsonPropertyName("national_debt_external")]
+    public double NationalDebtExternal { get; init; } = 100_000_000.0;
+
+    [JsonPropertyName("national_debt_total")]
+    public double NationalDebtTotal { get; init; } = 250_000_000.0;
+
+    [JsonPropertyName("national_debt_total_formatted")]
+    public string NationalDebtTotalFormatted { get; init; } = "R 250.0M";
+
+    [JsonPropertyName("debt_service_quarterly")]
+    public double DebtServiceQuarterly { get; init; } = 3_625_000.0;
+
+    [JsonPropertyName("debt_service_quarterly_formatted")]
+    public string DebtServiceQuarterlyFormatted { get; init; } = "R 3.6M / Qtr";
+
+    [JsonPropertyName("stock_market_name")]
+    public string StockMarketName { get; init; } = "Republic Composite Index (RCI)";
+
+    [JsonPropertyName("stock_market_points")]
+    public double StockMarketPoints { get; init; } = 2500.0;
+
+    [JsonPropertyName("stock_market_change_pct")]
+    public double StockMarketChangePct { get; init; } = 1.4;
+
+    [JsonPropertyName("stock_market_direction")]
+    public string StockMarketDirection { get; init; } = "Bullish ↗️";
+
+    [JsonPropertyName("stock_market_sentiment")]
+    public string StockMarketSentiment { get; init; } = "Moderate Expansion";
+
+    [JsonPropertyName("currency_regime")]
+    public string CurrencyRegime { get; init; } = "Sovereign Managed Float";
+
+    [JsonPropertyName("exchange_rate_usd")]
+    public double ExchangeRateToUSD { get; init; } = 1.25;
+
     [JsonPropertyName("bills")]
     public IReadOnlyList<CountryBillSnapshot> Bills { get; init; } = Array.Empty<CountryBillSnapshot>();
 
@@ -1631,9 +1730,42 @@ public sealed record PresidentialDeskSnapshot
             PressBriefingHeadline = pressHeadline,
             PressBriefingSummary = pressSummary,
             PressBriefingDate = conciseTime,
-            CentralBankGovernorName = "Dr. Marcus Thorne",
-            CentralBankInterestRate = 4.5,
-            CentralBankForeignReserves = country.Treasury.Balance * 0.45,
+            CentralBankGovernorName = country.CentralBank?.GovernorName ?? "Dr. Marcus Thorne",
+            CentralBankInterestRate = country.CentralBank?.BenchmarkInterestRate ?? 4.5,
+            CentralBankForeignReserves = country.CentralBank?.ForeignReserves ?? (country.Treasury.Balance * 0.45),
+            InflationRate = country.InflationRate,
+            InflationRateFormatted = $"{country.InflationRate:0.1}%",
+            InflationCostMultiplier = country.GetInflationCostMultiplier(),
+            InflationImpactOnCosts = $"+{Math.Max(0.0, country.InflationRate - 3.0):0.1}% Project Cost Index",
+            BudgetRevenue = Math.Round((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate), 2),
+            BudgetRevenueFormatted = $"{RepuTreasury.Format((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate))} / Qtr",
+            BudgetExpenditure = Math.Round((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0), 2),
+            BudgetExpenditureFormatted = $"{RepuTreasury.Format((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0))} / Qtr",
+            BudgetBalance = Math.Round(((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate)) - ((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0)), 2),
+            BudgetBalanceFormatted = (((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate)) - ((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0)) >= 0 ? "+" : "") + $"{RepuTreasury.Format(((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate)) - ((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0)))} {(((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate)) - ((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0)) >= 0 ? "Surplus" : "Deficit")}",
+            BudgetDefenseAllocation = country.MinistryBudget?.DefenseAllocation ?? 500_000_000.0,
+            BudgetHealthcareAllocation = country.MinistryBudget?.HealthcareAllocation ?? 400_000_000.0,
+            BudgetEducationAllocation = country.MinistryBudget?.EducationAllocation ?? 350_000_000.0,
+            BudgetInfrastructureAllocation = country.MinistryBudget?.InfrastructureAllocation ?? 600_000_000.0,
+            BudgetScienceAllocation = country.MinistryBudget?.ScienceAllocation ?? 250_000_000.0,
+            ForeignReserves = country.CentralBank?.ForeignReserves ?? 45_000_000.0,
+            ForeignReservesFormatted = RepuTreasury.Format(country.CentralBank?.ForeignReserves ?? 45_000_000.0),
+            ForexUnlocked = country.CentralBank?.ForexUnlocked ?? false,
+            ForexUnlockThreshold = 150_000_000.0,
+            ForexUnlockProgressPct = Math.Clamp(((country.CentralBank?.ForeignReserves ?? 45_000_000.0) / 150_000_000.0) * 100.0, 0.0, 100.0),
+            NationalDebtDomestic = country.Debt?.DomesticDebt ?? 150_000_000.0,
+            NationalDebtExternal = country.Debt?.ExternalDebt ?? 100_000_000.0,
+            NationalDebtTotal = country.Debt?.TotalDebt ?? 250_000_000.0,
+            NationalDebtTotalFormatted = RepuTreasury.Format(country.Debt?.TotalDebt ?? 250_000_000.0),
+            DebtServiceQuarterly = country.Debt?.QuarterlyDebtService ?? 3_625_000.0,
+            DebtServiceQuarterlyFormatted = $"{RepuTreasury.Format(country.Debt?.QuarterlyDebtService ?? 3_625_000.0)} / Qtr",
+            StockMarketName = country.StockMarket?.IndexName ?? "Republic Composite Index (RCI)",
+            StockMarketPoints = country.StockMarket?.CurrentPoints ?? 2500.0,
+            StockMarketChangePct = country.StockMarket?.ChangePercent ?? 0.0,
+            StockMarketDirection = country.StockMarket?.Direction ?? "Bullish ↗️",
+            StockMarketSentiment = country.StockMarket?.Sentiment ?? "Moderate Expansion",
+            CurrencyRegime = country.CentralBank?.CurrencyRegime ?? "Sovereign Managed Float",
+            ExchangeRateToUSD = country.CentralBank?.ExchangeRateToUSD ?? 1.25,
             Bills = billSnapshots.AsReadOnly(),
             PendingBill = pendingBillSnapshot,
             PlayerGender = playerGender,

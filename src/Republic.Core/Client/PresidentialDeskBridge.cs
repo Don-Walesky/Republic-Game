@@ -10,6 +10,10 @@ using Republic.Core.Identity.Models;
 using Republic.Core.Identity.Services;
 
 using Republic.Core.Cabinet.Models;
+using Republic.Core.Economy.CentralBank.Models;
+using Republic.Core.Economy.Debt.Models;
+using Republic.Core.Economy.StockMarket.Models;
+using Republic.Core.Communication.Services;
 using Republic.Core.Economy.Budget.Models;
 using Republic.Core.Economy.PrivateSector.Services;
 using Republic.Core.Economy.Projects;
@@ -8673,6 +8677,586 @@ public static class PresidentialDeskBridge
         return successResult;
     }
 
+    /// <summary>
+    /// Adjusts national ministry budget allocations across Defense, Healthcare, Education, Infrastructure, and Science.
+    /// Rebalances fiscal expenditures, updates macroeconomic cycle, and calculates projected inflation and budget balance.
+    /// </summary>
+    public static PresidentialActionResult ApplyAdjustBudgetDecision(
+        double? defenseAllocation = null,
+        double? healthcareAllocation = null,
+        double? educationAllocation = null,
+        double? infrastructureAllocation = null,
+        double? scienceAllocation = null,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "adjust national ministry budget");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (country!.MinistryBudget == null)
+        {
+            country.MinistryBudget = new MinistryBudget();
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose adjusting ministry budget allocations. Current expenditure: {RepuTreasury.Format(country.MinistryBudget.TotalQuarterlyExpenditures)} / Qtr.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        if (defenseAllocation.HasValue && defenseAllocation.Value >= 0)
+        {
+            country.MinistryBudget.DefenseAllocation = Math.Max(50_000_000.0, defenseAllocation.Value);
+        }
+        if (healthcareAllocation.HasValue && healthcareAllocation.Value >= 0)
+        {
+            country.MinistryBudget.HealthcareAllocation = Math.Max(50_000_000.0, healthcareAllocation.Value);
+        }
+        if (educationAllocation.HasValue && educationAllocation.Value >= 0)
+        {
+            country.MinistryBudget.EducationAllocation = Math.Max(50_000_000.0, educationAllocation.Value);
+        }
+        if (infrastructureAllocation.HasValue && infrastructureAllocation.Value >= 0)
+        {
+            country.MinistryBudget.InfrastructureAllocation = Math.Max(50_000_000.0, infrastructureAllocation.Value);
+        }
+        if (scienceAllocation.HasValue && scienceAllocation.Value >= 0)
+        {
+            country.MinistryBudget.ScienceAllocation = Math.Max(50_000_000.0, scienceAllocation.Value);
+        }
+
+        country.UpdateEconomicCycle(simTime);
+
+        double estTaxRev = (country.GrossDomesticProduct * 0.15 * country.TaxPolicy.IncomeTaxRate) +
+                           (country.GrossDomesticProduct * 0.10 * country.TaxPolicy.CorporateTaxRate) +
+                           (Math.Max(0.0, country.TradeBalance) * country.TaxPolicy.ImportTariffRate);
+        double estExp = country.MinistryBudget.TotalQuarterlyExpenditures + (country.Debt?.QuarterlyDebtService ?? 0.0);
+        double netBal = estTaxRev - estExp;
+        string balTag = netBal >= 0 ? $"+{RepuTreasury.Format(netBal)} Surplus" : $"-{RepuTreasury.Format(Math.Abs(netBal))} Deficit";
+
+        string outcomeMessage = $"National ministry budget rebalanced. Quarterly expenditure: {RepuTreasury.Format(country.MinistryBudget.TotalQuarterlyExpenditures)}. Fiscal balance: {balTag}. Projected inflation: {country.InflationRate:0.1}%.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Processes sovereign borrowing or debt repayment for domestic or external loans.
+    /// External loans boost foreign reserves and available funds, adding external debt service.
+    /// Domestic loans inject funds into the national treasury, adding domestic debt service.
+    /// When foreign reserves reach 150 Million REPU, unlocks national currency management and Forex participation.
+    /// </summary>
+    public static PresidentialActionResult ApplyLoanDecision(
+        string loanType,
+        double amount,
+        bool isRepayment = false,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, isRepayment ? "repay sovereign loan" : "contract sovereign loan");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (amount <= 0.0)
+        {
+            var invalidAmount = CreateInvalidInputResult(targetStatePath, "Loan amount must be greater than zero.", requestId);
+            TryWriteResultFile(targetStatePath, invalidAmount);
+            return invalidAmount;
+        }
+
+        if (country!.Debt == null)
+        {
+            country.Debt = new NationalDebtRecord();
+        }
+        if (country.CentralBank == null)
+        {
+            country.CentralBank = new CountryCentralBank();
+        }
+
+        bool isExternal = loanType.Trim().Equals("external", StringComparison.OrdinalIgnoreCase);
+
+        if (!confirmed)
+        {
+            double rate = isExternal ? country.Debt.ExternalInterestRate : country.Debt.DomesticInterestRate;
+            string op = isRepayment ? "repayment" : "contracting";
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose sovereign {loanType} loan {op} of {RepuTreasury.Format(amount)} at {rate:0.1}% interest.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        if (isRepayment)
+        {
+            if (country.Treasury.Balance < amount)
+            {
+                var insufficientFunds = CreateInvalidInputResult(
+                    targetStatePath,
+                    $"Cannot repay loan: National treasury balance ({RepuTreasury.Format(country.Treasury.Balance)}) is insufficient for repayment of {RepuTreasury.Format(amount)}.",
+                    requestId);
+                TryWriteResultFile(targetStatePath, insufficientFunds);
+                return insufficientFunds;
+            }
+
+            country.Treasury.Withdraw(amount);
+            if (isExternal && country.CentralBank.ForeignReserves >= amount)
+            {
+                country.CentralBank.WithdrawForeignReserves(amount);
+            }
+            country.Debt.RepayLoan(loanType, amount, country.Treasury, country.CentralBank);
+        }
+        else
+        {
+            country.Debt.TakeLoan(loanType, amount, country.Treasury, country.CentralBank);
+            if (isExternal)
+            {
+                country.CentralBank.DepositForeignReserves(amount);
+                country.Treasury.Deposit(amount);
+            }
+            else
+            {
+                country.Treasury.Deposit(amount);
+            }
+        }
+
+        country.UpdateEconomicCycle(simTime);
+
+        if (country.CentralBank.ForexUnlocked && country.ForexMilestonePendingNotification && envelope?.State != null)
+        {
+            InGameCommunicationService.DispatchForexUnlockCable(envelope.State, country);
+            country.ForexMilestonePendingNotification = false;
+        }
+
+        string actionStr = isRepayment ? "repaid" : "contracted";
+        string typeStr = isExternal ? "External" : "Domestic";
+        string outcomeMessage = $"Sovereign {typeStr} loan {actionStr}: {RepuTreasury.Format(amount)}. Total debt: {RepuTreasury.Format(country.Debt.TotalDebt)} (Quarterly service: {RepuTreasury.Format(country.Debt.QuarterlyDebtService)}). Foreign reserves: {RepuTreasury.Format(country.CentralBank.ForeignReserves)}.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes a Central Bank policy action: interest rate hike/cut or foreign reserve injection/sterilization.
+    /// Modulates macroeconomic inflation pressure, investor confidence, and stock market sentiment.
+    /// </summary>
+    public static PresidentialActionResult ApplyCentralBankDecision(
+        string operation,
+        double value = 0.50,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "execute Central Bank policy");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (country!.CentralBank == null)
+        {
+            country.CentralBank = new CountryCentralBank();
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose Central Bank operation '{operation}' with value {value:0.##}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        string normalizedOp = operation?.Trim().ToLowerInvariant() ?? "rate_hike";
+        string opMessage;
+
+        switch (normalizedOp)
+        {
+            case "rate_hike" or "hike":
+                double hikeDelta = value > 0 ? value : 0.50;
+                country.CentralBank.AdjustInterestRate(hikeDelta);
+                opMessage = $"Central Bank raised benchmark interest rate by +{hikeDelta:0.1}% to {country.CentralBank.BenchmarkInterestRate:0.1}%. Monetary policy tightened to curb inflation.";
+                break;
+
+            case "rate_cut" or "cut":
+                double cutDelta = value > 0 ? value : 0.50;
+                country.CentralBank.AdjustInterestRate(-cutDelta);
+                opMessage = $"Central Bank lowered benchmark interest rate by -{cutDelta:0.1}% to {country.CentralBank.BenchmarkInterestRate:0.1}%. Credit conditions eased to support business growth.";
+                break;
+
+            case "set_rate" or "set_interest_rate":
+                country.CentralBank.SetInterestRate(value);
+                opMessage = $"Central Bank benchmark interest rate set to {country.CentralBank.BenchmarkInterestRate:0.1}%.";
+                break;
+
+            case "inject_reserves" or "reserve_injection":
+                double injectAmount = value > 0 ? value : 10_000_000.0;
+                if (!country.CentralBank.InjectReservesToTreasury(country.Treasury, injectAmount))
+                {
+                    var failResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        $"Insufficient foreign reserves ({RepuTreasury.Format(country.CentralBank.ForeignReserves)}) to inject {RepuTreasury.Format(injectAmount)}.",
+                        requestId);
+                    TryWriteResultFile(targetStatePath, failResult);
+                    return failResult;
+                }
+                opMessage = $"Central Bank injected {RepuTreasury.Format(injectAmount)} from foreign reserves into national treasury.";
+                break;
+
+            case "sterilize_reserves" or "reserve_sterilization":
+                double sterilizeAmount = value > 0 ? value : 10_000_000.0;
+                if (!country.CentralBank.SterilizeTreasuryToReserves(country.Treasury, sterilizeAmount))
+                {
+                    var failResult = CreateInvalidInputResult(
+                        targetStatePath,
+                        $"Insufficient treasury funds ({RepuTreasury.Format(country.Treasury.Balance)}) to sterilize {RepuTreasury.Format(sterilizeAmount)} into reserves.",
+                        requestId);
+                    TryWriteResultFile(targetStatePath, failResult);
+                    return failResult;
+                }
+                opMessage = $"Central Bank sterilized {RepuTreasury.Format(sterilizeAmount)} from treasury liquidity into sovereign foreign reserves.";
+                break;
+
+            default:
+                var invalidOp = CreateInvalidInputResult(
+                    targetStatePath,
+                    $"Unknown Central Bank operation '{operation}'. Valid: rate_hike, rate_cut, set_rate, inject_reserves, sterilize_reserves.",
+                    requestId);
+                TryWriteResultFile(targetStatePath, invalidOp);
+                return invalidOp;
+        }
+
+        country.UpdateEconomicCycle(simTime);
+
+        if (country.CentralBank.ForexUnlocked && country.ForexMilestonePendingNotification && envelope?.State != null)
+        {
+            InGameCommunicationService.DispatchForexUnlockCable(envelope.State, country);
+            country.ForexMilestonePendingNotification = false;
+        }
+
+        string outcomeMessage = $"{opMessage} Inflation: {country.InflationRate:0.1}%, RCI: {country.StockMarket.CurrentPoints:0.0} ({country.StockMarket.Direction}). Foreign Reserves: {RepuTreasury.Format(country.CentralBank.ForeignReserves)}.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes national currency management and Forex participation policies once foreign reserves reach 150 Million REPU.
+    /// </summary>
+    public static PresidentialActionResult ApplyForexDecision(
+        string currencyRegime,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "set currency regime");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (country!.CentralBank == null)
+        {
+            country.CentralBank = new CountryCentralBank();
+        }
+
+        if (!country.CentralBank.ForexUnlocked && country.CentralBank.ForeignReserves < CountryCentralBank.ForexUnlockThreshold)
+        {
+            var lockedResult = CreateInvalidInputResult(
+                targetStatePath,
+                $"National currency management and Forex participation are locked. Sovereign foreign reserves must reach {RepuTreasury.Format(CountryCentralBank.ForexUnlockThreshold)} (current: {RepuTreasury.Format(country.CentralBank.ForeignReserves)}).",
+                requestId);
+            TryWriteResultFile(targetStatePath, lockedResult);
+            return lockedResult;
+        }
+
+        country.CentralBank.ForexUnlocked = true;
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose adopting '{currencyRegime}' foreign exchange regime. Current reserves: {RepuTreasury.Format(country.CentralBank.ForeignReserves)}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        string normalizedRegime = currencyRegime?.Trim() ?? "ManagedFloat";
+        if (normalizedRegime.Equals("PeggedToUSD", StringComparison.OrdinalIgnoreCase) ||
+            normalizedRegime.Equals("Pegged", StringComparison.OrdinalIgnoreCase))
+        {
+            country.CentralBank.CurrencyRegime = "PeggedToUSD";
+            country.CentralBank.ExchangeRateToUSD = 1.0;
+        }
+        else if (normalizedRegime.Equals("Floating", StringComparison.OrdinalIgnoreCase) ||
+                 normalizedRegime.Equals("FreeFloat", StringComparison.OrdinalIgnoreCase))
+        {
+            country.CentralBank.CurrencyRegime = "Floating";
+            country.CentralBank.ExchangeRateToUSD = Math.Round(1.0 + (country.InflationRate / 20.0), 2);
+        }
+        else
+        {
+            country.CentralBank.CurrencyRegime = "ManagedFloat";
+            country.CentralBank.ExchangeRateToUSD = Math.Round(1.0 + (country.InflationRate / 40.0), 2);
+        }
+
+        country.UpdateEconomicCycle(simTime);
+
+        string outcomeMessage = $"National currency regime set to {country.CentralBank.CurrencyRegime}. Exchange rate: 1 USD = {country.CentralBank.ExchangeRateToUSD:0.00} REPU. Foreign reserves: {RepuTreasury.Format(country.CentralBank.ForeignReserves)}.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
     public static PresidentialActionResult? ProcessPendingDecisionRequest(
         string? stateFilePath = null,
         string? saveFilePath = null,
@@ -10334,6 +10918,160 @@ public static class PresidentialDeskBridge
                             TryDeleteFile(targetRequestPath);
                         }
                     }
+
+                    if (normalizedAction is "adjust_budget" or "budget_decision" or "budget" or "rebalance_budget")
+                    {
+                        double? defense = null;
+                        double? healthcare = null;
+                        double? education = null;
+                        double? infrastructure = null;
+                        double? science = null;
+
+                        if (root.TryGetProperty("defense", out var defEl) && defEl.ValueKind == JsonValueKind.Number) defense = defEl.GetDouble();
+                        else if (root.TryGetProperty("defense_allocation", out var defAEl) && defAEl.ValueKind == JsonValueKind.Number) defense = defAEl.GetDouble();
+
+                        if (root.TryGetProperty("healthcare", out var hcEl) && hcEl.ValueKind == JsonValueKind.Number) healthcare = hcEl.GetDouble();
+                        else if (root.TryGetProperty("healthcare_allocation", out var hcAEl) && hcAEl.ValueKind == JsonValueKind.Number) healthcare = hcAEl.GetDouble();
+
+                        if (root.TryGetProperty("education", out var edEl) && edEl.ValueKind == JsonValueKind.Number) education = edEl.GetDouble();
+                        else if (root.TryGetProperty("education_allocation", out var edAEl) && edAEl.ValueKind == JsonValueKind.Number) education = edAEl.GetDouble();
+
+                        if (root.TryGetProperty("infrastructure", out var infEl) && infEl.ValueKind == JsonValueKind.Number) infrastructure = infEl.GetDouble();
+                        else if (root.TryGetProperty("infrastructure_allocation", out var infAEl) && infAEl.ValueKind == JsonValueKind.Number) infrastructure = infAEl.GetDouble();
+
+                        if (root.TryGetProperty("science", out var sciEl) && sciEl.ValueKind == JsonValueKind.Number) science = sciEl.GetDouble();
+                        else if (root.TryGetProperty("science_allocation", out var sciAEl) && sciAEl.ValueKind == JsonValueKind.Number) science = sciAEl.GetDouble();
+
+                        bool bConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var cfEl) && (cfEl.ValueKind == JsonValueKind.True || cfEl.ValueKind == JsonValueKind.False))
+                        {
+                            bConfirmed = cfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyAdjustBudgetDecision(defense, healthcare, education, infrastructure, science, bConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "take_loan" or "borrow_loan" or "loan" or "repay_loan" or "repay_debt" or "debt_repayment")
+                    {
+                        string loanType = "domestic";
+                        if (root.TryGetProperty("loan_type", out var ltEl) && ltEl.ValueKind == JsonValueKind.String)
+                        {
+                            loanType = ltEl.GetString() ?? "domestic";
+                        }
+                        else if (root.TryGetProperty("type", out var tEl) && tEl.ValueKind == JsonValueKind.String)
+                        {
+                            loanType = tEl.GetString() ?? "domestic";
+                        }
+
+                        double loanAmount = 25_000_000.0;
+                        if (root.TryGetProperty("amount", out var amEl) && amEl.ValueKind == JsonValueKind.Number)
+                        {
+                            loanAmount = amEl.GetDouble();
+                        }
+                        else if (root.TryGetProperty("amount_repu", out var amREl) && amREl.ValueKind == JsonValueKind.Number)
+                        {
+                            loanAmount = amREl.GetDouble();
+                        }
+
+                        bool isRepayment = normalizedAction is "repay_loan" or "repay_debt" or "debt_repayment";
+                        if (root.TryGetProperty("is_repayment", out var repEl) && (repEl.ValueKind == JsonValueKind.True || repEl.ValueKind == JsonValueKind.False))
+                        {
+                            isRepayment = repEl.GetBoolean();
+                        }
+
+                        bool lConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var lcfEl) && (lcfEl.ValueKind == JsonValueKind.True || lcfEl.ValueKind == JsonValueKind.False))
+                        {
+                            lConfirmed = lcfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyLoanDecision(loanType, loanAmount, isRepayment, lConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "central_bank" or "central_bank_decision" or "adjust_interest_rate" or "set_interest_rate" or "rate_hike" or "rate_cut" or "inject_reserves" or "sterilize_reserves")
+                    {
+                        string operation = normalizedAction;
+                        if (root.TryGetProperty("operation", out var opEl) && opEl.ValueKind == JsonValueKind.String)
+                        {
+                            operation = opEl.GetString() ?? normalizedAction;
+                        }
+
+                        double val = 0.50;
+                        if (root.TryGetProperty("value", out var vEl) && vEl.ValueKind == JsonValueKind.Number)
+                        {
+                            val = vEl.GetDouble();
+                        }
+                        else if (root.TryGetProperty("rate_change", out var rcEl) && rcEl.ValueKind == JsonValueKind.Number)
+                        {
+                            val = rcEl.GetDouble();
+                        }
+                        else if (root.TryGetProperty("target_rate", out var trEl) && trEl.ValueKind == JsonValueKind.Number)
+                        {
+                            val = trEl.GetDouble();
+                        }
+                        else if (root.TryGetProperty("amount", out var amtEl) && amtEl.ValueKind == JsonValueKind.Number)
+                        {
+                            val = amtEl.GetDouble();
+                        }
+
+                        bool cbConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var cbcfEl) && (cbcfEl.ValueKind == JsonValueKind.True || cbcfEl.ValueKind == JsonValueKind.False))
+                        {
+                            cbConfirmed = cbcfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyCentralBankDecision(operation, val, cbConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "forex_decision" or "forex" or "set_currency_regime" or "currency_regime")
+                    {
+                        string regime = "ManagedFloat";
+                        if (root.TryGetProperty("currency_regime", out var crEl) && crEl.ValueKind == JsonValueKind.String)
+                        {
+                            regime = crEl.GetString() ?? "ManagedFloat";
+                        }
+                        else if (root.TryGetProperty("regime", out var rEl) && rEl.ValueKind == JsonValueKind.String)
+                        {
+                            regime = rEl.GetString() ?? "ManagedFloat";
+                        }
+
+                        bool fxConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var fxcfEl) && (fxcfEl.ValueKind == JsonValueKind.True || fxcfEl.ValueKind == JsonValueKind.False))
+                        {
+                            fxConfirmed = fxcfEl.GetBoolean();
+                        }
+
+                        try
+                        {
+                            return ApplyForexDecision(regime, fxConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
                 }
 
                 // 1. Validate rate field presence and format for taxation decisions

@@ -3,6 +3,9 @@ namespace Republic.Core.World.Models;
 using System.Text.Json.Serialization;
 using Republic.Core.Cabinet.Models;
 using Republic.Core.Economy.Budget.Models;
+using Republic.Core.Economy.CentralBank.Models;
+using Republic.Core.Economy.Debt.Models;
+using Republic.Core.Economy.StockMarket.Models;
 using Republic.Core.Economy.PrivateSector.Models;
 using Republic.Core.Economy.Projects;
 using Republic.Core.Economy.Treasury;
@@ -162,6 +165,109 @@ public sealed class Country
     /// Defaults to the standard national baseline (2,100,000,000.0).
     /// </summary>
     public double TradeBalance { get; set; } = 2_100_000_000.0;
+
+    /// <summary>
+    /// Gets or sets the sovereign headline inflation rate percentage (0.0 to 50.0%).
+    /// Baseline default is 3.5%.
+    /// Rises with fiscal deficits, low central bank interest rates, high borrowing, and low reserves.
+    /// Falls with tight monetary policy, strong foreign reserves, and fiscal consolidation.
+    /// </summary>
+    public double InflationRate { get; set; } = 3.5;
+
+    /// <summary>
+    /// Gets or sets the sovereign nation's independent Central Bank governing interest rates,
+    /// monetary stances, and foreign reserves.
+    /// </summary>
+    public CountryCentralBank CentralBank { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the authoritative sovereign debt ledger tracking domestic and external borrowing obligations.
+    /// </summary>
+    public NationalDebtRecord Debt { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the domestic stock market composite index measuring corporate equity valuations and investor sentiment.
+    /// </summary>
+    public StockMarketIndex StockMarket { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether a milestone notification for unlocking Forex (150M reserves) is pending delivery.
+    /// </summary>
+    public bool ForexMilestonePendingNotification { get; set; }
+
+    /// <summary>
+    /// Gets the inflation-adjusted project cost multiplier.
+    /// At baseline inflation (<= 3.0%), multiplier is 1.0.
+    /// Higher inflation scales capital project costs accordingly.
+    /// </summary>
+    public double GetInflationCostMultiplier()
+    {
+        return 1.0 + (Math.Max(0.0, InflationRate - 3.0) / 100.0);
+    }
+
+    /// <summary>
+    /// Evaluates and advances the domestic macroeconomic cycle:
+    /// Taxation → Inflation → Budget → Loans → Trade → Stock Market → Forex.
+    /// </summary>
+    public double UpdateEconomicCycle(RepublicTime simTime)
+    {
+        double gdp = GrossDomesticProduct > 0.0 ? GrossDomesticProduct : 450_000_000_000.0;
+
+        // 1. Calculate Quarterly Fiscal Estimates
+        double estQuarterlyTaxRev = (gdp * 0.15 * TaxPolicy.IncomeTaxRate) +
+                                    (gdp * 0.10 * TaxPolicy.CorporateTaxRate) +
+                                    (Math.Max(0.0, TradeBalance) * TaxPolicy.ImportTariffRate);
+
+        double estQuarterlyExp = MinistryBudget.TotalQuarterlyExpenditures + Debt.QuarterlyDebtService;
+        double fiscalBalance = estQuarterlyTaxRev - estQuarterlyExp;
+
+        // 2. Synthesize Inflation Pressure
+        // Baseline 3.5%
+        double baseInflation = 3.5;
+
+        // A. Tax Policy demand-pull impact:
+        double taxInflationImpact = -(TaxPolicy.IncomeTaxRate - 0.25) * 6.0;
+
+        // B. Central Bank Interest Rate impact:
+        double rateInflationImpact = -(CentralBank.BenchmarkInterestRate - 4.5) * 0.50;
+
+        // C. Fiscal Deficit / Spending impact:
+        double deficitInflationImpact = fiscalBalance < 0.0
+            ? Math.Min(4.0, (Math.Abs(fiscalBalance) / 200_000_000.0) * 0.3)
+            : -Math.Min(1.5, (fiscalBalance / 200_000_000.0) * 0.15);
+
+        // D. Debt impact:
+        double debtInflationImpact = Math.Min(3.0, (Debt.TotalDebt / 100_000_000.0) * 0.15);
+
+        // E. Foreign Reserves shielding:
+        double reserveInflationImpact = CentralBank.ForeignReserves < 30_000_000.0
+            ? 0.8
+            : (CentralBank.ForeignReserves >= 100_000_000.0 ? -0.5 : 0.0);
+
+        double rawInflation = baseInflation + taxInflationImpact + rateInflationImpact + deficitInflationImpact + debtInflationImpact + reserveInflationImpact;
+        InflationRate = Math.Clamp(Math.Round(rawInflation, 1), 0.5, 35.0);
+
+        // 3. Approval drag from elevated inflation
+        if (InflationRate > 5.0)
+        {
+            double excess = InflationRate - 5.0;
+            double drag = excess * 0.35;
+            HappinessRating = Math.Clamp(HappinessRating - drag, 5.0, 100.0);
+        }
+
+        // 4. Update Stock Market Index based on new macroeconomic indicators
+        StockMarket.UpdateIndex(BaselineStability, InflationRate, CorruptionIndex, TaxPolicy.CorporateTaxRate, CentralBank.BenchmarkInterestRate);
+
+        // 5. Check Forex Unlock Threshold (150 Million REPU)
+        bool wasUnlocked = CentralBank.ForexUnlocked;
+        bool isUnlockedNow = CentralBank.CheckForexUnlock();
+        if (!wasUnlocked && isUnlockedNow)
+        {
+            ForexMilestonePendingNotification = true;
+        }
+
+        return InflationRate;
+    }
 
     /// <summary>
     /// Gets or sets the latest citizen welfare and public approval feedback record resulting from domestic policy actions.
@@ -2998,6 +3104,8 @@ public sealed class Country
             BaselineStability = Math.Clamp(BaselineStability + stabilityDelta, 0.0, 100.0);
         }
 
+        UpdateEconomicCycle(enactedTime);
+
         var description = BuildCitizenFeedbackDescription(clampedIncome, prevIncome, actualApprovalDelta, stabilityDelta);
 
         var feedback = new CitizenFeedbackRecord
@@ -3020,7 +3128,7 @@ public sealed class Country
         return feedback;
     }
 
-    private static string BuildCitizenFeedbackDescription(double newIncome, double prevIncome, double approvalDelta, double stabilityDelta)
+    private string BuildCitizenFeedbackDescription(double newIncome, double prevIncome, double approvalDelta, double stabilityDelta)
     {
         if (newIncome > prevIncome)
         {
@@ -3029,6 +3137,7 @@ public sealed class Country
             {
                 text += $" Societal friction from extreme tax (>50%) reduced national stability by {Math.Abs(stabilityDelta):0.#}%.";
             }
+            text += $" Macroeconomic demand cooled: Inflation pressure reduced to {InflationRate:0.1}%.";
             return text;
         }
         else if (newIncome < prevIncome)
@@ -3038,6 +3147,7 @@ public sealed class Country
             {
                 text += $" Easing extreme taxation restored national stability by {stabilityDelta:0.#}%.";
             }
+            text += $" Household purchasing liquidity stimulated: Inflation pressure adjusted to {InflationRate:0.1}%.";
             return text;
         }
 
@@ -3170,6 +3280,10 @@ public sealed class Country
         InterestGroup? interestGroup = null,
         CountryBill? bill = null,
         CountryElection? election = null,
+        double inflationRate = 3.5,
+        CountryCentralBank? centralBank = null,
+        NationalDebtRecord? debt = null,
+        StockMarketIndex? stockMarket = null,
         DiplomaticRelation? relation = null,
         DiplomaticAgreement? agreement = null,
         IEnumerable<DiplomaticAgreement>? agreements = null,
@@ -3217,6 +3331,10 @@ public sealed class Country
             StrategicDirection = strategicDirection ?? NationalStrategicDirection.Industrialisation,
             StrategyProfile = strategyProfile,
             BaseMilitaryLevel = baseMilitaryLevel,
+            InflationRate = inflationRate,
+            CentralBank = centralBank ?? new CountryCentralBank(),
+            Debt = debt ?? new NationalDebtRecord(),
+            StockMarket = stockMarket ?? new StockMarketIndex(),
             TaxPolicy = taxPolicy != null
                 ? new TaxPolicy { IncomeTaxRate = taxPolicy.IncomeTaxRate, CorporateTaxRate = taxPolicy.CorporateTaxRate, ImportTariffRate = taxPolicy.ImportTariffRate }
                 : new TaxPolicy(),

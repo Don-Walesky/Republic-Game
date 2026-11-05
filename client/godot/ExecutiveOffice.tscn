@@ -4162,10 +4162,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -200.0
-offset_right = 300.0
-offset_bottom = 200.0
+offset_left = -390.0
+offset_top = -280.0
+offset_right = 390.0
+offset_bottom = 280.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
@@ -4182,36 +4182,312 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 13
-text = "📈 National Treasury & Central Bank"
+text = "🏛️ National Treasury, Central Bank & Macroeconomic Command"
 
 [node name="CloseEconXButton" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconHeaderHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = " ✕ "
 
-[node name="CentralBankCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox"]
+[node name="EconScroll" type="ScrollContainer" parent="InterfaceLayer/EconomyModal/EconVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="EconCardsVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="CentralBankCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="BankVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/CentralBankCard"]
+[node name="BankVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="GovernorNameLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox"]
+[node name="GovernorNameLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 11
-text = "Central Bank Governor: [Unavailable]"
+text = "Central Bank Governor: Dr. Marcus Thorne"
 
-[node name="InterestRateLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox"]
+[node name="InterestRateHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Benchmark Interest Rate: [Unavailable]"
+theme_override_constants/separation = 8
 
-[node name="ForeignReservesLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/CentralBankCard/BankVBox"]
+[node name="InterestRateLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 10
-text = "Foreign Exchange Reserves: [Unavailable]"
+text = "Benchmark Interest Rate: 4.5% (Neutral)"
+
+[node name="RateCutButton" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "📉 -0.5% Rate Cut"
+
+[node name="RateHikeButton" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InterestRateHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "📈 +0.5% Rate Hike"
+
+[node name="InflationHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InflationRateLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InflationHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1.0, 0.75, 0.3, 1)
+theme_override_font_sizes/font_size = 10
+text = "Inflation Rate: 3.5% (Target)"
+
+[node name="InflationCostMultiplierLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/CentralBankCard/BankVBox/InflationHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Project Capital Cost Index: 1.00x (+0.0%)"
+
+[node name="StockMarketCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="StockVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="StockTitleHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox"]
+layout_mode = 2
+
+[node name="StockMarketNameLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockTitleHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "📊 Domestic Stock Exchange (Republic Composite Index - RCI)"
+
+[node name="StockMarketDirectionLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockTitleHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "Bullish ↗️ (+1.2%)"
+
+[node name="StockDetailsHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StockMarketPointsLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDetailsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "Current Index: 2,500.0 pts"
+
+[node name="StockMarketSentimentLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/StockMarketCard/StockVBox/StockDetailsHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Market Sentiment: Moderate Expansion"
+
+[node name="ForexCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ForexVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ForexHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox"]
+layout_mode = 2
+
+[node name="ForeignReservesLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🌐 Sovereign Foreign Reserves: R 45,000,000"
+
+[node name="ForexUnlockBadge" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1.0, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 9
+text = "🔒 LOCKED (Requires R 150M Reserves)"
+
+[node name="ForexProgressHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ForexProgressBar" type="ProgressBar" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexProgressHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 100.0
+value = 30.0
+
+[node name="ForexProgressLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ForexProgressHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "30.0% of R 150M Unlock Milestone"
+
+[node name="CurrencyRegimeHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CurrencyRegimeLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Currency Regime: Sovereign Managed Float (1 USD = 1.25 REPU)"
+
+[node name="BtnRegimeManaged" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Managed Float"
+
+[node name="BtnRegimePegged" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Peg to USD"
+
+[node name="BtnRegimeFloating" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/CurrencyRegimeHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Free Float"
+
+[node name="ReserveOpsHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnInjectReserves" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "📥 Inject R 10M to Treasury"
+
+[node name="BtnSterilizeReserves" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/ForexCard/ForexVBox/ReserveOpsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "📤 Sterilize R 10M to Reserves"
+
+[node name="BudgetCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="BudgetVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BudgetSummaryHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BudgetRevenueLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.4, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "Quarterly Revenue: R 2,250.0M"
+
+[node name="BudgetExpenditureLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1.0, 0.45, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "Quarterly Outlays: R 2,103.6M"
+
+[node name="BudgetBalanceLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/BudgetSummaryHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "Balance: +R 146.4M Surplus"
+
+[node name="AllocationsGridHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BudgetDefenseLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Defense: R 500M"
+
+[node name="BudgetHealthLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Health: R 400M"
+
+[node name="BudgetEducationLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Education: R 350M"
+
+[node name="BudgetInfraLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Infra: R 600M"
+
+[node name="BudgetScienceLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox/AllocationsGridHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Science: R 250M"
+
+[node name="BtnRebalanceBudget" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/BudgetCard/BudgetVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "⚖️ Rebalance Ministry Budget Priorities"
+
+[node name="DebtCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="DebtVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="DebtSummaryHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DebtTotalLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSummaryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1.0, 0.75, 0.3, 1)
+theme_override_font_sizes/font_size = 10
+text = "Total Sovereign Debt: R 250,000,000 (Dom: R 150M | Ext: R 100M)"
+
+[node name="DebtServiceLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtSummaryHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Debt Service: R 3.63M / Qtr"
+
+[node name="DebtActionsHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnTakeDomesticLoan" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "🏛️ Take Domestic Loan (+R 25M)"
+
+[node name="BtnTakeExternalLoan" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "🌐 Take External Loan (+R 50M)"
+
+[node name="BtnRepayDebt" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/DebtCard/DebtVBox/DebtActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "💳 Repay Debt (-R 25M)"
 
 [node name="EconDeskLinkButton" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox"]
 layout_mode = 2
