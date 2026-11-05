@@ -3489,17 +3489,17 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -340.0
-offset_top = -240.0
-offset_right = 340.0
-offset_bottom = 240.0
+offset_left = -380.0
+offset_top = -260.0
+offset_right = 380.0
+offset_bottom = 260.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
 
 [node name="CmdVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="CmdHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox"]
 layout_mode = 2
@@ -3509,110 +3509,516 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 13
-text = "⚔️ Supreme Military Command & Warfare Operations"
+text = "⚔️ Sovereign Military & National Security Command"
 
 [node name="CloseCmdXButton" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdHeaderHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = " ✕ "
 
-[node name="CmdBodyHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox"]
+[node name="CmdNavHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BtnCmdTabForces" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "🪖 Armed Forces"
+
+[node name="BtnCmdTabInternal" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "🛡️ Border & Police"
+
+[node name="BtnCmdTabIntelAi" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "🕵️ SIB & Military AI"
+
+[node name="BtnCmdTabWarfare" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "🎯 Operations & Espionage"
+
+[node name="CmdContentScroll" type="ScrollContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CmdContentVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="CmdForcesView" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="ForcesSummaryCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ForcesSummaryHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CmdTotalPersonnelLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "Standing Forces: 75,000"
+
+[node name="CmdTotalEquipmentLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "Hardware: 703 Units"
+
+[node name="CmdCompositeReadinessLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "Readiness: 81.7%"
+
+[node name="CmdTotalBudgetLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "Defense Budget: R 500M"
+
+[node name="BranchesHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ArmyCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="ArmyVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="ArmyTitle" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "🪖 Ground Army"
+
+[node name="ArmyStatsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Troops: 45,000 | Armor: 520
+Readiness: 82% | Budget: R 200M"
+
+[node name="ArmyActionsHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BtnRecruitArmy" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox/ArmyActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "+1,000 Troops"
+
+[node name="BtnProcureArmy" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox/ArmyActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "+20 Armor"
+
+[node name="NavyCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="NavyVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="NavyTitle" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "⚓ Naval Fleet"
+
+[node name="NavyStatsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Sailors: 14,000 | Ships: 48
+Readiness: 78% | Budget: R 150M"
+
+[node name="NavyActionsHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BtnRecruitNavy" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox/NavyActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "+500 Sailors"
+
+[node name="BtnProcureNavy" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox/NavyActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "+5 Vessels"
+
+[node name="AirForceCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="AirVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="AirTitle" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 10
+text = "✈️ Air Command"
+
+[node name="AirStatsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Airmen: 16,000 | Aircraft: 135
+Readiness: 85% | Budget: R 150M"
+
+[node name="AirActionsHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BtnRecruitAir" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox/AirActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "+500 Airmen"
+
+[node name="BtnProcureAir" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox/AirActionsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "+10 Jets"
+
+[node name="BudgetReallocCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="BudgetReallocHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BudgetSlidersVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="ArmyBudgetSliderLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Army Budget: R 200M"
+
+[node name="ArmyBudgetSlider" type="HSlider" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox"]
+layout_mode = 2
+min_value = 20.0
+max_value = 400.0
+step = 10.0
+value = 200.0
+
+[node name="NavyBudgetSliderLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Navy Budget: R 150M"
+
+[node name="NavyBudgetSlider" type="HSlider" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox"]
+layout_mode = 2
+min_value = 20.0
+max_value = 300.0
+step = 10.0
+value = 150.0
+
+[node name="AirBudgetSliderLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Air Force Budget: R 150M"
+
+[node name="AirBudgetSlider" type="HSlider" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox"]
+layout_mode = 2
+min_value = 20.0
+max_value = 300.0
+step = 10.0
+value = 150.0
+
+[node name="BtnApplyMilitaryBudget" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Reallocate
+Defense Budget"
+
+[node name="CmdInternalView" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="BorderCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="BorderVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BorderHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox"]
+layout_mode = 2
+
+[node name="BorderTitle" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox/BorderHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🛂 Sovereign Border Control & Customs Integrity"
+
+[node name="BtnFundBorder" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox/BorderHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Fund Frontier Security (+R 15M)"
+
+[node name="BorderMetricsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Funding: R 35M/Qtr | Patrol Strength: 3,500 Agents | Surveillance Tech: 65%
+Contraband Interception Rate: 70.3% | Infiltration Detection: 86.0%"
+
+[node name="BorderStatusLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 8
+text = "Frontiers Fortified 🟢: High-tech sensor grids and active patrols minimize contraband and intercept unauthorized crossings."
+autowrap_mode = 2
+
+[node name="PoliceCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="PoliceVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PoliceHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox"]
+layout_mode = 2
+
+[node name="PoliceTitle" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox/PoliceHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "👮 Republic National Police Service (RNPS)"
+
+[node name="BtnExpandPolice" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox/PoliceHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Expand Police Force (+1,000 Officers)"
+
+[node name="PoliceMetricsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Sworn Officers: 28,000 | Quarterly Funding: R 45M | Community Trust: 72%
+Crime Rate Index: 16.3 (Low) | Public Order Score: 95.6% (Secure)"
+
+[node name="PoliceStatusLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 8
+text = "Civil Order Secure 🟢: Professional police presence maintains low crime and swift municipal emergency response."
+autowrap_mode = 2
+
+[node name="CmdIntelAiView" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SibCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SibVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SibHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox"]
+layout_mode = 2
+
+[node name="SibTitle" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox/SibHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🕵️ State Investigative Bureau (SIB)"
+
+[node name="BtnCommissionSib" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox/SibHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Commission SIB (National Project)"
+
+[node name="SibMetricsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Counter-Intelligence Rating: 85.0% | Spy Detection Rate: 89.0% | Internal Threat Audit: 88.2%
+Neutralized Foreign Spies: 0 | Operational Profile: Concealed"
+
+[node name="SibStatusLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 8
+text = "Operational & Classified 🛡️: SIB counter-espionage active. Neutralized hostile traces logged authoritatively."
+autowrap_mode = 2
+
+[node name="AiCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="AiVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="AiHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox"]
+layout_mode = 2
+
+[node name="AiTitle" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox/AiHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🤖 Aegis-9 Sovereign Defense Neural Grid"
+
+[node name="BtnUpgradeAi" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox/AiHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Upgrade Neural Tier (+R 25M)"
+
+[node name="AiMetricsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "Neural Tier: Tier 1 (Heuristic Scanning) | Computing Funding: R 25M/Qtr | Tactical Threat Detection Bonus: +23.5%"
+
+[node name="AiThreatFeedLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 8
+text = "Neural Predictive Vector: Peacetime electronic signals verified across regional frontiers."
+autowrap_mode = 2
+
+[node name="CmdWarfareView" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CmdBodyHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 12
 
-[node name="CmdReadinessCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox"]
+[node name="CmdReadinessCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox"]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="ReadinessVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard"]
+[node name="ReadinessVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="ReadinessHeader" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+[node name="ReadinessHeader" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 11
 text = "National Armed Forces Readiness"
 
-[node name="MilitaryReadinessStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+[node name="MilitaryReadinessStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Readiness: [Unavailable]"
 
-[node name="MilitaryPersonnelStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+[node name="MilitaryPersonnelStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Active Personnel: [Unavailable]"
 
-[node name="WeaponsInventoryStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+[node name="WeaponsInventoryStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Weapons Inventory: [Unavailable]"
 
-[node name="DefconPostureStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
+[node name="DefconPostureStatLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "DEFCON Posture: [Unavailable]"
 
-[node name="CmdOperationsCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox"]
+[node name="CmdOperationsCard" type="PanelContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="OpsVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard"]
+[node name="OpsVBox" type="VBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="OpsTargetLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="OpsTargetLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 10
 text = "Select Sovereign Target:"
 
-[node name="TargetCountryOption" type="OptionButton" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="TargetCountryOption" type="OptionButton" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 
-[node name="OpsTypeLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="OpsTypeLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 10
 text = "Operation Directive Type:"
 
-[node name="OperationTypeOption" type="OptionButton" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="OperationTypeOption" type="OptionButton" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 
-[node name="TroopsSliderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="TroopsSliderHBox" type="HBoxContainer" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 
-[node name="TroopsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox"]
+[node name="TroopsLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Committed Personnel: 5,000"
 
-[node name="TroopsSlider" type="HSlider" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="TroopsSlider" type="HSlider" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 min_value = 500.0
 max_value = 50000.0
 step = 500.0
 value = 5000.0
 
-[node name="CmdWarningLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="CmdWarningLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.65, 0.25, 1)
 theme_override_font_sizes/font_size = 8
-text = "Hostile operations consume military supplies, risk DEFCON escalation, and are authoritatively processed in Republic.Core."
+text = "Operations consume defense budget & supplies, risk diplomatic fallout, and are authoritatively processed in Republic.Core."
 autowrap_mode = 2
 
-[node name="ExecuteAttackButton" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="ExecuteAttackButton" type="Button" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "🚀 Authorize Military Directive"
 
-[node name="CmdResultLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
+[node name="CmdResultLabel" type="Label" parent="InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
 theme_override_font_sizes/font_size = 9
@@ -3980,6 +4386,35 @@ text = "⚠️ Req: Resources Minister | +6 Natural Resources, +4 Energy, +4% St
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
 text = "Initiate Irrigation Dam"
+
+[node name="CardProjectInvestigativeBureau" type="PanelContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="SibHBox" type="HBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectInvestigativeBureau"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SibInfoVBox" type="VBoxContainer" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectInvestigativeBureau/SibHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SibProjectTitle" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectInvestigativeBureau/SibHBox/SibInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🕵️ State Investigative Bureau (SIB) (R 2,200,000)"
+
+[node name="SibRequirementLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectInvestigativeBureau/SibHBox/SibInfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 9
+text = "Requires Appointed Minister of Defense or Interior"
+
+[node name="StartSibProjectButton" type="Button" parent="InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectInvestigativeBureau/SibHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Commission SIB"
 
 [node name="DevStatusLabel" type="Label" parent="InterfaceLayer/DevelopmentModal/DevVBox"]
 layout_mode = 2

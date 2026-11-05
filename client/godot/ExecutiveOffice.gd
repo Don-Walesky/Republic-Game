@@ -442,16 +442,76 @@ var media_auto_publish_timer: Timer = null
 
 @onready var command_centre_modal: PanelContainer = _get_node_safe("InterfaceLayer/CommandCentreModal") as PanelContainer
 @onready var close_cmd_x_button: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdHeaderHBox/CloseCmdXButton") as Button
-@onready var military_readiness_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryReadinessStatLabel") as Label
-@onready var military_personnel_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryPersonnelStatLabel") as Label
-@onready var weapons_inventory_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/WeaponsInventoryStatLabel") as Label
-@onready var defcon_posture_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/DefconPostureStatLabel") as Label
-@onready var target_country_option: OptionButton = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TargetCountryOption") as OptionButton
-@onready var operation_type_option: OptionButton = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/OperationTypeOption") as OptionButton
-@onready var troops_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox/TroopsLabel") as Label
-@onready var troops_slider: HSlider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSlider") as HSlider
-@onready var execute_attack_button: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/ExecuteAttackButton") as Button
-@onready var cmd_result_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/CmdResultLabel") as Label
+
+# Military & Security Navigation Tabs
+@onready var btn_cmd_tab_forces: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox/BtnCmdTabForces") as Button
+@onready var btn_cmd_tab_internal: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox/BtnCmdTabInternal") as Button
+@onready var btn_cmd_tab_intel_ai: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox/BtnCmdTabIntelAi") as Button
+@onready var btn_cmd_tab_warfare: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox/BtnCmdTabWarfare") as Button
+
+# Views
+@onready var cmd_forces_view: VBoxContainer = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView") as VBoxContainer
+@onready var cmd_internal_view: VBoxContainer = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView") as VBoxContainer
+@onready var cmd_intel_ai_view: VBoxContainer = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView") as VBoxContainer
+@onready var cmd_warfare_view: VBoxContainer = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView") as VBoxContainer
+
+# Armed Forces Summary & Branches
+@onready var cmd_total_personnel_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox/CmdTotalPersonnelLabel") as Label
+@onready var cmd_total_equipment_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox/CmdTotalEquipmentLabel") as Label
+@onready var cmd_composite_readiness_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox/CmdCompositeReadinessLabel") as Label
+@onready var cmd_total_budget_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox/CmdTotalBudgetLabel") as Label
+
+@onready var army_stats_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox/ArmyStatsLabel") as Label
+@onready var btn_recruit_army: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox/ArmyActionsHBox/BtnRecruitArmy") as Button
+@onready var btn_procure_army: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox/ArmyActionsHBox/BtnProcureArmy") as Button
+
+@onready var navy_stats_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox/NavyStatsLabel") as Label
+@onready var btn_recruit_navy: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox/NavyActionsHBox/BtnRecruitNavy") as Button
+@onready var btn_procure_navy: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox/NavyActionsHBox/BtnProcureNavy") as Button
+
+@onready var air_stats_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox/AirStatsLabel") as Label
+@onready var btn_recruit_air: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox/AirActionsHBox/BtnRecruitAir") as Button
+@onready var btn_procure_air: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox/AirActionsHBox/BtnProcureAir") as Button
+
+@onready var army_budget_slider: HSlider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/ArmyBudgetSlider") as HSlider
+@onready var army_budget_slider_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/ArmyBudgetSliderLabel") as Label
+@onready var navy_budget_slider: HSlider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/NavyBudgetSlider") as HSlider
+@onready var navy_budget_slider_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/NavyBudgetSliderLabel") as Label
+@onready var air_budget_slider: HSlider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/AirBudgetSlider") as HSlider
+@onready var air_budget_slider_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/AirBudgetSliderLabel") as Label
+@onready var btn_apply_military_budget: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BtnApplyMilitaryBudget") as Button
+
+# Border & Police View
+@onready var border_metrics_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox/BorderMetricsLabel") as Label
+@onready var border_status_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox/BorderStatusLabel") as Label
+@onready var btn_fund_border: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox/BorderHeaderHBox/BtnFundBorder") as Button
+
+@onready var police_metrics_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox/PoliceMetricsLabel") as Label
+@onready var police_status_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox/PoliceStatusLabel") as Label
+@onready var btn_expand_police: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox/PoliceHeaderHBox/BtnExpandPolice") as Button
+
+# SIB & Military AI View
+@onready var sib_metrics_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox/SibMetricsLabel") as Label
+@onready var sib_status_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox/SibStatusLabel") as Label
+@onready var btn_commission_sib: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox/SibHeaderHBox/BtnCommissionSib") as Button
+
+@onready var ai_metrics_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox/AiMetricsLabel") as Label
+@onready var ai_threat_feed_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox/AiThreatFeedLabel") as Label
+@onready var btn_upgrade_ai: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox/AiHeaderHBox/BtnUpgradeAi") as Button
+
+# Warfare & Ops View
+@onready var military_readiness_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryReadinessStatLabel") as Label
+@onready var military_personnel_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryPersonnelStatLabel") as Label
+@onready var weapons_inventory_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/WeaponsInventoryStatLabel") as Label
+@onready var defcon_posture_stat_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/DefconPostureStatLabel") as Label
+@onready var target_country_option: OptionButton = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/TargetCountryOption") as OptionButton
+@onready var operation_type_option: OptionButton = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/OperationTypeOption") as OptionButton
+@onready var troops_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox/TroopsLabel") as Label
+@onready var troops_slider: HSlider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSlider") as HSlider
+@onready var execute_attack_button: Button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/ExecuteAttackButton") as Button
+@onready var cmd_result_label: Label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/CmdResultLabel") as Label
+
+@onready var start_sib_project_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectInvestigativeBureau/SibHBox/StartSibProjectButton") as Button
 
 @onready var development_modal: PanelContainer = _get_node_safe("InterfaceLayer/DevelopmentModal") as PanelContainer
 @onready var close_dev_x_button: Button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevHeaderHBox/CloseDevXButton") as Button
@@ -1643,26 +1703,121 @@ func _init_controls() -> void:
 		command_centre_modal = _get_node_safe("InterfaceLayer/CommandCentreModal") as PanelContainer
 	if close_cmd_x_button == null:
 		close_cmd_x_button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdHeaderHBox/CloseCmdXButton") as Button
+
+	if btn_cmd_tab_forces == null:
+		btn_cmd_tab_forces = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox/BtnCmdTabForces") as Button
+	if btn_cmd_tab_internal == null:
+		btn_cmd_tab_internal = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox/BtnCmdTabInternal") as Button
+	if btn_cmd_tab_intel_ai == null:
+		btn_cmd_tab_intel_ai = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox/BtnCmdTabIntelAi") as Button
+	if btn_cmd_tab_warfare == null:
+		btn_cmd_tab_warfare = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdNavHBox/BtnCmdTabWarfare") as Button
+
+	if cmd_forces_view == null:
+		cmd_forces_view = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView") as VBoxContainer
+	if cmd_internal_view == null:
+		cmd_internal_view = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView") as VBoxContainer
+	if cmd_intel_ai_view == null:
+		cmd_intel_ai_view = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView") as VBoxContainer
+	if cmd_warfare_view == null:
+		cmd_warfare_view = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView") as VBoxContainer
+
+	if cmd_total_personnel_label == null:
+		cmd_total_personnel_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox/CmdTotalPersonnelLabel") as Label
+	if cmd_total_equipment_label == null:
+		cmd_total_equipment_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox/CmdTotalEquipmentLabel") as Label
+	if cmd_composite_readiness_label == null:
+		cmd_composite_readiness_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox/CmdCompositeReadinessLabel") as Label
+	if cmd_total_budget_label == null:
+		cmd_total_budget_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/ForcesSummaryCard/ForcesSummaryHBox/CmdTotalBudgetLabel") as Label
+
+	if army_stats_label == null:
+		army_stats_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox/ArmyStatsLabel") as Label
+	if btn_recruit_army == null:
+		btn_recruit_army = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox/ArmyActionsHBox/BtnRecruitArmy") as Button
+	if btn_procure_army == null:
+		btn_procure_army = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/ArmyCard/ArmyVBox/ArmyActionsHBox/BtnProcureArmy") as Button
+
+	if navy_stats_label == null:
+		navy_stats_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox/NavyStatsLabel") as Label
+	if btn_recruit_navy == null:
+		btn_recruit_navy = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox/NavyActionsHBox/BtnRecruitNavy") as Button
+	if btn_procure_navy == null:
+		btn_procure_navy = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/NavyCard/NavyVBox/NavyActionsHBox/BtnProcureNavy") as Button
+
+	if air_stats_label == null:
+		air_stats_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox/AirStatsLabel") as Label
+	if btn_recruit_air == null:
+		btn_recruit_air = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox/AirActionsHBox/BtnRecruitAir") as Button
+	if btn_procure_air == null:
+		btn_procure_air = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BranchesHBox/AirForceCard/AirVBox/AirActionsHBox/BtnProcureAir") as Button
+
+	if army_budget_slider == null:
+		army_budget_slider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/ArmyBudgetSlider") as HSlider
+	if army_budget_slider_label == null:
+		army_budget_slider_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/ArmyBudgetSliderLabel") as Label
+	if navy_budget_slider == null:
+		navy_budget_slider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/NavyBudgetSlider") as HSlider
+	if navy_budget_slider_label == null:
+		navy_budget_slider_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/NavyBudgetSliderLabel") as Label
+	if air_budget_slider == null:
+		air_budget_slider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/AirBudgetSlider") as HSlider
+	if air_budget_slider_label == null:
+		air_budget_slider_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BudgetSlidersVBox/AirBudgetSliderLabel") as Label
+	if btn_apply_military_budget == null:
+		btn_apply_military_budget = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdForcesView/BudgetReallocCard/BudgetReallocHBox/BtnApplyMilitaryBudget") as Button
+
+	if border_metrics_label == null:
+		border_metrics_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox/BorderMetricsLabel") as Label
+	if border_status_label == null:
+		border_status_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox/BorderStatusLabel") as Label
+	if btn_fund_border == null:
+		btn_fund_border = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/BorderCard/BorderVBox/BorderHeaderHBox/BtnFundBorder") as Button
+
+	if police_metrics_label == null:
+		police_metrics_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox/PoliceMetricsLabel") as Label
+	if police_status_label == null:
+		police_status_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox/PoliceStatusLabel") as Label
+	if btn_expand_police == null:
+		btn_expand_police = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdInternalView/PoliceCard/PoliceVBox/PoliceHeaderHBox/BtnExpandPolice") as Button
+
+	if sib_metrics_label == null:
+		sib_metrics_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox/SibMetricsLabel") as Label
+	if sib_status_label == null:
+		sib_status_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox/SibStatusLabel") as Label
+	if btn_commission_sib == null:
+		btn_commission_sib = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/SibCard/SibVBox/SibHeaderHBox/BtnCommissionSib") as Button
+
+	if ai_metrics_label == null:
+		ai_metrics_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox/AiMetricsLabel") as Label
+	if ai_threat_feed_label == null:
+		ai_threat_feed_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox/AiThreatFeedLabel") as Label
+	if btn_upgrade_ai == null:
+		btn_upgrade_ai = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdIntelAiView/AiCard/AiVBox/AiHeaderHBox/BtnUpgradeAi") as Button
+
 	if military_readiness_stat_label == null:
-		military_readiness_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryReadinessStatLabel") as Label
+		military_readiness_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryReadinessStatLabel") as Label
 	if military_personnel_stat_label == null:
-		military_personnel_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryPersonnelStatLabel") as Label
+		military_personnel_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/MilitaryPersonnelStatLabel") as Label
 	if weapons_inventory_stat_label == null:
-		weapons_inventory_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/WeaponsInventoryStatLabel") as Label
+		weapons_inventory_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/WeaponsInventoryStatLabel") as Label
 	if defcon_posture_stat_label == null:
-		defcon_posture_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/DefconPostureStatLabel") as Label
+		defcon_posture_stat_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdReadinessCard/ReadinessVBox/DefconPostureStatLabel") as Label
 	if target_country_option == null:
-		target_country_option = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TargetCountryOption") as OptionButton
+		target_country_option = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/TargetCountryOption") as OptionButton
 	if operation_type_option == null:
-		operation_type_option = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/OperationTypeOption") as OptionButton
+		operation_type_option = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/OperationTypeOption") as OptionButton
 	if troops_label == null:
-		troops_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox/TroopsLabel") as Label
+		troops_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSliderHBox/TroopsLabel") as Label
 	if troops_slider == null:
-		troops_slider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSlider") as HSlider
+		troops_slider = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/TroopsSlider") as HSlider
 	if execute_attack_button == null:
-		execute_attack_button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/ExecuteAttackButton") as Button
+		execute_attack_button = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/ExecuteAttackButton") as Button
 	if cmd_result_label == null:
-		cmd_result_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdBodyHBox/CmdOperationsCard/OpsVBox/CmdResultLabel") as Label
+		cmd_result_label = _get_node_safe("InterfaceLayer/CommandCentreModal/CmdVBox/CmdContentScroll/CmdContentVBox/CmdWarfareView/CmdBodyHBox/CmdOperationsCard/OpsVBox/CmdResultLabel") as Label
+
+	if start_sib_project_button == null:
+		start_sib_project_button = _get_node_safe("InterfaceLayer/DevelopmentModal/DevVBox/DevProjectsScroll/ProjectsListVBox/CardProjectInvestigativeBureau/SibHBox/StartSibProjectButton") as Button
 
 	if development_modal == null:
 		development_modal = _get_node_safe("InterfaceLayer/DevelopmentModal") as PanelContainer
@@ -2231,6 +2386,53 @@ func _connect_signals() -> void:
 	# Modal Dismiss Buttons
 	if close_cmd_x_button and not close_cmd_x_button.pressed.is_connected(close_all_modals):
 		close_cmd_x_button.pressed.connect(close_all_modals)
+
+	if btn_cmd_tab_forces and not btn_cmd_tab_forces.pressed.is_connected(_on_cmd_tab_forces_pressed):
+		btn_cmd_tab_forces.pressed.connect(_on_cmd_tab_forces_pressed)
+	if btn_cmd_tab_internal and not btn_cmd_tab_internal.pressed.is_connected(_on_cmd_tab_internal_pressed):
+		btn_cmd_tab_internal.pressed.connect(_on_cmd_tab_internal_pressed)
+	if btn_cmd_tab_intel_ai and not btn_cmd_tab_intel_ai.pressed.is_connected(_on_cmd_tab_intel_ai_pressed):
+		btn_cmd_tab_intel_ai.pressed.connect(_on_cmd_tab_intel_ai_pressed)
+	if btn_cmd_tab_warfare and not btn_cmd_tab_warfare.pressed.is_connected(_on_cmd_tab_warfare_pressed):
+		btn_cmd_tab_warfare.pressed.connect(_on_cmd_tab_warfare_pressed)
+
+	if btn_recruit_army and not btn_recruit_army.pressed.is_connected(_on_recruit_army_pressed):
+		btn_recruit_army.pressed.connect(_on_recruit_army_pressed)
+	if btn_procure_army and not btn_procure_army.pressed.is_connected(_on_procure_army_pressed):
+		btn_procure_army.pressed.connect(_on_procure_army_pressed)
+
+	if btn_recruit_navy and not btn_recruit_navy.pressed.is_connected(_on_recruit_navy_pressed):
+		btn_recruit_navy.pressed.connect(_on_recruit_navy_pressed)
+	if btn_procure_navy and not btn_procure_navy.pressed.is_connected(_on_procure_navy_pressed):
+		btn_procure_navy.pressed.connect(_on_procure_navy_pressed)
+
+	if btn_recruit_air and not btn_recruit_air.pressed.is_connected(_on_recruit_air_pressed):
+		btn_recruit_air.pressed.connect(_on_recruit_air_pressed)
+	if btn_procure_air and not btn_procure_air.pressed.is_connected(_on_procure_air_pressed):
+		btn_procure_air.pressed.connect(_on_procure_air_pressed)
+
+	if army_budget_slider and not army_budget_slider.value_changed.is_connected(_on_army_budget_changed):
+		army_budget_slider.value_changed.connect(_on_army_budget_changed)
+	if navy_budget_slider and not navy_budget_slider.value_changed.is_connected(_on_navy_budget_changed):
+		navy_budget_slider.value_changed.connect(_on_navy_budget_changed)
+	if air_budget_slider and not air_budget_slider.value_changed.is_connected(_on_air_budget_changed):
+		air_budget_slider.value_changed.connect(_on_air_budget_changed)
+
+	if btn_apply_military_budget and not btn_apply_military_budget.pressed.is_connected(_on_apply_military_budget_pressed):
+		btn_apply_military_budget.pressed.connect(_on_apply_military_budget_pressed)
+
+	if btn_fund_border and not btn_fund_border.pressed.is_connected(_on_fund_border_pressed):
+		btn_fund_border.pressed.connect(_on_fund_border_pressed)
+	if btn_expand_police and not btn_expand_police.pressed.is_connected(_on_expand_police_pressed):
+		btn_expand_police.pressed.connect(_on_expand_police_pressed)
+
+	if btn_commission_sib and not btn_commission_sib.pressed.is_connected(_on_commission_sib_pressed):
+		btn_commission_sib.pressed.connect(_on_commission_sib_pressed)
+	if start_sib_project_button and not start_sib_project_button.pressed.is_connected(_on_start_sib_project_pressed):
+		start_sib_project_button.pressed.connect(_on_start_sib_project_pressed)
+
+	if btn_upgrade_ai and not btn_upgrade_ai.pressed.is_connected(_on_upgrade_military_ai_pressed):
+		btn_upgrade_ai.pressed.connect(_on_upgrade_military_ai_pressed)
 	if close_dev_x_button and not close_dev_x_button.pressed.is_connected(close_all_modals):
 		close_dev_x_button.pressed.connect(close_all_modals)
 	if close_pol_x_button and not close_pol_x_button.pressed.is_connected(close_all_modals):
@@ -3231,18 +3433,121 @@ func _update_press_secretary(state: Dictionary) -> void:
 			open_media_desk_button.text = "📰 Media Desk"
 
 func _update_command_centre_modal(state: Dictionary) -> void:
+	# 1. Armed Forces
+	var armed_forces: Dictionary = state.get("armed_forces", state.get("ArmedForces", {}))
+	var army: Dictionary = armed_forces.get("army", armed_forces.get("Army", {}))
+	var navy: Dictionary = armed_forces.get("navy", armed_forces.get("Navy", {}))
+	var air: Dictionary = armed_forces.get("air_force", armed_forces.get("AirForce", {}))
+
+	var total_personnel: int = int(armed_forces.get("total_personnel", armed_forces.get("TotalPersonnel", state.get("military_personnel", 75000))))
+	var total_equipment: int = int(armed_forces.get("total_equipment", armed_forces.get("TotalEquipmentCount", state.get("military_weapons_inventory", 703))))
+	var composite_readiness: float = float(armed_forces.get("composite_readiness", armed_forces.get("CompositeReadiness", 81.7)))
+	var total_budget: float = float(armed_forces.get("total_budget", armed_forces.get("TotalQuarterlyDefenseBudget", 500000000.0)))
+
+	if cmd_total_personnel_label:
+		cmd_total_personnel_label.text = "Standing Forces: %s" % _format_number_commas(total_personnel)
+	if cmd_total_equipment_label:
+		cmd_total_equipment_label.text = "Hardware: %s Units" % _format_number_commas(total_equipment)
+	if cmd_composite_readiness_label:
+		cmd_composite_readiness_label.text = "Readiness: %.1f%%" % composite_readiness
+	if cmd_total_budget_label:
+		cmd_total_budget_label.text = "Defense Budget: R %s" % _format_number_commas(int(total_budget))
+
+	if army_stats_label:
+		army_stats_label.text = "Troops: %s | Armor: %s\nReadiness: %.1f%% | Budget: R %s" % [
+			_format_number_commas(int(army.get("personnel_count", army.get("ActivePersonnel", 45000)))),
+			_format_number_commas(int(army.get("equipment_count", army.get("EquipmentCount", 520)))),
+			float(army.get("readiness_score", army.get("Readiness", 82.0))),
+			_format_number_commas(int(army.get("quarterly_funding", army.get("QuarterlyFunding", 200000000.0))))
+		]
+
+	if navy_stats_label:
+		navy_stats_label.text = "Sailors: %s | Ships: %s\nReadiness: %.1f%% | Budget: R %s" % [
+			_format_number_commas(int(navy.get("personnel_count", navy.get("ActivePersonnel", 14000)))),
+			_format_number_commas(int(navy.get("equipment_count", navy.get("EquipmentCount", 48)))),
+			float(navy.get("readiness_score", navy.get("Readiness", 78.0))),
+			_format_number_commas(int(navy.get("quarterly_funding", navy.get("QuarterlyFunding", 150000000.0))))
+		]
+
+	if air_stats_label:
+		air_stats_label.text = "Airmen: %s | Aircraft: %s\nReadiness: %.1f%% | Budget: R %s" % [
+			_format_number_commas(int(air.get("personnel_count", air.get("ActivePersonnel", 16000)))),
+			_format_number_commas(int(air.get("equipment_count", air.get("EquipmentCount", 135)))),
+			float(air.get("readiness_score", air.get("Readiness", 85.0))),
+			_format_number_commas(int(air.get("quarterly_funding", air.get("QuarterlyFunding", 150000000.0))))
+		]
+
+	# 2. Border Security
+	var border: Dictionary = state.get("border_security", state.get("BorderSecurity", {}))
+	if border_metrics_label:
+		border_metrics_label.text = "Funding: R %s/Qtr | Patrol Strength: %s Agents | Tech: %.1f%%\nContraband Interception: %.1f%% | Infiltration Detection: %.1f%%" % [
+			_format_number_commas(int(border.get("funding_level", border.get("BorderFundingLevel", 35000000.0)))),
+			_format_number_commas(int(border.get("patrol_strength", border.get("PatrolPersonnel", 3500)))),
+			float(border.get("surveillance_tech_level", border.get("SurveillanceRating", 65.0))),
+			float(border.get("contraband_interception_rate", border.get("ContrabandInterceptionRate", 70.3))),
+			float(border.get("infiltration_detection_chance", border.get("InfiltrationDetectionChance", 86.0)))
+		]
+	if border_status_label:
+		border_status_label.text = str(border.get("status_summary", "Frontiers Fortified 🟢"))
+
+	# 3. Police Force
+	var police: Dictionary = state.get("police_force", state.get("PoliceForce", {}))
+	if police_metrics_label:
+		police_metrics_label.text = "Officers: %s | Funding: R %s/Qtr | Trust: %.1f%%\nCrime Index: %.1f | Public Order: %.1f%%" % [
+			_format_number_commas(int(police.get("officer_count", police.get("ActiveOfficers", 28000)))),
+			_format_number_commas(int(police.get("quarterly_funding", police.get("FundingLevel", 45000000.0)))),
+			float(police.get("community_trust_score", police.get("CommunityTrustScore", 72.0))),
+			float(police.get("crime_rate_index", police.get("CrimeRateIndex", 16.3))),
+			float(police.get("public_order_score", police.get("PublicOrderScore", 95.6)))
+		]
+	if police_status_label:
+		police_status_label.text = str(police.get("status_summary", "Civil Order Secure 🟢"))
+
+	# 4. SIB & Military AI
+	var sib: Dictionary = state.get("investigative_bureau", state.get("InvestigativeBureau", {}))
+	var sib_commissioned: bool = bool(sib.get("is_commissioned", sib.get("IsEstablished", false)))
+	if sib_metrics_label:
+		sib_metrics_label.text = "Counter-Intel: %.1f%% | Spy Detection: %.1f%% | Threat Audit: %.1f%%\nNeutralized Spies: %d | Profile: %s" % [
+			float(sib.get("counter_intelligence_rating", sib.get("CounterIntelligenceRating", 40.0))),
+			float(sib.get("foreign_spy_detection_rate", sib.get("ForeignSpyDetectionRate", 20.0))),
+			float(sib.get("internal_threat_audit_score", sib.get("InternalThreatAuditScore", 25.0))),
+			int(sib.get("neutralized_foreign_spies_count", sib.get("NeutralizedForeignSpies", 0))),
+			"Classified / Concealed" if bool(sib.get("is_concealed", sib.get("IsConcealed", true))) else "Public"
+		]
+	if sib_status_label:
+		sib_status_label.text = str(sib.get("status_summary", "Uncommissioned 🔒"))
+	if btn_commission_sib:
+		btn_commission_sib.disabled = sib_commissioned
+		btn_commission_sib.text = "✅ SIB Operational" if sib_commissioned else "Commission SIB (National Project)"
+	if start_sib_project_button:
+		start_sib_project_button.disabled = sib_commissioned
+		start_sib_project_button.text = "Operational" if sib_commissioned else "Commission SIB"
+
+	var ai: Dictionary = state.get("military_ai", state.get("MilitaryAi", {}))
+	var ai_tier: int = int(ai.get("analysis_level", ai.get("AnalysisLevel", 1)))
+	if ai_metrics_label:
+		ai_metrics_label.text = "%s [Tier %d] | Computing: R %s/Qtr | Tactical Bonus: +%.1f%%" % [
+			str(ai.get("ai_system_name", ai.get("AiSystemName", "Aegis-9 Sovereign Defense Neural Grid"))),
+			ai_tier,
+			_format_number_commas(int(ai.get("computing_funding_level", ai.get("ComputingFundingLevel", 25000000.0)))),
+			float(ai.get("threat_detection_bonus", ai.get("ThreatDetectionBonus", 23.5)))
+		]
+	if ai_threat_feed_label:
+		var summaries = ai.get("predictive_threat_summaries", ai.get("RecentThreatAssessments", []))
+		if summaries is Array and summaries.size() > 0:
+			ai_threat_feed_label.text = "Threat Analysis: " + str(summaries[summaries.size() - 1])
+		else:
+			ai_threat_feed_label.text = str(ai.get("status_summary", "Online 🤖"))
+
+	# 5. Warfare & Operations Legacy/Targeting
 	if military_readiness_stat_label:
-		var r_val := str(state.get("military_composite_readiness", state.get("defense_posture", "Operational")))
-		military_readiness_stat_label.text = "Readiness: %s" % r_val
+		military_readiness_stat_label.text = "Readiness: %.1f%%" % composite_readiness
 	if military_personnel_stat_label:
-		var p_val := str(state.get("military_personnel", "125,000 Active Personnel"))
-		military_personnel_stat_label.text = "Armed Forces: %s" % p_val
+		military_personnel_stat_label.text = "Armed Forces: %s Troops" % _format_number_commas(total_personnel)
 	if weapons_inventory_stat_label:
-		var w_val := str(state.get("military_weapons_inventory", "Standard Arsenal (Grade A)"))
-		weapons_inventory_stat_label.text = "Weapons Inventory: %s" % w_val
+		weapons_inventory_stat_label.text = "Hardware: %s Units" % _format_number_commas(total_equipment)
 	if defcon_posture_stat_label:
-		var def_val := str(state.get("defcon_level", "DEFCON 5 (Peacetime)"))
-		defcon_posture_stat_label.text = "DEFCON Posture: %s" % def_val
+		defcon_posture_stat_label.text = "DEFCON Posture: %s" % str(state.get("defcon_level", "DEFCON 5 (Peacetime)"))
 
 	if target_country_option and target_country_option.item_count == 0:
 		var targets = state.get("target_countries", ["Republic of Azuria", "Kingdom of Westoria", "Federation of Southland", "Ostmark"])
@@ -3251,11 +3556,14 @@ func _update_command_centre_modal(state: Dictionary) -> void:
 				target_country_option.add_item(str(t))
 
 	if operation_type_option and operation_type_option.item_count == 0:
-		operation_type_option.add_item("Reconnaissance")
+		operation_type_option.add_item("MilitaryReconnaissance")
+		operation_type_option.add_item("IndustrialSabotage")
+		operation_type_option.add_item("CyberIntrusion")
+		operation_type_option.add_item("StrategicIntelligence")
+		operation_type_option.add_item("PoliticalInfiltration")
+		operation_type_option.add_item("AdvancedEspionage")
 		operation_type_option.add_item("BorderIncursion")
 		operation_type_option.add_item("AirStrike")
-		operation_type_option.add_item("CovertSabotage")
-		operation_type_option.add_item("FullScaleAssault")
 
 func _update_development_modal_requirements(state: Dictionary) -> void:
 	# 1. National University requires Minister of Education
@@ -5267,20 +5575,26 @@ func _on_execute_attack_pressed() -> void:
 	var target := "Republic of Azuria"
 	if target_country_option and target_country_option.selected >= 0:
 		target = target_country_option.get_item_text(target_country_option.selected)
-	var op_type := "BorderIncursion"
+	var op_type := "MilitaryReconnaissance"
 	if operation_type_option and operation_type_option.selected >= 0:
 		op_type = operation_type_option.get_item_text(operation_type_option.selected)
 	var troops := 5000
 	if troops_slider:
 		troops = int(troops_slider.value)
 
-	var req_id := "req_war_" + str(Time.get_unix_time_from_system())
+	var is_espionage: bool = op_type.contains("Recon") or op_type.contains("Sabotage") or op_type.contains("Cyber") or op_type.contains("Intel") or op_type.contains("Infiltration") or op_type.contains("Espionage")
+
+	var req_id := ("req_spy_" if is_espionage else "req_war_") + str(Time.get_unix_time_from_system())
 	var req_dict := {
 		"request_id": req_id,
-		"action": "military_attack",
-		"target_country": target,
+		"action": ("launch_espionage_mission" if is_espionage else "military_attack"),
 		"operation_type": op_type,
+		"target_country_id": target,
+		"target_country": target,
+		"title": "Operation " + op_type,
 		"troops_committed": troops,
+		"resolve_immediately": true,
+		"confirmed": true,
 		"client_timestamp": Time.get_datetime_string_from_system()
 	}
 	_write_request_file(req_dict)
@@ -8377,3 +8691,151 @@ func _on_tariff_adjust_pressed(delta_pct: float) -> void:
 	})
 	if status_ticker_label:
 		status_ticker_label.text = "Trade Policy: Sovereign import tariff adjusted to %.1f%%." % new_tariff
+
+# -----------------------------------------------------------------------------
+# Military & Security Module Handlers
+# -----------------------------------------------------------------------------
+
+func _on_cmd_tab_forces_pressed() -> void:
+	_switch_cmd_tab("forces")
+
+func _on_cmd_tab_internal_pressed() -> void:
+	_switch_cmd_tab("internal")
+
+func _on_cmd_tab_intel_ai_pressed() -> void:
+	_switch_cmd_tab("intel_ai")
+
+func _on_cmd_tab_warfare_pressed() -> void:
+	_switch_cmd_tab("warfare")
+
+func _switch_cmd_tab(tab: String) -> void:
+	if cmd_forces_view: cmd_forces_view.visible = (tab == "forces")
+	if cmd_internal_view: cmd_internal_view.visible = (tab == "internal")
+	if cmd_intel_ai_view: cmd_intel_ai_view.visible = (tab == "intel_ai")
+	if cmd_warfare_view: cmd_warfare_view.visible = (tab == "warfare")
+
+func _on_army_budget_changed(val: float) -> void:
+	if army_budget_slider_label:
+		army_budget_slider_label.text = "Army Budget: R %dM" % int(val)
+
+func _on_navy_budget_changed(val: float) -> void:
+	if navy_budget_slider_label:
+		navy_budget_slider_label.text = "Navy Budget: R %dM" % int(val)
+
+func _on_air_budget_changed(val: float) -> void:
+	if air_budget_slider_label:
+		air_budget_slider_label.text = "Air Force Budget: R %dM" % int(val)
+
+func _on_recruit_army_pressed() -> void:
+	_dispatch_recruit_branch("army", 1000)
+
+func _on_procure_army_pressed() -> void:
+	_dispatch_procure_branch("army", 20)
+
+func _on_recruit_navy_pressed() -> void:
+	_dispatch_recruit_branch("navy", 500)
+
+func _on_procure_navy_pressed() -> void:
+	_dispatch_procure_branch("navy", 5)
+
+func _on_recruit_air_pressed() -> void:
+	_dispatch_recruit_branch("air_force", 500)
+
+func _on_procure_air_pressed() -> void:
+	_dispatch_procure_branch("air_force", 10)
+
+func _dispatch_recruit_branch(branch: String, count: int) -> void:
+	var req_dict := {
+		"request_id": "req_rec_" + str(Time.get_unix_time_from_system()),
+		"action": "recruit_military_branch",
+		"branch": branch,
+		"count": count,
+		"confirmed": true
+	}
+	_write_request_file(req_dict)
+	if status_ticker_label:
+		status_ticker_label.text = "Military Recruitment: Enlisting %s recruits into %s." % [_format_number_commas(count), branch.capitalize()]
+
+func _dispatch_procure_branch(branch: String, units: int) -> void:
+	var req_dict := {
+		"request_id": "req_proc_" + str(Time.get_unix_time_from_system()),
+		"action": "procure_military_branch",
+		"branch": branch,
+		"units": units,
+		"confirmed": true
+	}
+	_write_request_file(req_dict)
+	if status_ticker_label:
+		status_ticker_label.text = "Hardware Procurement: Acquiring %s units for %s." % [_format_number_commas(units), branch.capitalize()]
+
+func _on_apply_military_budget_pressed() -> void:
+	var army_val: float = (army_budget_slider.value if army_budget_slider else 200.0) * 1000000.0
+	var navy_val: float = (navy_budget_slider.value if navy_budget_slider else 150.0) * 1000000.0
+	var air_val: float = (air_budget_slider.value if air_budget_slider else 150.0) * 1000000.0
+
+	var req_dict := {
+		"request_id": "req_mbudget_" + str(Time.get_unix_time_from_system()),
+		"action": "military_budget_allocation",
+		"army_funding": army_val,
+		"navy_funding": navy_val,
+		"air_force_funding": air_val,
+		"confirmed": true
+	}
+	_write_request_file(req_dict)
+	if status_ticker_label:
+		status_ticker_label.text = "Military Budget: Allocated R %dM Army, R %dM Navy, R %dM Air Force." % [int(army_val / 1000000.0), int(navy_val / 1000000.0), int(air_val / 1000000.0)]
+
+func _on_fund_border_pressed() -> void:
+	var current_funding: float = float(latest_state.get("border_security", {}).get("funding_level", 35000000.0))
+	var new_funding: float = current_funding + 15000000.0
+	var req_dict := {
+		"request_id": "req_border_" + str(Time.get_unix_time_from_system()),
+		"action": "border_security_funding",
+		"funding": new_funding,
+		"confirmed": true
+	}
+	_write_request_file(req_dict)
+	if status_ticker_label:
+		status_ticker_label.text = "Border Security: Increased frontier surveillance funding to R %s." % _format_number_commas(int(new_funding))
+
+func _on_expand_police_pressed() -> void:
+	var req_dict := {
+		"request_id": "req_police_" + str(Time.get_unix_time_from_system()),
+		"action": "police_force_expansion",
+		"officers": 1000,
+		"additional_funding": 5000000.0,
+		"confirmed": true
+	}
+	_write_request_file(req_dict)
+	if status_ticker_label:
+		status_ticker_label.text = "Police Expansion: Recruited 1,000 sworn officers into national police service."
+
+func _on_commission_sib_pressed() -> void:
+	var req_dict := {
+		"request_id": "req_sib_" + str(Time.get_unix_time_from_system()),
+		"action": "commission_investigative_bureau",
+		"confirmed": true
+	}
+	_write_request_file(req_dict)
+	if status_ticker_label:
+		status_ticker_label.text = "Investigative Bureau: Commissioning State Investigative Bureau project."
+
+func _on_start_sib_project_pressed() -> void:
+	_on_commission_sib_pressed()
+
+func _on_upgrade_military_ai_pressed() -> void:
+	var current_funding: float = float(latest_state.get("military_ai", {}).get("computing_funding_level", 25000000.0))
+	var new_funding: float = current_funding + 25000000.0
+	var current_tier: int = int(latest_state.get("military_ai", {}).get("analysis_level", 1))
+	var next_tier: int = mini(current_tier + 1, 3)
+
+	var req_dict := {
+		"request_id": "req_mai_" + str(Time.get_unix_time_from_system()),
+		"action": "military_ai_funding",
+		"funding": new_funding,
+		"tier": next_tier,
+		"confirmed": true
+	}
+	_write_request_file(req_dict)
+	if status_ticker_label:
+		status_ticker_label.text = "Military AI: Upgrading neural computing grid to Tier %d." % next_tier

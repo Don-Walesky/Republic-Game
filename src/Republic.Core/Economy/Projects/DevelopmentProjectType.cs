@@ -69,5 +69,10 @@ public enum DevelopmentProjectType
     /// <summary>
     /// Agro-industrial irrigation mega-dam and national food security reservoir.
     /// </summary>
-    IrrigationDam = 12
+    IrrigationDam = 12,
+
+    /// <summary>
+    /// National investigative bureau & counter-intelligence agency (CIA/FBI-style state intelligence apparatus).
+    /// </summary>
+    InvestigativeBureau = 13
 }

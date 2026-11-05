@@ -186,10 +186,15 @@ public sealed class IntelligenceProgressionService : IIntelligenceProgressionSer
         double successProb = Math.Clamp(baseSuccess + (levelAdvantage * 0.03) + (defMinisterBonus * 0.15) - (targetCounter * 0.003), 0.20, 0.95);
         operation.SuccessProbability = Math.Round(successProb, 2);
 
-        // Calculate dynamic detection probability
+        // Calculate dynamic detection probability factoring target SIB, Military AI, and Border Security
         double baseDetect = operation.RiskRating;
         double civilDefense = initiator.StateCapacity?.CivilServiceQuality ?? 0.3;
-        double detectProb = Math.Clamp(baseDetect + (targetCounter * 0.004) - (civilDefense * 0.15), 0.10, 0.90);
+        double targetSibDefense = (target.InvestigativeBureau != null && target.InvestigativeBureau.IsCommissioned) ? (target.InvestigativeBureau.ForeignSpyDetectionRate / 100.0 * 0.25) : 0.0;
+        double targetAiDefense = (target.MilitaryAi != null && target.MilitaryAi.IsActive) ? (target.MilitaryAi.ThreatDetectionBonus / 100.0 * 0.20) : 0.0;
+        double targetBorderDefense = (target.BorderSecurity != null) ? (target.BorderSecurity.InfiltrationDetectionChance / 100.0 * 0.15) : 0.0;
+        double initiatorConcealment = (initiator.InvestigativeBureau != null && initiator.InvestigativeBureau.IsCommissioned && initiator.InvestigativeBureau.IsConcealed) ? 0.08 : 0.0;
+
+        double detectProb = Math.Clamp(baseDetect + (targetCounter * 0.003) + targetSibDefense + targetAiDefense + targetBorderDefense - (civilDefense * 0.10) - initiatorConcealment, 0.08, 0.95);
         operation.DetectionProbability = Math.Round(detectProb, 2);
 
         double successRoll = forcedSuccessRoll ?? _random.NextDouble();
@@ -307,6 +312,12 @@ public sealed class IntelligenceProgressionService : IIntelligenceProgressionSer
     {
         operation.DiplomaticPenaltyApplied = true;
 
+        // 0. Target SIB neutralizes and audits hostile operative
+        if (target.InvestigativeBureau != null && target.InvestigativeBureau.IsCommissioned)
+        {
+            target.InvestigativeBureau.RecordNeutralizedSpy(initiator.Name);
+        }
+
         // 1. Diplomatic fallout: initiator suffers international embarrassment and diplomatic blowback
         initiator.BaselineStability = Math.Max(5.0, initiator.BaselineStability - 4.0);
         initiator.ApprovalRating = Math.Max(5.0, initiator.ApprovalRating - 3.0);
@@ -407,6 +418,16 @@ public sealed class IntelligenceProgressionService : IIntelligenceProgressionSer
                 report.EstimatedTreasury = Math.Round(actualTreasury * (0.85 + (_random.NextDouble() * 0.30)), 0);
                 report.ReportSummary = $"Tactical Reconnaissance Report: Border forces estimate readiness at approximately {report.EstimatedMilitaryReadiness:0.#}%.";
                 break;
+        }
+
+        // Apply concealment rules: Classified SIB and Military AI installations remain concealed unless penetrated by advanced espionage or cyber intrusion
+        if (target.InvestigativeBureau != null && target.InvestigativeBureau.IsCommissioned && target.InvestigativeBureau.IsConcealed)
+        {
+            if (operation.Type != IntelligenceOperationType.AdvancedEspionage && operation.Type != IntelligenceOperationType.CyberIntrusion)
+            {
+                report.DiscoveredProjects = report.DiscoveredProjects.Where(p => !p.Contains("Investigative", StringComparison.OrdinalIgnoreCase)).ToList();
+                report.ReportSummary += " [Target counter-surveillance protocols masked black-budget installations]";
+            }
         }
 
         return report;

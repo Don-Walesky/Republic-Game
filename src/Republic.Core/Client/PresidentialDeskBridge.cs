@@ -7933,7 +7933,15 @@ public static class PresidentialDeskBridge
             return error;
         }
 
-        if (!Enum.TryParse<IntelligenceOperationType>(operationTypeName, true, out var opType))
+        string normalizedOpType = (operationTypeName ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "economicespionage" or "economic_espionage" or "economic espionage" or "industrial_espionage" => "IndustrialSabotage",
+            "infrastructurescouting" or "infrastructure_scouting" or "infrastructure scouting" or "cyber" => "CyberIntrusion",
+            "militaryreconnaissance" or "military_reconnaissance" or "military_recon" or "recon" or "reconnaissance" => "MilitaryReconnaissance",
+            _ => operationTypeName ?? string.Empty
+        };
+
+        if (!Enum.TryParse<IntelligenceOperationType>(normalizedOpType, true, out var opType))
         {
             var invalidTypeResult = CreateInvalidInputResult(
                 targetStatePath,
@@ -8807,6 +8815,535 @@ public static class PresidentialDeskBridge
         };
         TryWriteResultFile(targetStatePath, successResult);
         return successResult;
+    }
+
+    private static PresidentialActionResult SaveAndExportSnapshot(
+        SaveEnvelope<FullGameState>? envelope,
+        Country country,
+        RepublicTime simTime,
+        ulong tick,
+        string targetSavePath,
+        string targetStatePath,
+        string? requestId,
+        string outcomeMessage)
+    {
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    public static PresidentialActionResult ApplyMilitaryBudgetAllocation(
+        double armyFunding,
+        double navyFunding,
+        double airForceFunding,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "allocate military budget");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (armyFunding < 10_000_000.0 || navyFunding < 10_000_000.0 || airForceFunding < 10_000_000.0)
+        {
+            var invalidBudget = CreateInvalidInputResult(
+                targetStatePath,
+                "Each military branch requires a minimum operational allocation of R 10,000,000.",
+                requestId);
+            TryWriteResultFile(targetStatePath, invalidBudget);
+            return invalidBudget;
+        }
+
+        double totalProposed = armyFunding + navyFunding + airForceFunding;
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose allocating defense budget: Army {RepuTreasury.Format(armyFunding)}, Navy {RepuTreasury.Format(navyFunding)}, Air Force {RepuTreasury.Format(airForceFunding)} (Total: {RepuTreasury.Format(totalProposed)}).",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        country!.ArmedForces.AllocateBudget(armyFunding, navyFunding, airForceFunding);
+        if (country.MinistryBudget != null)
+        {
+            country.MinistryBudget.DefenseAllocation = country.ArmedForces.TotalBudget;
+        }
+        country.UpdateEconomicCycle(simTime);
+
+        string outcomeMessage = $"Military budget reallocated across branches: Army {RepuTreasury.Format(armyFunding)}, Navy {RepuTreasury.Format(navyFunding)}, Air Force {RepuTreasury.Format(airForceFunding)}. Total Defense: {RepuTreasury.Format(country.ArmedForces.TotalBudget)} (Composite Readiness: {country.ArmedForces.CompositeReadiness:0.0}%).";
+
+        return SaveAndExportSnapshot(envelope, country, simTime, tick, targetSavePath, targetStatePath, requestId, outcomeMessage);
+    }
+
+    public static PresidentialActionResult ApplyRecruitMilitaryBranch(
+        string branchName,
+        int recruitCount,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "recruit military personnel");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (recruitCount <= 0)
+        {
+            var invalidInput = CreateInvalidInputResult(targetStatePath, "Recruit count must be greater than zero.", requestId);
+            TryWriteResultFile(targetStatePath, invalidInput);
+            return invalidInput;
+        }
+
+        const double costPerRecruit = 1500.0;
+        double totalCost = recruitCount * costPerRecruit;
+
+        if (country!.Treasury.Balance < totalCost)
+        {
+            var brokeResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InsufficientFunds",
+                Message = $"Insufficient treasury reserves for military recruitment. Required: {RepuTreasury.Format(totalCost)}, Available: {country.Treasury.FormattedBalance}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, brokeResult);
+            return brokeResult;
+        }
+
+        string branchNormalized = branchName?.Trim().ToLowerInvariant() ?? "army";
+        string branchDisplay = "National Army";
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose recruiting {recruitCount:N0} personnel into {branchDisplay}. Enlistment & Training Cost: {RepuTreasury.Format(totalCost)}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        country.Treasury.TryWithdraw(totalCost);
+
+        if (branchNormalized.Contains("navy"))
+        {
+            branchDisplay = country.ArmedForces.Navy.Name;
+            country.ArmedForces.Navy.Recruit(recruitCount);
+        }
+        else if (branchNormalized.Contains("air"))
+        {
+            branchDisplay = country.ArmedForces.AirForce.Name;
+            country.ArmedForces.AirForce.Recruit(recruitCount);
+        }
+        else
+        {
+            branchDisplay = country.ArmedForces.Army.Name;
+            country.ArmedForces.Army.Recruit(recruitCount);
+        }
+
+        country.UpdateEconomicCycle(simTime);
+
+        string outcomeMessage = $"Recruited {recruitCount:N0} personnel into {branchDisplay}. Deducted {RepuTreasury.Format(totalCost)} from sovereign treasury. Standing Armed Forces: {country.ArmedForces.TotalPersonnel:N0} troops.";
+
+        return SaveAndExportSnapshot(envelope, country, simTime, tick, targetSavePath, targetStatePath, requestId, outcomeMessage);
+    }
+
+    public static PresidentialActionResult ApplyProcureMilitaryBranch(
+        string branchName,
+        int unitCount,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "procure military hardware");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (unitCount <= 0)
+        {
+            var invalidInput = CreateInvalidInputResult(targetStatePath, "Procurement unit count must be greater than zero.", requestId);
+            TryWriteResultFile(targetStatePath, invalidInput);
+            return invalidInput;
+        }
+
+        string branchNormalized = branchName?.Trim().ToLowerInvariant() ?? "army";
+        double unitCost = branchNormalized.Contains("navy")
+            ? 1_500_000.0
+            : (branchNormalized.Contains("air") ? 2_000_000.0 : 250_000.0);
+
+        double totalCost = unitCount * unitCost;
+
+        if (country!.Treasury.Balance < totalCost)
+        {
+            var brokeResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InsufficientFunds",
+                Message = $"Insufficient treasury reserves for hardware procurement. Required: {RepuTreasury.Format(totalCost)}, Available: {country.Treasury.FormattedBalance}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, brokeResult);
+            return brokeResult;
+        }
+
+        string branchDisplay = branchNormalized.Contains("navy")
+            ? country.ArmedForces.Navy.Name
+            : (branchNormalized.Contains("air") ? country.ArmedForces.AirForce.Name : country.ArmedForces.Army.Name);
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose procuring {unitCount:N0} hardware units for {branchDisplay}. Cost: {RepuTreasury.Format(totalCost)}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        country.Treasury.TryWithdraw(totalCost);
+
+        if (branchNormalized.Contains("navy"))
+        {
+            country.ArmedForces.Navy.Procure(unitCount);
+        }
+        else if (branchNormalized.Contains("air"))
+        {
+            country.ArmedForces.AirForce.Procure(unitCount);
+        }
+        else
+        {
+            country.ArmedForces.Army.Procure(unitCount);
+        }
+
+        country.UpdateEconomicCycle(simTime);
+
+        string outcomeMessage = $"Procured {unitCount:N0} military hardware units for {branchDisplay}. Deducted {RepuTreasury.Format(totalCost)} from sovereign treasury. Total Equipment: {country.ArmedForces.TotalEquipment:N0} units.";
+
+        return SaveAndExportSnapshot(envelope, country, simTime, tick, targetSavePath, targetStatePath, requestId, outcomeMessage);
+    }
+
+    public static PresidentialActionResult ApplyBorderSecurityFunding(
+        double quarterlyFunding,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "fund border security");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (quarterlyFunding < 10_000_000.0)
+        {
+            var invalidBudget = CreateInvalidInputResult(
+                targetStatePath,
+                "Border security requires a minimum quarterly allocation of R 10,000,000.",
+                requestId);
+            TryWriteResultFile(targetStatePath, invalidBudget);
+            return invalidBudget;
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose funding border security at {RepuTreasury.Format(quarterlyFunding)} / quarter.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        country!.BorderSecurity.FundBorderSecurity(quarterlyFunding);
+        country.UpdateEconomicCycle(simTime);
+
+        string outcomeMessage = $"Border security funding set to {RepuTreasury.Format(quarterlyFunding)} / quarter. Interception rate: {country.BorderSecurity.ContrabandInterceptionRate:0.0}%, Infiltration detection chance: {country.BorderSecurity.InfiltrationDetectionChance:0.0}%.";
+
+        return SaveAndExportSnapshot(envelope, country, simTime, tick, targetSavePath, targetStatePath, requestId, outcomeMessage);
+    }
+
+    public static PresidentialActionResult ApplyPoliceForceExpansion(
+        int additionalOfficers,
+        double additionalFunding = 0.0,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "expand police force");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (additionalOfficers <= 0 && additionalFunding <= 0.0)
+        {
+            var invalidInput = CreateInvalidInputResult(targetStatePath, "Police expansion requires adding officers or increasing funding.", requestId);
+            TryWriteResultFile(targetStatePath, invalidInput);
+            return invalidInput;
+        }
+
+        const double costPerOfficer = 2000.0;
+        double initialCost = (additionalOfficers * costPerOfficer);
+
+        if (country!.Treasury.Balance < initialCost)
+        {
+            var brokeResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "InsufficientFunds",
+                Message = $"Insufficient treasury reserves for police academy training. Required: {RepuTreasury.Format(initialCost)}, Available: {country.Treasury.FormattedBalance}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, brokeResult);
+            return brokeResult;
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose deploying {additionalOfficers:N0} new police officers. Academy & equipment cost: {RepuTreasury.Format(initialCost)}. Additional quarterly funding: {RepuTreasury.Format(additionalFunding)}.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        if (initialCost > 0.0)
+        {
+            country.Treasury.TryWithdraw(initialCost);
+        }
+
+        country.PoliceForce.ExpandForce(additionalOfficers, additionalFunding);
+        country.UpdateEconomicCycle(simTime);
+
+        string outcomeMessage = $"Police force expanded by {additionalOfficers:N0} sworn officers. Total force: {country.PoliceForce.OfficerCount:N0} officers (Crime Rate Index: {country.PoliceForce.CrimeRateIndex:0.0}, Public Order: {country.PoliceForce.PublicOrderScore:0.0}%).";
+
+        return SaveAndExportSnapshot(envelope, country, simTime, tick, targetSavePath, targetStatePath, requestId, outcomeMessage);
+    }
+
+    public static PresidentialActionResult ApplyCommissionInvestigativeBureau(
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "commission state investigative bureau");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        var outcome = PresidentialWorkspaceHandler.InitiateInvestigativeBureauProject(country!, simTime, confirmed);
+        if (outcome.Result != ExecutiveActionResult.Success)
+        {
+            var failResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = outcome.Result.ToString(),
+                Message = outcome.Message,
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, failResult);
+            return failResult;
+        }
+
+        country!.UpdateEconomicCycle(simTime);
+
+        return SaveAndExportSnapshot(envelope, country, simTime, tick, targetSavePath, targetStatePath, requestId, outcome.Message);
+    }
+
+    public static PresidentialActionResult ApplyMilitaryAiFunding(
+        double funding,
+        int? targetTier = null,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "fund military AI");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (funding < 5_000_000.0)
+        {
+            var invalidBudget = CreateInvalidInputResult(
+                targetStatePath,
+                "Military AI computing cluster requires a minimum quarterly allocation of R 5,000,000.",
+                requestId);
+            TryWriteResultFile(targetStatePath, invalidBudget);
+            return invalidBudget;
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose allocating {RepuTreasury.Format(funding)} / quarter to {country!.MilitaryAi.AiSystemName}.",
+                CountryName = country!.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        country!.MilitaryAi.SetFunding(funding);
+        if (targetTier.HasValue)
+        {
+            country.MilitaryAi.UpgradeAnalysisTier(targetTier.Value);
+        }
+        country.UpdateEconomicCycle(simTime);
+
+        string outcomeMessage = $"Military AI computing funded at {RepuTreasury.Format(funding)} / quarter. System: {country.MilitaryAi.AiSystemName} (Tier {country.MilitaryAi.AnalysisLevel}), Tactical Threat Bonus: +{country.MilitaryAi.ThreatDetectionBonus:0.0}%.";
+
+        return SaveAndExportSnapshot(envelope, country, simTime, tick, targetSavePath, targetStatePath, requestId, outcomeMessage);
     }
 
     /// <summary>
@@ -11019,7 +11556,7 @@ public static class PresidentialDeskBridge
                         }
                     }
 
-                    if (normalizedAction is "launch_intelligence_operation" or "launch_intelligence_op" or "spy_operation" or "launch_spy_op")
+                    if (normalizedAction is "launch_intelligence_operation" or "launch_intelligence_op" or "spy_operation" or "launch_spy_op" or "launch_espionage_mission" or "espionage_mission")
                     {
                         string opType = string.Empty;
                         if (root.TryGetProperty("operation_type", out var otEl) && otEl.ValueKind == JsonValueKind.String)
@@ -11539,6 +12076,188 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyForexDecision(regime, fxConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "military_budget_allocation" or "allocate_military_budget" or "military_budget")
+                    {
+                        double armyFunding = 200_000_000.0;
+                        if (root.TryGetProperty("army_funding", out var afEl) && afEl.ValueKind == JsonValueKind.Number)
+                            armyFunding = afEl.GetDouble();
+                        else if (root.TryGetProperty("army", out var aEl) && aEl.ValueKind == JsonValueKind.Number)
+                            armyFunding = aEl.GetDouble();
+
+                        double navyFunding = 150_000_000.0;
+                        if (root.TryGetProperty("navy_funding", out var nfEl) && nfEl.ValueKind == JsonValueKind.Number)
+                            navyFunding = nfEl.GetDouble();
+                        else if (root.TryGetProperty("navy", out var nEl) && nEl.ValueKind == JsonValueKind.Number)
+                            navyFunding = nEl.GetDouble();
+
+                        double airFunding = 150_000_000.0;
+                        if (root.TryGetProperty("air_force_funding", out var airfEl) && airfEl.ValueKind == JsonValueKind.Number)
+                            airFunding = airfEl.GetDouble();
+                        else if (root.TryGetProperty("air_funding", out var af2El) && af2El.ValueKind == JsonValueKind.Number)
+                            airFunding = af2El.GetDouble();
+                        else if (root.TryGetProperty("air", out var airEl) && airEl.ValueKind == JsonValueKind.Number)
+                            airFunding = airEl.GetDouble();
+
+                        bool mbConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var mbcEl) && (mbcEl.ValueKind == JsonValueKind.True || mbcEl.ValueKind == JsonValueKind.False))
+                            mbConfirmed = mbcEl.GetBoolean();
+
+                        try
+                        {
+                            return ApplyMilitaryBudgetAllocation(armyFunding, navyFunding, airFunding, mbConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "recruit_military_branch" or "recruit_military" or "recruit_troops")
+                    {
+                        string branch = "army";
+                        if (root.TryGetProperty("branch", out var bEl) && bEl.ValueKind == JsonValueKind.String)
+                            branch = bEl.GetString() ?? "army";
+
+                        int count = 1000;
+                        if (root.TryGetProperty("count", out var cEl) && cEl.ValueKind == JsonValueKind.Number)
+                            count = cEl.GetInt32();
+                        else if (root.TryGetProperty("recruits", out var rEl) && rEl.ValueKind == JsonValueKind.Number)
+                            count = rEl.GetInt32();
+
+                        bool recConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var rcEl) && (rcEl.ValueKind == JsonValueKind.True || rcEl.ValueKind == JsonValueKind.False))
+                            recConfirmed = rcEl.GetBoolean();
+
+                        try
+                        {
+                            return ApplyRecruitMilitaryBranch(branch, count, recConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "procure_military_branch" or "procure_military" or "procure_hardware")
+                    {
+                        string branch = "army";
+                        if (root.TryGetProperty("branch", out var bEl) && bEl.ValueKind == JsonValueKind.String)
+                            branch = bEl.GetString() ?? "army";
+
+                        int units = 20;
+                        if (root.TryGetProperty("units", out var uEl) && uEl.ValueKind == JsonValueKind.Number)
+                            units = uEl.GetInt32();
+                        else if (root.TryGetProperty("count", out var cEl) && cEl.ValueKind == JsonValueKind.Number)
+                            units = cEl.GetInt32();
+
+                        bool procConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var pcEl) && (pcEl.ValueKind == JsonValueKind.True || pcEl.ValueKind == JsonValueKind.False))
+                            procConfirmed = pcEl.GetBoolean();
+
+                        try
+                        {
+                            return ApplyProcureMilitaryBranch(branch, units, procConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "border_security_funding" or "fund_border_security" or "border_security")
+                    {
+                        double funding = 35_000_000.0;
+                        if (root.TryGetProperty("funding", out var fEl) && fEl.ValueKind == JsonValueKind.Number)
+                            funding = fEl.GetDouble();
+                        else if (root.TryGetProperty("quarterly_funding", out var qfEl) && qfEl.ValueKind == JsonValueKind.Number)
+                            funding = qfEl.GetDouble();
+
+                        bool bsConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var bscEl) && (bscEl.ValueKind == JsonValueKind.True || bscEl.ValueKind == JsonValueKind.False))
+                            bsConfirmed = bscEl.GetBoolean();
+
+                        try
+                        {
+                            return ApplyBorderSecurityFunding(funding, bsConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "police_force_expansion" or "expand_police_force" or "fund_police" or "police_expansion")
+                    {
+                        int officers = 1000;
+                        if (root.TryGetProperty("officers", out var offEl) && offEl.ValueKind == JsonValueKind.Number)
+                            officers = offEl.GetInt32();
+                        else if (root.TryGetProperty("count", out var cEl) && cEl.ValueKind == JsonValueKind.Number)
+                            officers = cEl.GetInt32();
+
+                        double addFunding = 0.0;
+                        if (root.TryGetProperty("additional_funding", out var afEl) && afEl.ValueKind == JsonValueKind.Number)
+                            addFunding = afEl.GetDouble();
+                        else if (root.TryGetProperty("funding", out var fEl) && fEl.ValueKind == JsonValueKind.Number)
+                            addFunding = fEl.GetDouble();
+
+                        bool pfConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var pfcEl) && (pfcEl.ValueKind == JsonValueKind.True || pfcEl.ValueKind == JsonValueKind.False))
+                            pfConfirmed = pfcEl.GetBoolean();
+
+                        try
+                        {
+                            return ApplyPoliceForceExpansion(officers, addFunding, pfConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "commission_investigative_bureau" or "commission_sib" or "start_investigative_bureau" or "investigative_bureau")
+                    {
+                        bool sibConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var scEl) && (scEl.ValueKind == JsonValueKind.True || scEl.ValueKind == JsonValueKind.False))
+                            sibConfirmed = scEl.GetBoolean();
+
+                        try
+                        {
+                            return ApplyCommissionInvestigativeBureau(sibConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "military_ai_funding" or "fund_military_ai" or "upgrade_military_ai" or "military_ai")
+                    {
+                        double funding = 25_000_000.0;
+                        if (root.TryGetProperty("funding", out var fEl) && fEl.ValueKind == JsonValueKind.Number)
+                            funding = fEl.GetDouble();
+                        else if (root.TryGetProperty("computing_funding_level", out var cfEl) && cfEl.ValueKind == JsonValueKind.Number)
+                            funding = cfEl.GetDouble();
+
+                        int? tier = null;
+                        if (root.TryGetProperty("tier", out var tEl) && tEl.ValueKind == JsonValueKind.Number)
+                            tier = tEl.GetInt32();
+                        else if (root.TryGetProperty("analysis_level", out var alEl) && alEl.ValueKind == JsonValueKind.Number)
+                            tier = alEl.GetInt32();
+
+                        bool maiConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var maicEl) && (maicEl.ValueKind == JsonValueKind.True || maicEl.ValueKind == JsonValueKind.False))
+                            maiConfirmed = maicEl.GetBoolean();
+
+                        try
+                        {
+                            return ApplyMilitaryAiFunding(funding, tier, maiConfirmed, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

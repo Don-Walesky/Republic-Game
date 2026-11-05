@@ -463,6 +463,28 @@ public static class PresidentialWorkspaceHandler
         return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"Agro-Industrial Irrigation Mega-Dam initiated. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
     }
 
+    public static ExecutiveActionOutcome InitiateInvestigativeBureauProject(Country country, RepublicTime simulationTime, bool confirmed = true)
+    {
+        if (country == null || string.IsNullOrWhiteSpace(country.Id))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InvalidCountry, "Cannot initiate project: invalid country.");
+        if (!confirmed)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.Cancelled, "Project cancelled by executive order.");
+        var defMinister = country.GetMinister(CabinetPortfolio.Defense);
+        var intMinister = country.GetMinister(CabinetPortfolio.Interior);
+        if ((defMinister == null || !defMinister.IsAppointed) && (intMinister == null || !intMinister.IsAppointed))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Requires an appointed Minister of Defense or Minister of Interior.");
+        if (country.Projects.OfType<NationalInvestigativeBureauProject>().Any(p => p.IsActive))
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "A State Investigative Bureau project is already under active development.");
+        if (country.InvestigativeBureau.IsCommissioned)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.AlreadyActive, "The State Investigative Bureau is already commissioned and operational.");
+        if (country.Treasury.Balance < NationalInvestigativeBureauProject.StandardCost)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.InsufficientFunds, $"Insufficient funds. Required: {RepuTreasury.Format(NationalInvestigativeBureauProject.StandardCost)}, Available: {country.Treasury.FormattedBalance}.");
+        var project = country.StartInvestigativeBureauProject(simulationTime);
+        if (project == null)
+            return new ExecutiveActionOutcome(ExecutiveActionResult.PrerequisitesNotMet, "Unable to start State Investigative Bureau commissioning.");
+        return new ExecutiveActionOutcome(ExecutiveActionResult.Success, $"State Investigative Bureau commissioning authorized. Deducted {RepuTreasury.Format(project.Cost)} from treasury.", project);
+    }
+
     /// <summary>
     /// Adjusts the national taxation policy for the specified sovereign country.
     /// Validates inputs, requires explicit presidential confirmation, and evaluates citizen welfare and approval consequences.

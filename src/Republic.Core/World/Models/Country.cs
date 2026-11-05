@@ -17,6 +17,7 @@ using Republic.Core.Government.Officials.Models;
 using Republic.Core.Identity.Models;
 using Republic.Core.Media.Models;
 using Republic.Core.Intelligence.Models;
+using Republic.Core.Military.Models;
 using Republic.Core.NationalStrategy.Models;
 using Republic.Core.NationalYield;
 using Republic.Core.Politics;
@@ -364,6 +365,8 @@ public sealed class Country
         {
             ForexMilestonePendingNotification = true;
         }
+
+
 
         return InflationRate;
     }
@@ -2264,6 +2267,16 @@ public sealed class Country
                 level += 2;
             }
 
+            if (InvestigativeBureau != null && InvestigativeBureau.IsCommissioned)
+            {
+                level += 2;
+            }
+
+            if (MilitaryAi != null && MilitaryAi.IsActive)
+            {
+                level += 1;
+            }
+
             return Math.Clamp(level, 1, 30);
         }
     }
@@ -2281,9 +2294,47 @@ public sealed class Country
             double civil = StateCapacity?.CivilServiceQuality ?? 0.3;
             var intMinister = GetMinister(CabinetPortfolio.Interior);
             double ministerBonus = intMinister != null ? (intMinister.Competence * 25.0) : 10.0;
+            if (InvestigativeBureau != null && InvestigativeBureau.IsCommissioned)
+            {
+                ministerBonus += InvestigativeBureau.CounterIntelligenceRating * 0.25;
+            }
+            if (MilitaryAi != null && MilitaryAi.IsActive)
+            {
+                ministerBonus += MilitaryAi.ThreatDetectionBonus * 0.20;
+            }
             return Math.Clamp((corr * 40.0) + (civil * 25.0) + ministerBonus, 10.0, 100.0);
         }
     }
+
+    /// <summary>
+    /// Gets or sets the sovereign armed forces service branches (Army, Navy, Air Force).
+    /// </summary>
+    [JsonPropertyName("armed_forces")]
+    public ArmedForcesRecord ArmedForces { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the national border security and customs surveillance force.
+    /// </summary>
+    [JsonPropertyName("border_security")]
+    public BorderSecurityRecord BorderSecurity { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the national police service and civic order command.
+    /// </summary>
+    [JsonPropertyName("police_force")]
+    public PoliceForceRecord PoliceForce { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the classified State Investigative Bureau (SIB) counter-intelligence agency.
+    /// </summary>
+    [JsonPropertyName("investigative_bureau")]
+    public InvestigativeBureauRecord InvestigativeBureau { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the sovereign military AI and neural threat detection grid.
+    /// </summary>
+    [JsonPropertyName("military_ai")]
+    public MilitaryAiRecord MilitaryAi { get; set; } = new();
 
     /// <summary>
     /// Gets the list of active, scheduled, and past intelligence operations initiated by this sovereign country.
@@ -2966,6 +3017,18 @@ public sealed class Country
         return StartProject(project) ? project : null;
     }
 
+    public NationalInvestigativeBureauProject? StartInvestigativeBureauProject(RepublicTime startedBoundary, double cost = NationalInvestigativeBureauProject.StandardCost)
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return null;
+        var project = new NationalInvestigativeBureauProject(Id, startedBoundary, cost);
+        return StartProject(project) ? project : null;
+    }
+
+    public NationalInvestigativeBureauProject? StartInvestigativeBureauProject(IRepublicClock clock, double cost = NationalInvestigativeBureauProject.StandardCost)
+    {
+        return StartInvestigativeBureauProject(clock.CurrentTime, cost);
+    }
+
     /// <summary>
     /// Initiates a generic development project for this sovereign country.
     /// Withdraws project cost immediately from the country's RepuTreasury.
@@ -3430,7 +3493,12 @@ public sealed class Country
         IEnumerable<IntelligenceDossierReport>? acquiredIntelligence = null,
         long presidencyStartDay = 1,
         long? currencyCreationDay = null,
-        IEnumerable<GlobalBusinessProposal>? globalBusinesses = null)
+        IEnumerable<GlobalBusinessProposal>? globalBusinesses = null,
+        ArmedForcesRecord? armedForces = null,
+        BorderSecurityRecord? borderSecurity = null,
+        PoliceForceRecord? policeForce = null,
+        InvestigativeBureauRecord? investigativeBureau = null,
+        MilitaryAiRecord? militaryAi = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var countryId = string.IsNullOrWhiteSpace(id) ? Guid.NewGuid().ToString("N") : id;
@@ -3488,7 +3556,12 @@ public sealed class Country
             Bill = bill,
             PresidencyStartDay = presidencyStartDay,
             CurrencyCreationDay = currencyCreationDay,
-            GlobalBusinesses = globalBusinesses != null ? new List<GlobalBusinessProposal>(globalBusinesses) : new List<GlobalBusinessProposal>()
+            GlobalBusinesses = globalBusinesses != null ? new List<GlobalBusinessProposal>(globalBusinesses) : new List<GlobalBusinessProposal>(),
+            ArmedForces = armedForces ?? new ArmedForcesRecord(),
+            BorderSecurity = borderSecurity ?? new BorderSecurityRecord(),
+            PoliceForce = policeForce ?? new PoliceForceRecord(),
+            InvestigativeBureau = investigativeBureau ?? new InvestigativeBureauRecord(),
+            MilitaryAi = militaryAi ?? new MilitaryAiRecord()
         };
 
         if (election != null)

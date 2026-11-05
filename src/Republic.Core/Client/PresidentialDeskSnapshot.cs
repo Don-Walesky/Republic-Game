@@ -848,6 +848,36 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("military_recent_operations")]
     public IReadOnlyList<MilitaryActionSnapshot> RecentMilitaryOperations { get; init; } = Array.Empty<MilitaryActionSnapshot>();
 
+    /// <summary>
+    /// Gets the authoritative Armed Forces snapshot across Army, Navy, and Air Force.
+    /// </summary>
+    [JsonPropertyName("armed_forces")]
+    public ArmedForcesSnapshot ArmedForces { get; init; } = new();
+
+    /// <summary>
+    /// Gets the national border security and contraband interception snapshot.
+    /// </summary>
+    [JsonPropertyName("border_security")]
+    public BorderSecuritySnapshot BorderSecurity { get; init; } = new();
+
+    /// <summary>
+    /// Gets the national police service and municipal order snapshot.
+    /// </summary>
+    [JsonPropertyName("police_force")]
+    public PoliceForceSnapshot PoliceForce { get; init; } = new();
+
+    /// <summary>
+    /// Gets the classified State Investigative Bureau (SIB) snapshot.
+    /// </summary>
+    [JsonPropertyName("investigative_bureau")]
+    public InvestigativeBureauSnapshot InvestigativeBureau { get; init; } = new();
+
+    /// <summary>
+    /// Gets the sovereign Military AI system and threat detection snapshot.
+    /// </summary>
+    [JsonPropertyName("military_ai")]
+    public MilitaryAiSnapshot MilitaryAi { get; init; } = new();
+
     [JsonPropertyName("target_countries")]
     public IReadOnlyList<string> TargetCountries { get; init; } = Array.Empty<string>();
 
@@ -1980,9 +2010,90 @@ public sealed record PresidentialDeskSnapshot
             LegislatureChamberStatus = chamber.ChamberStatus,
             LegislatureHasMajority = chamber.HasWorkingMajority,
             Lawmakers = lawmakerSnapshots.AsReadOnly(),
-            MilitaryPersonnel = country.MilitaryLevel * 2500,
-            MilitaryWeaponsInventory = country.MilitaryLevel * 85,
-            MilitaryCompositeReadiness = secAssessment.CompositeReadiness,
+            MilitaryPersonnel = country.ArmedForces?.TotalPersonnel ?? (country.MilitaryLevel * 2500),
+            MilitaryWeaponsInventory = country.ArmedForces?.TotalEquipment ?? (country.MilitaryLevel * 85),
+            MilitaryCompositeReadiness = country.ArmedForces?.CompositeReadiness ?? secAssessment.CompositeReadiness,
+            ArmedForces = new ArmedForcesSnapshot
+            {
+                Army = new ArmedForcesBranchSnapshot
+                {
+                    Branch = "Army",
+                    Name = country.ArmedForces?.Army?.Name ?? "National Army",
+                    PersonnelCount = country.ArmedForces?.Army?.PersonnelCount ?? 45000,
+                    EquipmentCount = country.ArmedForces?.Army?.EquipmentCount ?? 520,
+                    ReadinessScore = country.ArmedForces?.Army?.ReadinessScore ?? 82.0,
+                    QuarterlyFunding = country.ArmedForces?.Army?.QuarterlyFunding ?? 200_000_000.0,
+                    CombatStrength = country.ArmedForces?.Army?.CombatStrength ?? 31000.0
+                },
+                Navy = new ArmedForcesBranchSnapshot
+                {
+                    Branch = "Navy",
+                    Name = country.ArmedForces?.Navy?.Name ?? "Naval Fleet",
+                    PersonnelCount = country.ArmedForces?.Navy?.PersonnelCount ?? 14000,
+                    EquipmentCount = country.ArmedForces?.Navy?.EquipmentCount ?? 48,
+                    ReadinessScore = country.ArmedForces?.Navy?.ReadinessScore ?? 78.0,
+                    QuarterlyFunding = country.ArmedForces?.Navy?.QuarterlyFunding ?? 150_000_000.0,
+                    CombatStrength = country.ArmedForces?.Navy?.CombatStrength ?? 5304.0
+                },
+                AirForce = new ArmedForcesBranchSnapshot
+                {
+                    Branch = "AirForce",
+                    Name = country.ArmedForces?.AirForce?.Name ?? "Air Force Command",
+                    PersonnelCount = country.ArmedForces?.AirForce?.PersonnelCount ?? 16000,
+                    EquipmentCount = country.ArmedForces?.AirForce?.EquipmentCount ?? 135,
+                    ReadinessScore = country.ArmedForces?.AirForce?.ReadinessScore ?? 85.0,
+                    QuarterlyFunding = country.ArmedForces?.AirForce?.QuarterlyFunding ?? 150_000_000.0,
+                    CombatStrength = country.ArmedForces?.AirForce?.CombatStrength ?? 8308.7
+                },
+                TotalPersonnel = country.ArmedForces?.TotalPersonnel ?? 75000,
+                TotalEquipment = country.ArmedForces?.TotalEquipment ?? 703,
+                TotalBudget = country.ArmedForces?.TotalBudget ?? 500_000_000.0,
+                CompositeReadiness = country.ArmedForces?.CompositeReadiness ?? 81.7,
+                TotalCombatStrength = country.ArmedForces?.TotalCombatStrength ?? 44612.7
+            },
+            BorderSecurity = new BorderSecuritySnapshot
+            {
+                FundingLevel = country.BorderSecurity?.FundingLevel ?? 35_000_000.0,
+                PatrolStrength = country.BorderSecurity?.PatrolStrength ?? 3500,
+                SurveillanceTechLevel = country.BorderSecurity?.SurveillanceTechLevel ?? 65.0,
+                ContrabandInterceptionRate = country.BorderSecurity?.ContrabandInterceptionRate ?? 70.3,
+                InfiltrationDetectionChance = country.BorderSecurity?.InfiltrationDetectionChance ?? 86.0,
+                EffectivenessScore = country.BorderSecurity?.EffectivenessScore ?? 78.2,
+                StatusSummary = country.BorderSecurity?.StatusSummary ?? "Frontiers Fortified 🟢"
+            },
+            PoliceForce = new PoliceForceSnapshot
+            {
+                IsEstablished = country.PoliceForce?.IsEstablished ?? true,
+                ForceName = country.PoliceForce?.ForceName ?? "Republic National Police Service (RNPS)",
+                OfficerCount = country.PoliceForce?.OfficerCount ?? 28000,
+                QuarterlyFunding = country.PoliceForce?.QuarterlyFunding ?? 45_000_000.0,
+                CrimeRateIndex = country.PoliceForce?.CrimeRateIndex ?? 16.3,
+                PublicOrderScore = country.PoliceForce?.PublicOrderScore ?? 95.6,
+                CommunityTrustScore = country.PoliceForce?.CommunityTrustScore ?? 72.0,
+                StatusSummary = country.PoliceForce?.StatusSummary ?? "Civil Order Secure 🟢"
+            },
+            InvestigativeBureau = new InvestigativeBureauSnapshot
+            {
+                IsCommissioned = country.InvestigativeBureau?.IsCommissioned ?? false,
+                BureauName = country.InvestigativeBureau?.BureauName ?? "State Investigative Bureau (SIB)",
+                CounterIntelligenceRating = country.InvestigativeBureau?.CounterIntelligenceRating ?? 40.0,
+                ForeignSpyDetectionRate = country.InvestigativeBureau?.ForeignSpyDetectionRate ?? 20.0,
+                InternalThreatAuditScore = country.InvestigativeBureau?.InternalThreatAuditScore ?? 25.0,
+                IsConcealed = country.InvestigativeBureau?.IsConcealed ?? true,
+                NeutralizedForeignSpiesCount = country.InvestigativeBureau?.NeutralizedForeignSpiesCount ?? 0,
+                ActiveInvestigations = (country.InvestigativeBureau?.ActiveInvestigations ?? new List<string>()).AsReadOnly(),
+                StatusSummary = country.InvestigativeBureau?.StatusSummary ?? "Uncommissioned 🔒"
+            },
+            MilitaryAi = new MilitaryAiSnapshot
+            {
+                IsActive = country.MilitaryAi?.IsActive ?? true,
+                AiSystemName = country.MilitaryAi?.AiSystemName ?? "Aegis-9 Sovereign Defense Neural Grid",
+                AnalysisLevel = country.MilitaryAi?.AnalysisLevel ?? 1,
+                ComputingFundingLevel = country.MilitaryAi?.ComputingFundingLevel ?? 25_000_000.0,
+                ThreatDetectionBonus = country.MilitaryAi?.ThreatDetectionBonus ?? 23.5,
+                PredictiveThreatSummaries = (country.MilitaryAi?.PredictiveThreatSummaries ?? new List<string>()).AsReadOnly(),
+                StatusSummary = country.MilitaryAi?.StatusSummary ?? "Online 🤖 [Tier 1]"
+            },
             TargetCountries = foreignNames.AsReadOnly(),
             StatusMessage = !string.IsNullOrWhiteSpace(statusMessage) ? statusMessage : "Connected to live Republic simulation state",
             ExportedAtUtc = DateTimeOffset.UtcNow.ToString("O"),
