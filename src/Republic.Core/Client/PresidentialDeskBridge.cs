@@ -1652,14 +1652,31 @@ public static class PresidentialDeskBridge
                 StabilityRating = country.BaselineStability,
                 TreasuryBalance = country.Treasury.Balance,
                 CorruptionIndex = country.CorruptionIndex,
-                LegislatureSeatsRuling = country.Legislature.RulingPartySeats,
-                LegislatureSeatsOpposition = country.Legislature.OppositionSeats,
-                LegislatureSeatsIndependent = country.Legislature.IndependentSeats,
-                LegislatureChamberStatus = country.Legislature.ChamberStatus,
-                LegislatureHasMajority = country.Legislature.HasWorkingMajority
+                LegislatureSeatsRuling = country.Legislature?.RulingPartySeats ?? 48,
+                LegislatureSeatsOpposition = country.Legislature?.OppositionSeats ?? 42,
+                LegislatureSeatsIndependent = country.Legislature?.IndependentSeats ?? 10,
+                LegislatureChamberStatus = country.Legislature?.ChamberStatus ?? "Hung Parliament",
+                LegislatureHasMajority = country.Legislature?.HasWorkingMajority ?? false
             };
             TryWriteResultFile(targetStatePath, failResult);
             return failResult;
+        }
+
+        // Dispatch insider legislative intelligence from defected lawmaker
+        var courtedLawmaker = country.Legislature?.Lawmakers?.FirstOrDefault(l =>
+            string.Equals(l.Id, legislatorId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(l.Name, legislatorId, StringComparison.OrdinalIgnoreCase));
+
+        if (courtedLawmaker != null)
+        {
+            Republic.Core.Communication.Services.InGameCommunicationService.DispatchLegislatorDefectionIntel(
+                country, courtedLawmaker, incentiveType, envelope?.State);
+        }
+
+        if (country.Legislature != null && country.Legislature.HasWorkingMajority)
+        {
+            Republic.Core.Communication.Services.InGameCommunicationService.DispatchChamberStatusAlert(
+                country, country.Legislature, envelope?.State);
         }
 
         // Persist updated state
@@ -1690,11 +1707,11 @@ public static class PresidentialDeskBridge
             StabilityRating = country.BaselineStability,
             TreasuryBalance = country.Treasury.Balance,
             CorruptionIndex = country.CorruptionIndex,
-            LegislatureSeatsRuling = country.Legislature.RulingPartySeats,
-            LegislatureSeatsOpposition = country.Legislature.OppositionSeats,
-            LegislatureSeatsIndependent = country.Legislature.IndependentSeats,
-            LegislatureChamberStatus = country.Legislature.ChamberStatus,
-            LegislatureHasMajority = country.Legislature.HasWorkingMajority
+            LegislatureSeatsRuling = country.Legislature?.RulingPartySeats ?? 48,
+            LegislatureSeatsOpposition = country.Legislature?.OppositionSeats ?? 42,
+            LegislatureSeatsIndependent = country.Legislature?.IndependentSeats ?? 10,
+            LegislatureChamberStatus = country.Legislature?.ChamberStatus ?? "Hung Parliament",
+            LegislatureHasMajority = country.Legislature?.HasWorkingMajority ?? false
         };
         TryWriteResultFile(targetStatePath, successResult);
         return successResult;
@@ -6729,6 +6746,10 @@ public static class PresidentialDeskBridge
             return failResult;
         }
 
+        // Dispatch official bilateral diplomatic cable to recipient country
+        Republic.Core.Communication.Services.InGameCommunicationService.DispatchBilateralProposalCable(
+            targetCountry, country!, proposal, envelope?.State);
+
         try
         {
             if (world != null)
@@ -7033,6 +7054,17 @@ public static class PresidentialDeskBridge
                 country!.AdjustCorruption(-2.0, "Transparent published bilateral trade treaty");
                 outcomeMessage += $" [Transparent published treaty: Corruption Index reduced to {country.CorruptionIndex:0.1}%].";
             }
+
+            if (envelope?.State != null)
+            {
+                var partner = partnerCountry ?? country!;
+                Republic.Core.Communication.Services.InGameCommunicationService.DispatchBilateralResolutionCable(
+                    country!,
+                    partner,
+                    executed,
+                    "accepted",
+                    envelope.State);
+            }
         }
 
         if (!success || executed == null)
@@ -7184,6 +7216,24 @@ public static class PresidentialDeskBridge
             };
             TryWriteResultFile(targetStatePath, failResult);
             return failResult;
+        }
+
+        if (envelope?.State != null && rejected != null)
+        {
+            var partnerId = rejected.ProposerCountryId != country!.Id ? rejected.ProposerCountryId : rejected.TargetCountryId;
+            var partner = envelope.State.World?.Countries?.FirstOrDefault(c => c.Id == partnerId);
+            if (partner == null)
+            {
+                var factory = new CountryProfileFactory();
+                int seed = Math.Abs(partnerId.GetHashCode()) % 1000 + 100;
+                partner = factory.CreateCountry(seed, simTime);
+            }
+            Republic.Core.Communication.Services.InGameCommunicationService.DispatchBilateralResolutionCable(
+                country!,
+                partner,
+                rejected,
+                "rejected",
+                envelope.State);
         }
 
         var world = envelope?.State?.World;
@@ -8307,6 +8357,10 @@ public static class PresidentialDeskBridge
             return fail;
         }
 
+        // Dispatch legislative committee reading dispatch
+        Republic.Core.Communication.Services.InGameCommunicationService.DispatchLegislatorBillReview(
+            country, bill, "proposed", envelope?.State);
+
         if (envelope?.State != null && !string.IsNullOrWhiteSpace(targetSavePath))
         {
             envelope.State.CurrentTick = tick + 1;
@@ -8394,6 +8448,10 @@ public static class PresidentialDeskBridge
             return voteFail;
         }
 
+        // Dispatch legislative roll call result
+        Republic.Core.Communication.Services.InGameCommunicationService.DispatchLegislatorBillReview(
+            country, voted, voted.IsPassed ? "passed" : "defeated", envelope?.State);
+
         if (envelope?.State != null && !string.IsNullOrWhiteSpace(targetSavePath))
         {
             envelope.State.CurrentTick = tick + 1;
@@ -8465,6 +8523,11 @@ public static class PresidentialDeskBridge
 
         bool vetoSucceeded = country!.VetoBill(title, out var msg);
 
+        var vetoedBill = country.Bills.FirstOrDefault(b => string.Equals(b.Title, title, StringComparison.OrdinalIgnoreCase))
+            ?? new CountryBill(title, country.Id, CountryBillStatus.Vetoed);
+        Republic.Core.Communication.Services.InGameCommunicationService.DispatchLegislatorBillReview(
+            country, vetoedBill, "vetoed", envelope?.State);
+
         if (envelope?.State != null && !string.IsNullOrWhiteSpace(targetSavePath))
         {
             envelope.State.CurrentTick = tick + 1;
@@ -8504,6 +8567,110 @@ public static class PresidentialDeskBridge
 
         TryWriteResultFile(targetStatePath, result);
         return result;
+    }
+
+    /// <summary>
+    /// Authoritatively marks an in-game communication, floor dispatch, or diplomatic cable as read.
+    /// </summary>
+    public static PresidentialActionResult ApplyMarkEmailRead(
+        string emailId,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var targetSavePath = saveFilePath ?? Path.ChangeExtension(targetStatePath, ".sav");
+
+        if (!File.Exists(targetSavePath))
+        {
+            var missingResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "StateMissing",
+                Message = $"Cannot mark email read: Save state file '{targetSavePath}' not found."
+            };
+            TryWriteResultFile(targetStatePath, missingResult);
+            return missingResult;
+        }
+
+        SaveEnvelope<FullGameState>? envelope;
+        try
+        {
+            envelope = LoadAuthoritativeState(targetSavePath);
+        }
+        catch (Exception ex)
+        {
+            var errResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CorruptState",
+                Message = $"Failed to load simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, errResult);
+            return errResult;
+        }
+
+        var country = envelope?.State?.World?.Countries?.FirstOrDefault();
+        if (country == null)
+        {
+            var errResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "CountryNotFound",
+                Message = "No active sovereign country found in simulation state."
+            };
+            TryWriteResultFile(targetStatePath, errResult);
+            return errResult;
+        }
+
+        if (envelope?.State?.Workspace?.Emails != null)
+        {
+            if (string.IsNullOrEmpty(emailId) || string.Equals(emailId, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var em in envelope.State.Workspace.Emails)
+                {
+                    em.IsRead = true;
+                }
+            }
+            else
+            {
+                var email = envelope.State.Workspace.Emails.FirstOrDefault(e =>
+                    string.Equals(e.Id, emailId, StringComparison.OrdinalIgnoreCase));
+                if (email != null)
+                {
+                    email.IsRead = true;
+                }
+            }
+        }
+
+        if (envelope?.State != null)
+        {
+            envelope.SavedAt = DateTimeOffset.UtcNow;
+            var serializer = new JsonStateSerializer();
+            AtomicFileWriter.WriteAllTextSafely(targetSavePath, serializer.Serialize(envelope));
+        }
+
+        var clock = RepublicClock.CreateControlled();
+        var snapshot = PresidentialDeskSnapshot.Create(country, clock.CurrentTime, envelope?.State?.CurrentTick ?? 0, targetSavePath);
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase) ? Path.ChangeExtension(targetStatePath, ".json") : targetStatePath;
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = $"Communication '{emailId}' marked as read.",
+            CountryName = country.Name,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
     }
 
     public static PresidentialActionResult? ProcessPendingDecisionRequest(
@@ -10003,6 +10170,24 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyMilitaryOperation(targetCountryName, opType, troops, milConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "mark_message_read" or "mark_email_read" or "read_email")
+                    {
+                        string emailId = string.Empty;
+                        if (root.TryGetProperty("email_id", out var eidEl) && eidEl.ValueKind == JsonValueKind.String)
+                            emailId = eidEl.GetString() ?? string.Empty;
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                            emailId = idEl.GetString() ?? string.Empty;
+
+                        try
+                        {
+                            return ApplyMarkEmailRead(emailId, targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

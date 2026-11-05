@@ -499,8 +499,19 @@ var media_auto_publish_timer: Timer = null
 
 @onready var messages_modal: PanelContainer = _get_node_safe("InterfaceLayer/MessagesModal") as PanelContainer
 @onready var close_msg_x_button: Button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgHeaderHBox/CloseMsgXButton") as Button
+@onready var msg_summary_label: Label = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgSummaryLabel") as Label
+@onready var btn_msg_filter_all: Button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox/BtnMsgFilterAll") as Button
+@onready var btn_msg_filter_legislative: Button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox/BtnMsgFilterLegislative") as Button
+@onready var btn_msg_filter_diplomatic: Button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox/BtnMsgFilterDiplomatic") as Button
+@onready var btn_msg_filter_executive: Button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox/BtnMsgFilterExecutive") as Button
 @onready var emails_list_vbox: VBoxContainer = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox") as VBoxContainer
 @onready var empty_emails_label: Label = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox/EmptyEmailsLabel") as Label
+
+@onready var legislator_whisper_card: PanelContainer = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard") as PanelContainer
+@onready var legislator_whisper_label: Label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard/WhisperVBox/LegislatorWhisperLabel") as Label
+@onready var btn_open_legislative_dispatches: Button = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard/WhisperVBox/WhisperHeaderHBox/BtnOpenLegislativeDispatches") as Button
+
+var active_message_filter: String = "All"
 
 @onready var buffs_modal: PanelContainer = _get_node_safe("InterfaceLayer/BuffsModal") as PanelContainer
 @onready var close_buffs_x_button: Button = _get_node_safe("InterfaceLayer/BuffsModal/BuffsVBox/BuffsHeaderHBox/CloseBuffsXButton") as Button
@@ -1686,10 +1697,27 @@ func _init_controls() -> void:
 		messages_modal = _get_node_safe("InterfaceLayer/MessagesModal") as PanelContainer
 	if close_msg_x_button == null:
 		close_msg_x_button = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgHeaderHBox/CloseMsgXButton") as Button
+	if msg_summary_label == null:
+		msg_summary_label = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgSummaryLabel") as Label
+	if btn_msg_filter_all == null:
+		btn_msg_filter_all = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox/BtnMsgFilterAll") as Button
+	if btn_msg_filter_legislative == null:
+		btn_msg_filter_legislative = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox/BtnMsgFilterLegislative") as Button
+	if btn_msg_filter_diplomatic == null:
+		btn_msg_filter_diplomatic = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox/BtnMsgFilterDiplomatic") as Button
+	if btn_msg_filter_executive == null:
+		btn_msg_filter_executive = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox/BtnMsgFilterExecutive") as Button
 	if emails_list_vbox == null:
 		emails_list_vbox = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox") as VBoxContainer
 	if empty_emails_label == null:
 		empty_emails_label = _get_node_safe("InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox/EmptyEmailsLabel") as Label
+
+	if legislator_whisper_card == null:
+		legislator_whisper_card = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard") as PanelContainer
+	if legislator_whisper_label == null:
+		legislator_whisper_label = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard/WhisperVBox/LegislatorWhisperLabel") as Label
+	if btn_open_legislative_dispatches == null:
+		btn_open_legislative_dispatches = _get_node_safe("InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard/WhisperVBox/WhisperHeaderHBox/BtnOpenLegislativeDispatches") as Button
 
 	if buffs_modal == null:
 		buffs_modal = _get_node_safe("InterfaceLayer/BuffsModal") as PanelContainer
@@ -2051,6 +2079,17 @@ func _connect_signals() -> void:
 		close_econ_x_button.pressed.connect(close_all_modals)
 	if close_msg_x_button and not close_msg_x_button.pressed.is_connected(close_all_modals):
 		close_msg_x_button.pressed.connect(close_all_modals)
+	if btn_msg_filter_all and not btn_msg_filter_all.pressed.is_connected(_on_msg_filter_all_pressed):
+		btn_msg_filter_all.pressed.connect(_on_msg_filter_all_pressed)
+	if btn_msg_filter_legislative and not btn_msg_filter_legislative.pressed.is_connected(_on_msg_filter_legislative_pressed):
+		btn_msg_filter_legislative.pressed.connect(_on_msg_filter_legislative_pressed)
+	if btn_msg_filter_diplomatic and not btn_msg_filter_diplomatic.pressed.is_connected(_on_msg_filter_diplomatic_pressed):
+		btn_msg_filter_diplomatic.pressed.connect(_on_msg_filter_diplomatic_pressed)
+	if btn_msg_filter_executive and not btn_msg_filter_executive.pressed.is_connected(_on_msg_filter_executive_pressed):
+		btn_msg_filter_executive.pressed.connect(_on_msg_filter_executive_pressed)
+
+	if btn_open_legislative_dispatches and not btn_open_legislative_dispatches.pressed.is_connected(_on_open_legislative_dispatches_pressed):
+		btn_open_legislative_dispatches.pressed.connect(_on_open_legislative_dispatches_pressed)
 	if close_buffs_x_button and not close_buffs_x_button.pressed.is_connected(close_all_modals):
 		close_buffs_x_button.pressed.connect(close_all_modals)
 
@@ -3073,6 +3112,12 @@ func _update_policy_and_bills_modal(state: Dictionary) -> void:
 			chamber_status_badge.text = "⚠️ Minority Government (%d/100 Seats) — Obstruction risk! Court legislators to reach 51-seat majority." % ruling_seats
 			chamber_status_badge.modulate = Color(1.0, 0.75, 0.3)
 
+	if legislator_whisper_label:
+		var whisper := str(state.get("latest_legislator_whisper", ""))
+		if whisper.is_empty():
+			whisper = "Opposition whips are canvassing the backbenches. Court key lawmakers to expand coalition stability."
+		legislator_whisper_label.text = whisper
+
 	# Update Lawmakers Floor Roster
 	var lawmakers_list = state.get("lawmakers", [])
 	if lawmakers_vbox and lawmakers_list is Array and not lawmakers_list.is_empty():
@@ -3167,48 +3212,293 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 		foreign_reserves_label.text = "Foreign Reserves: %s" % res
 
 func _update_messages_modal(state: Dictionary) -> void:
-	var emails = state.get("emails", [])
-	var unread: int = get_unread_email_count(state)
+	var emails: Variant = state.get("emails", [])
+	var email_list: Array = []
+	if emails is Array:
+		email_list = emails as Array
+
+	var unread_total: int = get_unread_email_count(state)
 	if chat_unread_count_label:
-		chat_unread_count_label.text = str(max(1, unread))
+		chat_unread_count_label.text = str(max(1, unread_total))
 	if chat_unread_badge:
-		chat_unread_badge.visible = unread > 0
+		chat_unread_badge.visible = unread_total > 0
+
+	# Count per channel
+	var count_leg: int = 0
+	var count_dip: int = 0
+	var count_exec: int = 0
+	for em in email_list:
+		if em is Dictionary:
+			var ch: String = str(em.get("channel", "Executive")).to_lower()
+			if ch == "legislative":
+				count_leg += 1
+			elif ch == "diplomatic":
+				count_dip += 1
+			else:
+				count_exec += 1
+
+	if btn_msg_filter_all:
+		btn_msg_filter_all.text = "All (%d)" % email_list.size()
+		btn_msg_filter_all.modulate = Color(1.0, 0.9, 0.4) if active_message_filter == "All" else Color(0.85, 0.85, 0.9)
+	if btn_msg_filter_legislative:
+		btn_msg_filter_legislative.text = "🏛️ Legislative (%d)" % count_leg
+		btn_msg_filter_legislative.modulate = Color(1.0, 0.9, 0.4) if active_message_filter == "Legislative" else Color(0.85, 0.85, 0.9)
+	if btn_msg_filter_diplomatic:
+		btn_msg_filter_diplomatic.text = "🌐 Bilateral (%d)" % count_dip
+		btn_msg_filter_diplomatic.modulate = Color(1.0, 0.9, 0.4) if active_message_filter == "Diplomatic" else Color(0.85, 0.85, 0.9)
+	if btn_msg_filter_executive:
+		btn_msg_filter_executive.text = "📋 Cabinet (%d)" % count_exec
+		btn_msg_filter_executive.modulate = Color(1.0, 0.9, 0.4) if active_message_filter == "Executive" else Color(0.85, 0.85, 0.9)
+
+	var filtered_emails: Array = []
+	for em in email_list:
+		if em is Dictionary:
+			var ch: String = str(em.get("channel", "Executive")).to_lower()
+			if active_message_filter == "All":
+				filtered_emails.append(em)
+			elif active_message_filter == "Legislative" and ch == "legislative":
+				filtered_emails.append(em)
+			elif active_message_filter == "Diplomatic" and ch == "diplomatic":
+				filtered_emails.append(em)
+			elif active_message_filter == "Executive" and ch != "legislative" and ch != "diplomatic":
+				filtered_emails.append(em)
+
+	if msg_summary_label:
+		msg_summary_label.text = "Sovereign In-Box • Showing %s Communications (%d of %d total, %d unread)" % [
+			active_message_filter, filtered_emails.size(), email_list.size(), unread_total
+		]
 
 	if emails_list_vbox and empty_emails_label:
 		for child in emails_list_vbox.get_children():
 			if child != empty_emails_label:
+				emails_list_vbox.remove_child(child)
 				child.queue_free()
 
-		if emails is Array and not emails.is_empty():
+		if not filtered_emails.is_empty():
 			empty_emails_label.visible = false
-			for em in emails:
-				if em is Dictionary:
-					var card := _create_email_item(em)
-					emails_list_vbox.add_child(card)
+			for em in filtered_emails:
+				var card := _create_email_item(em)
+				emails_list_vbox.add_child(card)
 		else:
 			empty_emails_label.visible = true
+			empty_emails_label.text = "[No incoming %s communications or dispatches]" % active_message_filter
 
 func _create_email_item(email: Dictionary) -> Control:
-	var p := PanelContainer.new()
-	var vb := VBoxContainer.new()
-	var subj := Label.new()
+	var email_id: String = _get_email_id(email)
 	var is_read := is_email_read(email)
-	var icon := "📭" if is_read else "✉️"
-	subj.text = "%s %s — from %s" % [icon, str(email.get("subject", "Executive Memo")), str(email.get("sender", "Official"))]
-	subj.add_theme_font_size_override("font_size", 10)
-	if is_read:
-		subj.add_theme_color_override("font_color", Color(0.70, 0.70, 0.75, 0.8))
-	else:
-		subj.add_theme_color_override("font_color", Color(0.92, 0.85, 0.4, 1.0))
-	vb.add_child(subj)
+	var channel := str(email.get("channel", "Executive"))
+	var urgency := str(email.get("urgency", "Routine"))
+	var action_type := str(email.get("action_type", ""))
+	var related_id := str(email.get("related_entity_id", ""))
+	var avatar := str(email.get("avatar_symbol", "✉️"))
+	var sender := str(email.get("sender", "Republic Official"))
+	var sender_title := str(email.get("sender_title", "Official"))
+	var subject := str(email.get("subject", "Executive Memo"))
+	var body_txt := str(email.get("body", ""))
+	var date_sent := str(email.get("date_sent", ""))
 
-	var body := Label.new()
-	body.text = str(email.get("body", ""))
-	body.add_theme_font_size_override("font_size", 9)
-	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	vb.add_child(body)
-	p.add_child(vb)
-	return p
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	# Card Style
+	var box_style := StyleBoxFlat.new()
+	if not is_read:
+		box_style.bg_color = Color(0.10, 0.14, 0.22, 0.95)
+		box_style.border_color = Color(0.92, 0.80, 0.35, 0.85)
+		box_style.set_border_width_all(1)
+	else:
+		box_style.bg_color = Color(0.08, 0.11, 0.16, 0.85)
+		box_style.border_color = Color(0.20, 0.28, 0.38, 0.6)
+		box_style.set_border_width_all(1)
+	box_style.corner_radius_top_left = 4
+	box_style.corner_radius_top_right = 4
+	box_style.corner_radius_bottom_left = 4
+	box_style.corner_radius_bottom_right = 4
+	box_style.content_margin_left = 8
+	box_style.content_margin_right = 8
+	box_style.content_margin_top = 6
+	box_style.content_margin_bottom = 6
+	panel.add_theme_stylebox_override("panel", box_style)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 4)
+	panel.add_child(vb)
+
+	# Row 1: Header HBox (Channel Pill, Urgency Tag, Subject, Date, Status Icon)
+	var header_hbox := HBoxContainer.new()
+	header_hbox.add_theme_constant_override("separation", 6)
+
+	var ch_lbl := Label.new()
+	ch_lbl.add_theme_font_size_override("font_size", 8)
+	var ch_low := channel.to_lower()
+	if ch_low == "legislative":
+		ch_lbl.text = "[ 🏛️ LEGISLATIVE ]"
+		ch_lbl.add_theme_color_override("font_color", Color(0.95, 0.82, 0.35, 1.0))
+	elif ch_low == "diplomatic":
+		ch_lbl.text = "[ 🌐 BILATERAL DEAL ]"
+		ch_lbl.add_theme_color_override("font_color", Color(0.35, 0.85, 1.0, 1.0))
+	elif ch_low == "security":
+		ch_lbl.text = "[ ⚡ SECURITY INTEL ]"
+		ch_lbl.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45, 1.0))
+	elif ch_low == "cabinet":
+		ch_lbl.text = "[ 📋 CABINET MEMO ]"
+		ch_lbl.add_theme_color_override("font_color", Color(0.65, 0.88, 0.65, 1.0))
+	else:
+		ch_lbl.text = "[ 📋 EXECUTIVE ]"
+		ch_lbl.add_theme_color_override("font_color", Color(0.75, 0.82, 0.95, 1.0))
+	header_hbox.add_child(ch_lbl)
+
+	if urgency in ["Urgent", "Confidential", "Priority"]:
+		var urg_lbl := Label.new()
+		urg_lbl.add_theme_font_size_override("font_size", 8)
+		if urgency == "Urgent":
+			urg_lbl.text = "[ ⚠️ URGENT ]"
+			urg_lbl.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35, 1.0))
+		elif urgency == "Confidential":
+			urg_lbl.text = "[ 🔒 CONFIDENTIAL ]"
+			urg_lbl.add_theme_color_override("font_color", Color(0.95, 0.70, 0.25, 1.0))
+		else:
+			urg_lbl.text = "[ ⚡ PRIORITY ]"
+			urg_lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.30, 1.0))
+		header_hbox.add_child(urg_lbl)
+
+	var subj_lbl := Label.new()
+	subj_lbl.text = "%s %s" % [avatar, subject]
+	subj_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	subj_lbl.add_theme_font_size_override("font_size", 10)
+	if not is_read:
+		subj_lbl.add_theme_color_override("font_color", Color(0.96, 0.90, 0.45, 1.0))
+	else:
+		subj_lbl.add_theme_color_override("font_color", Color(0.72, 0.74, 0.80, 0.85))
+	header_hbox.add_child(subj_lbl)
+
+	if not date_sent.is_empty():
+		var date_lbl := Label.new()
+		date_lbl.text = date_sent
+		date_lbl.add_theme_font_size_override("font_size", 8)
+		date_lbl.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72, 0.8))
+		header_hbox.add_child(date_lbl)
+
+	var status_icon := Label.new()
+	status_icon.text = "✉️ NEW" if not is_read else "📭 Read"
+	status_icon.add_theme_font_size_override("font_size", 8)
+	status_icon.add_theme_color_override("font_color", Color(0.4, 0.95, 0.55, 1.0) if not is_read else Color(0.50, 0.55, 0.65, 0.7))
+	header_hbox.add_child(status_icon)
+
+	vb.add_child(header_hbox)
+
+	# Row 2: Sender Details
+	var sender_lbl := Label.new()
+	sender_lbl.text = "From: %s  •  %s" % [sender, sender_title]
+	sender_lbl.add_theme_font_size_override("font_size", 8)
+	sender_lbl.add_theme_color_override("font_color", Color(0.45, 0.80, 0.95, 0.9))
+	vb.add_child(sender_lbl)
+
+	# Row 3: Body Text
+	var body_lbl := Label.new()
+	body_lbl.text = body_txt
+	body_lbl.add_theme_font_size_override("font_size", 9)
+	body_lbl.add_theme_color_override("font_color", Color(0.88, 0.90, 0.95, 0.95))
+	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vb.add_child(body_lbl)
+
+	# Row 4: Action Buttons (if actionable or mark read)
+	var act_hbox := HBoxContainer.new()
+	act_hbox.add_theme_constant_override("separation", 8)
+
+	if action_type == "view_chamber":
+		var btn_view := Button.new()
+		btn_view.add_theme_font_size_override("font_size", 8)
+		btn_view.text = "🏛️ View Chamber & Floor Roster"
+		btn_view.pressed.connect(func():
+			open_policy_modal()
+		)
+		act_hbox.add_child(btn_view)
+
+	elif action_type == "review_bilateral_deal":
+		var p_id := related_id if not related_id.is_empty() else "prop_foreign_trade"
+		var btn_accept := Button.new()
+		btn_accept.add_theme_font_size_override("font_size", 8)
+		btn_accept.text = "✅ Ratify Bilateral Accord"
+		btn_accept.modulate = Color(0.4, 1.0, 0.6)
+		btn_accept.pressed.connect(func():
+			_on_email_deal_action_pressed(p_id, "accept", email_id)
+		)
+		act_hbox.add_child(btn_accept)
+
+		var btn_decline := Button.new()
+		btn_decline.add_theme_font_size_override("font_size", 8)
+		btn_decline.text = "❌ Decline Accord"
+		btn_decline.modulate = Color(1.0, 0.45, 0.45)
+		btn_decline.pressed.connect(func():
+			_on_email_deal_action_pressed(p_id, "reject", email_id)
+		)
+		act_hbox.add_child(btn_decline)
+
+		var btn_folder := Button.new()
+		btn_folder.add_theme_font_size_override("font_size", 8)
+		btn_folder.text = "🌐 Bilateral Desk"
+		btn_folder.pressed.connect(func():
+			navigate_to_section(Section.DIPLOMACY)
+		)
+		act_hbox.add_child(btn_folder)
+
+	if not is_read:
+		var btn_mark := Button.new()
+		btn_mark.add_theme_font_size_override("font_size", 8)
+		btn_mark.text = "📭 Mark as Read"
+		btn_mark.pressed.connect(func():
+			_on_mark_single_email_read_pressed(email_id)
+		)
+		act_hbox.add_child(btn_mark)
+	else:
+		var read_conf := Label.new()
+		read_conf.text = "✓ Read"
+		read_conf.add_theme_font_size_override("font_size", 8)
+		read_conf.add_theme_color_override("font_color", Color(0.48, 0.55, 0.65, 0.8))
+		act_hbox.add_child(read_conf)
+
+	vb.add_child(act_hbox)
+	return panel
+
+func _on_msg_filter_all_pressed() -> void:
+	active_message_filter = "All"
+	_update_messages_modal(latest_state)
+
+func _on_msg_filter_legislative_pressed() -> void:
+	active_message_filter = "Legislative"
+	_update_messages_modal(latest_state)
+
+func _on_msg_filter_diplomatic_pressed() -> void:
+	active_message_filter = "Diplomatic"
+	_update_messages_modal(latest_state)
+
+func _on_msg_filter_executive_pressed() -> void:
+	active_message_filter = "Executive"
+	_update_messages_modal(latest_state)
+
+func _on_open_legislative_dispatches_pressed() -> void:
+	open_messages_modal("Legislative")
+
+func _on_email_deal_action_pressed(proposal_id: String, decision: String, email_id: String) -> void:
+	execute_diplomatic_response(proposal_id, decision, true)
+	if not email_id.is_empty():
+		mark_email_as_read(email_id)
+		_update_messages_modal(latest_state)
+	if status_ticker_label:
+		status_ticker_label.text = "Bilateral Accord: Proposal %s %sed by presidential cable." % [proposal_id, decision]
+
+func _on_mark_single_email_read_pressed(email_id: String) -> void:
+	if email_id.is_empty():
+		return
+	mark_email_as_read(email_id)
+	var req := {
+		"action": "mark_email_read",
+		"email_id": email_id,
+		"request_id": "req_email_read_" + str(Time.get_ticks_msec())
+	}
+	_write_request_file(req)
+	_update_messages_modal(latest_state)
 
 func has_minister(portfolio_name: String, state: Dictionary) -> bool:
 	var cab = state.get("cabinet", [])
@@ -4242,15 +4532,17 @@ func open_security_modal() -> void:
 	if status_ticker_label:
 		status_ticker_label.text = "National Security: Reviewing intelligence dossiers and defense posture."
 
-func open_messages_modal() -> void:
+func open_messages_modal(filter: String = "") -> void:
 	close_all_modals()
 	active_nav_section = Section.MESSAGES
 	_update_nav_button_highlights()
 	if modal_backdrop: modal_backdrop.visible = true
 	if messages_modal: messages_modal.visible = true
-	mark_all_emails_as_read()
+	if not filter.is_empty():
+		active_message_filter = filter
+	_update_messages_modal(latest_state)
 	if status_ticker_label:
-		status_ticker_label.text = "Executive Messages: Reviewing diplomatic cables and executive inbox."
+		status_ticker_label.text = "Executive Messages: Reviewing diplomatic cables and floor intelligence."
 
 func open_buffs_modal() -> void:
 	close_all_modals()

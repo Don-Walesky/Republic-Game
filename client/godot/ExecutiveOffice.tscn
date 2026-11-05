@@ -4034,6 +4034,36 @@ theme_override_font_sizes/font_size = 9
 text = "⚠️ Minority Government (48/100) — High Bill Obstruction Risk! Court legislators to build a 51-seat majority."
 horizontal_alignment = 1
 
+[node name="LegislatorWhisperCard" type="PanelContainer" parent="InterfaceLayer/PolicyModal/PolVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="WhisperVBox" type="VBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="WhisperHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard/WhisperVBox"]
+layout_mode = 2
+
+[node name="WhisperHeaderLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard/WhisperVBox/WhisperHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.82, 0.35, 1)
+theme_override_font_sizes/font_size = 9
+text = "🏛️ LEGISLATIVE INSIDER INTELLIGENCE & FLOOR WHISPERS"
+
+[node name="BtnOpenLegislativeDispatches" type="Button" parent="InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard/WhisperVBox/WhisperHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "✉️ View Dispatches"
+
+[node name="LegislatorWhisperLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox/LegislatorWhisperCard/WhisperVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.95, 0.9)
+theme_override_font_sizes/font_size = 8
+text = "Opposition whips are canvassing the backbenches. Court key lawmakers to expand coalition stability."
+autowrap_mode = 2
+
 [node name="LawmakersTitleLabel" type="Label" parent="InterfaceLayer/PolicyModal/PolVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.75, 0.35, 1)
@@ -4196,17 +4226,17 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -220.0
-offset_right = 300.0
-offset_bottom = 220.0
+offset_left = -370.0
+offset_top = -260.0
+offset_right = 370.0
+offset_bottom = 260.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
 
 [node name="MsgVBox" type="VBoxContainer" parent="InterfaceLayer/MessagesModal"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="MsgHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/MessagesModal/MsgVBox"]
 layout_mode = 2
@@ -4216,12 +4246,46 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 13
-text = "✉️ Executive Messages & Diplomatic Cables"
+text = "✉️ Sovereign Communications & Diplomatic Cables"
 
 [node name="CloseMsgXButton" type="Button" parent="InterfaceLayer/MessagesModal/MsgVBox/MsgHeaderHBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = " ✕ "
+
+[node name="MsgSummaryLabel" type="Label" parent="InterfaceLayer/MessagesModal/MsgVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.75, 0.88, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "Sovereign In-Box • Communicating across Legislative Arm, Foreign Missions & Cabinet"
+
+[node name="MsgFilterHBox" type="HBoxContainer" parent="InterfaceLayer/MessagesModal/MsgVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnMsgFilterAll" type="Button" parent="InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "All Communications"
+
+[node name="BtnMsgFilterLegislative" type="Button" parent="InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "🏛️ Legislative Arm"
+
+[node name="BtnMsgFilterDiplomatic" type="Button" parent="InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "🌐 Bilateral & Cables"
+
+[node name="BtnMsgFilterExecutive" type="Button" parent="InterfaceLayer/MessagesModal/MsgVBox/MsgFilterHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "📋 Executive & Cabinet"
 
 [node name="EmailsScroll" type="ScrollContainer" parent="InterfaceLayer/MessagesModal/MsgVBox"]
 layout_mode = 2
@@ -4230,7 +4294,7 @@ size_flags_vertical = 3
 [node name="EmailsListVBox" type="VBoxContainer" parent="InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 4
+theme_override_constants/separation = 6
 
 [node name="EmptyEmailsLabel" type="Label" parent="InterfaceLayer/MessagesModal/MsgVBox/EmailsScroll/EmailsListVBox"]
 layout_mode = 2

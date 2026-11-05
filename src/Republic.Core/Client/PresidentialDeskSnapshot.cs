@@ -25,6 +25,8 @@ using Republic.Core.Time;
 using Republic.Core.World;
 using Republic.Core.World.Factories;
 using Republic.Core.World.Models;
+using Republic.Core.Persistence;
+using Republic.Core.Persistence.Models;
 
 /// <summary>
 /// Serializable data contract representing the live Republic simulation state displayed in the Godot presidential desk.
@@ -561,6 +563,15 @@ public sealed record PresidentialDeskSnapshot
     [JsonPropertyName("unread_email_count")]
     public int UnreadEmailCount { get; init; }
 
+    [JsonPropertyName("unread_legislative_count")]
+    public int UnreadLegislativeCount { get; init; }
+
+    [JsonPropertyName("unread_diplomatic_count")]
+    public int UnreadDiplomaticCount { get; init; }
+
+    [JsonPropertyName("latest_legislator_whisper")]
+    public string LatestLegislatorWhisper { get; init; } = string.Empty;
+
     [JsonPropertyName("press_secretary_name")]
     public string PressSecretaryName { get; init; } = "Elena Vance";
 
@@ -836,16 +847,12 @@ public sealed record PresidentialDeskSnapshot
 
 
 
+        SaveEnvelope<FullGameState>? envelope = null;
         if (!string.IsNullOrWhiteSpace(saveFilePath) && File.Exists(saveFilePath))
-
         {
-
             try
-
             {
-
-                var envelope = PresidentialDeskBridge.LoadAuthoritativeState(saveFilePath);
-
+                envelope = PresidentialDeskBridge.LoadAuthoritativeState(saveFilePath);
                 if (envelope?.State != null)
 
                 {
@@ -1468,45 +1475,59 @@ public sealed record PresidentialDeskSnapshot
         }
 
         // Executive Emails & Messaging integration
-        var emailList = new List<EmailSnapshot>
+        var emailList = new List<EmailSnapshot>();
+        Republic.Core.Communication.Services.InGameCommunicationService.EnsureDefaultCommunications(country, envelope?.State);
+
+        if (envelope?.State?.Workspace?.Emails != null && envelope.State.Workspace.Emails.Count > 0)
         {
-            new EmailSnapshot
+            foreach (var em in envelope.State.Workspace.Emails)
+            {
+                emailList.Add(new EmailSnapshot
+                {
+                    Id = em.Id,
+                    Sender = em.Sender,
+                    SenderTitle = em.SenderTitle,
+                    Recipient = em.Recipient,
+                    Subject = em.Subject,
+                    Body = em.Body,
+                    DateSent = em.DateSent.ToString("MMM dd, HH:mm"),
+                    IsRead = em.IsRead,
+                    Folder = em.Folder,
+                    Channel = string.IsNullOrWhiteSpace(em.Channel) ? "Executive" : em.Channel,
+                    Urgency = string.IsNullOrWhiteSpace(em.Urgency) ? "Routine" : em.Urgency,
+                    ActionRequired = em.ActionRequired,
+                    ActionType = em.ActionType,
+                    RelatedEntityId = em.RelatedEntityId,
+                    AvatarSymbol = string.IsNullOrWhiteSpace(em.AvatarSymbol) ? "✉️" : em.AvatarSymbol
+                });
+            }
+        }
+        else
+        {
+            emailList.Add(new EmailSnapshot
             {
                 Id = "mail_speaker_1",
                 Sender = "Speaker of the House",
+                SenderTitle = "Speaker's Chambers",
                 Recipient = "Presidential Desk",
                 Subject = "Legislative Calendar & Parliamentary Order",
                 Body = "Mr. President, the National Assembly stands ready for executive statutory proposals. Every bill undergoes rigorous committee review and roll-call voting.",
                 DateSent = conciseTime,
                 IsRead = false,
                 Folder = "Inbox",
-                ActionRequired = country.PendingBill != null
-            },
-            new EmailSnapshot
-            {
-                Id = "mail_cos_1",
-                Sender = "Chief of Staff",
-                Recipient = "Presidential Desk",
-                Subject = "Executive Briefing: Daily Priority Digest",
-                Body = $"All executive departments have submitted their cycle readiness status. Treasury Liquidity: {formattedTreasury} | Public Approval: {dashboard.Approval}.",
-                DateSent = conciseTime,
-                IsRead = true,
-                Folder = "Inbox",
-                ActionRequired = cosRecs.Any(r => r.IsUrgent)
-            },
-            new EmailSnapshot
-            {
-                Id = "mail_sec_1",
-                Sender = "Security Leadership Council",
-                Recipient = "Presidential Desk",
-                Subject = $"National Defense Posture: {defconLevelText}",
-                Body = $"Standing Armed Forces operating at {readinessText}. Command centers maintain full readiness across sovereign borders.",
-                DateSent = conciseTime,
-                IsRead = true,
-                Folder = "Inbox",
-                ActionRequired = false
-            }
-        };
+                Channel = "Legislative",
+                Urgency = "Routine",
+                ActionRequired = country.PendingBill != null,
+                ActionType = "view_chamber",
+                AvatarSymbol = "🏛️"
+            });
+        }
+
+        int unreadEmailCount = emailList.Count(e => !e.IsRead);
+        int unreadLegCount = emailList.Count(e => !e.IsRead && e.Channel.Equals("Legislative", StringComparison.OrdinalIgnoreCase));
+        int unreadDipCount = emailList.Count(e => !e.IsRead && e.Channel.Equals("Diplomatic", StringComparison.OrdinalIgnoreCase));
+        string latestWhisper = emailList.FirstOrDefault(e => e.Channel.Equals("Legislative", StringComparison.OrdinalIgnoreCase))?.Body
+            ?? "Legislative order calm. Assembly in regular session.";
 
         string pressHeadline = country.MediaReports.FirstOrDefault(r => !r.IsSuppressed)?.Headline ?? "Executive Administration Advances National Strategic Priorities";
         string pressSummary = country.MediaReports.FirstOrDefault(r => !r.IsSuppressed)?.ArticleSummary ?? "The Presidential Administration affirmed today's focus on fiscal stabilization, infrastructure expansion, and regional diplomatic stability.";
@@ -1602,7 +1623,10 @@ public sealed record PresidentialDeskSnapshot
             ActiveIntelligenceOperations = intelOpSnapshots.AsReadOnly(),
             AcquiredIntelligenceDossiers = dossierSnapshots.AsReadOnly(),
             Emails = emailList.AsReadOnly(),
-            UnreadEmailCount = emailList.Count(e => !e.IsRead),
+            UnreadEmailCount = unreadEmailCount,
+            UnreadLegislativeCount = unreadLegCount,
+            UnreadDiplomaticCount = unreadDipCount,
+            LatestLegislatorWhisper = latestWhisper,
             PressSecretaryName = "Elena Vance",
             PressBriefingHeadline = pressHeadline,
             PressBriefingSummary = pressSummary,
