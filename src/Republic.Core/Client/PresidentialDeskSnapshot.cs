@@ -13,6 +13,7 @@ using Republic.Core.Government.Advisers.Models;
 using Republic.Core.Government.Advisers.Services;
 using Republic.Core.Government;
 using Republic.Core.Government.Campaign.Services;
+using Republic.Core.Economy.Businesses.Models;
 using System.Linq;
 using Republic.Core.Identity.Models;
 using Republic.Core.Media.Models;
@@ -195,6 +196,27 @@ public sealed record PresidentialDeskSnapshot
     /// </summary>
     [JsonPropertyName("cabinet")]
     public IReadOnlyList<CabinetMinisterSnapshot> Cabinet { get; init; } = Array.Empty<CabinetMinisterSnapshot>();
+
+    [JsonPropertyName("active_appointment_portfolio")]
+    public string ActiveAppointmentPortfolio { get; init; } = string.Empty;
+
+    [JsonPropertyName("active_appointment_minister_name")]
+    public string ActiveAppointmentMinisterName { get; init; } = string.Empty;
+
+    [JsonPropertyName("active_appointment_candidate_type")]
+    public string ActiveAppointmentCandidateType { get; init; } = string.Empty;
+
+    [JsonPropertyName("active_appointment_time_remaining_seconds")]
+    public double ActiveAppointmentTimeRemainingSeconds { get; init; }
+
+    [JsonPropertyName("is_appointment_in_progress")]
+    public bool IsAppointmentInProgress { get; init; }
+
+    [JsonPropertyName("appointment_status_text")]
+    public string AppointmentStatusText { get; init; } = "Cabinet Confirmed & Stable";
+
+    [JsonPropertyName("appointment_timer_formatted")]
+    public string AppointmentTimerFormatted { get; init; } = "00:00";
 
     /// <summary>
     /// Gets the live connection status message.
@@ -691,6 +713,78 @@ public sealed record PresidentialDeskSnapshot
 
     [JsonPropertyName("budget_science_allocation")]
     public double BudgetScienceAllocation { get; init; } = 250_000_000.0;
+
+    [JsonPropertyName("budget_salaries_allocation")]
+    public double BudgetSalariesAllocation { get; init; } = 85_000_000.0;
+
+    [JsonPropertyName("budget_salaries_allocation_formatted")]
+    public string BudgetSalariesAllocationFormatted { get; init; } = "R 85.0M / Qtr";
+
+    [JsonPropertyName("budget_governance_allocation")]
+    public double BudgetGovernanceAllocation { get; init; } = 140_000_000.0;
+
+    [JsonPropertyName("budget_governance_allocation_formatted")]
+    public string BudgetGovernanceAllocationFormatted { get; init; } = "R 140.0M / Qtr";
+
+    [JsonPropertyName("budget_maintenance_allocation")]
+    public double BudgetMaintenanceAllocation { get; init; } = 180_000_000.0;
+
+    [JsonPropertyName("budget_maintenance_allocation_formatted")]
+    public string BudgetMaintenanceAllocationFormatted { get; init; } = "R 180.0M / Qtr";
+
+    [JsonPropertyName("budget_ongoing_governance_total")]
+    public double BudgetOngoingGovernanceTotal { get; init; } = 405_000_000.0;
+
+    [JsonPropertyName("budget_ongoing_governance_total_formatted")]
+    public string BudgetOngoingGovernanceTotalFormatted { get; init; } = "R 405.0M / Qtr";
+
+    [JsonPropertyName("enacted_revenue_activities")]
+    public IReadOnlyList<string> EnactedRevenueActivities { get; init; } = Array.Empty<string>();
+
+    [JsonPropertyName("additional_quarterly_revenue")]
+    public double AdditionalQuarterlyRevenue { get; init; }
+
+    [JsonPropertyName("additional_quarterly_revenue_formatted")]
+    public string AdditionalQuarterlyRevenueFormatted { get; init; } = "R 0.0M / Qtr";
+
+    [JsonPropertyName("available_revenue_activities")]
+    public IReadOnlyList<RevenueActivitySnapshot> AvailableRevenueActivities { get; init; } = Array.Empty<RevenueActivitySnapshot>();
+
+    [JsonPropertyName("is_finance_minister_appointed")]
+    public bool IsFinanceMinisterAppointed { get; init; }
+
+    [JsonPropertyName("finance_minister_name")]
+    public string FinanceMinisterName { get; init; } = "[Vacant]";
+
+    [JsonPropertyName("finance_minister_candidate_type")]
+    public string FinanceMinisterCandidateType { get; init; } = "None";
+
+    [JsonPropertyName("finance_minister_advice_headline")]
+    public string FinanceMinisterAdviceHeadline { get; init; } = "Finance Portfolio Vacant";
+
+    [JsonPropertyName("finance_minister_expenditure_advice")]
+    public string FinanceMinisterExpenditureAdvice { get; init; } = string.Empty;
+
+    [JsonPropertyName("finance_minister_revenue_advice")]
+    public string FinanceMinisterRevenueAdvice { get; init; } = string.Empty;
+
+    [JsonPropertyName("finance_minister_loan_recommendation")]
+    public string FinanceMinisterLoanRecommendation { get; init; } = string.Empty;
+
+    [JsonPropertyName("finance_minister_recommended_loan_type")]
+    public string FinanceMinisterRecommendedLoanType { get; init; } = "none";
+
+    [JsonPropertyName("finance_minister_recommended_loan_amount")]
+    public double FinanceMinisterRecommendedLoanAmount { get; init; }
+
+    [JsonPropertyName("finance_minister_recommended_loan_amount_formatted")]
+    public string FinanceMinisterRecommendedLoanAmountFormatted { get; init; } = "R 0.0M";
+
+    [JsonPropertyName("current_debt_repayment_plan")]
+    public string CurrentDebtRepaymentPlan { get; init; } = "Standard Amortization";
+
+    [JsonPropertyName("finance_minister_repayment_plan_advice")]
+    public string FinanceMinisterRepaymentPlanAdvice { get; init; } = string.Empty;
 
     [JsonPropertyName("foreign_reserves")]
     public double ForeignReserves { get; init; } = 45_000_000.0;
@@ -1843,6 +1937,160 @@ public sealed record PresidentialDeskSnapshot
         var debtRec = country.Debt ?? new Republic.Core.Economy.Debt.Models.NationalDebtRecord();
         var cbRec = country.CentralBank ?? new Republic.Core.Economy.CentralBank.Models.CountryCentralBank();
 
+        country.ActiveAppointment?.UpdateTimeRemaining();
+        bool isApptInProgress = country.ActiveAppointment != null && !country.ActiveAppointment.IsCompleted && country.ActiveAppointment.TimeRemainingSeconds > 0;
+        string apptPortfolio = isApptInProgress ? country.ActiveAppointment!.Portfolio : string.Empty;
+        string apptMinister = isApptInProgress ? country.ActiveAppointment!.MinisterName : string.Empty;
+        string apptCandidateType = isApptInProgress ? country.ActiveAppointment!.CandidateType : string.Empty;
+        double apptTimeRem = isApptInProgress ? country.ActiveAppointment!.TimeRemainingSeconds : 0.0;
+        int apptMin = (int)(apptTimeRem / 60);
+        int apptSec = (int)(apptTimeRem % 60);
+        string apptTimerFmt = isApptInProgress ? $"{apptMin:D2}:{apptSec:D2}" : "00:00";
+        string apptStatus = isApptInProgress
+            ? $"Confirmation Hearing in Progress: {apptPortfolio} ({apptTimerFmt} remaining)"
+            : (country.ActiveAppointment?.IsCompleted == true ? "Cabinet Confirmed & Commissioned" : "Cabinet Stable");
+
+        var availableActivities = new List<RevenueActivitySnapshot>
+        {
+            new()
+            {
+                Id = "rev_digital_tax_audit",
+                Name = "E-Invoicing & Digital Tax Compliance Drive",
+                Description = "Mandate real-time electronic invoicing and audit high-net-worth commercial entities to eliminate revenue leakage.",
+                SetupCost = 35_000_000.0,
+                SetupCostFormatted = "R 35.0M",
+                QuarterlyRevenueBoost = 120_000_000.0,
+                QuarterlyRevenueBoostFormatted = "+R 120.0M / Qtr",
+                IsEnacted = country.EnactedRevenueActivities.Contains("rev_digital_tax_audit")
+            },
+            new()
+            {
+                Id = "rev_commercial_concessions",
+                Name = "Strategic Ports & Customs Logistics Concession",
+                Description = "Tender commercial concessions for sovereign deepwater ports and bonded transit terminals to capture trade throughput.",
+                SetupCost = 20_000_000.0,
+                SetupCostFormatted = "R 20.0M",
+                QuarterlyRevenueBoost = 95_000_000.0,
+                QuarterlyRevenueBoostFormatted = "+R 95.0M / Qtr",
+                IsEnacted = country.EnactedRevenueActivities.Contains("rev_commercial_concessions")
+            },
+            new()
+            {
+                Id = "rev_export_corridor",
+                Name = "Mineral & Agro-Commodity Export Corridor",
+                Description = "Establish dedicated bonded fast-track export corridors with processing royalties and priority customs clearing.",
+                SetupCost = 50_000_000.0,
+                SetupCostFormatted = "R 50.0M",
+                QuarterlyRevenueBoost = 150_000_000.0,
+                QuarterlyRevenueBoostFormatted = "+R 150.0M / Qtr",
+                IsEnacted = country.EnactedRevenueActivities.Contains("rev_export_corridor")
+            },
+            new()
+            {
+                Id = "rev_procurement_reform",
+                Name = "Sovereign Procurement Anti-Waste & Asset Recovery",
+                Description = "Centralize public ministry purchasing onto a unified digital exchange to eradicate contractor markups and recover misallocated funds.",
+                SetupCost = 15_000_000.0,
+                SetupCostFormatted = "R 15.0M",
+                QuarterlyRevenueBoost = 80_000_000.0,
+                QuarterlyRevenueBoostFormatted = "+R 80.0M / Qtr",
+                IsEnacted = country.EnactedRevenueActivities.Contains("rev_procurement_reform")
+            }
+        };
+
+        double bizTaxTotal = country.GlobalBusinesses?.Where(b => b.Status == GlobalBusinessDecisionStatus.Accepted).Sum(b => b.QuarterlyTaxContribution) ?? 0.0;
+        double calculatedQtrRev = (country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) +
+                                  (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) +
+                                  (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate) +
+                                  bizTaxTotal +
+                                  country.AdditionalQuarterlyRevenue;
+        double calculatedQtrExp = (country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_505_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0);
+        double calculatedFiscalBal = calculatedQtrRev - calculatedQtrExp;
+
+        bool isFinMinAppointed = country.Cabinet.TryGetValue(CabinetPortfolio.Finance, out var finMin) && finMin != null;
+        string finMinName = isFinMinAppointed ? finMin!.Name : "[Vacant]";
+        string finMinType = isFinMinAppointed ? (finMin!.Loyalty >= 0.8 ? "Loyalist" : "Technocrat") : "None";
+        string finMinAdviceHeadline;
+        string finMinExpenditureAdvice;
+        string finMinRevenueAdvice;
+        string finMinLoanRec;
+        string recommendedLoanType;
+        double recommendedLoanAmount;
+        string currentRepaymentPlan = country.Debt?.RepaymentPlan ?? "Standard Amortization";
+        string finMinRepaymentAdvice;
+
+        if (!isFinMinAppointed)
+        {
+            finMinAdviceHeadline = "Finance Portfolio Vacant";
+            finMinExpenditureAdvice = "Appoint a Minister of Finance to receive strategic fiscal expenditure oversight and cost optimization guidance.";
+            finMinRevenueAdvice = "Without a Finance Minister, the treasury operates on emergency default collection rules. Appoint a minister to coordinate revenue mobilization.";
+            finMinLoanRec = "Appoint a Minister of Finance to receive tailored sovereign credit, debt sustainability, and borrowing recommendations.";
+            recommendedLoanType = "none";
+            recommendedLoanAmount = 0.0;
+            finMinRepaymentAdvice = "Appoint a Minister of Finance to structure an active sovereign debt amortization and paydown schedule.";
+        }
+        else
+        {
+            if (calculatedFiscalBal < 0)
+            {
+                finMinAdviceHeadline = $"Fiscal Deficit ({RepuTreasury.Format(Math.Abs(calculatedFiscalBal))} / Qtr) — Austerity & Mobilization Advised";
+                finMinExpenditureAdvice = $"Ongoing operational outlays (Salaries: {RepuTreasury.Format(country.MinistryBudget?.CivilServiceSalariesAllocation ?? 85_000_000.0)}, Governance: {RepuTreasury.Format(country.MinistryBudget?.GovernanceOperationsAllocation ?? 140_000_000.0)}, Maintenance: {RepuTreasury.Format(country.MinistryBudget?.InfrastructureMaintenanceAllocation ?? 180_000_000.0)}) exceed collections. I advise immediate restraint on discretionary projects and enacting revenue drives to avert an inflationary spiral.";
+            }
+            else
+            {
+                finMinAdviceHeadline = $"Fiscal Surplus (+{RepuTreasury.Format(calculatedFiscalBal)} / Qtr) — Balance Sheet Solvency Established";
+                finMinExpenditureAdvice = $"State payroll and administrative commitments ({RepuTreasury.Format(country.MinistryBudget?.TotalOngoingGovernanceExpenses ?? 405_000_000.0)} / Qtr) are fully covered by incoming receipts. Recommend channeling our surplus into capital development or sovereign debt retirement.";
+            }
+
+            int enactedCount = country.EnactedRevenueActivities.Count;
+            if (enactedCount == 0)
+            {
+                finMinRevenueAdvice = $"Quarterly revenues stand at {RepuTreasury.Format(calculatedQtrRev)}. We have not yet enacted any dedicated revenue drives. I recommend launching the E-Invoicing Compliance Drive and Port Logistics Concession to capture +R 215M in non-tax yield.";
+            }
+            else if (enactedCount < 4)
+            {
+                finMinRevenueAdvice = $"Active revenue drives are yielding +{RepuTreasury.Format(country.AdditionalQuarterlyRevenue)} / Qtr. Additional fiscal capacity can be unlocked by enacting the remaining strategic concession programs.";
+            }
+            else
+            {
+                finMinRevenueAdvice = $"All four strategic revenue programs are operating at peak efficiency, contributing +{RepuTreasury.Format(country.AdditionalQuarterlyRevenue)} / Qtr to the sovereign treasury.";
+            }
+
+            double debtRatio = country.Debt?.DebtToGdpRatio ?? 2.5;
+            double forRes = country.CentralBank?.ForeignReserves ?? 45_000_000.0;
+            if (debtRatio > 45.0)
+            {
+                finMinLoanRec = $"Sovereign debt represents {debtRatio:0.1}% of GDP. New borrowing will downgrade our sovereign rating. I strongly recommend against contracting new debt; focus on Accelerated Paydown.";
+                recommendedLoanType = "none";
+                recommendedLoanAmount = 0.0;
+            }
+            else if (forRes < 100_000_000.0)
+            {
+                finMinLoanRec = $"Foreign reserves stand at {RepuTreasury.Format(forRes)}, below our R 100M currency defense threshold. I recommend contracting an External Multilateral Facility of R 75,000,000 to defend the exchange rate.";
+                recommendedLoanType = "external";
+                recommendedLoanAmount = 75_000_000.0;
+            }
+            else if (country.Treasury.Balance < 250_000_000.0)
+            {
+                finMinLoanRec = $"Liquid treasury balance is {RepuTreasury.Format(country.Treasury.Balance)}. I recommend floating a R 50,000,000 Domestic Sovereign Bond at 5.0% coupon to supply immediate project liquidity.";
+                recommendedLoanType = "domestic";
+                recommendedLoanAmount = 50_000_000.0;
+            }
+            else
+            {
+                finMinLoanRec = $"National liquidity and reserves are strong. A conservative R 30,000,000 domestic treasury facility is recommended should capital investment acceleration be required.";
+                recommendedLoanType = "domestic";
+                recommendedLoanAmount = 30_000_000.0;
+            }
+
+            finMinRepaymentAdvice = currentRepaymentPlan switch
+            {
+                "Accelerated Debt Paydown" => "Accelerated Paydown active: 25% of any quarterly fiscal surplus is automatically diverted to retire debt principal early, slashing long-term interest.",
+                "Surplus-Linked Paydown" => "Surplus-Linked Paydown active: Debt service dynamically scales upward when quarterly surplus exceeds R 100M, protecting base liquidity.",
+                _ => "Standard Amortization active: Steady quarterly debt service covering coupon interest and scheduled 20-quarter principal retirement."
+            };
+        }
+
         return new PresidentialDeskSnapshot
         {
             CountryName = country.Name,
@@ -1879,6 +2127,13 @@ public sealed record PresidentialDeskSnapshot
             Corruption = formattedCorruption,
             InfrastructureCondition = infraCondition,
             Cabinet = cabinetList.AsReadOnly(),
+            ActiveAppointmentPortfolio = apptPortfolio,
+            ActiveAppointmentMinisterName = apptMinister,
+            ActiveAppointmentCandidateType = apptCandidateType,
+            ActiveAppointmentTimeRemainingSeconds = apptTimeRem,
+            IsAppointmentInProgress = isApptInProgress,
+            AppointmentStatusText = apptStatus,
+            AppointmentTimerFormatted = apptTimerFmt,
             GdpFormatted = gdpFormatted,
             FiscalReportSummary = fiscalSummary,
             FiscalDeficitFormatted = deficitFormatted,
@@ -1954,17 +2209,41 @@ public sealed record PresidentialDeskSnapshot
             InflationRateFormatted = $"{country.InflationRate:0.1}%",
             InflationCostMultiplier = country.GetInflationCostMultiplier(),
             InflationImpactOnCosts = $"+{Math.Max(0.0, country.InflationRate - 3.0):0.1}% Project Cost Index",
-            BudgetRevenue = Math.Round((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate), 2),
+            BudgetRevenue = Math.Round(calculatedQtrRev, 2),
             BudgetRevenueFormatted = $"{RepuTreasury.Format((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate))} / Qtr",
-            BudgetExpenditure = Math.Round((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0), 2),
+            BudgetExpenditure = Math.Round(calculatedQtrExp, 2),
             BudgetExpenditureFormatted = $"{RepuTreasury.Format((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0))} / Qtr",
-            BudgetBalance = Math.Round(((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate)) - ((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0)), 2),
+            BudgetBalance = Math.Round(calculatedFiscalBal, 2),
             BudgetBalanceFormatted = (((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate)) - ((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0)) >= 0 ? "+" : "") + $"{RepuTreasury.Format(((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate)) - ((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0)))} {(((country.GrossDomesticProduct * 0.15 * taxPolicy.IncomeTaxRate) + (country.GrossDomesticProduct * 0.10 * taxPolicy.CorporateTaxRate) + (Math.Max(0.0, country.TradeBalance) * taxPolicy.ImportTariffRate)) - ((country.MinistryBudget?.TotalQuarterlyExpenditures ?? 2_100_000_000.0) + (country.Debt?.QuarterlyDebtService ?? 0.0)) >= 0 ? "Surplus" : "Deficit")}",
             BudgetDefenseAllocation = country.MinistryBudget?.DefenseAllocation ?? 500_000_000.0,
             BudgetHealthcareAllocation = country.MinistryBudget?.HealthcareAllocation ?? 400_000_000.0,
             BudgetEducationAllocation = country.MinistryBudget?.EducationAllocation ?? 350_000_000.0,
             BudgetInfrastructureAllocation = country.MinistryBudget?.InfrastructureAllocation ?? 600_000_000.0,
             BudgetScienceAllocation = country.MinistryBudget?.ScienceAllocation ?? 250_000_000.0,
+            BudgetSalariesAllocation = country.MinistryBudget?.CivilServiceSalariesAllocation ?? 85_000_000.0,
+            BudgetSalariesAllocationFormatted = $"{RepuTreasury.Format(country.MinistryBudget?.CivilServiceSalariesAllocation ?? 85_000_000.0)} / Qtr",
+            BudgetGovernanceAllocation = country.MinistryBudget?.GovernanceOperationsAllocation ?? 140_000_000.0,
+            BudgetGovernanceAllocationFormatted = $"{RepuTreasury.Format(country.MinistryBudget?.GovernanceOperationsAllocation ?? 140_000_000.0)} / Qtr",
+            BudgetMaintenanceAllocation = country.MinistryBudget?.InfrastructureMaintenanceAllocation ?? 180_000_000.0,
+            BudgetMaintenanceAllocationFormatted = $"{RepuTreasury.Format(country.MinistryBudget?.InfrastructureMaintenanceAllocation ?? 180_000_000.0)} / Qtr",
+            BudgetOngoingGovernanceTotal = country.MinistryBudget?.TotalOngoingGovernanceExpenses ?? 405_000_000.0,
+            BudgetOngoingGovernanceTotalFormatted = $"{RepuTreasury.Format(country.MinistryBudget?.TotalOngoingGovernanceExpenses ?? 405_000_000.0)} / Qtr",
+            EnactedRevenueActivities = country.EnactedRevenueActivities.AsReadOnly(),
+            AdditionalQuarterlyRevenue = country.AdditionalQuarterlyRevenue,
+            AdditionalQuarterlyRevenueFormatted = (country.AdditionalQuarterlyRevenue > 0 ? "+" : "") + $"{RepuTreasury.Format(country.AdditionalQuarterlyRevenue)} / Qtr",
+            AvailableRevenueActivities = availableActivities.AsReadOnly(),
+            IsFinanceMinisterAppointed = isFinMinAppointed,
+            FinanceMinisterName = finMinName,
+            FinanceMinisterCandidateType = finMinType,
+            FinanceMinisterAdviceHeadline = finMinAdviceHeadline,
+            FinanceMinisterExpenditureAdvice = finMinExpenditureAdvice,
+            FinanceMinisterRevenueAdvice = finMinRevenueAdvice,
+            FinanceMinisterLoanRecommendation = finMinLoanRec,
+            FinanceMinisterRecommendedLoanType = recommendedLoanType,
+            FinanceMinisterRecommendedLoanAmount = recommendedLoanAmount,
+            FinanceMinisterRecommendedLoanAmountFormatted = RepuTreasury.Format(recommendedLoanAmount),
+            CurrentDebtRepaymentPlan = currentRepaymentPlan,
+            FinanceMinisterRepaymentPlanAdvice = finMinRepaymentAdvice,
             ForeignReserves = country.CentralBank?.ForeignReserves ?? 45_000_000.0,
             ForeignReservesFormatted = RepuTreasury.Format(country.CentralBank?.ForeignReserves ?? 45_000_000.0),
             ForexUnlocked = country.CentralBank?.ForexUnlocked ?? false,

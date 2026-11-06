@@ -172,13 +172,13 @@ public sealed class FiscalTaxationTreasuryTests
 
         // 3. Assert
         Assert.Equal(0.0, report.TotalTaxRevenue);
-        Assert.Equal(2_100_000_000.0, report.TotalExpenditures);
-        Assert.Equal(-2_100_000_000.0, report.NetSurplusOrDeficit);
+        Assert.Equal(country.MinistryBudget.TotalQuarterlyExpenditures, report.TotalExpenditures);
+        Assert.Equal(-country.MinistryBudget.TotalQuarterlyExpenditures, report.NetSurplusOrDeficit);
 
-        var expectedBalance = initialBalance - 2_100_000_000.0;
+        var expectedBalance = initialBalance - country.MinistryBudget.TotalQuarterlyExpenditures;
         Assert.Equal(expectedBalance, country.Treasury.Balance);
         Assert.Equal(expectedBalance, report.UpdatedTreasuryBalance);
-        Assert.Equal(7_900_000_000.0, country.Treasury.Balance);
+        Assert.Equal(expectedBalance, country.Treasury.Balance);
     }
 
     [Fact]

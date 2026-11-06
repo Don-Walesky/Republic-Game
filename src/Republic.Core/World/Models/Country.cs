@@ -292,7 +292,8 @@ public sealed class Country
         double estQuarterlyTaxRev = (gdp * 0.15 * TaxPolicy.IncomeTaxRate) +
                                     (gdp * 0.10 * TaxPolicy.CorporateTaxRate) +
                                     tariffRevenue +
-                                    businessTaxContribution;
+                                    businessTaxContribution +
+                                    AdditionalQuarterlyRevenue;
 
         double estQuarterlyExp = MinistryBudget.TotalQuarterlyExpenditures + Debt.QuarterlyDebtService;
         double fiscalBalance = estQuarterlyTaxRev - estQuarterlyExp;
@@ -559,6 +560,22 @@ public sealed class Country
     /// Each sovereign country owns an independent, isolated instance.
     /// </summary>
     public Dictionary<CabinetPortfolio, Minister?> Cabinet { get; init; } = new();
+
+    /// <summary>
+    /// Gets or sets the active ministerial appointment undergoing confirmation hearing and transition.
+    /// The Republic Constitution permits only one ministerial appointment at a time (minimum 10-minute duration).
+    /// </summary>
+    public ActiveMinisterialAppointment? ActiveAppointment { get; set; }
+
+    /// <summary>
+    /// Gets the list of IDs for strategic revenue-driving programs enacted by executive order.
+    /// </summary>
+    public List<string> EnactedRevenueActivities { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the additional quarterly revenue yielded by enacted fiscal revenue programs.
+    /// </summary>
+    public double AdditionalQuarterlyRevenue { get; set; } = 0.0;
 
     /// <summary>
     /// Gets the list of development projects associated with this sovereign country.
@@ -3660,5 +3677,49 @@ public sealed class Country
         }
 
         return country;
+    }
+}
+
+/// <summary>
+/// Domain model encapsulating an in-progress ministerial confirmation hearing and transition period.
+/// Enforces the constitutional requirement that only one ministerial appointment can proceed at a time (10 min duration).
+/// </summary>
+public sealed class ActiveMinisterialAppointment
+{
+    [JsonPropertyName("portfolio")]
+    public string Portfolio { get; set; } = string.Empty;
+
+    [JsonPropertyName("minister_name")]
+    public string MinisterName { get; set; } = string.Empty;
+
+    [JsonPropertyName("candidate_type")]
+    public string CandidateType { get; set; } = "technocrat";
+
+    [JsonPropertyName("started_at_utc")]
+    public DateTimeOffset StartedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+
+    [JsonPropertyName("duration_seconds")]
+    public double DurationSeconds { get; set; } = 600.0;
+
+    [JsonPropertyName("time_remaining_seconds")]
+    public double TimeRemainingSeconds { get; set; } = 600.0;
+
+    [JsonPropertyName("is_completed")]
+    public bool IsCompleted { get; set; }
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "Confirmation & Transition in Progress";
+
+    public double UpdateTimeRemaining()
+    {
+        if (IsCompleted) return 0.0;
+        double elapsed = (DateTimeOffset.UtcNow - StartedAtUtc).TotalSeconds;
+        TimeRemainingSeconds = Math.Max(0.0, DurationSeconds - elapsed);
+        if (TimeRemainingSeconds <= 0.0)
+        {
+            IsCompleted = true;
+            Status = "Confirmed & Commissioned";
+        }
+        return TimeRemainingSeconds;
     }
 }

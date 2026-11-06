@@ -197,6 +197,44 @@ var simulation_speed: int = 1 # 0 = Pause, 1 = 1x, 2 = 2x
 @onready var infrastructure_effect_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/InfrastructureEffectLabel") as Label
 @onready var appoint_infrastructure_button: Button = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Infrastructure/InfrastructureVBox/AppointInfrastructureButton") as Button
 
+# Active Ministerial Appointment Timer Card
+@onready var appointment_timer_card: PanelContainer = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard") as PanelContainer
+@onready var appointment_timer_badge: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentTimerHeaderHBox/AppointmentTimerBadge") as Label
+@onready var appointment_progress_bar: ProgressBar = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentProgressBar") as ProgressBar
+@onready var appointment_details_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentDetailsLabel") as Label
+@onready var appointment_lock_notice_label: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentLockNoticeLabel") as Label
+
+var active_appointment_portfolio: String = ""
+var active_appointment_minister_name: String = ""
+var active_appointment_time_remaining: float = 0.0
+var is_appointment_active: bool = false
+
+# Ongoing Expenses Card
+@onready var ongoing_expenses_card: PanelContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard") as PanelContainer
+@onready var ongoing_expenses_total_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesHeaderHBox/OngoingExpensesTotalLabel") as Label
+@onready var salaries_expense_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid/SalariesExpenseLabel") as Label
+@onready var governance_expense_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid/GovernanceExpenseLabel") as Label
+@onready var maintenance_expense_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid/MaintenanceExpenseLabel") as Label
+
+# Revenue Activities Card
+@onready var revenue_activities_card: PanelContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard") as PanelContainer
+@onready var revenue_activities_boost_badge: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard/RevenueActivitiesVBox/RevenueActivitiesHeaderHBox/RevenueActivitiesBoostBadge") as Label
+@onready var revenue_activities_container: VBoxContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard/RevenueActivitiesVBox/RevenueActivitiesContainer") as VBoxContainer
+
+# Finance Minister Advisory Card
+@onready var finance_minister_advisory_card: PanelContainer = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard") as PanelContainer
+@onready var finance_minister_active_badge: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceMinisterHeaderHBox/FinanceMinisterActiveBadge") as Label
+@onready var finance_minister_headline_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceMinisterHeadlineLabel") as Label
+@onready var finance_expenditure_advice_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceExpenditureAdviceCard/FinanceExpenditureAdviceVBox/FinanceExpenditureAdviceLabel") as Label
+@onready var finance_revenue_advice_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceRevenueAdviceCard/FinanceRevenueAdviceVBox/FinanceRevenueAdviceLabel") as Label
+@onready var finance_loan_rec_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceLoanRecCard/FinanceLoanRecHBox/FinanceLoanRecLabel") as Label
+@onready var btn_take_recommended_loan: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceLoanRecCard/FinanceLoanRecHBox/BtnTakeRecommendedLoan") as Button
+@onready var finance_repayment_plan_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentPlanLabel") as Label
+@onready var btn_plan_standard: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox/BtnPlanStandard") as Button
+@onready var btn_plan_accelerated: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox/BtnPlanAccelerated") as Button
+@onready var btn_plan_surplus: Button = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox/BtnPlanSurplus") as Button
+@onready var finance_repayment_advice_label: Label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentAdviceLabel") as Label
+
 # Left Dock Bottlenecks & Friction
 @onready var finance_bottleneck_badge: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox/FinanceBottleneckBadge") as Label
 @onready var interior_bottleneck_badge: Label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Interior/InteriorVBox/InteriorHeaderHBox/InteriorBottleneckBadge") as Label
@@ -1476,7 +1514,65 @@ func _init_controls() -> void:
 	if cancel_appointment_button == null:
 		cancel_appointment_button = _get_node_safe("InterfaceLayer/CabinetAppointmentModal/CabinetAppointmentVBox/CabinetAppointmentActionsHBox/CancelAppointmentButton") as Button
 
-	# Left Dock Bottlenecks & Friction Lookups
+	# Active Ministerial Appointment Timer Card Lookups
+	if appointment_timer_card == null:
+		appointment_timer_card = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard") as PanelContainer
+	if appointment_timer_badge == null:
+		appointment_timer_badge = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentTimerHeaderHBox/AppointmentTimerBadge") as Label
+	if appointment_progress_bar == null:
+		appointment_progress_bar = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentProgressBar") as ProgressBar
+	if appointment_details_label == null:
+		appointment_details_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentDetailsLabel") as Label
+	if appointment_lock_notice_label == null:
+		appointment_lock_notice_label = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentLockNoticeLabel") as Label
+
+	# Ongoing Expenses Card Lookups
+	if ongoing_expenses_card == null:
+		ongoing_expenses_card = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard") as PanelContainer
+	if ongoing_expenses_total_label == null:
+		ongoing_expenses_total_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesHeaderHBox/OngoingExpensesTotalLabel") as Label
+	if salaries_expense_label == null:
+		salaries_expense_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid/SalariesExpenseLabel") as Label
+	if governance_expense_label == null:
+		governance_expense_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid/GovernanceExpenseLabel") as Label
+	if maintenance_expense_label == null:
+		maintenance_expense_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid/MaintenanceExpenseLabel") as Label
+
+	# Revenue Activities Card Lookups
+	if revenue_activities_card == null:
+		revenue_activities_card = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard") as PanelContainer
+	if revenue_activities_boost_badge == null:
+		revenue_activities_boost_badge = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard/RevenueActivitiesVBox/RevenueActivitiesHeaderHBox/RevenueActivitiesBoostBadge") as Label
+	if revenue_activities_container == null:
+		revenue_activities_container = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard/RevenueActivitiesVBox/RevenueActivitiesContainer") as VBoxContainer
+
+	# Finance Minister Advisory Card Lookups
+	if finance_minister_advisory_card == null:
+		finance_minister_advisory_card = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard") as PanelContainer
+	if finance_minister_active_badge == null:
+		finance_minister_active_badge = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceMinisterHeaderHBox/FinanceMinisterActiveBadge") as Label
+	if finance_minister_headline_label == null:
+		finance_minister_headline_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceMinisterHeadlineLabel") as Label
+	if finance_expenditure_advice_label == null:
+		finance_expenditure_advice_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceExpenditureAdviceCard/FinanceExpenditureAdviceVBox/FinanceExpenditureAdviceLabel") as Label
+	if finance_revenue_advice_label == null:
+		finance_revenue_advice_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceRevenueAdviceCard/FinanceRevenueAdviceVBox/FinanceRevenueAdviceLabel") as Label
+	if finance_loan_rec_label == null:
+		finance_loan_rec_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceLoanRecCard/FinanceLoanRecHBox/FinanceLoanRecLabel") as Label
+	if btn_take_recommended_loan == null:
+		btn_take_recommended_loan = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceLoanRecCard/FinanceLoanRecHBox/BtnTakeRecommendedLoan") as Button
+	if finance_repayment_plan_label == null:
+		finance_repayment_plan_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentPlanLabel") as Label
+	if btn_plan_standard == null:
+		btn_plan_standard = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox/BtnPlanStandard") as Button
+	if btn_plan_accelerated == null:
+		btn_plan_accelerated = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox/BtnPlanAccelerated") as Button
+	if btn_plan_surplus == null:
+		btn_plan_surplus = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox/BtnPlanSurplus") as Button
+	if finance_repayment_advice_label == null:
+		finance_repayment_advice_label = _get_node_safe("InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentAdviceLabel") as Label
+
+# Left Dock Bottlenecks & Friction Lookups
 	if finance_bottleneck_badge == null:
 		finance_bottleneck_badge = _get_node_safe("InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/PortfolioCard_Finance/FinanceVBox/FinanceHeaderHBox/FinanceBottleneckBadge") as Label
 	if interior_bottleneck_badge == null:
@@ -2102,6 +2198,23 @@ func _process(delta: float) -> void:
 	if diplomatic_badge and diplomatic_badge.visible:
 		diplomatic_badge.modulate.a = pulse
 
+	# 3. Active Ministerial Appointment Countdown Timer (at least 10 minutes / 600s)
+	if is_appointment_active and active_appointment_time_remaining > 0.0:
+		active_appointment_time_remaining = max(0.0, active_appointment_time_remaining - delta)
+		var mins := int(active_appointment_time_remaining) / 60
+		var secs := int(active_appointment_time_remaining) % 60
+		if appointment_timer_badge:
+			appointment_timer_badge.text = "⏱️ %02d:%02d" % [mins, secs]
+		if appointment_progress_bar:
+			appointment_progress_bar.value = active_appointment_time_remaining
+		if active_appointment_time_remaining <= 0.0:
+			is_appointment_active = false
+			if appointment_timer_badge:
+				appointment_timer_badge.text = "✅ Hearing Concluded"
+			if appointment_details_label:
+				appointment_details_label.text = "Ministerial hearing concluded. Appointment enacted."
+			_update_cabinet_portfolios_ui(latest_state)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if purchase_confirm_modal and purchase_confirm_modal.visible:
@@ -2469,6 +2582,14 @@ func _connect_signals() -> void:
 		btn_take_external_loan.pressed.connect(_on_take_external_loan_pressed)
 	if btn_repay_debt and not btn_repay_debt.pressed.is_connected(_on_repay_debt_pressed):
 		btn_repay_debt.pressed.connect(_on_repay_debt_pressed)
+	if btn_take_recommended_loan and not btn_take_recommended_loan.pressed.is_connected(_on_take_recommended_loan_pressed):
+		btn_take_recommended_loan.pressed.connect(_on_take_recommended_loan_pressed)
+	if btn_plan_standard and not btn_plan_standard.pressed.is_connected(_on_plan_standard_pressed):
+		btn_plan_standard.pressed.connect(_on_plan_standard_pressed)
+	if btn_plan_accelerated and not btn_plan_accelerated.pressed.is_connected(_on_plan_accelerated_pressed):
+		btn_plan_accelerated.pressed.connect(_on_plan_accelerated_pressed)
+	if btn_plan_surplus and not btn_plan_surplus.pressed.is_connected(_on_plan_surplus_pressed):
+		btn_plan_surplus.pressed.connect(_on_plan_surplus_pressed)
 	if close_msg_x_button and not close_msg_x_button.pressed.is_connected(close_all_modals):
 		close_msg_x_button.pressed.connect(close_all_modals)
 	if btn_msg_filter_all and not btn_msg_filter_all.pressed.is_connected(_on_msg_filter_all_pressed):
@@ -3854,6 +3975,132 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 	if tariff_rate_label:
 		tariff_rate_label.text = "Tariff: %s" % str(state.get("import_tariff_rate_formatted", "5.0%"))
 
+	# 4b. Ongoing Governance Expenses (Salaries, Ops, Maintenance)
+	var sal_val: float = float(state.get("budget_salaries_allocation", 85000000.0)) / 1000000.0
+	var gov_val: float = float(state.get("budget_governance_allocation", 140000000.0)) / 1000000.0
+	var maint_val: float = float(state.get("budget_maintenance_allocation", 180000000.0)) / 1000000.0
+	var tot_ong: float = float(state.get("budget_ongoing_governance_total", 405000000.0)) / 1000000.0
+
+	if ongoing_expenses_total_label:
+		ongoing_expenses_total_label.text = "Total Ongoing: R %.1fM / Qtr" % tot_ong
+	if salaries_expense_label:
+		salaries_expense_label.text = "👥 Civil Service Salaries: R %.1fM" % sal_val
+	if governance_expense_label:
+		governance_expense_label.text = "🏛️ Cost of Governance: R %.1fM" % gov_val
+	if maintenance_expense_label:
+		maintenance_expense_label.text = "🛠️ Public Maintenance: R %.1fM" % maint_val
+
+	# 4c. In-Country Revenue Enhancement Initiatives
+	var add_rev_fmt: String = str(state.get("additional_quarterly_revenue_formatted", "+R 0 / Qtr"))
+	if revenue_activities_boost_badge:
+		revenue_activities_boost_badge.text = "Active Revenue Boost: %s" % add_rev_fmt
+
+	if revenue_activities_container:
+		for c in revenue_activities_container.get_children():
+			revenue_activities_container.remove_child(c)
+			c.queue_free()
+
+		var raw_acts: Variant = state.get("available_revenue_activities", [])
+		var acts: Array = []
+		if raw_acts is Array and not raw_acts.is_empty():
+			acts = raw_acts as Array
+		else:
+			acts = [
+				{
+					"id": "rev_digital_tax_audit",
+					"title": "E-Invoicing & Automated Tax Audits",
+					"description": "Deploy automated digital VAT and corporate audit reconciliation. Boosts quarterly tax collection.",
+					"revenue_boost_formatted": "+R 65M / Qtr",
+					"implementation_cost_formatted": "R 30M",
+					"is_enacted": false
+				},
+				{
+					"id": "rev_commercial_concessions",
+					"title": "Port & Logistics Commercial Concessions",
+					"description": "Lease sovereign deepwater terminal and freight warehouse slots under concession fees.",
+					"revenue_boost_formatted": "+R 90M / Qtr",
+					"implementation_cost_formatted": "R 45M",
+					"is_enacted": false
+				},
+				{
+					"id": "rev_export_corridor",
+					"title": "National Export Corridor Processing Fee",
+					"description": "Monetize heavy mineral and bulk trade transit corridors with automated processing tariffs.",
+					"revenue_boost_formatted": "+R 75M / Qtr",
+					"implementation_cost_formatted": "R 35M",
+					"is_enacted": false
+				},
+				{
+					"id": "rev_procurement_reform",
+					"title": "Centralized Procurement Anti-Waste Protocol",
+					"description": "Consolidate ministerial bulk purchasing into unified tenders, recovering unspent budget funds.",
+					"revenue_boost_formatted": "+R 50M / Qtr",
+					"implementation_cost_formatted": "R 20M",
+					"is_enacted": false
+				}
+			]
+
+		for a in acts:
+			if not (a is Dictionary):
+				continue
+			var act_id: String = str(a.get("id", ""))
+			var act_title: String = str(a.get("title", "Revenue Initiative"))
+			var act_desc: String = str(a.get("description", ""))
+			var act_boost: String = str(a.get("revenue_boost_formatted", "+R 0 / Qtr"))
+			var act_cost: String = str(a.get("implementation_cost_formatted", "R 0"))
+			var is_en: bool = bool(a.get("is_enacted", false))
+
+			var card := PanelContainer.new()
+			var c_style := StyleBoxFlat.new()
+			c_style.bg_color = Color(0.08, 0.12, 0.18, 0.9)
+			c_style.border_color = Color(0.2, 0.45, 0.35, 0.7) if is_en else Color(0.25, 0.35, 0.5, 0.6)
+			c_style.set_border_width_all(1)
+			c_style.set_corner_radius_all(4)
+			c_style.content_margin_left = 8
+			c_style.content_margin_right = 8
+			c_style.content_margin_top = 4
+			c_style.content_margin_bottom = 4
+			card.add_theme_stylebox_override("panel", c_style)
+
+			var r_hbox := HBoxContainer.new()
+			r_hbox.add_theme_constant_override("separation", 8)
+			card.add_child(r_hbox)
+
+			var t_vbox := VBoxContainer.new()
+			t_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			t_vbox.add_theme_constant_override("separation", 2)
+			r_hbox.add_child(t_vbox)
+
+			var t_lbl := Label.new()
+			t_lbl.text = ("✅ " if is_en else "⚡ ") + act_title
+			t_lbl.add_theme_font_size_override("font_size", 10)
+			t_lbl.add_theme_color_override("font_color", Color(0.4, 0.9, 0.6, 1.0) if is_en else Color(0.95, 0.85, 0.4, 1.0))
+			t_vbox.add_child(t_lbl)
+
+			var d_lbl := Label.new()
+			d_lbl.text = act_desc
+			d_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			d_lbl.add_theme_font_size_override("font_size", 8)
+			d_lbl.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85, 1.0))
+			t_vbox.add_child(d_lbl)
+
+			var m_lbl := Label.new()
+			m_lbl.text = "Yield: %s | Cost: %s" % [act_boost, act_cost]
+			m_lbl.add_theme_font_size_override("font_size", 8)
+			m_lbl.add_theme_color_override("font_color", Color(0.4, 0.85, 0.5, 1.0))
+			t_vbox.add_child(m_lbl)
+
+			var e_btn := Button.new()
+			e_btn.text = "✓ Enacted" if is_en else "Enact Drive"
+			e_btn.disabled = is_en
+			e_btn.custom_minimum_size = Vector2(90, 0)
+			e_btn.add_theme_font_size_override("font_size", 9)
+			if not is_en:
+				e_btn.pressed.connect(func(): _on_enact_revenue_activity_pressed(act_id))
+			r_hbox.add_child(e_btn)
+
+			revenue_activities_container.add_child(card)
+
 	# 5. Sovereign Debt & Loans
 	if debt_total_label:
 		var tot_fmt: String = str(state.get("national_debt_total_formatted", "R 250,000,000"))
@@ -3873,6 +4120,60 @@ func _update_economy_central_bank_modal(state: Dictionary) -> void:
 			debt_sustainability_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4, 1.0))
 		else:
 			debt_sustainability_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.35, 1.0))
+
+	# 5b. Finance Minister Strategic Advisory & Debt Repayment Plan
+	var is_fm_appointed: bool = bool(state.get("is_finance_minister_appointed", false))
+	var fm_name: String = str(state.get("finance_minister_name", ""))
+	if not is_fm_appointed:
+		var top_fm = str(state.get("finance_minister", ""))
+		if top_fm != "" and top_fm.to_lower() != "vacant" and top_fm != "[No State Loaded]":
+			is_fm_appointed = true
+			fm_name = top_fm
+
+	if finance_minister_active_badge:
+		if is_fm_appointed:
+			finance_minister_active_badge.text = "Minister: %s (Active)" % fm_name
+			finance_minister_active_badge.add_theme_color_override("font_color", Color(0.4, 0.9, 0.5, 1.0))
+		else:
+			finance_minister_active_badge.text = "⚠️ Position Vacant — Appoint Minister of Finance"
+			finance_minister_active_badge.add_theme_color_override("font_color", Color(1.0, 0.5, 0.4, 1.0))
+
+	var fm_headline: String = str(state.get("finance_minister_advice_headline", "Awaiting ministerial appointment."))
+	if finance_minister_headline_label:
+		finance_minister_headline_label.text = fm_headline
+
+	var exp_adv: String = str(state.get("finance_minister_expenditure_advice", "Appoint a Finance Minister to receive tailored expenditure reviews."))
+	if finance_expenditure_advice_label:
+		finance_expenditure_advice_label.text = exp_adv
+
+	var rev_adv: String = str(state.get("finance_minister_revenue_advice", "Appoint a Finance Minister to evaluate national revenue drives."))
+	if finance_revenue_advice_label:
+		finance_revenue_advice_label.text = rev_adv
+
+	var loan_rec: String = str(state.get("finance_minister_loan_recommendation", "Loan facility recommendation will appear here."))
+	if finance_loan_rec_label:
+		finance_loan_rec_label.text = loan_rec
+
+	if btn_take_recommended_loan:
+		btn_take_recommended_loan.disabled = not is_fm_appointed
+		var rec_type: String = str(state.get("finance_minister_recommended_loan_type", "domestic"))
+		var rec_amt: float = float(state.get("finance_minister_recommended_loan_amount", 50000000.0)) / 1000000.0
+		btn_take_recommended_loan.text = "🏛️ Accept Recommended %s Facility (+R %.0fM)" % [rec_type.capitalize(), rec_amt]
+
+	var cur_plan: String = str(state.get("current_debt_repayment_plan", "Standard Amortization"))
+	if finance_repayment_plan_label:
+		finance_repayment_plan_label.text = "Active Debt Repayment Plan: %s" % cur_plan
+
+	var plan_adv: String = str(state.get("finance_minister_repayment_plan_advice", "Standard 10-year amortization protects baseline operating liquidity."))
+	if finance_repayment_advice_label:
+		finance_repayment_advice_label.text = plan_adv
+
+	if btn_plan_standard:
+		btn_plan_standard.disabled = (cur_plan == "Standard Amortization") or not is_fm_appointed
+	if btn_plan_accelerated:
+		btn_plan_accelerated.disabled = (cur_plan == "Accelerated Debt Paydown") or not is_fm_appointed
+	if btn_plan_surplus:
+		btn_plan_surplus.disabled = (cur_plan == "Surplus-Linked Paydown") or not is_fm_appointed
 
 	# 6. Global Businesses & Inbound Industrialists
 	var op_count: int = int(state.get("operating_businesses_count", 0))
@@ -5910,6 +6211,76 @@ func _on_decline_global_business_pressed(biz_id: String) -> void:
 	if status_ticker_label:
 		status_ticker_label.text = "Commercial Policy: Inbound global enterprise proposal declined."
 
+func _on_take_recommended_loan_pressed() -> void:
+	execute_take_recommended_loan()
+
+func _on_plan_standard_pressed() -> void:
+	execute_set_repayment_plan("Standard Amortization")
+
+func _on_plan_accelerated_pressed() -> void:
+	execute_set_repayment_plan("Accelerated Debt Paydown")
+
+func _on_plan_surplus_pressed() -> void:
+	execute_set_repayment_plan("Surplus-Linked Paydown")
+
+func _on_enact_revenue_activity_pressed(activity_id: String) -> void:
+	execute_enact_revenue_activity(activity_id)
+
+func execute_take_recommended_loan() -> Dictionary:
+	var req_id := "req_loan_rec_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var ok := _write_request_file({
+		"request_id": req_id,
+		"action": "take_recommended_loan",
+		"confirmed": true
+	})
+	var msg := "Accepted recommended Finance Minister loan package." if ok else "Failed to submit loan request."
+	if status_ticker_label:
+		status_ticker_label.text = "Finance Ministry: " + msg
+	return { "success": ok, "message": msg, "request_id": req_id }
+
+func execute_set_repayment_plan(plan_name: String) -> Dictionary:
+	var req_id := "req_repay_plan_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var ok := _write_request_file({
+		"request_id": req_id,
+		"action": "set_repayment_plan",
+		"plan_name": plan_name,
+		"confirmed": true
+	})
+	var msg := "Debt repayment schedule set to '%s'." % plan_name if ok else "Failed to set repayment plan."
+	if status_ticker_label:
+		status_ticker_label.text = "Debt Management: " + msg
+	return { "success": ok, "message": msg, "plan_name": plan_name, "request_id": req_id }
+
+func execute_enact_revenue_activity(activity_id: String) -> Dictionary:
+	var req_id := "req_rev_act_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var ok := _write_request_file({
+		"request_id": req_id,
+		"action": "enact_revenue_activity",
+		"activity_id": activity_id,
+		"confirmed": true
+	})
+	var msg := "Enacted national revenue drive '%s'." % activity_id if ok else "Failed to enact revenue activity."
+	if status_ticker_label:
+		status_ticker_label.text = "Revenue Mobilization: " + msg
+	return { "success": ok, "message": msg, "activity_id": activity_id, "request_id": req_id }
+
+func execute_complete_appointment() -> Dictionary:
+	var req_id := "req_comp_app_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
+	var ok := _write_request_file({
+		"request_id": req_id,
+		"action": "complete_appointment",
+		"confirmed": true
+	})
+	is_appointment_active = false
+	active_appointment_time_remaining = 0.0
+	if latest_state is Dictionary:
+		latest_state["is_appointment_in_progress"] = false
+		latest_state["active_appointment_time_remaining_seconds"] = 0.0
+	if appointment_timer_card:
+		appointment_timer_card.visible = false
+	_update_cabinet_portfolios_ui(latest_state if not latest_state.is_empty() else { "is_appointment_in_progress": false, "active_appointment_time_remaining_seconds": 0.0 })
+	return { "success": ok, "message": "Completed appointment hearing.", "request_id": req_id }
+
 func _write_request_file(req_dict: Dictionary) -> bool:
 	var req_path := _resolve_request_path()
 	var file := FileAccess.open(req_path, FileAccess.WRITE)
@@ -6804,6 +7175,37 @@ func _update_cabinet_portfolios_ui(state: Dictionary) -> void:
 		_clear_cabinet_portfolios_ui()
 		return
 
+	# 1. Sync Active Ministerial Appointment Hearing & Lock State
+	var is_app_backend: bool = bool(state.get("is_appointment_in_progress", false))
+	var app_time: float = float(state.get("active_appointment_time_remaining_seconds", 0.0))
+	var app_port: String = str(state.get("active_appointment_portfolio", ""))
+	var app_name: String = str(state.get("active_appointment_minister_name", ""))
+	var app_timer_fmt: String = str(state.get("appointment_timer_formatted", ""))
+
+	if is_app_backend or app_time > 0.0:
+		is_appointment_active = true
+		active_appointment_time_remaining = app_time
+		active_appointment_portfolio = app_port
+		active_appointment_minister_name = app_name
+		if appointment_timer_card:
+			appointment_timer_card.visible = true
+		if appointment_timer_badge:
+			if not app_timer_fmt.is_empty():
+				appointment_timer_badge.text = "⏱️ " + app_timer_fmt
+			else:
+				var m := int(active_appointment_time_remaining) / 60
+				var s := int(active_appointment_time_remaining) % 60
+				appointment_timer_badge.text = "⏱️ %02d:%02d" % [m, s]
+		if appointment_progress_bar:
+			appointment_progress_bar.value = active_appointment_time_remaining
+		if appointment_details_label:
+			appointment_details_label.text = "Vetting %s for Ministry of %s (10-minute confirmation hearing)." % [app_name, app_port]
+	else:
+		is_appointment_active = false
+		active_appointment_time_remaining = 0.0
+		if appointment_timer_card:
+			appointment_timer_card.visible = false
+
 	var portfolios := ["Finance", "Defense", "ForeignAffairs", "Interior", "Health", "Infrastructure"]
 	for p in portfolios:
 		var p_data := _resolve_portfolio_display_data(p, state)
@@ -6884,6 +7286,25 @@ func _update_cabinet_portfolios_ui(state: Dictionary) -> void:
 					resolve_friction_button.text = "Review Cabinet Portfolio"
 			else:
 				cabinet_friction_panel.visible = false
+
+	# Enforce single appointment lock on all cabinet portfolio buttons during active hearing
+	var buttons := [
+		appoint_finance_button, appoint_defense_button, appoint_foreign_affairs_button,
+		appoint_interior_button, appoint_health_button, appoint_infrastructure_button,
+		appoint_education_button, appoint_oil_and_gas_button, appoint_resources_button
+	]
+	if is_appointment_active and active_appointment_time_remaining > 0.0:
+		var mins_left := int(active_appointment_time_remaining) / 60
+		var secs_left := int(active_appointment_time_remaining) % 60
+		var lock_text := "Locked (%02d:%02d)" % [mins_left, secs_left]
+		for b in buttons:
+			if b:
+				b.disabled = true
+				b.text = lock_text
+	else:
+		for b in buttons:
+			if b:
+				b.disabled = false
 
 func _resolve_portfolio_display_data(portfolio: String, state: Dictionary) -> Dictionary:
 	# 1. Check for Phase 2 ministerial_advice
@@ -7133,6 +7554,16 @@ func _apply_portfolio_card_data(portfolio: String, data: Dictionary) -> void:
 # ==============================================================================
 
 func open_appointment_modal(portfolio: String) -> void:
+	if is_appointment_active and active_appointment_time_remaining > 0.0:
+		var mins := int(active_appointment_time_remaining) / 60
+		var secs := int(active_appointment_time_remaining) % 60
+		var lock_msg := "Appointment Locked: Confirmation hearing for Ministry of %s is active (%02d:%02d remaining). Only one appointment at a time." % [active_appointment_portfolio, mins, secs]
+		if status_ticker_label:
+			status_ticker_label.text = lock_msg
+		if appointment_status_label:
+			appointment_status_label.text = lock_msg
+		return
+
 	if not CANDIDATE_DEFINITIONS.has(portfolio):
 		if appointment_status_label:
 			appointment_status_label.text = "Portfolio '%s' does not currently support candidate commissioning." % portfolio
@@ -7472,6 +7903,16 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 	if FileAccess.file_exists(stale_res_path):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(stale_res_path))
 
+	if is_appointment_active and active_appointment_time_remaining > 0.0 and confirmed and candidate_type != "dismiss":
+		var mins := int(active_appointment_time_remaining) / 60
+		var secs := int(active_appointment_time_remaining) % 60
+		var lock_msg := "Appointment Locked: Confirmation hearing for %s is already in progress (%02d:%02d remaining). Only one appointment at a time." % [active_appointment_portfolio, mins, secs]
+		if appointment_status_label:
+			appointment_status_label.text = lock_msg
+		if status_ticker_label:
+			status_ticker_label.text = "Cabinet Order Warning: " + lock_msg
+		return { "success": false, "message": lock_msg }
+
 	var req_id := "req_cab_" + str(Time.get_unix_time_from_system()) + "_" + str(randi())
 	var timestamp_str := Time.get_datetime_string_from_system()
 
@@ -7515,6 +7956,26 @@ func execute_cabinet_appointment(portfolio: String, candidate_type: String, conf
 			"request_id": req_id,
 			"request_path": req_path
 		}
+
+	if confirmed and candidate_type != "dismiss":
+		is_appointment_active = true
+		active_appointment_time_remaining = 600.0
+		active_appointment_portfolio = portfolio
+		active_appointment_minister_name = portfolio + " Minister Candidate"
+		if appointment_timer_card:
+			appointment_timer_card.visible = true
+		if appointment_timer_badge:
+			appointment_timer_badge.text = "⏱️ 10:00"
+		if appointment_progress_bar:
+			appointment_progress_bar.value = 600.0
+		_update_cabinet_portfolios_ui(latest_state)
+	elif confirmed and candidate_type == "dismiss":
+		if active_appointment_portfolio.to_lower() == portfolio.to_lower():
+			is_appointment_active = false
+			active_appointment_time_remaining = 0.0
+			if appointment_timer_card:
+				appointment_timer_card.visible = false
+			_update_cabinet_portfolios_ui(latest_state)
 
 	var success_msg := "Executive Appointment Submitted: %s for %s." % [candidate_type.capitalize(), portfolio]
 	if appointment_status_label:

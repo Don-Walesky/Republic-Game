@@ -43,6 +43,12 @@ public sealed class NationalDebtRecord
     public string SustainabilitySummary { get; set; } = "Debt stock is highly sustainable. Sovereign debt represents a modest fraction of GDP and quarterly service is well covered by tax revenues.";
 
     /// <summary>
+    /// Active sovereign debt repayment strategy (Standard Amortization, Accelerated Debt Paydown, Surplus-Linked Paydown).
+    /// </summary>
+    [JsonPropertyName("repayment_plan")]
+    public string RepaymentPlan { get; set; } = "Standard Amortization";
+
+    /// <summary>
     /// Evaluates sovereign debt sustainability based on national GDP and quarterly revenue.
     /// Returns the updated sustainability status string.
     /// </summary>

@@ -171,14 +171,21 @@
       "state_capacity_value": null
     }
   ],
+  "active_appointment_portfolio": "",
+  "active_appointment_minister_name": "",
+  "active_appointment_candidate_type": "",
+  "active_appointment_time_remaining_seconds": 0,
+  "is_appointment_in_progress": false,
+  "appointment_status_text": "Cabinet Stable",
+  "appointment_timer_formatted": "00:00",
   "status_message": "Connected to live Republic simulation state",
-  "exported_at_utc": "2026-11-05T11:26:43.0913198\u002B00:00",
+  "exported_at_utc": "2026-11-06T16:48:09.1743473\u002B00:00",
   "country_id": "player-country",
   "income_tax_rate": 0.25,
   "income_tax_rate_formatted": "25%",
   "corporate_tax_rate": 0.2,
   "import_tariff_rate": 0.05,
-  "latest_decision_result": "",
+  "latest_decision_result": "Debt Repayment Strategy Updated: \u0027Surplus-Linked Paydown\u0027 activated across sovereign borrowing obligations.",
   "active_project": "None",
   "simulation_tick": 1,
   "save_file_path": "C:\\Users\\WALE\\Republic - Game\\Republic-Game\\client\\godot\\presidential_desk_state.sav",
@@ -640,6 +647,15 @@
     }
   ],
   "investment_summary": "Private Sector: 4 Enterprises | 3 Pending Proposals | 0 Active Facilities",
+  "global_businesses": [],
+  "operating_businesses_count": 0,
+  "pending_business_proposals_count": 0,
+  "total_business_quarterly_tax": 0,
+  "total_business_quarterly_tax_formatted": "R0 / Qtr",
+  "total_business_jobs_created": 0,
+  "total_business_gdp_boost": 0,
+  "presidency_start_day": 1,
+  "currency_creation_day": null,
   "diplomatic_profiles": [
     {
       "country_id": "player-country",
@@ -908,14 +924,14 @@
     "Metals"
   ],
   "strategic_summary": "Industrialisation \u0026 Manufacturing (Progress: 65%)",
-  "military_level": 23,
-  "counterintelligence_level": 42,
-  "counterintelligence_display": "42.0% (Domestic Counter-Surveillance)",
+  "military_level": 24,
+  "counterintelligence_level": 46.7,
+  "counterintelligence_display": "46.7% (Domestic Counter-Surveillance)",
   "basic_espionage_unlocked": true,
   "basic_espionage_lock_reason": "Basic foreign espionage network authorized.",
   "advanced_espionage_unlocked": true,
   "advanced_espionage_lock_reason": "Advanced strategic intelligence operations unlocked.",
-  "intelligence_summary": "Intelligence: Level 23 Armed Forces | 0 Active Operations | 0 Acquired Dossiers",
+  "intelligence_summary": "Intelligence: Level 24 Armed Forces | 0 Active Operations | 0 Acquired Dossiers",
   "active_intelligence_operations": [],
   "acquired_intelligence_dossiers": [],
   "emails": [
@@ -926,7 +942,7 @@
       "recipient": "Presidential Desk",
       "subject": "\uD83C\uDFDB\uFE0F LEGISLATIVE WHISPER: Opening Assembly Mood \u0026 Floor Numbers",
       "body": "Mr./Madam President,\n\nAs the National Assembly convenes for this governance cycle, our caucus numbers stand at 48 Ruling Coalition seats, 42 Opposition, and 10 Independents. Under our constitutional standing rules, 51 votes are required to enact executive bills.\n\nMy colleagues in the Industrial Rustbelt are feeling the pinch of economic transitions. If your administration is willing to invest in constituency development or offer committee oversight roles, several of our members are prepared to cross the floor and deliver a reliable working majority.\n\nWe await your signals from the Executive Office.\n\nHon. Marcus Thorne\nRepresentative, 4th Industrial District",
-      "date_sent": "Nov 05, 11:26",
+      "date_sent": "Nov 06, 16:48",
       "is_read": false,
       "folder": "Inbox",
       "channel": "Legislative",
@@ -943,7 +959,7 @@
       "recipient": "Presidential Desk",
       "subject": "\uD83C\uDF10 BILATERAL OVERVIEW: Maridian Commercial \u0026 Resource Pact Proposed",
       "body": "To the Sovereign President of Republic of Arcadia,\n\nThe Maridian Union conveys its congratulations on your executive mandate. Our trade delegation has prepared a bilateral trade framework: our heavy manufacturing sector requires reliable crude oil and agricultural deliveries, in exchange for discounted industrial machinery and direct currency settlements.\n\nOur diplomatic mission in your capital is prepared to conclude formal terms whenever you review the bilateral proposal.\n\nIn diplomatic fraternity,\nAmbassador Elena Vane\nMaridian Diplomatic Mission",
-      "date_sent": "Nov 05, 11:26",
+      "date_sent": "Nov 06, 16:48",
       "is_read": false,
       "folder": "Inbox",
       "channel": "Diplomatic",
@@ -960,7 +976,7 @@
       "recipient": "Presidential Desk",
       "subject": "\uD83D\uDCCB EXECUTIVE MEMO: Daily Readiness \u0026 Priority Briefing",
       "body": "Mr./Madam President,\n\nAll ministries have completed their cycle audits. Treasury liquidity is stable at R15B, with public approval holding at 70.0%. Pending items on your desk include Cabinet portfolio confirmations, legislative bills, and bilateral diplomatic overtures.\n\nOffice of the Chief of Staff",
-      "date_sent": "Nov 05, 11:26",
+      "date_sent": "Nov 06, 16:48",
       "is_read": true,
       "folder": "Inbox",
       "channel": "Executive",
@@ -981,7 +997,245 @@
   "press_briefing_date": "Day 0, 00:00 WAT",
   "central_bank_governor_name": "Dr. Marcus Thorne",
   "central_bank_interest_rate": 4.5,
-  "central_bank_foreign_reserves": 6749887500,
+  "central_bank_foreign_reserves": 45000000,
+  "inflation_rate": 3.5,
+  "inflation_rate_formatted": "41%",
+  "inflation_cost_multiplier": 1.005,
+  "inflation_impact_on_costs": "\u002B11% Project Cost Index",
+  "budget_revenue": 25980000000,
+  "budget_revenue_formatted": "R26B / Qtr",
+  "budget_expenditure": 2508625000,
+  "budget_expenditure_formatted": "R2.5B / Qtr",
+  "budget_balance": 23471375000,
+  "budget_balance_formatted": "\u002BR23.5B Surplus",
+  "budget_defense_allocation": 500000000,
+  "budget_healthcare_allocation": 400000000,
+  "budget_education_allocation": 350000000,
+  "budget_infrastructure_allocation": 600000000,
+  "budget_science_allocation": 250000000,
+  "budget_salaries_allocation": 85000000,
+  "budget_salaries_allocation_formatted": "R85M / Qtr",
+  "budget_governance_allocation": 140000000,
+  "budget_governance_allocation_formatted": "R140M / Qtr",
+  "budget_maintenance_allocation": 180000000,
+  "budget_maintenance_allocation_formatted": "R180M / Qtr",
+  "budget_ongoing_governance_total": 405000000,
+  "budget_ongoing_governance_total_formatted": "R405M / Qtr",
+  "enacted_revenue_activities": [],
+  "additional_quarterly_revenue": 0,
+  "additional_quarterly_revenue_formatted": "R0 / Qtr",
+  "available_revenue_activities": [
+    {
+      "id": "rev_digital_tax_audit",
+      "name": "E-Invoicing \u0026 Digital Tax Compliance Drive",
+      "description": "Mandate real-time electronic invoicing and audit high-net-worth commercial entities to eliminate revenue leakage.",
+      "setup_cost": 35000000,
+      "setup_cost_formatted": "R 35.0M",
+      "quarterly_revenue_boost": 120000000,
+      "quarterly_revenue_boost_formatted": "\u002BR 120.0M / Qtr",
+      "is_enacted": false
+    },
+    {
+      "id": "rev_commercial_concessions",
+      "name": "Strategic Ports \u0026 Customs Logistics Concession",
+      "description": "Tender commercial concessions for sovereign deepwater ports and bonded transit terminals to capture trade throughput.",
+      "setup_cost": 20000000,
+      "setup_cost_formatted": "R 20.0M",
+      "quarterly_revenue_boost": 95000000,
+      "quarterly_revenue_boost_formatted": "\u002BR 95.0M / Qtr",
+      "is_enacted": false
+    },
+    {
+      "id": "rev_export_corridor",
+      "name": "Mineral \u0026 Agro-Commodity Export Corridor",
+      "description": "Establish dedicated bonded fast-track export corridors with processing royalties and priority customs clearing.",
+      "setup_cost": 50000000,
+      "setup_cost_formatted": "R 50.0M",
+      "quarterly_revenue_boost": 150000000,
+      "quarterly_revenue_boost_formatted": "\u002BR 150.0M / Qtr",
+      "is_enacted": false
+    },
+    {
+      "id": "rev_procurement_reform",
+      "name": "Sovereign Procurement Anti-Waste \u0026 Asset Recovery",
+      "description": "Centralize public ministry purchasing onto a unified digital exchange to eradicate contractor markups and recover misallocated funds.",
+      "setup_cost": 15000000,
+      "setup_cost_formatted": "R 15.0M",
+      "quarterly_revenue_boost": 80000000,
+      "quarterly_revenue_boost_formatted": "\u002BR 80.0M / Qtr",
+      "is_enacted": false
+    }
+  ],
+  "is_finance_minister_appointed": true,
+  "finance_minister_name": "Dr. Elena Rostova",
+  "finance_minister_candidate_type": "Loyalist",
+  "finance_minister_advice_headline": "Fiscal Surplus (\u002BR23.5B / Qtr) \u2014 Balance Sheet Solvency Established",
+  "finance_minister_expenditure_advice": "State payroll and administrative commitments (R405M / Qtr) are fully covered by incoming receipts. Recommend channeling our surplus into capital development or sovereign debt retirement.",
+  "finance_minister_revenue_advice": "Quarterly revenues stand at R26B. We have not yet enacted any dedicated revenue drives. I recommend launching the E-Invoicing Compliance Drive and Port Logistics Concession to capture \u002BR 215M in non-tax yield.",
+  "finance_minister_loan_recommendation": "Foreign reserves stand at R45M, below our R 100M currency defense threshold. I recommend contracting an External Multilateral Facility of R 75,000,000 to defend the exchange rate.",
+  "finance_minister_recommended_loan_type": "external",
+  "finance_minister_recommended_loan_amount": 75000000,
+  "finance_minister_recommended_loan_amount_formatted": "R75M",
+  "current_debt_repayment_plan": "Surplus-Linked Paydown",
+  "finance_minister_repayment_plan_advice": "Surplus-Linked Paydown active: Debt service dynamically scales upward when quarterly surplus exceeds R 100M, protecting base liquidity.",
+  "foreign_reserves": 45000000,
+  "foreign_reserves_formatted": "R45M",
+  "forex_unlocked": false,
+  "forex_unlock_threshold": 150000000,
+  "forex_unlock_progress_pct": 30,
+  "national_debt_domestic": 150000000,
+  "national_debt_external": 100000000,
+  "national_debt_total": 250000000,
+  "national_debt_total_formatted": "R250M",
+  "debt_service_quarterly": 3625000,
+  "debt_service_quarterly_formatted": "R3.6M / Qtr",
+  "stock_market_name": "Republic Composite Index (RCI)",
+  "stock_market_points": 2500,
+  "stock_market_change_pct": 1.42,
+  "stock_market_direction": "Bullish \u2197\uFE0F",
+  "stock_market_sentiment": "Strong Growth",
+  "currency_regime": "Sovereign Managed Float",
+  "exchange_rate_usd": 1.25,
+  "stock_market_primary_drivers": "Domestic stability and corporate investment flows supporting baseline equity valuations.",
+  "stock_market_sectors": [
+    {
+      "sector_name": "Technology \u0026 Telecommunications",
+      "icon": "\uD83D\uDCBB",
+      "current_points": 2650,
+      "change_percent": 1.92,
+      "direction": "Bullish \u2197\uFE0F",
+      "key_drivers": "Cloud computing expansion and telecommunication infrastructure demand.",
+      "representative_companies": [
+        {
+          "name": "OmniNet Cloud Systems",
+          "ticker": "ONET",
+          "market_cap_repu": 450000000,
+          "share_price_repu": 45.2,
+          "change_percent": 1.8
+        },
+        {
+          "name": "Apex Silicon Microelectronics",
+          "ticker": "APEX",
+          "market_cap_repu": 620000000,
+          "share_price_repu": 88.5,
+          "change_percent": 2.4
+        }
+      ]
+    },
+    {
+      "sector_name": "Industrial \u0026 Manufacturing",
+      "icon": "\uD83C\uDFED",
+      "current_points": 2480,
+      "change_percent": 1.22,
+      "direction": "Bullish \u2197\uFE0F",
+      "key_drivers": "Automotive assembly lines and heavy metal smelting exports.",
+      "representative_companies": [
+        {
+          "name": "Veloce Motors International",
+          "ticker": "VELO",
+          "market_cap_repu": 380000000,
+          "share_price_repu": 32.4,
+          "change_percent": 0.9
+        },
+        {
+          "name": "Titan Heavy Metallurgy",
+          "ticker": "TITN",
+          "market_cap_repu": 510000000,
+          "share_price_repu": 64,
+          "change_percent": 1.2
+        }
+      ]
+    },
+    {
+      "sector_name": "Banking \u0026 Financial Services",
+      "icon": "\uD83C\uDFDB\uFE0F",
+      "current_points": 2520,
+      "change_percent": 0.4,
+      "direction": "Bullish \u2197\uFE0F",
+      "key_drivers": "Steady commercial lending spreads and sovereign bond trading.",
+      "representative_companies": [
+        {
+          "name": "Sovereign Trust Financial",
+          "ticker": "STFC",
+          "market_cap_repu": 720000000,
+          "share_price_repu": 112,
+          "change_percent": 1.5
+        },
+        {
+          "name": "Republic Commercial Bank",
+          "ticker": "RCBK",
+          "market_cap_repu": 490000000,
+          "share_price_repu": 54.8,
+          "change_percent": 0.4
+        }
+      ]
+    },
+    {
+      "sector_name": "Healthcare \u0026 Consumer Staples",
+      "icon": "\uD83D\uDC8A",
+      "current_points": 2410,
+      "change_percent": 0.42,
+      "direction": "Neutral \u27A1\uFE0F",
+      "key_drivers": "Essential food packaging and pharmaceutical formulation demand.",
+      "representative_companies": [
+        {
+          "name": "Nestor-Valo Consumer Foods",
+          "ticker": "NVCF",
+          "market_cap_repu": 340000000,
+          "share_price_repu": 28.5,
+          "change_percent": 0.5
+        },
+        {
+          "name": "Aegis BioPharma Laboratories",
+          "ticker": "AEGS",
+          "market_cap_repu": 410000000,
+          "share_price_repu": 76.2,
+          "change_percent": 1.1
+        }
+      ]
+    },
+    {
+      "sector_name": "Energy \u0026 Infrastructure",
+      "icon": "\u26A1",
+      "current_points": 2540,
+      "change_percent": 1.6,
+      "direction": "Bullish \u2197\uFE0F",
+      "key_drivers": "Utility-scale renewable grid investments and deepwater seaport throughput.",
+      "representative_companies": [
+        {
+          "name": "Solis-Aura Clean Energy",
+          "ticker": "SOLI",
+          "market_cap_repu": 580000000,
+          "share_price_repu": 48,
+          "change_percent": 1.9
+        },
+        {
+          "name": "AeroCargo Transshipment Hub",
+          "ticker": "ACHB",
+          "market_cap_repu": 640000000,
+          "share_price_repu": 95.5,
+          "change_percent": 2
+        }
+      ]
+    }
+  ],
+  "forex_export_competitiveness": "1.00x (Export Advantage)",
+  "forex_import_cost_multiplier": "1.00x (Import Discount)",
+  "forex_interventions_count": 0,
+  "quarterly_exports": 3200000000,
+  "quarterly_exports_formatted": "R3.2B / Qtr",
+  "quarterly_imports": 2675000000,
+  "quarterly_imports_formatted": "R2.7B / Qtr",
+  "net_trade_balance": 525000000,
+  "net_trade_balance_formatted": "\u002BR525M Surplus",
+  "import_tariff_rate_formatted": "5.0%",
+  "debt_to_gdp_ratio_formatted": "2.5%",
+  "debt_service_to_revenue_ratio_formatted": "1.6%",
+  "debt_sustainability_status": "Sustainable (Low Risk) \uD83D\uDFE2",
+  "debt_sustainability_summary": "Debt stock is highly sustainable. Sovereign debt represents a modest fraction of GDP and quarterly service is well covered by tax revenues.",
+  "business_confidence_score": 65,
+  "business_confidence_status": "Moderate Growth \uD83D\uDFE1",
+  "business_confidence_summary": "Commercial sentiment remains constructive. Corporate balance sheets supported by manageable inflation and steady domestic stability.",
   "bills": [],
   "pending_bill": null,
   "player_gender": "Female",
@@ -1054,10 +1308,87 @@
       "defection_incentive": ""
     }
   ],
-  "military_personnel": 57500,
-  "military_weapons_inventory": 1955,
-  "military_composite_readiness": 88,
+  "military_personnel": 75000,
+  "military_weapons_inventory": 703,
+  "military_composite_readiness": 81.7,
   "military_recent_operations": [],
+  "armed_forces": {
+    "army": {
+      "branch": "Army",
+      "name": "National Army (Ground Forces)",
+      "personnel_count": 45000,
+      "equipment_count": 520,
+      "readiness_score": 82,
+      "quarterly_funding": 200000000,
+      "combat_strength": 25420
+    },
+    "navy": {
+      "branch": "Navy",
+      "name": "Naval Fleet \u0026 Coastal Defense",
+      "personnel_count": 14000,
+      "equipment_count": 48,
+      "readiness_score": 78,
+      "quarterly_funding": 150000000,
+      "combat_strength": 5304
+    },
+    "air_force": {
+      "branch": "AirForce",
+      "name": "Air Force \u0026 Air Defense Command",
+      "personnel_count": 16000,
+      "equipment_count": 135,
+      "readiness_score": 85,
+      "quarterly_funding": 150000000,
+      "combat_strength": 8308.8
+    },
+    "total_personnel": 75000,
+    "total_equipment": 703,
+    "total_budget": 500000000,
+    "composite_readiness": 81.7,
+    "total_combat_strength": 39032.8
+  },
+  "border_security": {
+    "funding_level": 35000000,
+    "patrol_strength": 3500,
+    "surveillance_tech_level": 65,
+    "contraband_interception_rate": 70.2,
+    "infiltration_detection_chance": 86,
+    "effectiveness_score": 78.1,
+    "status_summary": "Frontiers Fortified \uD83D\uDFE2: High-tech sensor grids and active patrols minimize contraband and intercept unauthorized crossings."
+  },
+  "police_force": {
+    "is_established": true,
+    "force_name": "Republic National Police Service (RNPS)",
+    "officer_count": 28000,
+    "quarterly_funding": 45000000,
+    "crime_rate_index": 16.3,
+    "public_order_score": 86.6,
+    "community_trust_score": 72,
+    "status_summary": "Civil Order Secure \uD83D\uDFE2: Professional police presence maintains low crime and swift municipal emergency response."
+  },
+  "investigative_bureau": {
+    "is_commissioned": false,
+    "bureau_name": "State Investigative Bureau (SIB)",
+    "counter_intelligence_rating": 40,
+    "foreign_spy_detection_rate": 20,
+    "internal_threat_audit_score": 25,
+    "is_concealed": true,
+    "neutralized_foreign_spies_count": 0,
+    "active_investigations": [],
+    "status_summary": "Uncommissioned \uD83D\uDD12: Domestic counter-intelligence fragmented. Requires commissioning the State Investigative Bureau national project."
+  },
+  "military_ai": {
+    "is_active": true,
+    "ai_system_name": "Aegis-9 Sovereign Defense Neural Grid",
+    "analysis_level": 1,
+    "computing_funding_level": 25000000,
+    "threat_detection_bonus": 23.5,
+    "predictive_threat_summaries": [
+      "Frontier radar feeds indicate peacetime regional electronic emissions.",
+      "Algorithm confidence: Zero immediate ballistic or armored mobilization signatures detected.",
+      "Counter-espionage neural models active; monitoring unverified encrypted network handshakes."
+    ],
+    "status_summary": "Online \uD83E\uDD16 [Tier 1]: Aegis-9 Sovereign Defense Neural Grid providing \u002B23.5% tactical detection bonus across land, air, and cyber corridors."
+  },
   "target_countries": [
     "Republic of Valerius",
     "Republic of Veridia",
@@ -1165,6 +1496,7 @@
     }
   ],
   "sovereign_gems": 500,
+  "campaign_time_remaining_seconds": 1800,
   "campaign_purse": 5000000,
   "campaign_purse_formatted": "R 5,000,000 REPU",
   "campaign_polling": 35,

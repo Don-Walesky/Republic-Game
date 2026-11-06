@@ -5871,6 +5871,26 @@ public static class PresidentialDeskBridge
         string outcomeMessage;
         Minister? appointed = null;
         var normalizedType = candidateType?.Trim().ToLowerInvariant() ?? "technocrat";
+        if (normalizedType is not ("dismiss" or "vacate"))
+        {
+            country.ActiveAppointment?.UpdateTimeRemaining();
+            if (country.ActiveAppointment != null && !country.ActiveAppointment.IsCompleted && country.ActiveAppointment.TimeRemainingSeconds > 0)
+            {
+                int remM = (int)(country.ActiveAppointment.TimeRemainingSeconds / 60);
+                int remS = (int)(country.ActiveAppointment.TimeRemainingSeconds % 60);
+                var inProgResult = new PresidentialActionResult
+                {
+                    RequestId = requestId ?? string.Empty,
+                    Success = false,
+                    Result = "AppointmentInProgress",
+                    Message = $"Cannot appoint minister: Ministerial confirmation for {country.ActiveAppointment.Portfolio} ({country.ActiveAppointment.MinisterName}) is currently underway ({remM:D2}:{remS:D2} remaining). The Republic Constitution permits only one ministerial appointment at a time.",
+                    CountryName = country.Name
+                };
+                TryWriteResultFile(targetStatePath, inProgResult);
+                return inProgResult;
+            }
+        }
+
 
         if (normalizedType is "technocrat" or "expert")
         {
@@ -5965,6 +5985,28 @@ public static class PresidentialDeskBridge
             };
             TryWriteResultFile(targetStatePath, invalidTypeResult);
             return invalidTypeResult;
+        }
+
+        if (appointed != null)
+        {
+            country.ActiveAppointment = new ActiveMinisterialAppointment
+            {
+                Portfolio = portfolio.ToString(),
+                MinisterName = appointed.Name,
+                CandidateType = normalizedType,
+                StartedAtUtc = DateTimeOffset.UtcNow,
+                DurationSeconds = 600.0,
+                TimeRemainingSeconds = 600.0,
+                IsCompleted = false,
+                Status = "Senate Confirmation & Transition in Progress"
+            };
+        }
+        else if (normalizedType is "dismiss" or "vacate")
+        {
+            if (country.ActiveAppointment != null && string.Equals(country.ActiveAppointment.Portfolio, portfolio.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                country.ActiveAppointment = null;
+            }
         }
 
         envelope.State.CurrentTick = tick + 1;
@@ -9524,6 +9566,382 @@ public static class PresidentialDeskBridge
     }
 
     /// <summary>
+    /// Executes an authoritative executive decision to enact a strategic revenue-driving program,
+    /// committing upfront capital to expand recurring non-debt sovereign receipts.
+    /// </summary>
+    public static PresidentialActionResult ApplyRevenueActivityDecision(
+        string activityId,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "enact strategic revenue drive");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        string normalizedId = activityId?.Trim().ToLowerInvariant() ?? string.Empty;
+
+        var (activityName, setupCost, qtrYield) = normalizedId switch
+        {
+            "rev_digital_tax_audit" => ("E-Invoicing & Digital Tax Compliance Drive", 35_000_000.0, 120_000_000.0),
+            "rev_commercial_concessions" => ("Strategic Ports & Customs Logistics Concession", 20_000_000.0, 95_000_000.0),
+            "rev_export_corridor" => ("Mineral & Agro-Commodity Export Corridor", 50_000_000.0, 150_000_000.0),
+            "rev_procurement_reform" => ("Sovereign Procurement Anti-Waste & Asset Recovery", 15_000_000.0, 80_000_000.0),
+            _ => (string.Empty, 0.0, 0.0)
+        };
+
+        if (string.IsNullOrEmpty(activityName))
+        {
+            var invalidResult = CreateInvalidInputResult(targetStatePath, $"Unknown revenue program '{activityId}'. Valid programs: rev_digital_tax_audit, rev_commercial_concessions, rev_export_corridor, rev_procurement_reform.", requestId);
+            TryWriteResultFile(targetStatePath, invalidResult);
+            return invalidResult;
+        }
+
+        if (country!.EnactedRevenueActivities.Contains(normalizedId))
+        {
+            var duplicateResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AlreadyEnacted",
+                Message = $"The program '{activityName}' is already enacted and actively contributing to sovereign revenues.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, duplicateResult);
+            return duplicateResult;
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose enacting '{activityName}': requires {RepuTreasury.Format(setupCost)} upfront setup, yielding +{RepuTreasury.Format(qtrYield)} in recurring quarterly revenue.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        if (country.Treasury.Balance < setupCost)
+        {
+            var insufficientFunds = CreateInvalidInputResult(
+                targetStatePath,
+                $"Cannot enact revenue program: Sovereign treasury balance ({RepuTreasury.Format(country.Treasury.Balance)}) is insufficient for the setup requirement of {RepuTreasury.Format(setupCost)}.",
+                requestId);
+            TryWriteResultFile(targetStatePath, insufficientFunds);
+            return insufficientFunds;
+        }
+
+        country.Treasury.Withdraw(setupCost);
+        country.EnactedRevenueActivities.Add(normalizedId);
+
+        double totalBoost = 0.0;
+        foreach (var act in country.EnactedRevenueActivities)
+        {
+            totalBoost += act switch
+            {
+                "rev_digital_tax_audit" => 120_000_000.0,
+                "rev_commercial_concessions" => 95_000_000.0,
+                "rev_export_corridor" => 150_000_000.0,
+                "rev_procurement_reform" => 80_000_000.0,
+                _ => 0.0
+            };
+        }
+        country.AdditionalQuarterlyRevenue = totalBoost;
+        country.UpdateEconomicCycle(simTime);
+
+        string outcomeMessage = $"Revenue Program Enacted: '{activityName}' operationalized with {RepuTreasury.Format(setupCost)} investment. Recurring quarterly revenues bolstered by +{RepuTreasury.Format(qtrYield)} (Total non-debt mobilization: +{RepuTreasury.Format(country.AdditionalQuarterlyRevenue)} / Qtr).";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes an authoritative executive decision to set the sovereign debt repayment strategy
+    /// (Standard Amortization, Accelerated Debt Paydown, Surplus-Linked Paydown).
+    /// </summary>
+    public static PresidentialActionResult ApplyRepaymentPlanDecision(
+        string planName,
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "set debt repayment plan");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        string normalized = planName?.Trim().ToLowerInvariant() ?? string.Empty;
+        string resolvedPlan = normalized switch
+        {
+            "accelerated" or "accelerated debt paydown" or "accelerated paydown" => "Accelerated Debt Paydown",
+            "surplus" or "surplus-linked" or "surplus-linked paydown" or "surplus_linked" => "Surplus-Linked Paydown",
+            _ => "Standard Amortization"
+        };
+
+        if (country!.Debt == null)
+        {
+            country.Debt = new NationalDebtRecord();
+        }
+
+        if (!confirmed)
+        {
+            var quoteResult = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "AwaitingConfirmation",
+                Message = $"Propose adopting sovereign debt repayment plan: '{resolvedPlan}'.",
+                CountryName = country.Name,
+                IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+                ApprovalRating = country.HappinessRating,
+                StabilityRating = country.BaselineStability,
+                TreasuryBalance = country.Treasury.Balance
+            };
+            TryWriteResultFile(targetStatePath, quoteResult);
+            return quoteResult;
+        }
+
+        country.Debt.RepaymentPlan = resolvedPlan;
+        string outcomeMessage = $"Debt Repayment Strategy Updated: '{resolvedPlan}' activated across sovereign borrowing obligations.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name,
+            IncomeTaxRate = country.TaxPolicy.IncomeTaxRate,
+            ApprovalRating = country.HappinessRating,
+            StabilityRating = country.BaselineStability,
+            TreasuryBalance = country.Treasury.Balance
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
+    /// Executes the loan package recommended by the Minister of Finance.
+    /// </summary>
+    public static PresidentialActionResult ApplyRecommendedLoanDecision(
+        bool confirmed = true,
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "take recommended sovereign loan");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        double debtRatio = country!.Debt?.DebtToGdpRatio ?? 2.5;
+        double forRes = country.CentralBank?.ForeignReserves ?? 45_000_000.0;
+
+        if (debtRatio > 45.0)
+        {
+            var noRec = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "LoanNotRecommended",
+                Message = $"Finance Minister advises against new borrowing: Sovereign debt ratio ({debtRatio:0.1}% of GDP) is too high. Prioritize debt repayment.",
+                CountryName = country.Name
+            };
+            TryWriteResultFile(targetStatePath, noRec);
+            return noRec;
+        }
+
+        string loanType = forRes < 100_000_000.0 ? "external" : "domestic";
+        double amount = forRes < 100_000_000.0 ? 75_000_000.0 : (country.Treasury.Balance < 250_000_000.0 ? 50_000_000.0 : 30_000_000.0);
+
+        return ApplyLoanDecision(loanType, amount, isRepayment: false, confirmed: confirmed, targetStatePath, saveFilePath, requestId);
+    }
+
+    /// <summary>
+    /// Completes the active ministerial appointment hearing and confirmation process.
+    /// </summary>
+    public static PresidentialActionResult ApplyCompleteAppointmentDecision(
+        string? stateFilePath = null,
+        string? saveFilePath = null,
+        string? requestId = null)
+    {
+        var targetStatePath = stateFilePath ?? ResolveDefaultStateFilePath();
+        var (envelope, country, simTime, tick, targetSavePath, error) = ResolveAuthoritativeCountry(
+            targetStatePath, saveFilePath, requestId, "complete ministerial appointment");
+
+        if (error != null)
+        {
+            return error;
+        }
+
+        if (country!.ActiveAppointment != null)
+        {
+            country.ActiveAppointment.TimeRemainingSeconds = 0.0;
+            country.ActiveAppointment.IsCompleted = true;
+            country.ActiveAppointment.Status = "Confirmed & Commissioned";
+        }
+
+        string outcomeMessage = country.ActiveAppointment != null
+            ? $"Confirmation Completed: {country.ActiveAppointment.MinisterName} fully confirmed and commissioned into the Cabinet for {country.ActiveAppointment.Portfolio}."
+            : "No ministerial appointment confirmation hearing currently underway.";
+
+        var world = envelope?.State?.World;
+        try
+        {
+            if (world != null)
+            {
+                SaveAuthoritativeState(world, simTime, tick, targetSavePath);
+            }
+            else
+            {
+                SaveAuthoritativeState(country, simTime, tick, targetSavePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var saveErr = new PresidentialActionResult
+            {
+                RequestId = requestId ?? string.Empty,
+                Success = false,
+                Result = "SaveFailed",
+                Message = $"Failed to persist authoritative simulation state ({ex.Message})."
+            };
+            TryWriteResultFile(targetStatePath, saveErr);
+            return saveErr;
+        }
+
+        var snapshot = world != null
+            ? PresidentialDeskSnapshot.Create(world, country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage)
+            : PresidentialDeskSnapshot.Create(country, simTime, tick, targetSavePath, latestDecisionResult: outcomeMessage);
+
+        var exportPath = targetStatePath.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(targetStatePath, ".json")
+            : targetStatePath;
+
+        AtomicFileWriter.WriteAllTextSafely(exportPath, Serialize(snapshot));
+
+        var successResult = new PresidentialActionResult
+        {
+            RequestId = requestId ?? string.Empty,
+            Success = true,
+            Result = "Success",
+            Message = outcomeMessage,
+            CountryName = country.Name
+        };
+        TryWriteResultFile(targetStatePath, successResult);
+        return successResult;
+    }
+
+    /// <summary>
     /// Executes a Central Bank policy action: interest rate hike/cut or foreign reserve injection/sterilization.
     /// Modulates macroeconomic inflation pressure, investor confidence, and stock market sentiment.
     /// </summary>
@@ -11907,6 +12325,87 @@ public static class PresidentialDeskBridge
                         try
                         {
                             return ApplyLoanDecision(loanType, loanAmount, isRepayment, lConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+                    if (normalizedAction is "take_recommended_loan" or "recommended_loan")
+                    {
+                        bool recConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var rcfEl) && (rcfEl.ValueKind == JsonValueKind.True || rcfEl.ValueKind == JsonValueKind.False))
+                        {
+                            recConfirmed = rcfEl.GetBoolean();
+                        }
+                        try
+                        {
+                            return ApplyRecommendedLoanDecision(recConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "set_repayment_plan" or "repayment_plan" or "debt_repayment_plan")
+                    {
+                        string planName = "Standard Amortization";
+                        if (root.TryGetProperty("plan_name", out var pnEl) && pnEl.ValueKind == JsonValueKind.String)
+                        {
+                            planName = pnEl.GetString() ?? planName;
+                        }
+                        else if (root.TryGetProperty("plan", out var pEl) && pEl.ValueKind == JsonValueKind.String)
+                        {
+                            planName = pEl.GetString() ?? planName;
+                        }
+                        bool planConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var pcfEl) && (pcfEl.ValueKind == JsonValueKind.True || pcfEl.ValueKind == JsonValueKind.False))
+                        {
+                            planConfirmed = pcfEl.GetBoolean();
+                        }
+                        try
+                        {
+                            return ApplyRepaymentPlanDecision(planName, planConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                    if (normalizedAction is "enact_revenue_activity" or "revenue_activity" or "enact_revenue")
+                    {
+                        string activityId = string.Empty;
+                        if (root.TryGetProperty("activity_id", out var actEl) && actEl.ValueKind == JsonValueKind.String)
+                        {
+                            activityId = actEl.GetString() ?? string.Empty;
+                        }
+                        else if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String)
+                        {
+                            activityId = idEl.GetString() ?? string.Empty;
+                        }
+                        bool actConfirmed = true;
+                        if (root.TryGetProperty("confirmed", out var acfEl) && (acfEl.ValueKind == JsonValueKind.True || acfEl.ValueKind == JsonValueKind.False))
+                        {
+                            actConfirmed = acfEl.GetBoolean();
+                        }
+                        try
+                        {
+                            return ApplyRevenueActivityDecision(activityId, actConfirmed, targetStatePath, saveFilePath, requestId);
+                        }
+                        finally
+                        {
+                            TryDeleteFile(targetRequestPath);
+                        }
+                    }
+
+                                        if (normalizedAction is "complete_appointment" or "complete_ministerial_appointment")
+                    {
+                        try
+                        {
+                            return ApplyCompleteAppointmentDecision(targetStatePath, saveFilePath, requestId);
                         }
                         finally
                         {

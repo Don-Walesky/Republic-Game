@@ -1572,6 +1572,52 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
+[node name="AppointmentTimerCard" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="AppointmentTimerVBox" type="VBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="AppointmentTimerHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox"]
+layout_mode = 2
+
+[node name="AppointmentTimerTitleLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentTimerHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+theme_override_font_sizes/font_size = 10
+text = "⏳ CONFIRMATION HEARING IN PROGRESS"
+
+[node name="AppointmentTimerBadge" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox/AppointmentTimerHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "⏱️ 10:00"
+
+[node name="AppointmentProgressBar" type="ProgressBar" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+max_value = 600.0
+value = 600.0
+show_percentage = false
+
+[node name="AppointmentDetailsLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.95, 1)
+theme_override_font_sizes/font_size = 9
+text = "Vetting Candidate for Ministerial Appointment"
+autowrap_mode = 2
+
+[node name="AppointmentLockNoticeLabel" type="Label" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox/AppointmentTimerCard/AppointmentTimerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 8
+text = "Only one ministerial appointment can proceed at a time. Other portfolios locked until confirmation completes."
+autowrap_mode = 2
+
 [node name="PortfolioCard_Finance" type="PanelContainer" parent="InterfaceLayer/LeftDock/LeftDockVBox/LeftDockContent/CabinetScroll/CabinetPortfoliosVBox"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
@@ -4968,6 +5014,92 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "⚖️ Rebalance Ministry Budget Priorities"
 
+[node name="OngoingExpensesCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="OngoingExpensesVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="OngoingExpensesHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox"]
+layout_mode = 2
+
+[node name="OngoingExpensesTitleLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.75, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "💼 In-Country Ongoing Expenses & Cost of Governance"
+
+[node name="OngoingExpensesTotalLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
+theme_override_font_sizes/font_size = 10
+text = "Total Ongoing: R 405.0M / Qtr"
+
+[node name="OngoingExpensesGrid" type="GridContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 4
+columns = 3
+
+[node name="SalariesExpenseLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 9
+text = "👥 Civil Service Salaries: R 85.0M"
+
+[node name="GovernanceExpenseLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 9
+text = "🏛️ Cost of Governance: R 140.0M"
+
+[node name="MaintenanceExpenseLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox/OngoingExpensesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 9
+text = "🛠️ Public Maintenance: R 180.0M"
+
+[node name="OngoingExpensesNoticeLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/OngoingExpensesCard/OngoingExpensesVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 8
+text = "Recurring non-discretionary commitments. Civil service wages, ministerial operations, and infrastructure preservation deducted each quarter."
+autowrap_mode = 2
+
+[node name="RevenueActivitiesCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="RevenueActivitiesVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RevenueActivitiesHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard/RevenueActivitiesVBox"]
+layout_mode = 2
+
+[node name="RevenueActivitiesTitleLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard/RevenueActivitiesVBox/RevenueActivitiesHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.4, 0.9, 0.6, 1)
+theme_override_font_sizes/font_size = 11
+text = "📈 In-Country Revenue Enhancement Initiatives"
+
+[node name="RevenueActivitiesBoostBadge" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard/RevenueActivitiesVBox/RevenueActivitiesHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 10
+text = "Active Revenue Boost: +R 0 / Qtr"
+
+[node name="RevenueActivitiesContainer" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/RevenueActivitiesCard/RevenueActivitiesVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
 [node name="DebtCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
@@ -5020,6 +5152,142 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 text = "💳 Repay Debt (-R 25M)"
+
+[node name="FinanceMinisterAdvisoryCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="FinanceMinisterAdvisoryVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="FinanceMinisterHeaderHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox"]
+layout_mode = 2
+
+[node name="FinanceMinisterHeaderTitle" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceMinisterHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏛️ Finance Minister Strategic Advisory"
+
+[node name="FinanceMinisterActiveBadge" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceMinisterHeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "Minister: Appointed"
+
+[node name="FinanceMinisterHeadlineLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 0.95, 1)
+theme_override_font_sizes/font_size = 10
+text = "Strategic fiscal advice from the Minister of Finance."
+autowrap_mode = 2
+
+[node name="FinanceAdviceHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FinanceExpenditureAdviceCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FinanceExpenditureAdviceVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceExpenditureAdviceCard"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="FinanceExpenditureTitle" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceExpenditureAdviceCard/FinanceExpenditureAdviceVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.65, 0.4, 1)
+theme_override_font_sizes/font_size = 9
+text = "📉 Expenditure Guidance:"
+
+[node name="FinanceExpenditureAdviceLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceExpenditureAdviceCard/FinanceExpenditureAdviceVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 9
+text = "Maintain fiscal discipline across state ministries."
+autowrap_mode = 2
+
+[node name="FinanceRevenueAdviceCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FinanceRevenueAdviceVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceRevenueAdviceCard"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="FinanceRevenueTitle" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceRevenueAdviceCard/FinanceRevenueAdviceVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 9
+text = "📈 Revenue Guidance:"
+
+[node name="FinanceRevenueAdviceLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceAdviceHBox/FinanceRevenueAdviceCard/FinanceRevenueAdviceVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 9
+text = "Execute structural revenue enhancement initiatives."
+autowrap_mode = 2
+
+[node name="FinanceLoanRecCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox"]
+layout_mode = 2
+
+[node name="FinanceLoanRecHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceLoanRecCard"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FinanceLoanRecLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceLoanRecCard/FinanceLoanRecHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 9
+text = "Loan Advisory: External facility recommended."
+autowrap_mode = 2
+
+[node name="BtnTakeRecommendedLoan" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceLoanRecCard/FinanceLoanRecHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "🏛️ Accept Finance Minister Loan Package"
+
+[node name="FinanceRepaymentPlanVBox" type="VBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="FinanceRepaymentPlanLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 9
+text = "Debt Repayment Plan: Standard Amortization"
+
+[node name="FinanceRepaymentButtonsHBox" type="HBoxContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnPlanStandard" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Standard Amortization"
+
+[node name="BtnPlanAccelerated" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Accelerated Debt Paydown (+25%)"
+
+[node name="BtnPlanSurplus" type="Button" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox/FinanceRepaymentButtonsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 9
+text = "Surplus-Linked Paydown"
+
+[node name="FinanceRepaymentAdviceLabel" type="Label" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox/FinanceMinisterAdvisoryCard/FinanceMinisterAdvisoryVBox/FinanceRepaymentPlanVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 8
+text = "Plan note: Standard amortization prioritizes baseline liquidity."
+autowrap_mode = 2
 
 [node name="GlobalBusinessesCard" type="PanelContainer" parent="InterfaceLayer/EconomyModal/EconVBox/EconScroll/EconCardsVBox"]
 layout_mode = 2
