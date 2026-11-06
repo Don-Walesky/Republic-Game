@@ -2450,6 +2450,7 @@ public static class PresidentialDeskBridge
             IsEmailVerified = envelope.State.Account.PersonalIdentity.IsEmailVerified,
             PlayerDisplayName = envelope.State.Account.GetPublicIdentity(),
             CountryName = country?.Name ?? string.Empty,
+            CampaignTimeRemainingSeconds = country?.CampaignOffice?.CampaignTimeRemainingSeconds ?? 1800m,
             CampaignPurse = country?.CampaignOffice?.Purse ?? 5_000_000m,
             CampaignPurseFormatted = $"R {country?.CampaignOffice?.Purse ?? 5_000_000m:N0} REPU",
             CampaignPolling = country?.CampaignOffice?.Polling ?? 35.0m,
@@ -2577,6 +2578,7 @@ public static class PresidentialDeskBridge
             CountryName = country.Name,
             ApprovalRating = country.HappinessRating,
             StabilityRating = country.BaselineStability,
+            CampaignTimeRemainingSeconds = country.CampaignOffice.CampaignTimeRemainingSeconds,
             CampaignPurse = country.CampaignOffice.Purse,
             CampaignPurseFormatted = $"R {country.CampaignOffice.Purse:N0} REPU",
             CampaignPolling = country.CampaignOffice.Polling,
@@ -2733,6 +2735,7 @@ public static class PresidentialDeskBridge
             CountryName = country.Name,
             ApprovalRating = country.HappinessRating,
             StabilityRating = country.BaselineStability,
+            CampaignTimeRemainingSeconds = country.CampaignOffice.CampaignTimeRemainingSeconds,
             CampaignPurse = country.CampaignOffice.Purse,
             CampaignPurseFormatted = $"R {country.CampaignOffice.Purse:N0} REPU",
             CampaignPolling = country.CampaignOffice.Polling,
@@ -2874,6 +2877,7 @@ public static class PresidentialDeskBridge
             CountryName = country.Name,
             ApprovalRating = country.HappinessRating,
             StabilityRating = country.BaselineStability,
+            CampaignTimeRemainingSeconds = country.CampaignOffice.CampaignTimeRemainingSeconds,
             CampaignPurse = country.CampaignOffice.Purse,
             CampaignPurseFormatted = $"R {country.CampaignOffice.Purse:N0} REPU",
             CampaignPolling = country.CampaignOffice.Polling,
@@ -10599,7 +10603,7 @@ public static class PresidentialDeskBridge
                         }
                     }
 
-                    if (normalizedAction is "resolve_campaign_election" or "resolve_election" or "election_night")
+                    if (normalizedAction is "resolve_campaign_election" or "resolve_election" or "election_night" or "start_election")
                     {
                         string? reqAccId = root.TryGetProperty("account_id", out var accEl) ? accEl.GetString() : null;
                         string? reqCid = root.TryGetProperty("country_id", out var cidEl) ? cidEl.GetString() : null;
@@ -12756,6 +12760,9 @@ public sealed record PresidentialActionResult
 
     [JsonPropertyName("sovereign_gems")]
     public int SovereignGems { get; init; }
+
+    [JsonPropertyName("campaign_time_remaining_seconds")]
+    public decimal CampaignTimeRemainingSeconds { get; init; } = 1800m;
 
     [JsonPropertyName("campaign_purse")]
     public decimal CampaignPurse { get; init; } = 5_000_000m;

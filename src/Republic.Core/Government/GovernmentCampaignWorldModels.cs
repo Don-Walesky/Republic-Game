@@ -425,6 +425,9 @@ public sealed class CampaignOfficeState
     [JsonPropertyName("purse")]
     public decimal Purse { get; set; } = 5_000_000m;
 
+    [JsonPropertyName("campaign_time_remaining_seconds")]
+    public decimal CampaignTimeRemainingSeconds { get; set; } = 1800m;
+
     [JsonPropertyName("accountant_general")]
     public CampaignAccountantGeneral AccountantGeneral { get; set; } = new();
 

@@ -929,6 +929,9 @@ public sealed record PresidentialDeskSnapshot
     /// <summary>
     /// Gets the current presidential campaign purse in REPU.
     /// </summary>
+    [JsonPropertyName("campaign_time_remaining_seconds")]
+    public decimal CampaignTimeRemainingSeconds { get; init; } = 1800m;
+
     [JsonPropertyName("campaign_purse")]
     public decimal CampaignPurse { get; init; } = 5_000_000m;
 
@@ -2130,6 +2133,7 @@ public sealed record PresidentialDeskSnapshot
             PressSecretary = country.PressSecretary ?? new PresidentialPressSecretary(),
             SpecialAdvisers = country.SpecialAdvisers != null ? country.SpecialAdvisers.ToList().AsReadOnly() : SpecialAdviserSlot.CreateDefaultRoster().AsReadOnly(),
             SovereignGems = country.SovereignGems,
+            CampaignTimeRemainingSeconds = country.CampaignOffice?.CampaignTimeRemainingSeconds ?? 1800m,
             CampaignPurse = country.CampaignOffice?.Purse ?? 5_000_000m,
             CampaignPurseFormatted = $"R {country.CampaignOffice?.Purse ?? 5_000_000m:N0} REPU",
             CampaignPolling = country.CampaignOffice?.Polling ?? 35.0m,

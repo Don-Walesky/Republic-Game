@@ -39,6 +39,9 @@ var active_result_path: String = "res://presidential_desk_result.json"
 var registered_first_name: String = ""
 var registered_last_name: String = ""
 var registered_username: String = ""
+var campaign_time_remaining: float = 1800.0
+var campaign_timer_active: bool = false
+var active_adviser_filter: String = "all" 
 var registered_email: String = ""
 var registered_dob: String = ""
 var selected_gender: String = ""
@@ -210,6 +213,12 @@ var resend_cooldown_timer: float = 0.0
 @onready var lbl_campaign_purse: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPurse
 @onready var lbl_campaign_polling: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPolling
 @onready var lbl_campaign_audit: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblAudit
+@onready var lbl_campaign_countdown: Label = $PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblCountdown
+@onready var btn_filter_all: Button = $PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/HBoxAdviserFilter/BtnFilterAll
+@onready var btn_filter_political: Button = $PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/HBoxAdviserFilter/BtnFilterPolitical
+@onready var btn_filter_press: Button = $PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/HBoxAdviserFilter/BtnFilterPress
+@onready var btn_start_election: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/BtnStartElection
+@onready var btn_conclude_early: Button = $PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/BtnConcludeEarly
 
 # Race Polling Bar
 @onready var lbl_projected_turnout: Label = $PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/HBoxHdr/LblProjectedTurnout
@@ -413,6 +422,12 @@ func _init_controls() -> void:
 	if lbl_campaign_purse == null: lbl_campaign_purse = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPurse")
 	if lbl_campaign_polling == null: lbl_campaign_polling = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblPolling")
 	if lbl_campaign_audit == null: lbl_campaign_audit = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblAudit")
+	if lbl_campaign_countdown == null: lbl_campaign_countdown = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxStats/LblCountdown")
+	if btn_filter_all == null: btn_filter_all = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/HBoxAdviserFilter/BtnFilterAll")
+	if btn_filter_political == null: btn_filter_political = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/HBoxAdviserFilter/BtnFilterPolitical")
+	if btn_filter_press == null: btn_filter_press = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabDecisionsContainer/HBoxAdviserFilter/BtnFilterPress")
+	if btn_start_election == null: btn_start_election = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/BtnStartElection")
+	if btn_conclude_early == null: btn_conclude_early = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/TabElectionContainer/CardElectionNight/VBox/HBoxElection/BtnConcludeEarly")
 
 	if lbl_projected_turnout == null: lbl_projected_turnout = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/HBoxHdr/LblProjectedTurnout")
 	if lbl_race_player == null: lbl_race_player = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardRaceOverview/VBox/GridRace/LblRacePlayer")
@@ -462,6 +477,7 @@ func _init_controls() -> void:
 	if btn_assume_office == null: btn_assume_office = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/CardElectionNight/VBox/BtnAssumeOffice")
 	if lbl_campaign_feedback == null: lbl_campaign_feedback = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/LblCampaignFeedback")
 	if btn_back_to_advisers == null: btn_back_to_advisers = get_node_or_null("PanelContainer/VBox/ScreenCampaignHq/HBoxCampaignActions/BtnBackToAdvisers")
+	_connect_signals()
 
 func _process(delta: float) -> void:
 	if resend_cooldown_timer > 0.0:
@@ -474,6 +490,15 @@ func _process(delta: float) -> void:
 				btn_resend_email.text = "Resend Verification Email"
 				btn_resend_email.disabled = false
 
+	if current_stage == ScreenStage.CAMPAIGN_HQ and campaign_timer_active:
+		if campaign_time_remaining > 0.0:
+			campaign_time_remaining = max(0.0, campaign_time_remaining - delta)
+			_update_campaign_timer_display()
+		else:
+			campaign_time_remaining = 0.0
+			campaign_timer_active = false
+			_on_campaign_timer_completed()
+
 func _connect_signals() -> void:
 	if btn_mode_new_republic and not btn_mode_new_republic.pressed.is_connected(_on_entry_new_republic_pressed):
 		btn_mode_new_republic.pressed.connect(_on_entry_new_republic_pressed)
@@ -483,6 +508,17 @@ func _connect_signals() -> void:
 		btn_quick_login.pressed.connect(_on_quick_login_pressed)
 	if btn_submit_login and not btn_submit_login.pressed.is_connected(_on_submit_login_pressed):
 		btn_submit_login.pressed.connect(_on_submit_login_pressed)
+	if btn_filter_all and not btn_filter_all.pressed.is_connected(_on_filter_all_pressed):
+		btn_filter_all.pressed.connect(_on_filter_all_pressed)
+	if btn_filter_political and not btn_filter_political.pressed.is_connected(_on_filter_political_pressed):
+		btn_filter_political.pressed.connect(_on_filter_political_pressed)
+	if btn_filter_press and not btn_filter_press.pressed.is_connected(_on_filter_press_pressed):
+		btn_filter_press.pressed.connect(_on_filter_press_pressed)
+	if btn_start_election and not btn_start_election.pressed.is_connected(_on_contest_election_pressed):
+		btn_start_election.pressed.connect(_on_contest_election_pressed)
+	if btn_conclude_early and not btn_conclude_early.pressed.is_connected(_on_conclude_early_pressed):
+		btn_conclude_early.pressed.connect(_on_conclude_early_pressed)
+
 	if btn_campaign_signout and not btn_campaign_signout.pressed.is_connected(_on_campaign_signout_pressed):
 		btn_campaign_signout.pressed.connect(_on_campaign_signout_pressed)
 	if btn_gender_female and not btn_gender_female.pressed.is_connected(_on_gender_female_pressed):
@@ -648,7 +684,12 @@ func _show_stage(stage: ScreenStage) -> void:
 	if plans_panel: plans_panel.visible = (stage == ScreenStage.DEVELOPMENT_PLANS)
 	if summary_panel: summary_panel.visible = (stage == ScreenStage.PHASE3_SUMMARY)
 	if advisers_panel: advisers_panel.visible = (stage == ScreenStage.ADVISERS)
-	if campaign_panel: campaign_panel.visible = (stage == ScreenStage.CAMPAIGN_HQ)
+	if campaign_panel:
+		campaign_panel.visible = (stage == ScreenStage.CAMPAIGN_HQ)
+		if stage == ScreenStage.CAMPAIGN_HQ:
+			if not active_campaign_data.get("election_resolved", false) and campaign_time_remaining > 0.0:
+				campaign_timer_active = true
+			_update_campaign_timer_display()
 
 	var stage_name := "Register"
 	match stage:
@@ -1713,6 +1754,10 @@ func _select_campaign_tab(tab_name: String) -> void:
 
 func _populate_campaign_hq_view(data: Dictionary) -> void:
 	active_campaign_data = data
+	if data.has("campaign_time_remaining_seconds"):
+		campaign_time_remaining = float(data.get("campaign_time_remaining_seconds", campaign_time_remaining))
+	_update_campaign_timer_display()
+	_update_adviser_filter_buttons()
 	var purse := float(data.get("campaign_purse", 5000000.0))
 	var polling := float(data.get("campaign_polling", 35.0))
 	var accountant = data.get("campaign_accountant_general", {})
@@ -1792,20 +1837,13 @@ Latest Move: %s" % [thorne_poll, thorne_action]
 		lbl_drake_desc.text = "Strategy: Grassroots outrage & mass rallies • Polling: %.1f%%
 Latest Move: %s" % [drake_poll, drake_action]
 
-	# Populate Decision Cards
-	if decisions_box:
-		for child in decisions_box.get_children():
-			child.queue_free()
-
-		var decisions = data.get("available_campaign_decisions", [])
-		if typeof(decisions) == TYPE_ARRAY:
-			for d in decisions:
-				if typeof(d) == TYPE_DICTIONARY:
-					_create_decision_card(d)
+	# Populate Decision Cards via filtered adviser delivery list
+	_populate_decisions_list()
 
 	# Populate Interest Groups Cards
 	if groups_box:
 		for child in groups_box.get_children():
+			groups_box.remove_child(child)
 			child.queue_free()
 
 		var groups = data.get("campaign_interest_groups", [])
@@ -1817,6 +1855,7 @@ Latest Move: %s" % [drake_poll, drake_action]
 	# Populate Campaign News Wire
 	if news_box:
 		for child in news_box.get_children():
+			news_box.remove_child(child)
 			child.queue_free()
 
 		var news_items = data.get("campaign_news", [])
@@ -1836,6 +1875,7 @@ Latest Move: %s" % [drake_poll, drake_action]
 
 	if election_breakdown_box:
 		for child in election_breakdown_box.get_children():
+			election_breakdown_box.remove_child(child)
 			child.queue_free()
 
 		var breakdown = data.get("election_breakdown", {})
@@ -1881,6 +1921,13 @@ Latest Move: %s" % [drake_poll, drake_action]
 				input_official_address.text = "President " + (lname if not lname.is_empty() else fname)
 		if btn_contest_election:
 			btn_contest_election.disabled = election_won
+		if btn_start_election:
+			btn_start_election.disabled = election_won
+			btn_start_election.visible = not election_won
+		if btn_conclude_early:
+			btn_conclude_early.visible = not election_won
+		if election_won:
+			campaign_timer_active = false
 	else:
 		if lbl_election_result:
 			lbl_election_result.text = "Election Status: Campaign in progress. Build public support and endorsements before contesting election night."
@@ -1892,6 +1939,24 @@ Latest Move: %s" % [drake_poll, drake_action]
 		if btn_contest_election:
 			btn_contest_election.disabled = false
 
+func _populate_decisions_list() -> void:
+	if not decisions_box: return
+	for child in decisions_box.get_children():
+		decisions_box.remove_child(child)
+		child.queue_free()
+
+	var decisions = active_campaign_data.get("available_campaign_decisions", [])
+	if typeof(decisions) == TYPE_ARRAY:
+		for d in decisions:
+			if typeof(d) == TYPE_DICTIONARY:
+				var cat := str(d.get("category", d.get("Category", "Campaign"))).to_lower()
+				var is_press := cat.contains("media") or cat.contains("press") or cat.contains("broadcast") or cat.contains("debate")
+				if active_adviser_filter == "political" and is_press:
+					continue
+				if active_adviser_filter == "press" and not is_press:
+					continue
+				_create_decision_card(d)
+
 func _create_decision_card(d: Dictionary) -> void:
 	var dec_id := str(d.get("id", d.get("Id", "")))
 	var title := str(d.get("title", d.get("Title", "")))
@@ -1902,41 +1967,71 @@ func _create_decision_card(d: Dictionary) -> void:
 	var cost := float(d.get("cost_repu", d.get("CostRepu", 0.0)))
 	var is_net_pos := bool(d.get("is_net_positive", d.get("IsNetPositive", true)))
 
+	var is_press := category.to_lower().contains("media") or category.to_lower().contains("press") or category.to_lower().contains("broadcast") or category.to_lower().contains("debate")
+	var adviser_tag := "🎙️ Brought by Elena Vance — Press Secretary" if is_press else "👔 Brought by Marcus Vance — Political Adviser"
+	var adviser_color := Color(0.4, 0.85, 1.0) if is_press else Color(0.95, 0.78, 0.35)
+
 	var panel := PanelContainer.new()
 	var vbox := VBoxContainer.new()
 	vbox.set("theme_override_constants/separation", 4)
 	panel.add_child(vbox)
 
+	# Adviser delivery notice pill
+	var hbox_adviser := HBoxContainer.new()
+	vbox.add_child(hbox_adviser)
+
+	var lbl_adv := Label.new()
+	lbl_adv.text = adviser_tag
+	lbl_adv.modulate = adviser_color
+	lbl_adv.set("theme_override_font_sizes/font_size", 10)
+	lbl_adv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox_adviser.add_child(lbl_adv)
+
+	var lbl_cat_badge := Label.new()
+	lbl_cat_badge.text = "[Category: %s]" % category
+	lbl_cat_badge.set("theme_override_font_sizes/font_size", 10)
+	lbl_cat_badge.modulate = Color(0.7, 0.7, 0.7)
+	hbox_adviser.add_child(lbl_cat_badge)
+
+	# Header with title and expense approval button
 	var hbox_hdr := HBoxContainer.new()
 	vbox.add_child(hbox_hdr)
 
 	var lbl_t := Label.new()
 	lbl_t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl_t.text = "%s [%s]" % [title, category]
-	lbl_t.modulate = Color(0.85, 0.72, 0.35)
+	lbl_t.modulate = Color(0.95, 0.95, 0.95)
 	hbox_hdr.add_child(lbl_t)
 
 	var btn_exec := Button.new()
-	btn_exec.custom_minimum_size = Vector2(170, 26)
-	btn_exec.text = "Approve (R %s)" % [_format_number(cost)]
+	btn_exec.custom_minimum_size = Vector2(210, 28)
+	if cost > 0.0:
+		btn_exec.text = "Approve Expense (R %s)" % [_format_number(cost)]
+	else:
+		btn_exec.text = "Approve Agreement (R 0)"
 	hbox_hdr.add_child(btn_exec)
 	btn_exec.pressed.connect(_on_decision_clicked.bind(dec_id))
 
+	# Memo description
 	var lbl_d := Label.new()
 	lbl_d.text = desc
 	lbl_d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_d.set("theme_override_font_sizes/font_size", 11)
 	vbox.add_child(lbl_d)
 
+	# Positive & negative consequences (strictly keeping labels test_onboarding_phase5_flow expects)
 	var lbl_pos := Label.new()
 	lbl_pos.text = "• Positive Consequence: " + pos
 	lbl_pos.modulate = Color(0.4, 0.9, 0.4)
 	lbl_pos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_pos.set("theme_override_font_sizes/font_size", 10)
 	vbox.add_child(lbl_pos)
 
 	var lbl_neg := Label.new()
 	lbl_neg.text = "• Negative Consequence: " + neg
 	lbl_neg.modulate = Color(1.0, 0.6, 0.4)
 	lbl_neg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_neg.set("theme_override_font_sizes/font_size", 10)
 	vbox.add_child(lbl_neg)
 
 	decisions_box.add_child(panel)
@@ -1979,15 +2074,19 @@ func _create_interest_group_card(g: Dictionary) -> void:
 	hbox_hdr.add_child(lbl_status)
 
 	var btn_court := Button.new()
-	btn_court.custom_minimum_size = Vector2(210, 26)
-	btn_court.text = "Court Group (Cost: R 200,000)"
+	btn_court.custom_minimum_size = Vector2(240, 26)
+	btn_court.text = "Approve Stakeholder Pact (R 200,000)"
 	hbox_hdr.add_child(btn_court)
 	btn_court.pressed.connect(_on_court_group_pressed.bind(gid, name))
 
+	var lbl_adviser_memo := Label.new()
+	lbl_adviser_memo.text = "👔 Marcus Vance: \"Securing an endorsement agreement here will shift grassroots turnout and bolster our coalition.\""
+	lbl_adviser_memo.modulate = Color(0.75, 0.85, 1.0)
+	lbl_adviser_memo.set("theme_override_font_sizes/font_size", 10)
+	vbox.add_child(lbl_adviser_memo)
+
 	var lbl_desc := Label.new()
-	lbl_desc.text = "%s
-• Demands: %s
-• Endorsement Benefit: %s" % [desc, demands, benefit]
+	lbl_desc.text = "%s\n• Demands: %s\n• Endorsement Benefit: %s" % [desc, demands, benefit]
 	lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lbl_desc.set("theme_override_font_sizes/font_size", 11)
 	vbox.add_child(lbl_desc)
@@ -2097,6 +2196,7 @@ func _on_decision_clicked(dec_id: String) -> void:
 
 func _on_contest_election_pressed() -> void:
 	if is_processing: return
+	campaign_timer_active = false
 	is_processing = true
 	_select_campaign_tab("election")
 	if btn_contest_election: btn_contest_election.disabled = true
@@ -2269,3 +2369,70 @@ func _on_assume_office_pressed() -> void:
 		if lbl_campaign_feedback:
 			lbl_campaign_feedback.text = str(res.get("message", "Failed to assume office."))
 			lbl_campaign_feedback.modulate = Color(1.0, 0.4, 0.4)
+
+func _update_campaign_timer_display() -> void:
+	var total_sec := int(max(0.0, campaign_time_remaining))
+	var mins := total_sec / 60
+	var secs := total_sec % 60
+	var time_str := "%02d:%02d" % [mins, secs]
+
+	if lbl_campaign_countdown:
+		if campaign_time_remaining <= 0.0:
+			lbl_campaign_countdown.text = "⏱️ 00:00 (Campaign Closed)"
+			lbl_campaign_countdown.modulate = Color(1.0, 0.45, 0.45)
+		else:
+			lbl_campaign_countdown.text = "⏱️ %s to Election" % [time_str]
+			lbl_campaign_countdown.modulate = Color(1.0, 0.85, 0.35)
+
+	if btn_start_election:
+		if campaign_time_remaining <= 0.0:
+			btn_start_election.text = "🗳️ Start Election (Voting Open!)"
+			btn_start_election.disabled = false
+			btn_start_election.modulate = Color(0.4, 1.0, 0.4)
+		else:
+			btn_start_election.text = "🗳️ Start Election (%s)" % [time_str]
+			btn_start_election.disabled = false
+			btn_start_election.modulate = Color(0.9, 0.85, 0.7)
+
+	if btn_conclude_early:
+		btn_conclude_early.visible = (campaign_time_remaining > 0.0)
+
+func _on_campaign_timer_completed() -> void:
+	campaign_time_remaining = 0.0
+	campaign_timer_active = false
+	_update_campaign_timer_display()
+	if lbl_campaign_feedback:
+		lbl_campaign_feedback.text = "⏱️ Active campaign period concluded! Polling stations are open across the sovereign nation."
+		lbl_campaign_feedback.modulate = Color(0.4, 1.0, 0.4)
+	if btn_contest_election:
+		btn_contest_election.disabled = false
+	if btn_start_election:
+		btn_start_election.disabled = false
+
+func _on_conclude_early_pressed() -> void:
+	campaign_time_remaining = 0.0
+	campaign_timer_active = false
+	_on_campaign_timer_completed()
+	_select_campaign_tab("election")
+
+func _on_filter_all_pressed() -> void:
+	_on_filter_adviser_pressed("all")
+
+func _on_filter_political_pressed() -> void:
+	_on_filter_adviser_pressed("political")
+
+func _on_filter_press_pressed() -> void:
+	_on_filter_adviser_pressed("press")
+
+func _on_filter_adviser_pressed(mode: String) -> void:
+	active_adviser_filter = mode
+	_update_adviser_filter_buttons()
+	_populate_decisions_list()
+
+func _update_adviser_filter_buttons() -> void:
+	if btn_filter_all:
+		btn_filter_all.modulate = Color(1.0, 0.9, 0.4) if active_adviser_filter == "all" else Color(0.65, 0.65, 0.65)
+	if btn_filter_political:
+		btn_filter_political.modulate = Color(1.0, 0.9, 0.4) if active_adviser_filter == "political" else Color(0.65, 0.65, 0.65)
+	if btn_filter_press:
+		btn_filter_press.modulate = Color(1.0, 0.9, 0.4) if active_adviser_filter == "press" else Color(0.65, 0.65, 0.65)
